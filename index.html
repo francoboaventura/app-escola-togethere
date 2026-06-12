@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Escola Togethere</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4F46E5;
+            --primary-dark: #4338CA;
+            --secondary: #EC4899;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --bg-light: #F9FAFB;
+            --bg-white: #FFFFFF;
+            --text-dark: #1F2937;
+            --text-muted: #6B7280;
+            --border: #E5E7EB;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        /* LAYOUT PRINCIPAL */
+        .container {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            background: var(--primary);
+            color: white;
+            padding: 2rem 1rem;
+            overflow-y: auto;
+            position: fixed;
+            width: 250px;
+            height: 100vh;
+        }
+
+        .sidebar-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .user-info {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-link {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .nav-link:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .nav-link.active {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            font-weight: 600;
+        }
+
+        /* MAIN CONTENT */
+        .main {
+            margin-left: 250px;
+            padding: 2rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            color: var(--text-dark);
+        }
+
+        .btn-logout {
+            padding: 0.5rem 1rem;
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+
+        /* SECTIONS */
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* CARDS */
+        .card {
+            background: var(--bg-white);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+        }
+
+        /* FORMS */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        /* BUTTONS */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--bg-light);
+            color: var(--text-dark);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        /* TABLES */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top
+
+
+cat > index.html << 'EOF'
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Escola Togethere</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4F46E5;
+            --primary-dark: #4338CA;
+            --secondary: #EC4899;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --danger: #EF4444;
+            --bg-light: #F9FAFB;
+            --bg-white: #FFFFFF;
+            --text-dark: #1F2937;
+            --text-muted: #6B7280;
+            --border: #E5E7EB;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        /* LAYOUT PRINCIPAL */
+        .container {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            min-height: 100vh;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            background: var(--primary);
+            color: white;
+            padding: 2rem 1rem;
+            overflow-y: auto;
+            position: fixed;
+            width: 250px;
+            height: 100vh;
+        }
+
+        .sidebar-header {
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .user-info {
+            font-size: 0.875rem;
+            opacity: 0.9;
+        }
+
+        .nav-menu {
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-bottom: 0.5rem;
+        }
+
+        .nav-link {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .nav-link:hover {
+            background: rgba(255,255,255,0.1);
+            color: white;
+        }
+
+        .nav-link.active {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            font-weight: 600;
+        }
+
+        /* MAIN CONTENT */
+        .main {
+            margin-left: 250px;
+            padding: 2rem;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            color: var(--text-dark);
+        }
+
+        .btn-logout {
+            padding: 0.5rem 1rem;
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+
+        /* SECTIONS */
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* CARDS */
+        .card {
+            background: var(--bg-white);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            margin-bottom: 1rem;
+            color: var(--text-dark);
+        }
+
+        /* FORMS */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-dark);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        /* BUTTONS */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-secondary {
+            background: var(--bg-light);
+            color: var(--text-dark);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            background: var(--border);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        /* TABLES */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th {
+            background: var(--bg-light);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--border);
+        }
+
+        td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:hover {
+            background: var(--bg-light);
+        }
+
+        /* CHECKBOX */
+        .checkbox-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        input[type="checkbox"] {
+            width: auto;
+            cursor: pointer;
+        }
+
+        /* ALERTS */
+        .alert {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+        }
+
+        .alert-danger {
+            background: #FEE2E2;
+            color: #991B1B;
+            border: 1px solid #FECACA;
+        }
+
+        .alert-warning {
+            background: #FEF3C7;
+            color: #92400E;
+            border: 1px solid #FCD34D;
+        }
+
+        .alert-success {
+            background: #DCFCE7;
+            color: #166534;
+            border: 1px solid #BBF7D0;
+        }
+
+        /* MATRIZ DE EISENHOWER */
+        .eisenhower {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .eisenhower-quadrant {
+            background: var(--bg-light);
+            padding: 1rem;
+            border-radius: 6px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .eisenhower-quadrant.important-urgent { border-left-color: var(--danger); }
+        .eisenhower-quadrant.important-not-urgent { border-left-color: var(--success); }
+        .eisenhower-quadrant.not-important-urgent { border-left-color: var(--warning); }
+        .eisenhower-quadrant.not-important-not-urgent { border-left-color: var(--text-muted); }
+
+        .quadrant-title {
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .task-list {
+            list-style: none;
+        }
+
+        .task-item {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: white;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+
+        /* RESPONSIVE */
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+
+            .main {
+                margin-left: 0;
+            }
+
+            .eisenhower {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">🎓 Togethere</div>
+                <div class="user-info" id="userInfo">Professora Ana Silva</div>
+            </div>
+
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <a class="nav-link active" onclick="switchSection('dashboard')">📊 Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="switchSection('attendance')">📋 Presença</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="switchSection('homework')">📚 Temas de Casa</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="switchSection('tests')">📝 Testes</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="switchSection('material')">🎒 Material</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="switchSection('lessonplan')">✏️ Plano de Aula</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="switchSection('meetings')">📌 Atas</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="switchSection('tasks')">✅ Tarefas Internas</a>
+                    </li>
+                    <li class="nav-item" style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.2);">
+                        <a class="nav-link" onclick="logout()">🚪 Sair</a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main class="main">
+            <div class="header">
+                <h1 id="sectionTitle">Dashboard</h1>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </div>
+
+            <section id="dashboard" class="section active">
+                <div class="card">
+                    <h2 class="card-title">Bem-vindo! 👋</h2>
+                    <p>Versão 1.0 - App de Gestão Escolar Togethere</p>
+                </div>
+
+                <div class="alert alert-warning">
+                    <strong>⚠️ Alertas do Sistema</strong>
+                    <p>Aluna Maria Silva: 3 faltas consecutivas — contato com responsável necessário</p>
+                </div>
+
+                <div class="card">
+                    <h2 class="card-title">Resumo do Dia</h2>
+                    <p>Apresentação em: <strong>6 segundos</strong></p>
+                    <button class="btn btn-primary" onclick="generateDayReport()">📧 Gerar Resumo para Pais</button>
+                </div>
+            </section>
+
+            <section id="attendance" class="section">
+                <div class="card">
+                    <h2 class="card-title">Controle de Presença</h2>
+                    <div class="form-group">
+                        <label for="attendanceClass">Turma:</label>
+                        <select id="attendanceClass">
+                            <option>Infantil 3 - Manhã</option>
+                            <option>Infantil 4 - Manhã</option>
+                            <option>Infantil 5 - Tarde</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="attendanceDate">Data:</label>
+                        <input type="date" id="attendanceDate">
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Aluno/a</th>
+                                <th>Presente</th>
+                                <th>Faltou</th>
+                                <th>Justificado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendanceTable">
+                            <tr>
+                                <td>João Silva</td>
+                                <td><input type="radio" name="joao"></td>
+                                <td><input type="radio" name="joao"></td>
+                                <td><input type="radio" name="joao"></td>
+                            </tr>
+                            <tr>
+                                <td>Maria Oliveira</td>
+                                <td><input type="radio" name="maria"></td>
+                                <td><input type="radio" name="maria"></td>
+                                <td><input type="radio" name="maria"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <button class="btn btn-primary" onclick="saveAttendance()" style="margin-top: 1rem;">💾 Salvar Presença</button>
+                </div>
+            </section>
+
+            <section id="homework" class="section">
+                <div class="card">
+                    <h2 class="card-title">Temas de Casa</h2>
+                    
+                    <div class="form-group">
+                        <label for="homeworkClass">Turma:</label>
+                        <select id="homeworkClass">
+                            <option>Infantil 3 - Manhã</option>
+                            <option>Infantil 4 - Manhã</option>
+                            <option>Infantil 5 - Tarde</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="homeworkDate">Data para Entrega:</label>
+                        <input type="date" id="homeworkDate">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="homeworkDescription">Descrição do Tema:</label>
+                        <textarea id="homeworkDescription" placeholder="Ex: Atividade de matemática sobre adição..."></textarea>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="saveHomework()">💾 Registrar Tema</button>
+
+                    <h3 style="margin-top: 2rem;">Temas Registrados</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Turma</th>
+                                <th>Descrição</th>
+                                <th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="homeworkList">
+                            <tr>
+                                <td>10/06/2026</td>
+                                <td>Infantil 3</td>
+                                <td>Atividade sobre números</td>
+                                <td><button class="btn btn-danger" onclick="deleteItem()">🗑️</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="tests" class="section">
+                <div class="card">
+                    <h2 class="card-title">Resultados de Testes</h2>
+                    
+                    <div class="form-group">
+                        <label for="testClass">Turma:</label>
+                        <select id="testClass">
+                            <option>Infantil 3 - Manhã</option>
+                            <option>Infantil 4 - Manhã</option>
+                            <option>Infantil 5 - Tarde</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="testName">Nome do Teste:</label>
+                        <input type="text" id="testName" placeholder="Ex: Avaliação de Leitura">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="testDate">Data:</label>
+                        <input type="date" id="testDate">
+                    </div>
+
+                    <h3>Notas dos Alunos</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Aluno/a</th>
+                                <th>Nota</th>
+                                <th>Observações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="testTable">
+                            <tr>
+                                <td>João Silva</td>
+                                <td><input type="number" min="0" max="10" style="width: 80px;"></td>
+                                <td><input type="text" style="width: 200px;"></td>
+                            </tr>
+                            <tr>
+                                <td>Maria Oliveira</td>
+                                <td><input type="number" min="0" max="10" style="width: 80px;"></td>
+                                <td><input type="text" style="width: 200px;"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <button class="btn btn-primary" onclick="saveTests()" style="margin-top: 1rem;">💾 Salvar Testes</button>
+                </div>
+            </section>
+
+            <section id="material" class="section">
+                <div class="card">
+                    <h2 class="card-title">Controle de Material</h2>
+                    
+                    <div class="form-group">
+                        <label for="materialClass">Turma:</label>
+                        <select id="materialClass">
+                            <option>Infantil 3 - Manhã</option>
+                            <option>Infantil 4 - Manhã</option>
+                            <option>Infantil 5 - Tarde</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="materialDate">Data:</label>
+                        <input type="date" id="materialDate">
+                    </div>
+
+                    <h3>Material Não Trazido</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Aluno/a</th>
+                                <th>Trouxe?</th>
+                                <th>Observações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="materialTable">
+                            <tr>
+                                <td>João Silva</td>
+                                <td>
+                                    <input type="checkbox"> ✓
+                                </td>
+                                <td><input type="text" placeholder="Esqueceu livro de leitura"></td>
+                            </tr>
+                            <tr>
+                                <td>Maria Oliveira</td>
+                                <td>
+                                    <input type="checkbox"> ✓
+                                </td>
+                                <td><input type="text" placeholder="Faltou material de arte"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="alert alert-danger" style="margin-top: 1rem;">
+                        <strong>🚨 Alerta do Sistema</strong>
+                        <p>Pedro Martins: Não trouxe material em 3 aulas consecutivas</p>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="saveMaterial()" style="margin-top: 1rem;">💾 Registrar Material</button>
+                </div>
+            </section>
+
+            <section id="lessonplan" class="section">
+                <div class="card">
+                    <h2 class="card-title">Plano de Aula</h2>
+                    
+                    <div class="form-group">
+                        <label for="planClass">Turma:</label>
+                        <select id="planClass">
+                            <option>Infantil 3 - Manhã</option>
+                            <option>Infantil 4 - Manhã</option>
+                            <option>Infantil 5 - Tarde</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="planDate">Data da Aula:</label>
+                        <input type="date" id="planDate">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="planTopic">Tema da Aula:</label>
+                        <input type="text" id="planTopic" placeholder="Ex: Os números de 1 a 10">
+                    </div>
+
+                    <h3>Checklist de Atividades</h3>
+                    <div class="checkbox-group" style="flex-direction: column; gap: 0.75rem;">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="activity1">
+                            <label for="activity1" style="margin: 0;">Aquecimento/Motivação</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="activity2">
+                            <label for="activity2" style="margin: 0;">Atividade Principal</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="activity3">
+                            <label for="activity3" style="margin: 0;">Atividade Prática</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="activity4">
+                            <label for="activity4" style="margin: 0;">Atividade Criativa/Expressiva</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="activity5">
+                            <label for="activity5" style="margin: 0;">Fechamento/Avaliação</label>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 1.5rem;">
+                        <label for="planNotes">Anotações da Aula:</label>
+                        <textarea id="planNotes" placeholder="Como foi a aula, dificuldades, pontos positivos..."></textarea>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="saveLessonPlan()">💾 Salvar Plano de Aula</button>
+                    <button class="btn btn-success" onclick="generateLessonSummary()" style="margin-left: 0.5rem;">📧 Gerar Resumo para Pais</button>
+                </div>
+            </section>
+
+            <section id="meetings" class="section">
+                <div class="card">
+                    <h2 class="card-title">Atas de Reuniões</h2>
+                    
+                    <div class="form-group">
+                        <label for="meetingType">Tipo de Reunião:</label>
+                        <select id="meetingType">
+                            <option>Reunião Pedagógica</option>
+                            <option>Reunião com Pais</option>
+                            <option>Reunião de Planejamento</option>
+                            <option>Outro</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="meetingDate">Data:</label>
+                        <input type="date" id="meetingDate">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="meetingAttendees">Presentes:</label>
+                        <input type="text" id="meetingAttendees" placeholder="Ex: Ana Silva, João Santos, Maria Oliveira">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="meetingContent">Conteúdo da Reunião:</label>
+                        <textarea id="meetingContent" placeholder="Pontos discutidos, decisões tomadas, próximos passos..."></textarea>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="saveMeeting()">💾 Salvar Ata</button>
+
+                    <h3 style="margin-top: 2rem;">Atas Registradas</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Tipo</th>
+                                <th>Presentes</th>
+                                <th>Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody id="meetingList">
+                            <tr>
+                                <td>05/06/2026</td>
+                                <td>Reunião Pedagógica</td>
+                                <td>Ana, João, Maria</td>
+                                <td><button class="btn btn-danger" onclick="deleteItem()">🗑️</button></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="tasks" class="section">
+                <div class="card">
+                    <h2 class="card-title">Tarefas Internas - Matriz de Eisenhower</h2>
+                    
+                    <div class="form-group">
+                        <label for="taskTitle">Título da Tarefa:</label>
+                        <input type="text" id="taskTitle" placeholder="Ex: Preparar relatório de alunos">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="taskQuadrant">Quadrante:</label>
+                        <select id="taskQuadrant">
+                            <option value="important-urgent">🔴 Importante e Urgente (FAZER AGORA)</option>
+                            <option value="important-not-urgent">🟢 Importante e Não Urgente (AGENDAR)</option>
+                            <option value="not-important-urgent">🟡 Não Importante e Urgente (STANDBY)</option>
+                            <option value="not-important-not-urgent">⚪ Não Importante e Não Urgente (ELIMINAR)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="taskDueDate">Data Limite:</label>
+                        <input type="date" id="taskDueDate">
+                    </div>
+
+                    <button class="btn btn-primary" onclick="addTask()">➕ Adicionar Tarefa</button>
+
+                    <div class="eisenhower">
+                        <div class="eisenhower-quadrant important-urgent">
+                            <h4 class="quadrant-title">🔴 FAZER AGORA<br><span style="font-size: 0.75rem;">Importante + Urgente</span></h4>
+                            <ul class="task-list" id="quadrant1">
+                                <li class="task-item">Corrigir provas da semana</li>
+                                <li class="task-item">Reunião com diretor hoje</li>
+                            </ul>
+                        </div>
+
+                        <div class="eisenhower-quadrant important-not-urgent">
+                            <h4 class="quadrant-title">🟢 AGENDAR<br><span style="font-size: 0.75rem;">Importante + Não Urgente</span></h4>
+                            <ul class="task-list" id="quadrant2">
+                                <li class="task-item">Planejar próximo bimestre</li>
+                                <li class="task-item">Desenvolver novo material didático</li>
+                            </ul>
+                        </div>
+
+                        <div class="eisenhower-quadrant not-important-urgent">
+                            <h4 class="quadrant-title">🟡 STANDBY<br><span style="font-size: 0.75rem;">Não Importante + Urgente</span></h4>
+                            <ul class="task-list" id="quadrant3">
+                                <li class="task-item">Responder e-mails diversos</li>
+                                <li class="task-item">Presença em reunião informativa</li>
+                            </ul>
+                        </div>
+
+                        <div class="eisenhower-quadrant not-important-not-urgent">
+                            <h4 class="quadrant-title">⚪ ELIMINAR<br><span style="font-size: 0.75rem;">Não Importante + Não Urgente</span></h4>
+                            <ul class="task-list" id="quadrant4">
+                                <li class="task-item">Navegar internet sem propósito</li>
+                                <li class="task-item">Conversar sobre assuntos não relevantes</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        function switchSection(sectionId) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+
+            document.getElementById(sectionId).classList.add('active');
+            event.target.classList.add('active');
+
+            const titles = {
+                'dashboard': '📊 Dashboard',
+                'attendance': '📋 Presença',
+                'homework': '📚 Temas de Casa',
+                'tests': '📝 Testes',
+                'material': '🎒 Material',
+                'lessonplan': '✏️ Plano de Aula',
+                'meetings': '📌 Atas de Reuniões',
+                'tasks': '✅ Tarefas Internas'
+            };
+            document.getElementById('sectionTitle').textContent = titles[sectionId];
+        }
+
+        function saveAttendance() { alert('✅ Presença salva com sucesso!'); }
+        function saveHomework() { alert('✅ Tema registrado com sucesso!'); }
+        function saveTests() { alert('✅ Testes salvos com sucesso!'); }
+        function saveMaterial() { alert('✅ Material registrado com sucesso!'); }
+        function saveLessonPlan() { alert('✅ Plano de aula salvo com sucesso!'); }
+        function saveMeeting() { alert('✅ Ata registrada com sucesso!'); }
+        function addTask() { alert('✅ Tarefa adicionada!'); }
+        
+        function generateDayReport() {
+            alert('📧 Resumo do dia gerado!\n\nO texto será enviado aos pais com a descrição da aula de hoje.');
+        }
+
+        function generateLessonSummary() {
+            alert('📧 Resumo da aula gerado!\n\nTexto pronto para envio aos responsáveis.');
+        }
+
+        function deleteItem() {
+            if (confirm('Tem certeza que deseja deletar?')) {
+                alert('🗑️ Item deletado com sucesso!');
+            }
+        }
+
+        function logout() {
+            if (confirm('Deseja fazer logout?')) {
+                alert('👋 Até logo!');
+            }
+        }
+
+        function saveToLocalStorage(key, value) {
+            localStorage.setItem(key, JSON.stringify(value));
+        }
+
+        function getFromLocalStorage(key) {
+            return JSON.parse(localStorage.getItem(key) || 'null');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('App Escola Togethere v1.0 carregado');
+        });
+    </script>
+</body>
+</html>
