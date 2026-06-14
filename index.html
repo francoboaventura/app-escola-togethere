@@ -377,6 +377,8 @@ function save(){
 }
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function hoje(){return new Date().toISOString().slice(0,10);}
+function diasAtras(n){const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().slice(0,10);}
+function pesoFalta(turmaId){const t=S.turmas.find(x=>x.id===turmaId);return (t&&t.vezesSemana===1)?2:1;}
 
 /* dados reais da escola (relatório Sponte 12/06/2026) */
 function seed(){
@@ -440,8 +442,13 @@ function alertasFaltas(){
                           .sort((x,y)=>x.data.localeCompare(y.data));
     let streak=0;
     for(let i=sess.length-1;i>=0;i--){ if(sess[i].registros[a.id]==='falta')streak++; else break; }
-    if(streak>=3) out.push({alunoId:a.id, tipo:'falta', n:streak,
-      motivo:`${streak} faltas consecutivas`});
+    const peso=pesoFalta(a.turmaId), equiv=streak*peso;
+    if(equiv>=3){
+      const motivo = peso===2
+        ? `${streak} aula(s) seguida(s) sem vir (${equiv} faltas)`
+        : `${streak} faltas consecutivas`;
+      out.push({alunoId:a.id, tipo:'falta', n:equiv, motivo});
+    }
   });
   return out.filter(o=>!jaContatado(o.alunoId,'falta'));
 }
@@ -469,8 +476,11 @@ function faltasDoAluno(alunoId,turmaId){
 }
 function materialDoAluno(alunoId,turmaId){
   return S.material.filter(m=>m.turmaId===turmaId && (m.faltantes||[]).includes(alunoId))
-    .map(m=>m.data).sort();
-}
+    .map(m=>m.data).sort();}
+function atrasosDoAluno(alunoId,turmaId){
+  return S.presencas.filter(p=>p.turmaId===turmaId && (p.atrasados||[]).includes(alunoId)).map(p=>p.data).sort();}
+function saidasCedoDoAluno(alunoId,turmaId){
+  return S.presencas.filter(p=>p.turmaId===turmaId && (p.saiuCedo||[]).includes(alunoId)).map(p=>p.data).sort();}
 function temasNaoFeitosDoAluno(alunoId,turmaId){
   return S.temas.filter(t=>t.turmaId===turmaId && t.entregas[alunoId]===false)
     .map(t=>({data:t.data,descricao:t.descricao,origem:t.origem||'extra'})).sort((a,b)=>a.data.localeCompare(b.data));
@@ -645,54 +655,87 @@ VIEWS.painel=()=>{
 };
 
 /* ---- PRESENÇA ---- */
-let presTurma=null, presData=hoje();
+let presTurma=null, presData=hoje(), presBusca='';
 VIEWS.presenca=()=>{
   presTurma=presTurma||primeiraTurma();
   const v=document.getElementById('view');
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Chamada</h2></div>
-    <p class="sub">Marque presença ou falta. Faltas alimentam os alertas da secretaria.</p>
+    <p class="sub">Marque presença/falta e, se for o caso, atraso ou saída antecipada. Faltas alimentam os alertas.</p>
     <div class="card"><div class="row">
       <div><label class="lbl">Turma</label>${selectTurma('pT',presTurma)}</div>
       <div><label class="lbl">Data da aula</label><input type="date" id="pD" value="${presData}"></div>
     </div></div>
-    <div class="card" id="pBox"></div>`;
-  document.getElementById('pT').onchange=e=>{presTurma=e.target.value;renderPres();};
+    <div class="card" id="pBox"></div>
+    <div class="card"><input type="text" id="pBusca" placeholder="🔎 Buscar chamada anterior por data (ex.: 10/06)" value="${escAttr(presBusca)}" oninput="presBusca=this.value;renderPresLista()"><div id="pLista" style="margin-top:8px"></div></div>`;
+  document.getElementById('pT').onchange=e=>{presTurma=e.target.value;renderPres();renderPresLista();};
   document.getElementById('pD').onchange=e=>{presData=e.target.value;renderPres();};
-  renderPres();
+  renderPres(); renderPresLista();
 };
+function presRec(criar){
+  let rec=S.presencas.find(p=>p.turmaId===presTurma&&p.data===presData);
+  if(!rec && criar){ rec={id:uid(),turmaId:presTurma,data:presData,registros:{},atrasados:[],saiuCedo:[]}; alunosDa(presTurma).forEach(a=>rec.registros[a.id]='presente'); S.presencas.push(rec); }
+  return rec;
+}
 function renderPres(){
   const box=document.getElementById('pBox');
-  const reg=(S.presencas.find(p=>p.turmaId===presTurma&&p.data===presData)||{}).registros||{};
+  const rec=S.presencas.find(p=>p.turmaId===presTurma&&p.data===presData)||{registros:{},atrasados:[],saiuCedo:[]};
+  const reg=rec.registros||{}, atr=rec.atrasados||[], cedo=rec.saiuCedo||[];
   const als=alunosDa(presTurma);
   if(!als.length){box.innerHTML='<div class="empty"><div class="big">👥</div>Nenhum aluno nesta turma ainda.</div>';return;}
-  box.innerHTML=`<h3>${als.length} alunos · ${brDate(presData)}</h3><p class="hint">Toque para alternar.</p>
-    <table><tbody>${als.map(a=>{
+  box.innerHTML=`<h3>${als.length} alunos · ${brDate(presData)}</h3><p class="hint">Toque para alternar presença. Marque atraso / saída antecipada quando houver.</p>
+    ${als.map(a=>{
       const st=reg[a.id]||'presente';
-      return `<tr><td><b>${a.nome}</b></td><td style="text-align:right">
-        <div class="seg"><button class="${st==='presente'?'on-p':''}" onclick="setPres('${a.id}','presente')">Presente</button>
-        <button class="${st==='falta'?'on-f':''}" onclick="setPres('${a.id}','falta')">Falta</button></div></td></tr>`;
-    }).join('')}</tbody></table>
+      return `<div style="padding:10px 0;border-bottom:1px dashed var(--linha)">
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <b style="flex:1;min-width:130px">${a.nome}</b>
+          <div class="seg"><button class="${st==='presente'?'on-p':''}" onclick="setPres('${a.id}','presente')">Presente</button>
+          <button class="${st==='falta'?'on-f':''}" onclick="setPres('${a.id}','falta')">Falta</button></div>
+        </div>
+        ${st==='presente'?`<div style="display:flex;gap:18px;margin-top:8px;flex-wrap:wrap">
+          <label style="display:flex;align-items:center;gap:6px;font-size:.84rem;cursor:pointer"><input type="checkbox" ${atr.includes(a.id)?'checked':''} onchange="toggleAtraso('${a.id}')"> chegou atrasado</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:.84rem;cursor:pointer"><input type="checkbox" ${cedo.includes(a.id)?'checked':''} onchange="toggleSaiuCedo('${a.id}')"> saiu mais cedo</label>
+        </div>`:''}
+      </div>`;
+    }).join('')}
     <div style="margin-top:16px"><button class="btn" onclick="salvarPres()">Salvar chamada</button></div>`;
 }
-let presTemp={};
 function setPres(id,st){
-  let rec=S.presencas.find(p=>p.turmaId===presTurma&&p.data===presData);
-  if(!rec){rec={id:uid(),turmaId:presTurma,data:presData,registros:{}};S.presencas.push(rec);alunosDa(presTurma).forEach(a=>rec.registros[a.id]='presente');}
-  rec.registros[id]=st; renderPres();
+  const rec=presRec(true);
+  rec.registros[id]=st;
+  if(st==='falta'){ rec.atrasados=(rec.atrasados||[]).filter(x=>x!==id); rec.saiuCedo=(rec.saiuCedo||[]).filter(x=>x!==id); }
+  renderPres();
 }
-function salvarPres(){save();montarNav();toast('Chamada salva');}
+function toggleAtraso(id){const rec=presRec(true);rec.atrasados=rec.atrasados||[];const i=rec.atrasados.indexOf(id);if(i>=0)rec.atrasados.splice(i,1);else rec.atrasados.push(id);renderPres();}
+function toggleSaiuCedo(id){const rec=presRec(true);rec.saiuCedo=rec.saiuCedo||[];const i=rec.saiuCedo.indexOf(id);if(i>=0)rec.saiuCedo.splice(i,1);else rec.saiuCedo.push(id);renderPres();}
+function salvarPres(){save();montarNav();renderPresLista();toast('Chamada salva');}
+function carregaPres(data){presData=data;const el=document.getElementById('pD');if(el)el.value=data;renderPres();window.scrollTo({top:0,behavior:'smooth'});}
+function renderPresLista(){
+  const box=document.getElementById('pLista'); if(!box)return;
+  const recs=S.presencas.filter(p=>p.turmaId===presTurma);
+  const q=presBusca.trim();
+  let filt,titulo;
+  if(q){ filt=recs.filter(p=>p.data.includes(q)||brDate(p.data).includes(q)); titulo=`Resultados (${filt.length})`; }
+  else { const lim=diasAtras(7); filt=recs.filter(p=>p.data>=lim); titulo='Chamadas dos últimos 7 dias'; }
+  filt.sort((a,b)=>b.data.localeCompare(a.data));
+  if(!filt.length){ box.innerHTML=`<p class="hint">${q?'Nenhuma chamada encontrada.':'Nenhuma chamada nos últimos 7 dias.'}</p>`; return; }
+  box.innerHTML=`<p class="hint" style="margin:4px 0 6px">${titulo}</p>`+filt.map(p=>{
+    const nf=Object.values(p.registros).filter(s=>s==='falta').length;
+    return `<div class="check"><span>${brDate(p.data)} · ${nf} falta(s)</span><button class="btn ghost sm" style="margin-left:auto" onclick="carregaPres('${p.data}')">abrir</button></div>`;
+  }).join('');
+}
 
 /* ---- TEMAS DE CASA ---- */
-let temaTurma=null;
+let temaTurma=null, _buscaTema='';
 VIEWS.temas=()=>{
   temaTurma=temaTurma||primeiraTurma();
   const v=document.getElementById('view');
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--rosa)"></span><h2 class="display">Temas de casa</h2></div>
-    <p class="sub">Aqui ficam os temas <b>extras</b> — os que não estavam no plano de aula. (Os temas do plano você cria direto na aba <b>Planos de aula</b>, no botão 📩 de cada item.)</p>
+    <p class="sub">Temas <b>extras</b> (fora do plano). Mostra os da última semana; use a busca para anteriores.</p>
     <div class="card"><div class="row">
       <div style="flex:2"><label class="lbl">Turma</label>${selectTurma('tT',temaTurma)}</div>
       <div style="display:flex;align-items:flex-end"><button class="btn" onclick="modalTema(temaTurma,'',hoje(),'extra')">+ Novo tema extra</button></div>
-    </div></div>
+    </div>
+    <input type="text" id="buscaTema" placeholder="🔎 Buscar tema (descrição ou data)" value="${escAttr(_buscaTema)}" oninput="_buscaTema=this.value;renderTemas()" style="margin-top:12px"></div>
     <div id="tList"></div>`;
   document.getElementById('tT').onchange=e=>{temaTurma=e.target.value;renderTemas();};
   renderTemas();
@@ -722,7 +765,7 @@ function criarTema(turmaId,origem){
   }else{
     alvos=alunosDa(turmaId).map(a=>a.id);
   }
-  const ent={}; alvos.forEach(id=>ent[id]=false);
+  const ent={}; alvos.forEach(id=>ent[id]=true);   // padrão: todos entregaram (marca-se quem NÃO entregou)
   S.temas.push({id:uid(),turmaId,data,descricao:desc,entregas:ent,origem:origem||'extra'});
   save(); fechar(); toast('Tema de casa criado');
   if(rota==='temas'){ temaTurma=turmaId; VIEWS.temas(); }
@@ -731,21 +774,28 @@ function criarTema(turmaId,origem){
 function temaDoPlano(pid,i){ const p=S.planos.find(p=>p.id===pid); if(!p)return; modalTema(p.turmaId,p.itens[i].txt,p.data,'plano'); }
 function renderTemas(){
   const list=document.getElementById('tList');
-  const ts=S.temas.filter(t=>t.turmaId===temaTurma).sort((a,b)=>b.data.localeCompare(a.data));
-  if(!ts.length){list.innerHTML='<div class="card empty"><div class="big">📚</div>Nenhum tema extra para esta turma.</div>';return;}
+  let ts=S.temas.filter(t=>t.turmaId===temaTurma);
+  const raw=(_buscaTema||'').trim(), q=_normTxt(raw);
+  if(q){ ts=ts.filter(t=>_normTxt(t.descricao).includes(q)||t.data.includes(raw)||brDate(t.data).includes(raw)); }
+  else { const lim=diasAtras(7); ts=ts.filter(t=>t.data>=lim); }
+  ts.sort((a,b)=>b.data.localeCompare(a.data));
+  if(!ts.length){list.innerHTML=`<div class="card empty"><div class="big">📚</div>${raw?'Nenhum tema encontrado.':'Nenhum tema extra na última semana para esta turma.'}</div>`;return;}
   const totalTurma=alunosDa(temaTurma).length;
   list.innerHTML=ts.map(t=>{
     const alvos=Object.keys(t.entregas);
-    const feitos=Object.values(t.entregas).filter(Boolean).length;
+    const naoEnt=alvos.filter(aid=>t.entregas[aid]===false).length;
     const alvoLabel=(totalTurma>0 && alvos.length>=totalTurma)?'Turma toda':alvos.length+' aluno(s)';
     const badge=t.origem==='plano'?'<span class="pill" style="background:#e6f0fb;color:var(--azul)">do plano</span>':'<span class="pill">extra</span>';
     return `<div class="card"><h3>${t.descricao}</h3>
-      <p class="hint">${brDate(t.data)} · ${alvoLabel} · ${feitos}/${alvos.length} entregaram &nbsp;${badge}</p>
-      ${alvos.map(aid=>{const a=S.alunos.find(x=>x.id===aid);return `<div class="check ${t.entregas[aid]?'done':''}"><input type="checkbox" ${t.entregas[aid]?'checked':''} onchange="toggleTema('${t.id}','${aid}')"><span>${a?a.nome:'—'}</span></div>`;}).join('')}
+      <p class="hint">${brDate(t.data)} · ${alvoLabel} · ${naoEnt} não entregaram &nbsp;${badge}</p>
+      <p class="hint" style="margin:2px 0 8px">Assumimos que todos fizeram — marque só quem <b>não entregou</b>.</p>
+      <button class="btn ghost sm" style="margin-bottom:6px" onclick="todosEntregaram('${t.id}')">✓ Todos entregaram</button>
+      ${alvos.map(aid=>{const a=S.alunos.find(x=>x.id===aid);const ne=t.entregas[aid]===false;return `<div class="check"><input type="checkbox" ${ne?'checked':''} onchange="toggleTema('${t.id}','${aid}')"><span>${a?a.nome:'—'}</span>${ne?'<span class="pill" style="margin-left:auto;background:#fdeaea;color:var(--vermelho)">não entregou</span>':''}</div>`;}).join('')}
       <button class="btn ghost sm" style="margin-top:12px;color:var(--vermelho)" onclick="delTema('${t.id}')">Excluir tema</button></div>`;
   }).join('');
 }
 function toggleTema(tid,aid){const t=S.temas.find(t=>t.id===tid);t.entregas[aid]=!t.entregas[aid];save();renderTemas();}
+function todosEntregaram(tid){const t=S.temas.find(t=>t.id===tid);if(!t)return;Object.keys(t.entregas).forEach(k=>t.entregas[k]=true);save();renderTemas();toast('Todos marcados como entregues');}
 function delTema(id){if(confirm('Excluir este tema de casa?')){S.temas=S.temas.filter(t=>t.id!==id);save();renderTemas();toast('Tema excluído');}}
 
 /* ---- TESTES ---- */
@@ -786,7 +836,7 @@ function renderTestes(){
 function setNota(tid,aid,val){const t=S.testes.find(t=>t.id===tid);t.notas[aid]=val===''?'':+val;save();renderTestes();}
 
 /* ---- MATERIAL ---- */
-let matTurma=null, matData=hoje();
+let matTurma=null, matData=hoje(), matBusca='';
 VIEWS.material=()=>{
   matTurma=matTurma||primeiraTurma();
   const v=document.getElementById('view');
@@ -795,10 +845,11 @@ VIEWS.material=()=>{
     <div class="card"><div class="row">
       <div><label class="lbl">Turma</label>${selectTurma('mT',matTurma)}</div>
       <div><label class="lbl">Data da aula</label><input type="date" id="mD" value="${matData}"></div></div></div>
-    <div class="card" id="mBox"></div>`;
-  document.getElementById('mT').onchange=e=>{matTurma=e.target.value;renderMat();};
+    <div class="card" id="mBox"></div>
+    <div class="card"><input type="text" id="mBusca" placeholder="🔎 Buscar registro anterior por data" value="${escAttr(matBusca)}" oninput="matBusca=this.value;renderMatLista()"><div id="mLista" style="margin-top:8px"></div></div>`;
+  document.getElementById('mT').onchange=e=>{matTurma=e.target.value;renderMat();renderMatLista();};
   document.getElementById('mD').onchange=e=>{matData=e.target.value;renderMat();};
-  renderMat();
+  renderMat(); renderMatLista();
 };
 function renderMat(){
   const box=document.getElementById('mBox');
@@ -807,7 +858,7 @@ function renderMat(){
   const als=alunosDa(matTurma);
   if(!als.length){box.innerHTML='<div class="empty"><div class="big">🎒</div>Sem alunos nesta turma.</div>';return;}
   box.innerHTML=`<h3>${brDate(matData)}</h3><p class="hint">Marque quem <b>não trouxe</b> o material.</p>
-    ${als.map(a=>`<div class="check ${falt.includes(a.id)?'':''}"><input type="checkbox" ${falt.includes(a.id)?'checked':''} onchange="toggleMat('${a.id}')"><span>${a.nome}</span>${falt.includes(a.id)?'<span class="pill" style="background:#ffeee5;color:var(--laranja)">sem material</span>':''}</div>`).join('')}
+    ${als.map(a=>`<div class="check"><input type="checkbox" ${falt.includes(a.id)?'checked':''} onchange="toggleMat('${a.id}')"><span>${a.nome}</span>${falt.includes(a.id)?'<span class="pill" style="margin-left:auto;background:#ffeee5;color:var(--laranja)">sem material</span>':''}</div>`).join('')}
     <div style="margin-top:16px"><button class="btn" onclick="salvarMat()">Salvar</button></div>`;
 }
 function toggleMat(aid){
@@ -817,17 +868,31 @@ function toggleMat(aid){
   if(i>=0)rec.faltantes.splice(i,1);else rec.faltantes.push(aid);
   renderMat();
 }
-function salvarMat(){save();montarNav();toast('Material registrado');}
+function salvarMat(){save();montarNav();renderMatLista();toast('Material registrado');}
+function carregaMat(data){matData=data;const el=document.getElementById('mD');if(el)el.value=data;renderMat();window.scrollTo({top:0,behavior:'smooth'});}
+function renderMatLista(){
+  const box=document.getElementById('mLista'); if(!box)return;
+  const recs=S.material.filter(m=>m.turmaId===matTurma);
+  const q=matBusca.trim();
+  let filt,titulo;
+  if(q){ filt=recs.filter(m=>m.data.includes(q)||brDate(m.data).includes(q)); titulo=`Resultados (${filt.length})`; }
+  else { const lim=diasAtras(7); filt=recs.filter(m=>m.data>=lim); titulo='Registros dos últimos 7 dias'; }
+  filt.sort((a,b)=>b.data.localeCompare(a.data));
+  if(!filt.length){ box.innerHTML=`<p class="hint">${q?'Nenhum registro encontrado.':'Nenhum registro nos últimos 7 dias.'}</p>`; return; }
+  box.innerHTML=`<p class="hint" style="margin:4px 0 6px">${titulo}</p>`+filt.map(m=>`<div class="check"><span>${brDate(m.data)} · ${(m.faltantes||[]).length} sem material</span><button class="btn ghost sm" style="margin-left:auto" onclick="carregaMat('${m.data}')">abrir</button></div>`).join('');
+}
 
 /* ---- PLANOS DE AULA ---- */
 VIEWS.planos=()=>{
   const v=document.getElementById('view');
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Planos de aula</h2></div>
-    <p class="sub">Checklist do que foi feito + espaço para anotações.</p>
-    <button class="btn" style="margin-bottom:16px" onclick="novoPlano()">+ Novo plano de aula</button>
+    <p class="sub">Mostra os da última semana. Use a busca para encontrar planos anteriores.</p>
+    <button class="btn" style="margin-bottom:14px" onclick="novoPlano()">+ Novo plano de aula</button>
+    <div class="card" style="padding:14px 18px"><input type="text" id="buscaPlano" placeholder="🔎 Buscar plano (título, conteúdo, turma ou data)" value="${escAttr(_buscaPlano)}" oninput="_buscaPlano=this.value;renderPlanos()"></div>
     <div id="plList"></div>`;
   renderPlanos();
 };
+let _buscaPlano='';
 function novoPlano(){
   modal(`<h3>🗒️ Novo plano de aula <button class="close" onclick="fechar()">×</button></h3>
     <div class="field"><label class="lbl">Título</label><input type="text" id="plTit" placeholder="Ex: Present Perfect — experiências"></div>
@@ -845,8 +910,11 @@ function salvarPlano(){
 }
 function renderPlanos(){
   const list=document.getElementById('plList');
-  const ps=[...S.planos].sort((a,b)=>b.data.localeCompare(a.data));
-  if(!ps.length){list.innerHTML='<div class="card empty"><div class="big">🗒️</div>Nenhum plano ainda. Crie o primeiro!</div>';return;}
+  let ps=[...S.planos].sort((a,b)=>b.data.localeCompare(a.data));
+  const raw=(_buscaPlano||'').trim(), q=_normTxt(raw);
+  if(q){ ps=ps.filter(p=> _normTxt(p.titulo).includes(q) || _normTxt(p.conteudo||'').includes(q) || _normTxt(turmaNome(p.turmaId)).includes(q) || p.data.includes(raw) || brDate(p.data).includes(raw)); }
+  else { const lim=diasAtras(7); ps=ps.filter(p=>p.data>=lim); }
+  if(!ps.length){list.innerHTML=`<div class="card empty"><div class="big">🗒️</div>${raw?'Nenhum plano encontrado.':'Nenhum plano na última semana. Crie um novo ou busque os anteriores acima.'}</div>`;return;}
   list.innerHTML=ps.map(p=>{
     const feitos=p.itens.filter(i=>i.done).length;
     return `<div class="card"><h3>${p.titulo}</h3><p class="hint">${turmaNome(p.turmaId)} · ${brDate(p.data)} · ${feitos}/${p.itens.length} itens feitos</p>
@@ -935,10 +1003,16 @@ function gerarRelatorioAluno(){
   const aluno=S.alunos.find(a=>a.id===alunoId), turma=S.turmas.find(t=>t.id===turmaId);
   const faltas=faltasDoAluno(alunoId,turmaId), mat=materialDoAluno(alunoId,turmaId);
   const temas=temasNaoFeitosDoAluno(alunoId,turmaId), coms=comentariosDoAluno(alunoId);
+  const atrasos=atrasosDoAluno(alunoId,turmaId), saidas=saidasCedoDoAluno(alunoId,turmaId);
+  const peso=pesoFalta(turmaId);
   let txt=`RELATÓRIO DO ALUNO\n${aluno.nome}\nTurma: ${turma.nome}${turma.professor?' · Prof. '+turma.professor:''}\nGerado em ${brDate(hoje())} por ${S.usuario}\n`;
-  txt+=`\n📋 FALTAS (${faltas.length})\n`;
+  txt+=`\n📋 FALTAS (${faltas.length}${peso===2?` aulas = ${faltas.length*2} faltas (turma 1x/semana)`:''})\n`;
   if(faltas.length) faltas.forEach(d=>{ txt+=`• ${brDate(d)} — conteúdo da aula: ${resumoAulaDoDia(turmaId,d)}\n`; });
   else txt+=`• Nenhuma falta registrada.\n`;
+  txt+=`\n⏰ CHEGOU ATRASADO (${atrasos.length})\n`;
+  if(atrasos.length) atrasos.forEach(d=>{ txt+=`• ${brDate(d)}\n`; }); else txt+=`• Nenhum registro.\n`;
+  txt+=`\n🚪 SAIU MAIS CEDO (${saidas.length})\n`;
+  if(saidas.length) saidas.forEach(d=>{ txt+=`• ${brDate(d)}\n`; }); else txt+=`• Nenhum registro.\n`;
   txt+=`\n🎒 MATERIAL NÃO TRAZIDO (${mat.length})\n`;
   if(mat.length) mat.forEach(d=>{ txt+=`• ${brDate(d)}\n`; }); else txt+=`• Nenhum registro.\n`;
   txt+=`\n📚 TEMAS DE CASA NÃO FEITOS (${temas.length})\n`;
@@ -1110,6 +1184,7 @@ VIEWS.turmas=()=>{
     <div class="card"><h3>Nova turma</h3><div class="row">
       <div style="flex:2"><label class="lbl">Nome da turma</label><input type="text" id="nT" placeholder="Ex: A2 ADULTS NOITE"></div>
       <div><label class="lbl">Nível</label><select id="nN"><option value="kids">kids</option><option value="junior">junior</option><option value="teens" selected>teens</option><option value="adults">adults</option><option value="talking">talking</option></select></div>
+      <div><label class="lbl">Aulas por semana</label><select id="nFreq"><option value="2" selected>2x (falta = 1)</option><option value="1">1x (falta = 2)</option></select></div>
     </div><div style="margin-top:12px"><button class="btn" onclick="addTurma()">+ Criar turma</button></div></div>
     <div class="card" style="padding:14px 18px"><input type="text" id="buscaAluno" placeholder="🔎 Buscar aluno pelo nome (em todas as turmas)" value="${_buscaAluno||''}" oninput="filtrarAlunos(this.value)"></div>
     <div id="turmaList"></div>
@@ -1122,7 +1197,7 @@ function filtrarAlunos(v){ _buscaAluno=v; renderTurmaList(); }
 function addTurma(){
   const nome=document.getElementById('nT').value.trim();
   if(!nome)return toast('Dê um nome à turma');
-  const t={id:uid(),nome,nivel:document.getElementById('nN').value,horario:''};
+  const t={id:uid(),nome,nivel:document.getElementById('nN').value,horario:'',vezesSemana:+document.getElementById('nFreq').value};
   if(S.perfil==='professor'){const u=S.usuarios.find(u=>u.nome===S.usuario);t.professor=u&&u.ensina;}
   S.turmas.push(t);
   save();VIEWS.turmas();toast('Turma criada');
@@ -1146,7 +1221,8 @@ function renderTurmaList(){
     const als=alunosDa(t.id);
     const prof=t.professor?` · Prof. ${t.professor}`:'';
     const hor=t.horario?` · ${t.horario}`:'';
-    return `<div class="card"><h3>${t.nome} ${nivelTag(t.nivel)}</h3><p class="hint">${als.length} aluno(s)${prof}${hor}</p>
+    const freq=` · ${(t.vezesSemana===1)?'1x/semana (falta dupla)':'2x/semana'}`;
+    return `<div class="card"><h3>${t.nome} ${nivelTag(t.nivel)}</h3><p class="hint">${als.length} aluno(s)${prof}${hor}${freq}</p>
       <table><tbody>${als.map(a=>`<tr><td>${a.nome}</td><td style="text-align:right"><button class="btn ghost sm" onclick="delAluno('${a.id}')">remover</button></td></tr>`).join('')||'<tr><td colspan=2 style="color:var(--tinta-suave)">Sem alunos ainda.</td></tr>'}</tbody></table>
       <div class="row" style="margin-top:12px"><div style="flex:3"><input type="text" id="al_${t.id}" placeholder="Nome do novo aluno" onkeydown="if(event.key==='Enter')addAluno('${t.id}')"></div>
       <button class="btn ghost" onclick="addAluno('${t.id}')">+ Aluno</button></div>
