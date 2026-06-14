@@ -473,7 +473,7 @@ function materialDoAluno(alunoId,turmaId){
 }
 function temasNaoFeitosDoAluno(alunoId,turmaId){
   return S.temas.filter(t=>t.turmaId===turmaId && t.entregas[alunoId]===false)
-    .map(t=>({data:t.data,descricao:t.descricao})).sort((a,b)=>a.data.localeCompare(b.data));
+    .map(t=>({data:t.data,descricao:t.descricao,origem:t.origem||'extra'})).sort((a,b)=>a.data.localeCompare(b.data));
 }
 function comentariosDoAluno(alunoId){
   return S.comentarios.filter(c=>c.alunoId===alunoId).sort((a,b)=>a.data.localeCompare(b.data));
@@ -688,32 +688,60 @@ VIEWS.temas=()=>{
   temaTurma=temaTurma||primeiraTurma();
   const v=document.getElementById('view');
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--rosa)"></span><h2 class="display">Temas de casa</h2></div>
-    <p class="sub">Registre o tema e acompanhe quem entregou.</p>
-    <div class="card"><h3>Novo tema</h3><div class="field"><label class="lbl">Turma</label>${selectTurma('tT',temaTurma)}</div>
-      <div class="row"><div><label class="lbl">Data</label><input type="date" id="tD" value="${hoje()}"></div>
-      <div style="flex:2"><label class="lbl">Descrição do tema</label><input type="text" id="tDesc" placeholder="Ex: Workbook pág. 30, exercícios 1 a 4"></div></div>
-      <div style="margin-top:12px"><button class="btn" onclick="addTema()">Registrar tema</button></div></div>
+    <p class="sub">Aqui ficam os temas <b>extras</b> — os que não estavam no plano de aula. (Os temas do plano você cria direto na aba <b>Planos de aula</b>, no botão 📩 de cada item.)</p>
+    <div class="card"><div class="row">
+      <div style="flex:2"><label class="lbl">Turma</label>${selectTurma('tT',temaTurma)}</div>
+      <div style="display:flex;align-items:flex-end"><button class="btn" onclick="modalTema(temaTurma,'',hoje(),'extra')">+ Novo tema extra</button></div>
+    </div></div>
     <div id="tList"></div>`;
-  document.getElementById('tT').onchange=e=>temaTurma=e.target.value;
+  document.getElementById('tT').onchange=e=>{temaTurma=e.target.value;renderTemas();};
   renderTemas();
 };
-function addTema(){
-  const desc=document.getElementById('tDesc').value.trim();
-  if(!desc)return toast('Descreva o tema');
-  const turmaId=document.getElementById('tT').value;
-  const ent={}; alunosDa(turmaId).forEach(a=>ent[a.id]=false);
-  S.temas.push({id:uid(),turmaId,data:document.getElementById('tD').value,descricao:desc,entregas:ent});
-  save();VIEWS.temas();toast('Tema registrado');
+function escAttr(s){return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function modalTema(turmaId,descricao,data,origem){
+  const als=alunosDa(turmaId);
+  modal(`<h3>📩 Tema de casa <button class="close" onclick="fechar()">×</button></h3>
+    <div class="field"><label class="lbl">Descrição do tema</label><input type="text" id="mtDesc" value="${escAttr(descricao)}" placeholder="Ex: Workbook pág. 30, ex. 1 a 4"></div>
+    <div class="row"><div class="field"><label class="lbl">Data</label><input type="date" id="mtData" value="${data||hoje()}"></div>
+    <div class="field"><label class="lbl">Para quem?</label><select id="mtAlvo" onchange="document.getElementById('mtAlunos').style.display=this.value==='alguns'?'block':'none'">
+      <option value="todos">Turma toda</option><option value="alguns">Escolher alunos</option></select></div></div>
+    <div id="mtAlunos" style="display:none;max-height:230px;overflow:auto;border:1px solid var(--linha);border-radius:10px;padding:4px 12px;margin-bottom:14px">
+      ${als.map(a=>`<label class="check" style="cursor:pointer"><input type="checkbox" class="mtChk" value="${a.id}"><span>${a.nome}</span></label>`).join('')||'<p class="hint">Turma sem alunos.</p>'}
+    </div>
+    <button class="btn block" onclick="criarTema('${turmaId}','${origem||'extra'}')">Criar tema</button>`);
+  setTimeout(()=>{const i=document.getElementById('mtDesc'); if(i&&!i.value) i.focus();},60);
 }
+function criarTema(turmaId,origem){
+  const desc=document.getElementById('mtDesc').value.trim();
+  if(!desc)return toast('Descreva o tema');
+  const data=document.getElementById('mtData').value;
+  let alvos;
+  if(document.getElementById('mtAlvo').value==='alguns'){
+    alvos=[...document.querySelectorAll('.mtChk:checked')].map(c=>c.value);
+    if(!alvos.length)return toast('Selecione ao menos um aluno');
+  }else{
+    alvos=alunosDa(turmaId).map(a=>a.id);
+  }
+  const ent={}; alvos.forEach(id=>ent[id]=false);
+  S.temas.push({id:uid(),turmaId,data,descricao:desc,entregas:ent,origem:origem||'extra'});
+  save(); fechar(); toast('Tema de casa criado');
+  if(rota==='temas'){ temaTurma=turmaId; VIEWS.temas(); }
+  else if(rota==='planos'){ renderPlanos(); }
+}
+function temaDoPlano(pid,i){ const p=S.planos.find(p=>p.id===pid); if(!p)return; modalTema(p.turmaId,p.itens[i].txt,p.data,'plano'); }
 function renderTemas(){
   const list=document.getElementById('tList');
   const ts=S.temas.filter(t=>t.turmaId===temaTurma).sort((a,b)=>b.data.localeCompare(a.data));
-  if(!ts.length){list.innerHTML='<div class="card empty"><div class="big">📚</div>Sem temas registrados para esta turma.</div>';return;}
+  if(!ts.length){list.innerHTML='<div class="card empty"><div class="big">📚</div>Nenhum tema extra para esta turma.</div>';return;}
+  const totalTurma=alunosDa(temaTurma).length;
   list.innerHTML=ts.map(t=>{
-    const als=alunosDa(t.turmaId);
+    const alvos=Object.keys(t.entregas);
     const feitos=Object.values(t.entregas).filter(Boolean).length;
-    return `<div class="card"><h3>${t.descricao}</h3><p class="hint">${brDate(t.data)} · ${feitos}/${als.length} entregaram</p>
-      ${als.map(a=>`<div class="check ${t.entregas[a.id]?'done':''}"><input type="checkbox" ${t.entregas[a.id]?'checked':''} onchange="toggleTema('${t.id}','${a.id}')"><span>${a.nome}</span></div>`).join('')}
+    const alvoLabel=(totalTurma>0 && alvos.length>=totalTurma)?'Turma toda':alvos.length+' aluno(s)';
+    const badge=t.origem==='plano'?'<span class="pill" style="background:#e6f0fb;color:var(--azul)">do plano</span>':'<span class="pill">extra</span>';
+    return `<div class="card"><h3>${t.descricao}</h3>
+      <p class="hint">${brDate(t.data)} · ${alvoLabel} · ${feitos}/${alvos.length} entregaram &nbsp;${badge}</p>
+      ${alvos.map(aid=>{const a=S.alunos.find(x=>x.id===aid);return `<div class="check ${t.entregas[aid]?'done':''}"><input type="checkbox" ${t.entregas[aid]?'checked':''} onchange="toggleTema('${t.id}','${aid}')"><span>${a?a.nome:'—'}</span></div>`;}).join('')}
       <button class="btn ghost sm" style="margin-top:12px;color:var(--vermelho)" onclick="delTema('${t.id}')">Excluir tema</button></div>`;
   }).join('');
 }
@@ -822,7 +850,7 @@ function renderPlanos(){
   list.innerHTML=ps.map(p=>{
     const feitos=p.itens.filter(i=>i.done).length;
     return `<div class="card"><h3>${p.titulo}</h3><p class="hint">${turmaNome(p.turmaId)} · ${brDate(p.data)} · ${feitos}/${p.itens.length} itens feitos</p>
-      ${p.itens.map((it,i)=>`<div class="check ${it.done?'done':''}"><input type="checkbox" ${it.done?'checked':''} onchange="togglePlano('${p.id}',${i})"><span>${it.txt}</span></div>`).join('')}
+      ${p.itens.map((it,i)=>`<div class="check ${it.done?'done':''}"><input type="checkbox" ${it.done?'checked':''} onchange="togglePlano('${p.id}',${i})"><span>${it.txt}</span><button class="btn ghost sm" style="margin-left:auto" title="Transformar em tema de casa" onclick="temaDoPlano('${p.id}',${i})">📩 tema</button></div>`).join('')}
       <div class="field" style="margin-top:14px"><label class="lbl">Anotações</label><textarea onchange="setPlanoCampo('${p.id}','anotacoes',this.value)" placeholder="Observações sobre a aula...">${p.anotacoes||''}</textarea></div>
       <button class="btn ghost sm" onclick="delPlano('${p.id}')">Excluir plano</button></div>`;
   }).join('');
@@ -914,7 +942,7 @@ function gerarRelatorioAluno(){
   txt+=`\n🎒 MATERIAL NÃO TRAZIDO (${mat.length})\n`;
   if(mat.length) mat.forEach(d=>{ txt+=`• ${brDate(d)}\n`; }); else txt+=`• Nenhum registro.\n`;
   txt+=`\n📚 TEMAS DE CASA NÃO FEITOS (${temas.length})\n`;
-  if(temas.length) temas.forEach(t=>{ txt+=`• ${brDate(t.data)} — ${t.descricao}\n`; }); else txt+=`• Nenhum registro.\n`;
+  if(temas.length) temas.forEach(t=>{ txt+=`• ${brDate(t.data)} — ${t.descricao}${t.origem==='plano'?' (do plano de aula)':' (extra)'}\n`; }); else txt+=`• Nenhum registro.\n`;
   txt+=`\n💬 COMENTÁRIOS (${coms.length})\n`;
   if(coms.length) coms.forEach(c=>{ txt+=`• ${brDate(c.data)} (${c.autor}): ${c.texto}\n`; }); else txt+=`• Nenhum comentário.\n`;
   txt+=`\n—\nTogethere · inglês para chegar lá`;
