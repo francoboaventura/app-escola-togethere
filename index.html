@@ -1,1094 +1,1219 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>App Escola Togethere</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --primary: #4F46E5;
-            --primary-dark: #4338CA;
-            --secondary: #EC4899;
-            --success: #10B981;
-            --warning: #F59E0B;
-            --danger: #EF4444;
-            --bg-light: #F9FAFB;
-            --bg-white: #FFFFFF;
-            --text-dark: #1F2937;
-            --text-muted: #6B7280;
-            --border: #E5E7EB;
-            --shadow: 0 1px 3px rgba(0,0,0,0.1);
-            --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-            background-color: var(--bg-light);
-            color: var(--text-dark);
-            line-height: 1.6;
-        }
-
-        /* LAYOUT PRINCIPAL */
-        .container {
-            display: grid;
-            grid-template-columns: 250px 1fr;
-            min-height: 100vh;
-        }
-
-        /* SIDEBAR */
-        .sidebar {
-            background: var(--primary);
-            color: white;
-            padding: 2rem 1rem;
-            overflow-y: auto;
-            position: fixed;
-            width: 250px;
-            height: 100vh;
-        }
-
-        .sidebar-header {
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
-        .user-info {
-            font-size: 0.875rem;
-            opacity: 0.9;
-        }
-
-        .nav-menu {
-            list-style: none;
-        }
-
-        .nav-item {
-            margin-bottom: 0.5rem;
-        }
-
-        .nav-link {
-            display: block;
-            padding: 0.75rem 1rem;
-            color: rgba(255,255,255,0.8);
-            text-decoration: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .nav-link:hover {
-            background: rgba(255,255,255,0.1);
-            color: white;
-        }
-
-        .nav-link.active {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            font-weight: 600;
-        }
-
-        /* MAIN CONTENT */
-        .main {
-            margin-left: 250px;
-            padding: 2rem;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        .header h1 {
-            font-size: 2rem;
-            color: var(--text-dark);
-        }
-
-        .btn-logout {
-            padding: 0.5rem 1rem;
-            background: var(--danger);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.875rem;
-        }
-
-        /* SECTIONS */
-        .section {
-            display: none;
-        }
-
-        .section.active {
-            display: block;
-        }
-
-        /* CARDS */
-        .card {
-            background: var(--bg-white);
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            box-shadow: var(--shadow);
-        }
-
-        .card-title {
-            font-size: 1.25rem;
-            margin-bottom: 1rem;
-            color: var(--text-dark);
-        }
-
-        /* FORMS */
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: var(--text-dark);
-        }
-
-        input, select, textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 1rem;
-            font-family: inherit;
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-
-        /* BUTTONS */
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            font-weight: 600;
-            transition: all 0.3s;
-            display: inline-block;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-dark);
-        }
-
-        .btn-secondary {
-            background: var(--bg-light);
-            color: var(--text-dark);
-            border: 1px solid var(--border);
-        }
-
-        .btn-secondary:hover {
-            background: var(--border);
-        }
-
-        .btn-success {
-            background: var(--success);
-            color: white;
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-        }
-
-        .btn-warning {
-            background: var(--warning);
-            color: white;
-        }
-
-        /* TABLES */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top
-
-
-cat > index.html << 'EOF'
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>App Escola Togethere</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --primary: #4F46E5;
-            --primary-dark: #4338CA;
-            --secondary: #EC4899;
-            --success: #10B981;
-            --warning: #F59E0B;
-            --danger: #EF4444;
-            --bg-light: #F9FAFB;
-            --bg-white: #FFFFFF;
-            --text-dark: #1F2937;
-            --text-muted: #6B7280;
-            --border: #E5E7EB;
-            --shadow: 0 1px 3px rgba(0,0,0,0.1);
-            --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
-            background-color: var(--bg-light);
-            color: var(--text-dark);
-            line-height: 1.6;
-        }
-
-        /* LAYOUT PRINCIPAL */
-        .container {
-            display: grid;
-            grid-template-columns: 250px 1fr;
-            min-height: 100vh;
-        }
-
-        /* SIDEBAR */
-        .sidebar {
-            background: var(--primary);
-            color: white;
-            padding: 2rem 1rem;
-            overflow-y: auto;
-            position: fixed;
-            width: 250px;
-            height: 100vh;
-        }
-
-        .sidebar-header {
-            margin-bottom: 2rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(255,255,255,0.2);
-        }
-
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-
-        .user-info {
-            font-size: 0.875rem;
-            opacity: 0.9;
-        }
-
-        .nav-menu {
-            list-style: none;
-        }
-
-        .nav-item {
-            margin-bottom: 0.5rem;
-        }
-
-        .nav-link {
-            display: block;
-            padding: 0.75rem 1rem;
-            color: rgba(255,255,255,0.8);
-            text-decoration: none;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .nav-link:hover {
-            background: rgba(255,255,255,0.1);
-            color: white;
-        }
-
-        .nav-link.active {
-            background: rgba(255,255,255,0.2);
-            color: white;
-            font-weight: 600;
-        }
-
-        /* MAIN CONTENT */
-        .main {
-            margin-left: 250px;
-            padding: 2rem;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-
-        .header h1 {
-            font-size: 2rem;
-            color: var(--text-dark);
-        }
-
-        .btn-logout {
-            padding: 0.5rem 1rem;
-            background: var(--danger);
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.875rem;
-        }
-
-        /* SECTIONS */
-        .section {
-            display: none;
-        }
-
-        .section.active {
-            display: block;
-        }
-
-        /* CARDS */
-        .card {
-            background: var(--bg-white);
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            box-shadow: var(--shadow);
-        }
-
-        .card-title {
-            font-size: 1.25rem;
-            margin-bottom: 1rem;
-            color: var(--text-dark);
-        }
-
-        /* FORMS */
-        .form-group {
-            margin-bottom: 1rem;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: var(--text-dark);
-        }
-
-        input, select, textarea {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            font-size: 1rem;
-            font-family: inherit;
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-        }
-
-        /* BUTTONS */
-        .btn {
-            padding: 0.75rem 1.5rem;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 0.875rem;
-            font-weight: 600;
-            transition: all 0.3s;
-            display: inline-block;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: var(--primary-dark);
-        }
-
-        .btn-secondary {
-            background: var(--bg-light);
-            color: var(--text-dark);
-            border: 1px solid var(--border);
-        }
-
-        .btn-secondary:hover {
-            background: var(--border);
-        }
-
-        .btn-success {
-            background: var(--success);
-            color: white;
-        }
-
-        .btn-danger {
-            background: var(--danger);
-            color: white;
-        }
-
-        .btn-warning {
-            background: var(--warning);
-            color: white;
-        }
-
-        /* TABLES */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 1rem;
-        }
-
-        th {
-            background: var(--bg-light);
-            padding: 1rem;
-            text-align: left;
-            font-weight: 600;
-            border-bottom: 2px solid var(--border);
-        }
-
-        td {
-            padding: 0.75rem 1rem;
-            border-bottom: 1px solid var(--border);
-        }
-
-        tr:hover {
-            background: var(--bg-light);
-        }
-
-        /* CHECKBOX */
-        .checkbox-group {
-            display: flex;
-            gap: 1rem;
-            margin-top: 0.5rem;
-        }
-
-        .checkbox-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        input[type="checkbox"] {
-            width: auto;
-            cursor: pointer;
-        }
-
-        /* ALERTS */
-        .alert {
-            padding: 1rem;
-            border-radius: 6px;
-            margin-bottom: 1rem;
-        }
-
-        .alert-danger {
-            background: #FEE2E2;
-            color: #991B1B;
-            border: 1px solid #FECACA;
-        }
-
-        .alert-warning {
-            background: #FEF3C7;
-            color: #92400E;
-            border: 1px solid #FCD34D;
-        }
-
-        .alert-success {
-            background: #DCFCE7;
-            color: #166534;
-            border: 1px solid #BBF7D0;
-        }
-
-        /* MATRIZ DE EISENHOWER */
-        .eisenhower {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .eisenhower-quadrant {
-            background: var(--bg-light);
-            padding: 1rem;
-            border-radius: 6px;
-            border-left: 4px solid var(--primary);
-        }
-
-        .eisenhower-quadrant.important-urgent { border-left-color: var(--danger); }
-        .eisenhower-quadrant.important-not-urgent { border-left-color: var(--success); }
-        .eisenhower-quadrant.not-important-urgent { border-left-color: var(--warning); }
-        .eisenhower-quadrant.not-important-not-urgent { border-left-color: var(--text-muted); }
-
-        .quadrant-title {
-            font-weight: 600;
-            margin-bottom: 0.75rem;
-            font-size: 0.875rem;
-        }
-
-        .task-list {
-            list-style: none;
-        }
-
-        .task-item {
-            padding: 0.5rem;
-            margin-bottom: 0.5rem;
-            background: white;
-            border-radius: 4px;
-            font-size: 0.875rem;
-        }
-
-        /* RESPONSIVE */
-        @media (max-width: 768px) {
-            .container {
-                grid-template-columns: 1fr;
-            }
-
-            .sidebar {
-                width: 100%;
-                height: auto;
-                position: relative;
-            }
-
-            .main {
-                margin-left: 0;
-            }
-
-            .eisenhower {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Togethere · Gestão Escolar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Urbanist:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Zilla+Slab:ital,wght@1,600;1,700&display=swap" rel="stylesheet" />
+<style>
+/* ===================== Togethere — Identidade NUSA ===================== */
+:root{
+  --azul:#005EAF;       /* principal */
+  --marinho:#002B64;    /* profundo */
+  --vermelho:#E52524;   /* alerta */
+  --amarelo:#FFC800;    /* destaque */
+  --rosa:#FF005F;       /* apoio */
+  --laranja:#FF2A00;    /* apoio */
+  --roxo:#DF6DFF;       /* apoio */
+
+  --bg:#F4F6FB;
+  --card:#FFFFFF;
+  --tinta:#15233B;
+  --tinta-suave:#5A6B86;
+  --linha:#E4E9F2;
+  --ok:#16A07A;
+
+  --r:16px;
+  --r-sm:11px;
+  --sombra:0 8px 30px rgba(0,43,100,.08);
+  --sombra-sm:0 2px 10px rgba(0,43,100,.06);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%}
+body{
+  font-family:'Urbanist',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--tinta);
+  font-weight:400;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4{font-family:'Poppins',sans-serif;font-weight:600;line-height:1.2}
+.display{font-family:'Zilla Slab',serif;font-style:italic;font-weight:600}
+button{font-family:'Poppins',sans-serif;cursor:pointer}
+input,textarea,select{font-family:'Urbanist',sans-serif}
+a{color:inherit}
+
+/* feijão — assinatura da marca */
+.feijao{display:inline-block;border-radius:62% 38% 55% 45% / 55% 48% 52% 45%}
+
+/* ===================== LOGIN ===================== */
+#login{
+  position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  background:radial-gradient(120% 120% at 100% 0%, #0a6dc4 0%, var(--azul) 38%, var(--marinho) 100%);
+  overflow:hidden;z-index:50;
+}
+#login .blob{position:absolute;opacity:.9;filter:saturate(1.1)}
+#login .b1{width:230px;height:230px;background:var(--amarelo);top:-60px;left:-50px;transform:rotate(18deg)}
+#login .b2{width:170px;height:170px;background:var(--rosa);bottom:-40px;left:12%;transform:rotate(-12deg)}
+#login .b3{width:140px;height:140px;background:var(--roxo);top:14%;right:8%;transform:rotate(30deg)}
+#login .b4{width:90px;height:90px;background:var(--vermelho);bottom:18%;right:18%}
+.login-card{
+  position:relative;z-index:2;width:min(440px,92vw);background:var(--card);
+  border-radius:26px;padding:38px 34px;box-shadow:0 30px 80px rgba(0,20,55,.4);
+  animation:rise .5s ease both;
+}
+@keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.brand{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.brand .mark{width:42px;height:42px;background:var(--azul);position:relative;flex:none}
+.brand .mark::after{content:"";position:absolute;width:15px;height:15px;background:var(--amarelo);border-radius:60% 40% 55% 45%;right:-4px;bottom:-4px}
+.brand .name{font-family:'Poppins';font-weight:700;font-size:1.45rem;letter-spacing:-.5px}
+.brand .name b{color:var(--azul)}
+/* logomarca oficial (arquivo logo.png na pasta do projeto) */
+.logo-img{height:46px;width:auto;display:block}
+.wm{font-family:'Poppins';font-weight:700;font-size:1.4rem;letter-spacing:-.5px;color:var(--marinho)}
+.wm b{color:var(--azul)}
+.tagline{font-family:'Zilla Slab';font-style:italic;font-weight:600;color:var(--tinta-suave);margin:2px 0 26px;font-size:1.02rem}
+.login-card h2{font-size:1.06rem;margin-bottom:14px}
+.perfis{display:grid;gap:12px}
+.perfil-btn{
+  display:flex;align-items:center;gap:14px;width:100%;text-align:left;
+  background:#fff;border:1.5px solid var(--linha);border-radius:var(--r);padding:14px 16px;
+  transition:.15s;font-size:.97rem;color:var(--tinta);
+}
+.perfil-btn:hover{border-color:var(--azul);transform:translateY(-2px);box-shadow:var(--sombra-sm)}
+.perfil-btn .ic{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;font-size:1.25rem;flex:none}
+.perfil-btn small{display:block;color:var(--tinta-suave);font-size:.8rem;font-family:'Urbanist'}
+.perfil-btn b{font-family:'Poppins';font-weight:600}
+.grp-login{font-family:'Poppins';font-weight:600;font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--tinta-suave);margin:16px 2px 8px}
+.grp-login:first-child{margin-top:4px}
+
+/* ===================== APP SHELL ===================== */
+#app{display:none;min-height:100vh}
+.shell{display:flex;min-height:100vh}
+
+/* Sidebar */
+.side{
+  width:248px;background:linear-gradient(180deg,var(--marinho),#001a3f);color:#fff;
+  display:flex;flex-direction:column;flex:none;position:sticky;top:0;height:100vh;
+}
+.side .top{padding:22px 20px 14px}
+.side .brand .name{color:#fff;font-size:1.2rem}
+.side .brand .name b{color:var(--amarelo)}
+.side .brand{background:#fff;border-radius:12px;padding:7px 11px;display:inline-flex;align-items:center}
+.side .logo-img{height:28px}
+.side .wm{font-size:1.12rem}
+.side .brand .mark{width:34px;height:34px}
+.nav{flex:1;overflow-y:auto;padding:8px 12px 20px}
+.nav .grp{font-size:.68rem;text-transform:uppercase;letter-spacing:.12em;color:#7f94b8;margin:16px 10px 6px;font-family:'Poppins';font-weight:600}
+.nav button{
+  display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:11px;
+  color:#c5d3ea;font-size:.92rem;font-family:'Poppins';font-weight:500;margin-bottom:2px;
+  transition:.13s;border:none;background:none;width:100%;text-align:left;cursor:pointer;
+}
+.nav button .em{font-size:1.05rem;width:20px;text-align:center}
+.nav button:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav button.active{background:var(--azul);color:#fff}
+.nav button .badge{margin-left:auto;background:var(--vermelho);color:#fff;font-size:.7rem;font-weight:700;min-width:20px;height:20px;border-radius:10px;display:grid;place-items:center;padding:0 5px}
+.side .foot{padding:14px 18px;border-top:1px solid rgba(255,255,255,.1);font-size:.82rem;color:#9fb1d1}
+.side .foot button{background:none;border:none;color:#9fb1d1;font-size:.82rem;display:flex;align-items:center;gap:8px;width:100%;padding:6px 0}
+.side .foot button:hover{color:#fff}
+
+/* Main */
+.main{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{
+  background:var(--card);border-bottom:1px solid var(--linha);padding:16px 28px;
+  display:flex;align-items:center;gap:16px;position:sticky;top:0;z-index:10;
+}
+.topbar h1{font-size:1.18rem}
+.topbar .crumb{font-size:.8rem;color:var(--tinta-suave);font-family:'Poppins'}
+.topbar .me{margin-left:auto;display:flex;align-items:center;gap:10px;font-size:.86rem;color:var(--tinta-suave)}
+.topbar .me .dot{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;color:#fff;font-weight:600;font-family:'Poppins';font-size:.85rem}
+.content{padding:26px 28px 60px;max-width:1180px;width:100%}
+
+/* Hamburger (mobile) */
+.burger{display:none;background:none;border:none;font-size:1.4rem;color:var(--marinho)}
+
+/* ===================== COMPONENTES ===================== */
+.section-title{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.section-title .fj{width:18px;height:18px;flex:none}
+.section-title h2{font-size:1.32rem}
+.sub{color:var(--tinta-suave);font-size:.92rem;margin-bottom:20px}
+
+.card{background:var(--card);border:1px solid var(--linha);border-radius:var(--r);box-shadow:var(--sombra-sm);padding:20px;margin-bottom:18px}
+.card h3{font-size:1.02rem;margin-bottom:4px}
+.card .hint{font-size:.84rem;color:var(--tinta-suave);margin-bottom:14px}
+
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(auto-fill,minmax(220px,1fr))}
+
+label.lbl{display:block;font-family:'Poppins';font-weight:500;font-size:.85rem;margin:0 0 6px;color:var(--tinta)}
+.field{margin-bottom:14px}
+input[type=text],input[type=date],input[type=number],textarea,select{
+  width:100%;border:1.5px solid var(--linha);border-radius:var(--r-sm);padding:11px 13px;
+  font-size:.94rem;background:#fff;color:var(--tinta);transition:.13s;
+}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--azul);box-shadow:0 0 0 3px rgba(0,94,175,.12)}
+textarea{resize:vertical;min-height:90px;line-height:1.5}
+.row{display:flex;gap:12px;flex-wrap:wrap}
+.row>*{flex:1;min-width:160px}
+
+.btn{
+  display:inline-flex;align-items:center;gap:8px;background:var(--azul);color:#fff;border:none;
+  border-radius:var(--r-sm);padding:11px 18px;font-weight:600;font-size:.9rem;transition:.13s;
+}
+.btn:hover{background:#0a6dc4;transform:translateY(-1px)}
+.btn.ghost{background:#fff;color:var(--azul);border:1.5px solid var(--linha)}
+.btn.ghost:hover{border-color:var(--azul);background:#f2f7fd}
+.btn.amarelo{background:var(--amarelo);color:var(--marinho)}
+.btn.amarelo:hover{background:#ffd633}
+.btn.red{background:var(--vermelho)}
+.btn.red:hover{background:#c91f1e}
+.btn.sm{padding:7px 12px;font-size:.82rem}
+.btn.block{width:100%;justify-content:center}
+
+.tag{display:inline-flex;align-items:center;gap:5px;font-family:'Poppins';font-weight:600;font-size:.72rem;padding:3px 10px;border-radius:20px}
+.tag.kids{background:#fff0f6;color:var(--rosa)}
+.tag.junior{background:#fff8e0;color:#b88600}
+.tag.teens{background:#eaf3ff;color:var(--azul)}
+.tag.adults{background:#f4ecff;color:#9333c7}
+.tag.talking{background:#ffeee9;color:var(--laranja)}
+.pill{font-size:.74rem;font-family:'Poppins';font-weight:600;padding:3px 9px;border-radius:20px;background:#eef2f8;color:var(--tinta-suave)}
+
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th{text-align:left;font-family:'Poppins';font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;color:var(--tinta-suave);padding:8px 10px;border-bottom:1px solid var(--linha)}
+td{padding:10px;border-bottom:1px solid var(--linha);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+
+.seg{display:inline-flex;background:#eef2f8;border-radius:10px;padding:3px}
+.seg button{background:none;border:none;padding:6px 13px;border-radius:8px;font-size:.82rem;font-weight:600;color:var(--tinta-suave)}
+.seg button.on-p{background:var(--ok);color:#fff}
+.seg button.on-f{background:var(--vermelho);color:#fff}
+
+.check{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--linha)}
+.check:last-child{border-bottom:none}
+.check input{width:20px;height:20px;accent-color:var(--azul);flex:none;cursor:pointer}
+.check span{flex:1}
+.check.done span{text-decoration:line-through;color:var(--tinta-suave)}
+.check .x{background:none;border:none;color:var(--tinta-suave);font-size:1rem;opacity:.5}
+.check .x:hover{opacity:1;color:var(--vermelho)}
+
+.empty{text-align:center;padding:34px 20px;color:var(--tinta-suave)}
+.empty .big{font-size:2rem;margin-bottom:8px;opacity:.5}
+
+.alert-card{display:flex;gap:14px;align-items:flex-start;border-left:4px solid var(--vermelho);background:#fff;border-radius:var(--r-sm);padding:15px 16px;margin-bottom:12px;box-shadow:var(--sombra-sm)}
+.alert-card.mat{border-left-color:var(--laranja)}
+.alert-card .ic{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;flex:none;font-size:1.1rem}
+.alert-card .ic.falta{background:#fdeaea;color:var(--vermelho)}
+.alert-card .ic.mat{background:#ffeee5;color:var(--laranja)}
+.alert-card .info{flex:1}
+.alert-card .info b{font-family:'Poppins'}
+.alert-card .info p{font-size:.86rem;color:var(--tinta-suave);margin-top:2px}
+.alert-card .acts{display:flex;flex-direction:column;gap:6px}
+
+/* Eisenhower */
+.emat{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.quad{border-radius:var(--r);padding:16px;min-height:180px;border:1.5px solid var(--linha);background:#fff}
+.quad h4{display:flex;align-items:center;gap:8px;font-size:.95rem;margin-bottom:3px}
+.quad .qsub{font-size:.76rem;color:var(--tinta-suave);margin-bottom:12px}
+.quad .dot{width:11px;height:11px;border-radius:50%}
+.quad.q1{border-top:4px solid var(--vermelho)}
+.quad.q2{border-top:4px solid var(--azul)}
+.quad.q3{border-top:4px solid var(--amarelo)}
+.quad.q4{border-top:4px solid var(--tinta-suave)}
+.task{background:#f7f9fc;border:1px solid var(--linha);border-radius:10px;padding:9px 11px;margin-bottom:8px;font-size:.88rem;display:flex;gap:8px;align-items:flex-start}
+.task .grab{cursor:grab;color:var(--tinta-suave);font-size:.8rem;padding-top:2px}
+.task .t-txt{flex:1}
+.task .mv{font-size:.72rem;color:var(--azul);background:none;border:none;font-family:'Poppins';font-weight:600}
+.task .del{background:none;border:none;color:var(--tinta-suave);opacity:.5;font-size:.85rem}
+.task .del:hover{opacity:1;color:var(--vermelho)}
+.task.feito{opacity:.55}.task.feito .t-txt{text-decoration:line-through}
+
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--marinho);color:#fff;padding:13px 22px;border-radius:12px;font-family:'Poppins';font-weight:500;font-size:.9rem;box-shadow:0 12px 40px rgba(0,20,55,.35);opacity:0;transition:.25s;z-index:99;display:flex;align-items:center;gap:9px}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.modal-bg{position:fixed;inset:0;background:rgba(0,20,55,.45);display:none;align-items:center;justify-content:center;z-index:60;padding:18px}
+.modal-bg.show{display:flex}
+.modal{background:#fff;border-radius:var(--r);width:min(520px,96vw);max-height:90vh;overflow:auto;padding:24px;box-shadow:var(--sombra)}
+.modal h3{margin-bottom:14px;display:flex;align-items:center;gap:9px}
+.modal .close{margin-left:auto;background:none;border:none;font-size:1.3rem;color:var(--tinta-suave);cursor:pointer}
+
+.gen-box{background:#f7f9fc;border:1.5px dashed var(--linha);border-radius:var(--r-sm);padding:16px;font-size:.92rem;line-height:1.65;white-space:pre-wrap;color:var(--tinta);min-height:80px}
+
+.kpi{display:flex;align-items:center;gap:14px}
+.kpi .num{font-family:'Poppins';font-weight:700;font-size:1.9rem;line-height:1}
+.kpi .k-ic{width:46px;height:46px;border-radius:13px;display:grid;place-items:center;font-size:1.3rem;flex:none}
+.kpi small{color:var(--tinta-suave);font-size:.82rem;display:block;margin-top:3px}
+
+@media(max-width:860px){
+  .side{position:fixed;left:-260px;z-index:40;transition:.25s;box-shadow:0 0 60px rgba(0,0,0,.4)}
+  .side.open{left:0}
+  .burger{display:block}
+  .g2,.g3{grid-template-columns:1fr}
+  .emat{grid-template-columns:1fr}
+  .content{padding:18px 16px 50px}
+  .topbar{padding:14px 16px}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
 </head>
 <body>
-    <div class="container">
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <div class="logo">🎓 Togethere</div>
-                <div class="user-info" id="userInfo">Professora Ana Silva</div>
-            </div>
 
-            <nav>
-                <ul class="nav-menu">
-                    <li class="nav-item">
-                        <a class="nav-link active" onclick="switchSection('dashboard')">📊 Dashboard</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" onclick="switchSection('attendance')">📋 Presença</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" onclick="switchSection('homework')">📚 Temas de Casa</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" onclick="switchSection('tests')">📝 Testes</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" onclick="switchSection('material')">🎒 Material</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" onclick="switchSection('lessonplan')">✏️ Plano de Aula</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" onclick="switchSection('meetings')">📌 Atas</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" onclick="switchSection('tasks')">✅ Tarefas Internas</a>
-                    </li>
-                    <li class="nav-item" style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.2);">
-                        <a class="nav-link" onclick="logout()">🚪 Sair</a>
-                    </li>
-                </ul>
-            </nav>
-        </aside>
+<!-- ===================== LOGIN ===================== -->
+<div id="login">
+  <span class="feijao blob b1"></span>
+  <span class="feijao blob b2"></span>
+  <span class="feijao blob b3"></span>
+  <span class="feijao blob b4"></span>
+  <div class="login-card">
+    <div class="brand"><img src="logo.png" alt="togethere" class="logo-img" onerror="logoFallback(this)"></div>
+    <div class="tagline">inglês para chegar lá</div>
+    <h2 id="loginTitulo">Entrar</h2>
+    <div id="loginPanel"></div>
+  </div>
+</div>
 
-        <main class="main">
-            <div class="header">
-                <h1 id="sectionTitle">Dashboard</h1>
-                <button class="btn-logout" onclick="logout()">Logout</button>
-            </div>
+<!-- ===================== APP ===================== -->
+<div id="app">
+  <div class="shell">
+    <aside class="side" id="side">
+      <div class="top">
+        <div class="brand"><img src="logo.png" alt="togethere" class="logo-img" onerror="logoFallback(this)"></div>
+      </div>
+      <nav class="nav" id="nav"></nav>
+      <div class="foot">
+        <div id="syncDot" onclick="cloudPut()" style="font-size:.72rem;color:#9fb1d1;margin-bottom:8px;cursor:pointer" title="Clique para sincronizar agora">☁️ …</div>
+        <div id="perfilLabel" style="margin-bottom:8px"></div>
+        <button onclick="logout()">🚪 Sair</button>
+      </div>
+    </aside>
 
-            <section id="dashboard" class="section active">
-                <div class="card">
-                    <h2 class="card-title">Bem-vindo! 👋</h2>
-                    <p>Versão 1.0 - App de Gestão Escolar Togethere</p>
-                </div>
-
-                <div class="alert alert-warning">
-                    <strong>⚠️ Alertas do Sistema</strong>
-                    <p>Aluna Maria Silva: 3 faltas consecutivas — contato com responsável necessário</p>
-                </div>
-
-                <div class="card">
-                    <h2 class="card-title">Resumo do Dia</h2>
-                    <p>Apresentação em: <strong>6 segundos</strong></p>
-                    <button class="btn btn-primary" onclick="generateDayReport()">📧 Gerar Resumo para Pais</button>
-                </div>
-            </section>
-
-            <section id="attendance" class="section">
-                <div class="card">
-                    <h2 class="card-title">Controle de Presença</h2>
-                    <div class="form-group">
-                        <label for="attendanceClass">Turma:</label>
-                        <select id="attendanceClass">
-                            <option>Infantil 3 - Manhã</option>
-                            <option>Infantil 4 - Manhã</option>
-                            <option>Infantil 5 - Tarde</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="attendanceDate">Data:</label>
-                        <input type="date" id="attendanceDate">
-                    </div>
-
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Aluno/a</th>
-                                <th>Presente</th>
-                                <th>Faltou</th>
-                                <th>Justificado</th>
-                            </tr>
-                        </thead>
-                        <tbody id="attendanceTable">
-                            <tr>
-                                <td>João Silva</td>
-                                <td><input type="radio" name="joao"></td>
-                                <td><input type="radio" name="joao"></td>
-                                <td><input type="radio" name="joao"></td>
-                            </tr>
-                            <tr>
-                                <td>Maria Oliveira</td>
-                                <td><input type="radio" name="maria"></td>
-                                <td><input type="radio" name="maria"></td>
-                                <td><input type="radio" name="maria"></td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <button class="btn btn-primary" onclick="saveAttendance()" style="margin-top: 1rem;">💾 Salvar Presença</button>
-                </div>
-            </section>
-
-            <section id="homework" class="section">
-                <div class="card">
-                    <h2 class="card-title">Temas de Casa</h2>
-                    
-                    <div class="form-group">
-                        <label for="homeworkClass">Turma:</label>
-                        <select id="homeworkClass">
-                            <option>Infantil 3 - Manhã</option>
-                            <option>Infantil 4 - Manhã</option>
-                            <option>Infantil 5 - Tarde</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="homeworkDate">Data para Entrega:</label>
-                        <input type="date" id="homeworkDate">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="homeworkDescription">Descrição do Tema:</label>
-                        <textarea id="homeworkDescription" placeholder="Ex: Atividade de matemática sobre adição..."></textarea>
-                    </div>
-
-                    <button class="btn btn-primary" onclick="saveHomework()">💾 Registrar Tema</button>
-
-                    <h3 style="margin-top: 2rem;">Temas Registrados</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Data</th>
-                                <th>Turma</th>
-                                <th>Descrição</th>
-                                <th>Ação</th>
-                            </tr>
-                        </thead>
-                        <tbody id="homeworkList">
-                            <tr>
-                                <td>10/06/2026</td>
-                                <td>Infantil 3</td>
-                                <td>Atividade sobre números</td>
-                                <td><button class="btn btn-danger" onclick="deleteItem()">🗑️</button></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section id="tests" class="section">
-                <div class="card">
-                    <h2 class="card-title">Resultados de Testes</h2>
-                    
-                    <div class="form-group">
-                        <label for="testClass">Turma:</label>
-                        <select id="testClass">
-                            <option>Infantil 3 - Manhã</option>
-                            <option>Infantil 4 - Manhã</option>
-                            <option>Infantil 5 - Tarde</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="testName">Nome do Teste:</label>
-                        <input type="text" id="testName" placeholder="Ex: Avaliação de Leitura">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="testDate">Data:</label>
-                        <input type="date" id="testDate">
-                    </div>
-
-                    <h3>Notas dos Alunos</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Aluno/a</th>
-                                <th>Nota</th>
-                                <th>Observações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="testTable">
-                            <tr>
-                                <td>João Silva</td>
-                                <td><input type="number" min="0" max="10" style="width: 80px;"></td>
-                                <td><input type="text" style="width: 200px;"></td>
-                            </tr>
-                            <tr>
-                                <td>Maria Oliveira</td>
-                                <td><input type="number" min="0" max="10" style="width: 80px;"></td>
-                                <td><input type="text" style="width: 200px;"></td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <button class="btn btn-primary" onclick="saveTests()" style="margin-top: 1rem;">💾 Salvar Testes</button>
-                </div>
-            </section>
-
-            <section id="material" class="section">
-                <div class="card">
-                    <h2 class="card-title">Controle de Material</h2>
-                    
-                    <div class="form-group">
-                        <label for="materialClass">Turma:</label>
-                        <select id="materialClass">
-                            <option>Infantil 3 - Manhã</option>
-                            <option>Infantil 4 - Manhã</option>
-                            <option>Infantil 5 - Tarde</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="materialDate">Data:</label>
-                        <input type="date" id="materialDate">
-                    </div>
-
-                    <h3>Material Não Trazido</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Aluno/a</th>
-                                <th>Trouxe?</th>
-                                <th>Observações</th>
-                            </tr>
-                        </thead>
-                        <tbody id="materialTable">
-                            <tr>
-                                <td>João Silva</td>
-                                <td>
-                                    <input type="checkbox"> ✓
-                                </td>
-                                <td><input type="text" placeholder="Esqueceu livro de leitura"></td>
-                            </tr>
-                            <tr>
-                                <td>Maria Oliveira</td>
-                                <td>
-                                    <input type="checkbox"> ✓
-                                </td>
-                                <td><input type="text" placeholder="Faltou material de arte"></td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <div class="alert alert-danger" style="margin-top: 1rem;">
-                        <strong>🚨 Alerta do Sistema</strong>
-                        <p>Pedro Martins: Não trouxe material em 3 aulas consecutivas</p>
-                    </div>
-
-                    <button class="btn btn-primary" onclick="saveMaterial()" style="margin-top: 1rem;">💾 Registrar Material</button>
-                </div>
-            </section>
-
-            <section id="lessonplan" class="section">
-                <div class="card">
-                    <h2 class="card-title">Plano de Aula</h2>
-                    
-                    <div class="form-group">
-                        <label for="planClass">Turma:</label>
-                        <select id="planClass">
-                            <option>Infantil 3 - Manhã</option>
-                            <option>Infantil 4 - Manhã</option>
-                            <option>Infantil 5 - Tarde</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="planDate">Data da Aula:</label>
-                        <input type="date" id="planDate">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="planTopic">Tema da Aula:</label>
-                        <input type="text" id="planTopic" placeholder="Ex: Os números de 1 a 10">
-                    </div>
-
-                    <h3>Checklist de Atividades</h3>
-                    <div class="checkbox-group" style="flex-direction: column; gap: 0.75rem;">
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="activity1">
-                            <label for="activity1" style="margin: 0;">Aquecimento/Motivação</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="activity2">
-                            <label for="activity2" style="margin: 0;">Atividade Principal</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="activity3">
-                            <label for="activity3" style="margin: 0;">Atividade Prática</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="activity4">
-                            <label for="activity4" style="margin: 0;">Atividade Criativa/Expressiva</label>
-                        </div>
-                        <div class="checkbox-item">
-                            <input type="checkbox" id="activity5">
-                            <label for="activity5" style="margin: 0;">Fechamento/Avaliação</label>
-                        </div>
-                    </div>
-
-                    <div class="form-group" style="margin-top: 1.5rem;">
-                        <label for="planNotes">Anotações da Aula:</label>
-                        <textarea id="planNotes" placeholder="Como foi a aula, dificuldades, pontos positivos..."></textarea>
-                    </div>
-
-                    <button class="btn btn-primary" onclick="saveLessonPlan()">💾 Salvar Plano de Aula</button>
-                    <button class="btn btn-success" onclick="generateLessonSummary()" style="margin-left: 0.5rem;">📧 Gerar Resumo para Pais</button>
-                </div>
-            </section>
-
-            <section id="meetings" class="section">
-                <div class="card">
-                    <h2 class="card-title">Atas de Reuniões</h2>
-                    
-                    <div class="form-group">
-                        <label for="meetingType">Tipo de Reunião:</label>
-                        <select id="meetingType">
-                            <option>Reunião Pedagógica</option>
-                            <option>Reunião com Pais</option>
-                            <option>Reunião de Planejamento</option>
-                            <option>Outro</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="meetingDate">Data:</label>
-                        <input type="date" id="meetingDate">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="meetingAttendees">Presentes:</label>
-                        <input type="text" id="meetingAttendees" placeholder="Ex: Ana Silva, João Santos, Maria Oliveira">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="meetingContent">Conteúdo da Reunião:</label>
-                        <textarea id="meetingContent" placeholder="Pontos discutidos, decisões tomadas, próximos passos..."></textarea>
-                    </div>
-
-                    <button class="btn btn-primary" onclick="saveMeeting()">💾 Salvar Ata</button>
-
-                    <h3 style="margin-top: 2rem;">Atas Registradas</h3>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Data</th>
-                                <th>Tipo</th>
-                                <th>Presentes</th>
-                                <th>Ação</th>
-                            </tr>
-                        </thead>
-                        <tbody id="meetingList">
-                            <tr>
-                                <td>05/06/2026</td>
-                                <td>Reunião Pedagógica</td>
-                                <td>Ana, João, Maria</td>
-                                <td><button class="btn btn-danger" onclick="deleteItem()">🗑️</button></td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </section>
-
-            <section id="tasks" class="section">
-                <div class="card">
-                    <h2 class="card-title">Tarefas Internas - Matriz de Eisenhower</h2>
-                    
-                    <div class="form-group">
-                        <label for="taskTitle">Título da Tarefa:</label>
-                        <input type="text" id="taskTitle" placeholder="Ex: Preparar relatório de alunos">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="taskQuadrant">Quadrante:</label>
-                        <select id="taskQuadrant">
-                            <option value="important-urgent">🔴 Importante e Urgente (FAZER AGORA)</option>
-                            <option value="important-not-urgent">🟢 Importante e Não Urgente (AGENDAR)</option>
-                            <option value="not-important-urgent">🟡 Não Importante e Urgente (STANDBY)</option>
-                            <option value="not-important-not-urgent">⚪ Não Importante e Não Urgente (ELIMINAR)</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="taskDueDate">Data Limite:</label>
-                        <input type="date" id="taskDueDate">
-                    </div>
-
-                    <button class="btn btn-primary" onclick="addTask()">➕ Adicionar Tarefa</button>
-
-                    <div class="eisenhower">
-                        <div class="eisenhower-quadrant important-urgent">
-                            <h4 class="quadrant-title">🔴 FAZER AGORA<br><span style="font-size: 0.75rem;">Importante + Urgente</span></h4>
-                            <ul class="task-list" id="quadrant1">
-                                <li class="task-item">Corrigir provas da semana</li>
-                                <li class="task-item">Reunião com diretor hoje</li>
-                            </ul>
-                        </div>
-
-                        <div class="eisenhower-quadrant important-not-urgent">
-                            <h4 class="quadrant-title">🟢 AGENDAR<br><span style="font-size: 0.75rem;">Importante + Não Urgente</span></h4>
-                            <ul class="task-list" id="quadrant2">
-                                <li class="task-item">Planejar próximo bimestre</li>
-                                <li class="task-item">Desenvolver novo material didático</li>
-                            </ul>
-                        </div>
-
-                        <div class="eisenhower-quadrant not-important-urgent">
-                            <h4 class="quadrant-title">🟡 STANDBY<br><span style="font-size: 0.75rem;">Não Importante + Urgente</span></h4>
-                            <ul class="task-list" id="quadrant3">
-                                <li class="task-item">Responder e-mails diversos</li>
-                                <li class="task-item">Presença em reunião informativa</li>
-                            </ul>
-                        </div>
-
-                        <div class="eisenhower-quadrant not-important-not-urgent">
-                            <h4 class="quadrant-title">⚪ ELIMINAR<br><span style="font-size: 0.75rem;">Não Importante + Não Urgente</span></h4>
-                            <ul class="task-list" id="quadrant4">
-                                <li class="task-item">Navegar internet sem propósito</li>
-                                <li class="task-item">Conversar sobre assuntos não relevantes</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </main>
+    <div class="main">
+      <header class="topbar">
+        <button class="burger" onclick="document.getElementById('side').classList.toggle('open')">☰</button>
+        <div>
+          <div class="crumb" id="crumb">Início</div>
+          <h1 id="pageTitle">Painel</h1>
+        </div>
+        <div class="me">
+          <span id="meName"></span>
+          <span class="dot" id="meDot"></span>
+        </div>
+      </header>
+      <div class="content" id="view"></div>
     </div>
+  </div>
+</div>
 
-    <script>
-        function switchSection(sectionId) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
+<div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
 
-            document.getElementById(sectionId).classList.add('active');
-            event.target.classList.add('active');
+<script>
+/* =========================================================================
+   ESTADO  —  persistência em localStorage
+   ========================================================================= */
+const KEY='togethere_v2';
+let S=load();
 
-            const titles = {
-                'dashboard': '📊 Dashboard',
-                'attendance': '📋 Presença',
-                'homework': '📚 Temas de Casa',
-                'tests': '📝 Testes',
-                'material': '🎒 Material',
-                'lessonplan': '✏️ Plano de Aula',
-                'meetings': '📌 Atas de Reuniões',
-                'tasks': '✅ Tarefas Internas'
-            };
-            document.getElementById('sectionTitle').textContent = titles[sectionId];
-        }
+function load(){
+  let s=null;
+  try{const r=localStorage.getItem(KEY);if(r)s=JSON.parse(r);}catch(e){}
+  if(!s) s=seed();
+  return migrar(s);
+}
+function migrar(s){
+  s.versao=s.versao||1;
+  if(s.versao<2){                 // padroniza senhas para 12345
+    (s.usuarios||[]).forEach(u=>{u.senha='12345';});
+    s.versao=2;
+  }
+  s.comentarios=s.comentarios||[]; // garante campos novos
+  return s;
+}
+/* ============== NUVEM — sincronização com o Google Apps Script ==============
+   CLOUD_SECRET precisa ser IGUAL ao APP_SECRET que você colocou no Apps Script. */
+const CLOUD_URL    = 'https://script.google.com/macros/s/AKfycbylxwXqDh5ohAL4qLTn7WBQAu4juwt2bwgdiuGHDl1Ll3d1ViK-mdbeMghnG4UH3GNH/exec';
+const CLOUD_SECRET = 'togethere-junho-7Q2';
+/* ============================================================================ */
+let _syncTimer=null;
+function cloudOn(){ return CLOUD_URL && CLOUD_URL.indexOf('/exec')>0; }
+function marcarSync(st){
+  const e=document.getElementById('syncDot');
+  if(e) e.textContent = st==='ok' ? '☁️ sincronizado' : st==='off' ? '⚠️ sem conexão' : '☁️ sincronizando…';
+}
+async function cloudGet(timeout){
+  if(!cloudOn()) return null;
+  const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),timeout||7000);
+  try{
+    const r=await fetch(CLOUD_URL+'?action=get&secret='+encodeURIComponent(CLOUD_SECRET),{signal:ctrl.signal});
+    clearTimeout(t);
+    const j=await r.json();
+    return (j && Object.keys(j).length) ? j : null;
+  }catch(e){ clearTimeout(t); return null; }
+}
+function cloudPut(){
+  if(!cloudOn()) return Promise.resolve();
+  marcarSync('...');
+  const limpo=Object.assign({},S,{usuario:null,perfil:null});   // sessão não vai para a nuvem
+  return fetch(CLOUD_URL+'?action=put&secret='+encodeURIComponent(CLOUD_SECRET),{
+    method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(limpo)
+  }).then(()=>marcarSync('ok')).catch(()=>marcarSync('off'));
+}
+function save(){
+  localStorage.setItem(KEY,JSON.stringify(S));
+  clearTimeout(_syncTimer);
+  _syncTimer=setTimeout(cloudPut,800);   // agrupa edições rápidas antes de enviar
+}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+function hoje(){return new Date().toISOString().slice(0,10);}
 
-        function saveAttendance() { alert('✅ Presença salva com sucesso!'); }
-        function saveHomework() { alert('✅ Tema registrado com sucesso!'); }
-        function saveTests() { alert('✅ Testes salvos com sucesso!'); }
-        function saveMaterial() { alert('✅ Material registrado com sucesso!'); }
-        function saveLessonPlan() { alert('✅ Plano de aula salvo com sucesso!'); }
-        function saveMeeting() { alert('✅ Ata registrada com sucesso!'); }
-        function addTask() { alert('✅ Tarefa adicionada!'); }
-        
-        function generateDayReport() {
-            alert('📧 Resumo do dia gerado!\n\nO texto será enviado aos pais com a descrição da aula de hoje.');
-        }
+/* dados reais da escola (relatório Sponte 12/06/2026) */
+function seed(){
+  const T=[
+    ['A1 ADULTS NOITE','adults','Leandro','Ter–Qui 20:00–21:00',['Brenda Kulmann da Silva','Christian Fernandes de Barros','Fabiano silva da luz','Karina Cristine da Silva Rodrigues']],
+    ['A1 JUNIOR 2 HORAS','junior','Camila','Ter 18:30–20:30',['Antônia Nelci Birchols Vargas','Arthur Macalli Santos Fonseca','Bernardo Sulzbach Santos','Eduardo Bitello da Cunha','Henrique Santos Petró','Thiago Micael Martins Brasil','Vicente Sulzbach Santos','Vitor Hugo Maia dos Santos']],
+    ['A1 KIDS MANHÃ','kids','Fernanda','Seg–Qua 10:15–11:30',['Clara Pires Recus','Helena Valerio Dalpiaz','Laura Monteiro Cardoso','Luísa da Rosa Lopes','Maria Eduarda Santos de Souza','Valentina Algayer Mestre','Vitor de Freitas Sbruzzi de Toledo']],
+    ['A1 TEENS TARDE','teens','Mariana','Seg 14:00–16:45',['Anderson Bitello da Cunha','Danilo Schãffer de Vargas','Davi Saltiel','Guilherme Fofonka dos Santos','Henrique Zacarias Espindola']],
+    ['A1 TEENS TARDINHA','teens','Camila','Seg–Qua 18:15–19:30',['Arthur Marcelino Pinheiro','Davi de jesus Soster','Isabela Alexandre Quintilhano Dos Santos','Isabela Fontoura da Trindade','Lara Vargas dos Santos','Mikaella Pawlowskij Leites']],
+    ['A1+ JUNIOR MANHÃ','junior','Franco','Seg–Qua 10:15–11:30',['Catherine Cardoso Shvantes Bottini','Enzo Ferrari Velasques','Isabelle Ymai','Julia Nasario de Dillenburg','Lorenzo Braga Klahn','Manuela Canal Guedes','Maria Clara Sarmento Silveira','Martina Dupont Braga','Thomas de Freitas Sbruzzi de Toledo','Valentina Bitencourt Castro','Valentina Gonçalves pacheco']],
+    ['A1+ JUNIOR TARDINHA (Ter–Qui)','junior','Mariana','Ter–Qui 18:15–19:30',['Antônio Pires Recus','Eduardo Frigeri Fraga','Guilherme alves Fink','Julia Aguirre Lopes dos Santos','Júlia Miranda peker','Lorenzo Mazoni Margoni','Luca Vargas Lazzarotto da Fonseca','Manuela Rodrigues Schafer','Murilo Baptista Marques']],
+    ['A2 JUNIOR TARDINHA','junior','Mariana','Seg–Qua 18:15–19:30',['Davi de Vargas Jachemet','Debora Dutra Pereira de Oliveira','Fernando Rauter Becker','Laura Britzke de Albuquerque','Lorenzo Santos da Costa','Sophia Viegas Pereira','Valentina Kirchhoff']],
+    ['A2 TEENS TARDINHA','teens','Franco','Ter–Qui 18:15–19:30',['Artur Fellini Tedesco','Breno Apolinario Dias','Bruna Vitoria Brito de Almeida','Enrico Sccotti Mattos','Fernanda Cardoso Binotto','Gabriel Pereira dos Santos','Gabriela Porto Jerônimo','Helena Avila Henriques','Isabelly Pereira Dos santos','Isadora Douglas Polese','Lucca Jesus Capelão']],
+    ['A2+ JUNIOR TARDINHA','junior','Leandro','Seg–Qua 18:15–19:30',['Anne Frare Ferreira','Arthur Sousa da Rocha','Bernardo Francisco Felix Teixeira','Felipe Tavares Goerl','Isadora Dos santos Rezende','João Gabriel da Rosa Terra','Kaua Pawlowskij Leites','Leandra Fogaça Albuquerque','Teodora felix Teixeira','Valentina Coimbra Pacheco']],
+    ['A2+ JUNIOR TARDINHA (Ter–Qui)','junior','Leandro','Ter–Qui 18:15–19:30',['Felipe Nunes da Fonseca','Livia Galatto','Lorenzo Oliveira Capellão']],
+    ['B1 TEENS TARDE (Terça)','teens','Vlad','Ter 14:00–16:45',['Felipe Erichsen Maciel','Giovanna Andreola Masiero','João Vitor kirchhoff','Laura Cardoso Tiebbohl','Maria Eduarda Wabner','Marina Henn Lange','Mateus Scolari Conceição Rolim','Matteo Simas','Monica Fogassa Toledo']],
+    ['B1 TEENS TARDINHA','teens','Fernanda','Seg–Qua 18:15–19:30',['Arthur Benedetti Soares','Arthur Siqueira Conte','Augusto Kurtz da Silveira','Bernardo Abreu Benites Lopes','Betina Benedetti Soares','Carolina De Marchi Pereira','Davi Orlando Oliveira Peltz','Guilherme Ramos Fernandes de Souza','Lara dos santos schmidt','Luciano Gonçalves dias da Silva','Mariana Frigeri Fraga','Yao Jui Kuo']],
+    ['B1+ TEENS TARDE (Qui)','teens','Vlad','Qui 14:00–16:45',['Bruno Eduardo Lima Martins','Daniela Dos Santos Zimmer','Davi Azevedo de Sá','Felipe Fraga Binotte','Fernando Silveira Cruz','Isabela Fernandes Pereira','João Pedro Nunes Bohn','Lara Ferreira da Silva','Perola Mariana Petry Coelho']],
+    ['B1+ TEENS 2025/2','teens','Mariana','Ter 14:00–16:45',['Lucas Abreu da Silva','Milena Fonseca Cardozo','Pin Liang Kuo']],
+    ['B2 TEENS (Quinta)','teens','Mariana','Qui 14:00–16:45',['Carol Pires Ribeiro','Giovanna Antoniolli de Macedo','Isadora Dias','Lara Pires Ribeiro','Marina Basotti Dill','Victor Nunes Martins']],
+    ['B2 TEENS TARDE','teens','Mariana','Qua 14:00–16:45',['Alexandra Pereira da Silva','Gustavo Mercelo Splett','João Victor da Silva Vargas','José Lucimar Moraes Orça Neto','Kassio Hiran Bahr Ledebuhr','Murilo Martins Loeblin']],
+    ['Pré A1 KIDS MANHÃ (Ter–Qui)','kids','Camila','Ter–Qui 10:15–11:30',['Maria Antônia Markiewicz Pereira','Rafael Oliveira Weschenfelder Schmidt']],
+    ['Pré A1+ KIDS MANHÃ','kids','Mariana','Seg–Qua 10:15–11:30',['Clara Cardoso Binotto Bernardes','Eduardo Bobsin Martins','Elisa Soska Machado','Isabela Santos Petró','Nicolas Gomes Zilio','Nicolas Gonçalves pacheco','Pietro Pagno Benvegnu','Romeo Pereira Izabel','Sofia Lorenz Silva']],
+    ['C1 TEENS TARDE (Prep.)','teens','Franco','Seg 14:00–16:45',['Aleckssandra da Rosa Tavares','Isabella Pacheco Lima','Laís Antunes Motta Fernandes','Lucas Barcelos Mousquer','Maria Eduarda Pacheco Lima','Matheus Sakai','Murilo Garcia','Natália Tavares Goerl']],
+  ];
+  const turmas=[], alunos=[];
+  T.forEach(([nome,nivel,prof,hor,als])=>{
+    const id=uid();
+    turmas.push({id,nome,nivel,professor:prof,horario:hor});
+    als.forEach(n=>alunos.push({id:uid(),nome:n,turmaId:id}));
+  });
+  const usuarios=[
+    {nome:'Franco',   perfil:'direcao',    senha:'12345', ensina:'Franco'},
+    {nome:'Fernanda', perfil:'direcao',    senha:'12345', ensina:'Fernanda'},
+    {nome:'Vlad',     perfil:'professor',  senha:'12345', ensina:'Vlad'},
+    {nome:'Mari',     perfil:'professor',  senha:'12345', ensina:'Mariana'},
+    {nome:'Leandro',  perfil:'professor',  senha:'12345', ensina:'Leandro'},
+    {nome:'Camila',   perfil:'professor',  senha:'12345', ensina:'Camila'},
+    {nome:'Reginaldo',perfil:'secretaria', senha:'12345', ensina:null},
+  ];
+  return {
+    versao:2,
+    usuario:null, perfil:null, usuarios, turmas, alunos,
+    presencas:[], material:[], temas:[], testes:[], contatos:[], planos:[], comentarios:[],
+    atas:[{id:uid(),titulo:'Implantação do app de gestão',data:hoje(),participantes:'Direção e equipe',texto:'Início do uso do sistema Togethere: presença, temas de casa, testes, material, alertas para a secretaria e tarefas internas.'}],
+    tarefas:[
+      {id:uid(),txt:'Configurar acessos da equipe',quad:1,feito:true},
+      {id:uid(),txt:'Definir rotina diária de chamada',quad:2,feito:false},
+      {id:uid(),txt:'Conferir contatos dos responsáveis',quad:3,feito:false},
+    ],
+  };
+}
 
-        function generateLessonSummary() {
-            alert('📧 Resumo da aula gerado!\n\nTexto pronto para envio aos responsáveis.');
-        }
+/* =========================================================================
+   MOTOR DE ALERTAS
+   ========================================================================= */
+function alertasFaltas(){
+  const out=[];
+  S.alunos.forEach(a=>{
+    const sess=S.presencas.filter(p=>p.turmaId===a.turmaId && a.id in p.registros)
+                          .sort((x,y)=>x.data.localeCompare(y.data));
+    let streak=0;
+    for(let i=sess.length-1;i>=0;i--){ if(sess[i].registros[a.id]==='falta')streak++; else break; }
+    if(streak>=3) out.push({alunoId:a.id, tipo:'falta', n:streak,
+      motivo:`${streak} faltas consecutivas`});
+  });
+  return out.filter(o=>!jaContatado(o.alunoId,'falta'));
+}
+function alertasMaterial(){
+  const out=[];
+  S.alunos.forEach(a=>{
+    const sess=S.material.filter(m=>m.turmaId===a.turmaId).sort((x,y)=>x.data.localeCompare(y.data));
+    let streak=0, total=0;
+    sess.forEach(m=>{ if(m.faltantes.includes(a.id)) total++; });
+    for(let i=sess.length-1;i>=0;i--){ if(sess[i].faltantes.includes(a.id))streak++; else break; }
+    if(streak>=3) out.push({alunoId:a.id,tipo:'material',motivo:`Sem material em ${streak} aulas seguidas`});
+    else if(total>=5) out.push({alunoId:a.id,tipo:'material',motivo:`Sem material em ${total} aulas (alternadas)`});
+  });
+  return out.filter(o=>!jaContatado(o.alunoId,'material'));
+}
+function jaContatado(alunoId,tipo){
+  return S.contatos.some(c=>c.alunoId===alunoId && c.tipo===tipo);
+}
+function totalAlertas(){return alertasFaltas().length+alertasMaterial().length;}
 
-        function deleteItem() {
-            if (confirm('Tem certeza que deseja deletar?')) {
-                alert('🗑️ Item deletado com sucesso!');
-            }
-        }
+/* ---- incidentes detalhados (para registro da direção e relatórios) ---- */
+function faltasDoAluno(alunoId,turmaId){
+  return S.presencas.filter(p=>p.turmaId===turmaId && p.registros[alunoId]==='falta')
+    .map(p=>p.data).sort();
+}
+function materialDoAluno(alunoId,turmaId){
+  return S.material.filter(m=>m.turmaId===turmaId && (m.faltantes||[]).includes(alunoId))
+    .map(m=>m.data).sort();
+}
+function temasNaoFeitosDoAluno(alunoId,turmaId){
+  return S.temas.filter(t=>t.turmaId===turmaId && t.entregas[alunoId]===false)
+    .map(t=>({data:t.data,descricao:t.descricao})).sort((a,b)=>a.data.localeCompare(b.data));
+}
+function comentariosDoAluno(alunoId){
+  return S.comentarios.filter(c=>c.alunoId===alunoId).sort((a,b)=>a.data.localeCompare(b.data));
+}
+// lista geral de incidentes de um tipo (para a direção)
+function registroGeral(tipo){
+  const out=[];
+  S.alunos.forEach(a=>{
+    let datas=[];
+    if(tipo==='falta') datas=faltasDoAluno(a.id,a.turmaId);
+    else if(tipo==='material') datas=materialDoAluno(a.id,a.turmaId);
+    else if(tipo==='tema') datas=temasNaoFeitosDoAluno(a.id,a.turmaId).map(t=>t.data);
+    datas.forEach(d=>out.push({alunoId:a.id,turmaId:a.turmaId,data:d}));
+  });
+  return out.sort((x,y)=>y.data.localeCompare(x.data)); // mais recentes primeiro
+}
 
-        function logout() {
-            if (confirm('Deseja fazer logout?')) {
-                alert('👋 Até logo!');
-            }
-        }
+/* =========================================================================
+   NAVEGAÇÃO  —  itens por perfil
+   ========================================================================= */
+const NAV=[
+  {id:'painel', label:'Painel', em:'📊', grp:'Início', roles:['professor','secretaria','direcao']},
+  {id:'presenca', label:'Presença', em:'📋', grp:'Sala de aula', roles:['professor','direcao']},
+  {id:'temas', label:'Temas de casa', em:'📚', grp:'Sala de aula', roles:['professor','direcao']},
+  {id:'testes', label:'Testes', em:'✏️', grp:'Sala de aula', roles:['professor','direcao']},
+  {id:'material', label:'Material', em:'🎒', grp:'Sala de aula', roles:['professor','direcao']},
+  {id:'planos', label:'Planos de aula', em:'🗒️', grp:'Sala de aula', roles:['professor','direcao']},
+  {id:'resumo', label:'Resumo p/ pais', em:'✉️', grp:'Sala de aula', roles:['professor','secretaria','direcao']},
+  {id:'alertas', label:'Alertas', em:'🔔', grp:'Acompanhamento', roles:['secretaria','direcao'], badge:true},
+  {id:'atas', label:'Atas de reunião', em:'📝', grp:'Acompanhamento', roles:['secretaria','direcao']},
+  {id:'tarefas', label:'Tarefas internas', em:'🎯', grp:'Gestão', roles:['direcao']},
+  {id:'turmas', label:'Turmas e alunos', em:'👥', grp:'Gestão', roles:['professor','secretaria','direcao']},
+  {id:'acessos', label:'Acessos', em:'🔑', grp:'Gestão', roles:['direcao']},
+];
+const PERFIS={
+  professor:{nome:'Professor(a)',cor:'var(--azul)',bg:'#eaf3ff'},
+  secretaria:{nome:'Secretaria',cor:'var(--vermelho)',bg:'#fdeaea'},
+  direcao:{nome:'Direção',cor:'#b88600',bg:'#fff8e0'}
+};
+function turmasVisiveis(){
+  if(S.perfil==='professor'){
+    const u=S.usuarios.find(u=>u.nome===S.usuario);
+    return S.turmas.filter(t=>t.professor===(u&&u.ensina));
+  }
+  return S.turmas;
+}
+let rota='painel', loginNome=null;
 
-        function saveToLocalStorage(key, value) {
-            localStorage.setItem(key, JSON.stringify(value));
-        }
+/* ---- LOGIN ---- */
+function renderLogin(){
+  S.usuario=null; S.perfil=null;
+  const tit=document.getElementById('loginTitulo'); if(tit) tit.textContent='Entrar';
+  document.getElementById('loginPanel').innerHTML=`
+    <div class="field"><label class="lbl">Usuário</label>
+      <input type="text" id="loginUser" placeholder="Seu nome de acesso" autocomplete="off"
+             onkeydown="if(event.key==='Enter'){var s=document.getElementById('loginSenha');s&&s.focus();}"></div>
+    <div class="field"><label class="lbl">Senha</label>
+      <input type="password" id="loginSenha" placeholder="Sua senha" autocomplete="off"
+             onkeydown="if(event.key==='Enter')fazerLogin()"></div>
+    <button class="btn block" onclick="fazerLogin()">Entrar</button>
+    <p class="hint" style="margin-top:16px;text-align:center">Esqueceu a senha? Fale com a direção.</p>`;
+  setTimeout(function(){var i=document.getElementById('loginUser'); if(i) i.focus();},80);
+}
+function fazerLogin(){
+  const nome=(document.getElementById('loginUser').value||'').trim();
+  const senha=(document.getElementById('loginSenha').value||'').trim();
+  if(!nome||!senha) return toast('Preencha usuário e senha');
+  const u=S.usuarios.find(x=>x.nome.toLowerCase()===nome.toLowerCase());
+  if(!u || u.senha!==senha){ toast('Usuário ou senha incorretos'); return; }
+  S.usuario=u.nome; S.perfil=u.perfil;
+  aplicarLogin(u);
+}
+function aplicarLogin(u){
+  S.perfil=u.perfil;
+  document.getElementById('login').style.display='none';
+  document.getElementById('app').style.display='block';
+  const meta=PERFIS[u.perfil];
+  document.getElementById('meName').textContent=u.nome;
+  document.getElementById('meDot').style.background=meta.cor;
+  document.getElementById('meDot').textContent=u.nome[0];
+  document.getElementById('perfilLabel').innerHTML='Conectado como <b style="color:#fff">'+u.nome+'</b> · '+meta.nome;
+  montarNav(); ir(NAV.find(n=>n.roles.includes(u.perfil)).id);
+}
+function logout(){ location.reload(); }
 
-        function getFromLocalStorage(key) {
-            return JSON.parse(localStorage.getItem(key) || 'null');
-        }
+function montarNav(){
+  const nav=document.getElementById('nav'); nav.innerHTML='';
+  let grpAtual='';
+  NAV.filter(n=>n.roles.includes(S.perfil)).forEach(n=>{
+    if(n.grp!==grpAtual){grpAtual=n.grp;const g=document.createElement('div');g.className='grp';g.textContent=n.grp;nav.appendChild(g);}
+    const a=document.createElement('button');
+    a.className='nav-a'; a.dataset.id=n.id;
+    a.innerHTML=`<span class="em">${n.em}</span> ${n.label}`;
+    if(n.badge){const t=totalAlertas();if(t)a.innerHTML+=`<span class="badge">${t}</span>`;}
+    a.onclick=()=>ir(n.id);
+    nav.appendChild(a);
+  });
+  // aplica classe ".nav a" via tag genérica
+  nav.querySelectorAll('button').forEach(b=>b.classList.add('navbtn'));
+}
+function ir(id){
+  rota=id; const n=NAV.find(x=>x.id===id);
+  document.getElementById('pageTitle').textContent=n.label;
+  document.getElementById('crumb').textContent=n.grp;
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.id===id));
+  document.getElementById('side').classList.remove('open');
+  VIEWS[id]();
+  window.scrollTo(0,0);
+}
 
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('App Escola Togethere v1.0 carregado');
-        });
-    </script>
+/* utils UI */
+function _normTxt(s){return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();}
+function logoFallback(img){const s=document.createElement('span');s.className='wm';s.innerHTML='to<b>gethere</b>';img.replaceWith(s);}
+function el(html){const d=document.createElement('div');d.innerHTML=html.trim();return d.firstChild;}
+function toast(msg){const t=document.getElementById('toast');t.innerHTML='✓ '+msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200);}
+function modal(html){const m=document.getElementById('modal');m.innerHTML=html;document.getElementById('modalBg').classList.add('show');}
+function fechar(){document.getElementById('modalBg').classList.remove('show');}
+document.getElementById('modalBg').onclick=e=>{if(e.target.id==='modalBg')fechar();};
+function turmaNome(id){const t=S.turmas.find(t=>t.id===id);return t?t.nome:'—';}
+function nivelTag(n){return `<span class="tag ${n}">${n}</span>`;}
+function alunosDa(turmaId){return S.alunos.filter(a=>a.turmaId===turmaId);}
+function brDate(d){if(!d)return'';const[y,m,dd]=d.split('-');return`${dd}/${m}/${y}`;}
+function selectTurma(id,sel){
+  const ts=turmasVisiveis();
+  return `<select id="${id}">${ts.map(t=>`<option value="${t.id}" ${t.id===sel?'selected':''}>${t.nome}</option>`).join('')}</select>`;
+}
+function primeiraTurma(){return (turmasVisiveis()[0]||{}).id;}
+
+/* =========================================================================
+   VIEWS
+   ========================================================================= */
+const VIEWS={};
+
+/* ---- PAINEL ---- */
+VIEWS.painel=()=>{
+  const v=document.getElementById('view');
+  const tv=turmasVisiveis();
+  const nTurmas=tv.length;
+  const nAl=S.alunos.filter(a=>tv.some(t=>t.id===a.turmaId)).length;
+  const nAlertas=totalAlertas();
+  const planosAbertos=S.planos.filter(p=>p.itens.some(i=>!i.done)).length;
+  const ehProf=S.perfil==='professor';
+  const cards=[
+    {ic:'👥',bg:'#eaf3ff',cor:'var(--azul)',num:nAl,lbl:ehProf?'Meus alunos':'Alunos ativos'},
+    {ic:'📚',bg:'#fff8e0',cor:'#b88600',num:nTurmas,lbl:ehProf?'Minhas turmas':'Turmas'},
+    {ic:'🔔',bg:'#fdeaea',cor:'var(--vermelho)',num:nAlertas,lbl:'Alertas abertos'},
+    {ic:'🗒️',bg:'#f4ecff',cor:'#9333c7',num:planosAbertos,lbl:'Planos em andamento'},
+  ];
+  v.innerHTML=`
+    <div class="section-title"><span class="feijao fj" style="background:var(--amarelo)"></span><h2 class="display">Olá, ${S.usuario}!</h2></div>
+    <p class="sub">Resumo rápido — ${brDate(hoje())}</p>
+    <div class="grid g4" style="margin-bottom:8px">
+      ${cards.map(c=>`<div class="card"><div class="kpi"><div class="k-ic" style="background:${c.bg};color:${c.cor}">${c.ic}</div><div><div class="num">${c.num}</div><small>${c.lbl}</small></div></div></div>`).join('')}
+    </div>`;
+  if((S.perfil==='secretaria'||S.perfil==='direcao') && nAlertas){
+    v.appendChild(el(`<div class="card" style="border-left:4px solid var(--vermelho)">
+      <h3>🔔 ${nAlertas} aluno(s) precisam de contato</h3>
+      <p class="hint">A secretaria deve entrar em contato com os responsáveis.</p>
+      <button class="btn red" onclick="ir('alertas')">Ver alertas</button></div>`));
+  }
+  v.appendChild(el(`<div class="card">
+    <h3>Atalhos</h3><p class="hint">O que você quer fazer agora?</p>
+    <div class="row">
+      ${S.perfil!=='secretaria'?'<button class="btn ghost" onclick="ir(\'presenca\')">📋 Fazer chamada</button>':''}
+      ${S.perfil!=='secretaria'?'<button class="btn ghost" onclick="ir(\'resumo\')">✉️ Resumo p/ pais</button>':''}
+      ${S.perfil!=='professor'?'<button class="btn ghost" onclick="ir(\'alertas\')">🔔 Alertas</button>':''}
+      ${S.perfil==='direcao'?'<button class="btn ghost" onclick="ir(\'tarefas\')">🎯 Tarefas internas</button>':''}
+    </div></div>`));
+};
+
+/* ---- PRESENÇA ---- */
+let presTurma=null, presData=hoje();
+VIEWS.presenca=()=>{
+  presTurma=presTurma||primeiraTurma();
+  const v=document.getElementById('view');
+  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Chamada</h2></div>
+    <p class="sub">Marque presença ou falta. Faltas alimentam os alertas da secretaria.</p>
+    <div class="card"><div class="row">
+      <div><label class="lbl">Turma</label>${selectTurma('pT',presTurma)}</div>
+      <div><label class="lbl">Data da aula</label><input type="date" id="pD" value="${presData}"></div>
+    </div></div>
+    <div class="card" id="pBox"></div>`;
+  document.getElementById('pT').onchange=e=>{presTurma=e.target.value;renderPres();};
+  document.getElementById('pD').onchange=e=>{presData=e.target.value;renderPres();};
+  renderPres();
+};
+function renderPres(){
+  const box=document.getElementById('pBox');
+  const reg=(S.presencas.find(p=>p.turmaId===presTurma&&p.data===presData)||{}).registros||{};
+  const als=alunosDa(presTurma);
+  if(!als.length){box.innerHTML='<div class="empty"><div class="big">👥</div>Nenhum aluno nesta turma ainda.</div>';return;}
+  box.innerHTML=`<h3>${als.length} alunos · ${brDate(presData)}</h3><p class="hint">Toque para alternar.</p>
+    <table><tbody>${als.map(a=>{
+      const st=reg[a.id]||'presente';
+      return `<tr><td><b>${a.nome}</b></td><td style="text-align:right">
+        <div class="seg"><button class="${st==='presente'?'on-p':''}" onclick="setPres('${a.id}','presente')">Presente</button>
+        <button class="${st==='falta'?'on-f':''}" onclick="setPres('${a.id}','falta')">Falta</button></div></td></tr>`;
+    }).join('')}</tbody></table>
+    <div style="margin-top:16px"><button class="btn" onclick="salvarPres()">Salvar chamada</button></div>`;
+}
+let presTemp={};
+function setPres(id,st){
+  let rec=S.presencas.find(p=>p.turmaId===presTurma&&p.data===presData);
+  if(!rec){rec={id:uid(),turmaId:presTurma,data:presData,registros:{}};S.presencas.push(rec);alunosDa(presTurma).forEach(a=>rec.registros[a.id]='presente');}
+  rec.registros[id]=st; renderPres();
+}
+function salvarPres(){save();montarNav();toast('Chamada salva');}
+
+/* ---- TEMAS DE CASA ---- */
+let temaTurma=null;
+VIEWS.temas=()=>{
+  temaTurma=temaTurma||primeiraTurma();
+  const v=document.getElementById('view');
+  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--rosa)"></span><h2 class="display">Temas de casa</h2></div>
+    <p class="sub">Registre o tema e acompanhe quem entregou.</p>
+    <div class="card"><h3>Novo tema</h3><div class="field"><label class="lbl">Turma</label>${selectTurma('tT',temaTurma)}</div>
+      <div class="row"><div><label class="lbl">Data</label><input type="date" id="tD" value="${hoje()}"></div>
+      <div style="flex:2"><label class="lbl">Descrição do tema</label><input type="text" id="tDesc" placeholder="Ex: Workbook pág. 30, exercícios 1 a 4"></div></div>
+      <div style="margin-top:12px"><button class="btn" onclick="addTema()">Registrar tema</button></div></div>
+    <div id="tList"></div>`;
+  document.getElementById('tT').onchange=e=>temaTurma=e.target.value;
+  renderTemas();
+};
+function addTema(){
+  const desc=document.getElementById('tDesc').value.trim();
+  if(!desc)return toast('Descreva o tema');
+  const turmaId=document.getElementById('tT').value;
+  const ent={}; alunosDa(turmaId).forEach(a=>ent[a.id]=false);
+  S.temas.push({id:uid(),turmaId,data:document.getElementById('tD').value,descricao:desc,entregas:ent});
+  save();VIEWS.temas();toast('Tema registrado');
+}
+function renderTemas(){
+  const list=document.getElementById('tList');
+  const ts=S.temas.filter(t=>t.turmaId===temaTurma).sort((a,b)=>b.data.localeCompare(a.data));
+  if(!ts.length){list.innerHTML='<div class="card empty"><div class="big">📚</div>Sem temas registrados para esta turma.</div>';return;}
+  list.innerHTML=ts.map(t=>{
+    const als=alunosDa(t.turmaId);
+    const feitos=Object.values(t.entregas).filter(Boolean).length;
+    return `<div class="card"><h3>${t.descricao}</h3><p class="hint">${brDate(t.data)} · ${feitos}/${als.length} entregaram</p>
+      ${als.map(a=>`<div class="check ${t.entregas[a.id]?'done':''}"><input type="checkbox" ${t.entregas[a.id]?'checked':''} onchange="toggleTema('${t.id}','${a.id}')"><span>${a.nome}</span></div>`).join('')}
+      <button class="btn ghost sm" style="margin-top:12px;color:var(--vermelho)" onclick="delTema('${t.id}')">Excluir tema</button></div>`;
+  }).join('');
+}
+function toggleTema(tid,aid){const t=S.temas.find(t=>t.id===tid);t.entregas[aid]=!t.entregas[aid];save();renderTemas();}
+function delTema(id){if(confirm('Excluir este tema de casa?')){S.temas=S.temas.filter(t=>t.id!==id);save();renderTemas();toast('Tema excluído');}}
+
+/* ---- TESTES ---- */
+let testeTurma=null;
+VIEWS.testes=()=>{
+  testeTurma=testeTurma||primeiraTurma();
+  const v=document.getElementById('view');
+  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--roxo)"></span><h2 class="display">Resultados de testes</h2></div>
+    <p class="sub">Lance as notas e veja a média da turma.</p>
+    <div class="card"><h3>Novo teste</h3><div class="row">
+      <div><label class="lbl">Turma</label>${selectTurma('teT',testeTurma)}</div>
+      <div style="flex:2"><label class="lbl">Nome do teste</label><input type="text" id="teNome" placeholder="Ex: Unit 5 — Reading"></div>
+      <div><label class="lbl">Data</label><input type="date" id="teD" value="${hoje()}"></div></div>
+      <div style="margin-top:12px"><button class="btn" onclick="addTeste()">Criar teste</button></div></div>
+    <div id="teList"></div>`;
+  document.getElementById('teT').onchange=e=>testeTurma=e.target.value;
+  renderTestes();
+};
+function addTeste(){
+  const nome=document.getElementById('teNome').value.trim();
+  if(!nome)return toast('Dê um nome ao teste');
+  const turmaId=document.getElementById('teT').value;
+  S.testes.push({id:uid(),turmaId,nome,data:document.getElementById('teD').value,notas:{}});
+  save();VIEWS.testes();toast('Teste criado');
+}
+function renderTestes(){
+  const list=document.getElementById('teList');
+  const ts=S.testes.filter(t=>t.turmaId===testeTurma).sort((a,b)=>b.data.localeCompare(a.data));
+  if(!ts.length){list.innerHTML='<div class="card empty"><div class="big">✏️</div>Nenhum teste para esta turma.</div>';return;}
+  list.innerHTML=ts.map(t=>{
+    const als=alunosDa(t.turmaId);
+    const notas=als.map(a=>t.notas[a.id]).filter(n=>n!=null&&n!=='');
+    const media=notas.length?(notas.reduce((s,n)=>s+(+n),0)/notas.length).toFixed(1):'—';
+    return `<div class="card"><h3>${t.nome}</h3><p class="hint">${brDate(t.data)} · Média da turma: <b>${media}</b></p>
+      <table><tbody>${als.map(a=>`<tr><td>${a.nome}</td><td style="width:110px"><input type="number" step="0.5" min="0" max="10" value="${t.notas[a.id]??''}" placeholder="—" onchange="setNota('${t.id}','${a.id}',this.value)"></td></tr>`).join('')}</tbody></table></div>`;
+  }).join('');
+}
+function setNota(tid,aid,val){const t=S.testes.find(t=>t.id===tid);t.notas[aid]=val===''?'':+val;save();renderTestes();}
+
+/* ---- MATERIAL ---- */
+let matTurma=null, matData=hoje();
+VIEWS.material=()=>{
+  matTurma=matTurma||primeiraTurma();
+  const v=document.getElementById('view');
+  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--laranja)"></span><h2 class="display">Material não trazido</h2></div>
+    <p class="sub">Marque quem veio sem material. Alimenta os alertas: 3 aulas seguidas ou 5 alternadas.</p>
+    <div class="card"><div class="row">
+      <div><label class="lbl">Turma</label>${selectTurma('mT',matTurma)}</div>
+      <div><label class="lbl">Data da aula</label><input type="date" id="mD" value="${matData}"></div></div></div>
+    <div class="card" id="mBox"></div>`;
+  document.getElementById('mT').onchange=e=>{matTurma=e.target.value;renderMat();};
+  document.getElementById('mD').onchange=e=>{matData=e.target.value;renderMat();};
+  renderMat();
+};
+function renderMat(){
+  const box=document.getElementById('mBox');
+  const rec=S.material.find(m=>m.turmaId===matTurma&&m.data===matData);
+  const falt=rec?rec.faltantes:[];
+  const als=alunosDa(matTurma);
+  if(!als.length){box.innerHTML='<div class="empty"><div class="big">🎒</div>Sem alunos nesta turma.</div>';return;}
+  box.innerHTML=`<h3>${brDate(matData)}</h3><p class="hint">Marque quem <b>não trouxe</b> o material.</p>
+    ${als.map(a=>`<div class="check ${falt.includes(a.id)?'':''}"><input type="checkbox" ${falt.includes(a.id)?'checked':''} onchange="toggleMat('${a.id}')"><span>${a.nome}</span>${falt.includes(a.id)?'<span class="pill" style="background:#ffeee5;color:var(--laranja)">sem material</span>':''}</div>`).join('')}
+    <div style="margin-top:16px"><button class="btn" onclick="salvarMat()">Salvar</button></div>`;
+}
+function toggleMat(aid){
+  let rec=S.material.find(m=>m.turmaId===matTurma&&m.data===matData);
+  if(!rec){rec={id:uid(),turmaId:matTurma,data:matData,faltantes:[]};S.material.push(rec);}
+  const i=rec.faltantes.indexOf(aid);
+  if(i>=0)rec.faltantes.splice(i,1);else rec.faltantes.push(aid);
+  renderMat();
+}
+function salvarMat(){save();montarNav();toast('Material registrado');}
+
+/* ---- PLANOS DE AULA ---- */
+VIEWS.planos=()=>{
+  const v=document.getElementById('view');
+  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Planos de aula</h2></div>
+    <p class="sub">Checklist do que foi feito + espaço para anotações.</p>
+    <button class="btn" style="margin-bottom:16px" onclick="novoPlano()">+ Novo plano de aula</button>
+    <div id="plList"></div>`;
+  renderPlanos();
+};
+function novoPlano(){
+  modal(`<h3>🗒️ Novo plano de aula <button class="close" onclick="fechar()">×</button></h3>
+    <div class="field"><label class="lbl">Título</label><input type="text" id="plTit" placeholder="Ex: Present Perfect — experiências"></div>
+    <div class="row"><div class="field"><label class="lbl">Turma</label>${selectTurma('plTurma',primeiraTurma())}</div>
+    <div class="field"><label class="lbl">Data</label><input type="date" id="plData" value="${hoje()}"></div></div>
+    <div class="field"><label class="lbl">Itens do plano (um por linha)</label><textarea id="plItens" placeholder="Warm-up&#10;Apresentar estrutura&#10;Listening&#10;Speaking em duplas&#10;Tema de casa"></textarea></div>
+    <button class="btn block" onclick="salvarPlano()">Criar plano</button>`);
+}
+function salvarPlano(){
+  const tit=document.getElementById('plTit').value.trim();
+  if(!tit)return toast('Dê um título');
+  const itens=document.getElementById('plItens').value.split('\n').map(s=>s.trim()).filter(Boolean).map(t=>({txt:t,done:false}));
+  S.planos.push({id:uid(),titulo:tit,turmaId:document.getElementById('plTurma').value,data:document.getElementById('plData').value,itens,anotacoes:'',conteudo:''});
+  save();fechar();renderPlanos();toast('Plano criado');
+}
+function renderPlanos(){
+  const list=document.getElementById('plList');
+  const ps=[...S.planos].sort((a,b)=>b.data.localeCompare(a.data));
+  if(!ps.length){list.innerHTML='<div class="card empty"><div class="big">🗒️</div>Nenhum plano ainda. Crie o primeiro!</div>';return;}
+  list.innerHTML=ps.map(p=>{
+    const feitos=p.itens.filter(i=>i.done).length;
+    return `<div class="card"><h3>${p.titulo}</h3><p class="hint">${turmaNome(p.turmaId)} · ${brDate(p.data)} · ${feitos}/${p.itens.length} itens feitos</p>
+      ${p.itens.map((it,i)=>`<div class="check ${it.done?'done':''}"><input type="checkbox" ${it.done?'checked':''} onchange="togglePlano('${p.id}',${i})"><span>${it.txt}</span></div>`).join('')}
+      <div class="field" style="margin-top:14px"><label class="lbl">Anotações</label><textarea onchange="setPlanoCampo('${p.id}','anotacoes',this.value)" placeholder="Observações sobre a aula...">${p.anotacoes||''}</textarea></div>
+      <button class="btn ghost sm" onclick="delPlano('${p.id}')">Excluir plano</button></div>`;
+  }).join('');
+}
+function togglePlano(pid,i){const p=S.planos.find(p=>p.id===pid);p.itens[i].done=!p.itens[i].done;save();renderPlanos();}
+function setPlanoCampo(pid,campo,val){const p=S.planos.find(p=>p.id===pid);p[campo]=val;save();}
+function delPlano(pid){if(confirm('Excluir este plano?')){S.planos=S.planos.filter(p=>p.id!==pid);save();renderPlanos();toast('Plano excluído');}}
+
+/* ---- RESUMO PARA PAIS ---- */
+let resTurma=null, resData=hoje();
+VIEWS.resumo=()=>{
+  resTurma=resTurma||primeiraTurma();
+  const v=document.getElementById('view');
+  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--vermelho)"></span><h2 class="display">Resumo da aula para os pais</h2></div>
+    <p class="sub">Gera um texto pronto a partir do plano de aula e do tema do dia.</p>
+    <div class="card"><div class="row">
+      <div><label class="lbl">Turma</label>${selectTurma('rT',resTurma)}</div>
+      <div><label class="lbl">Data da aula</label><input type="date" id="rD" value="${resData}"></div></div>
+      <div style="margin-top:12px"><button class="btn" onclick="gerarResumo()">✨ Gerar resumo</button></div></div>
+    <div class="card"><h3>Texto gerado</h3><p class="hint">Revise e copie para enviar no grupo dos responsáveis.</p>
+      <div class="gen-box" id="rOut">Clique em “Gerar resumo” para criar o texto.</div>
+      <div style="margin-top:14px"><button class="btn amarelo" onclick="copiarResumo()">📋 Copiar texto</button></div></div>
+
+    <div class="section-title" style="margin-top:30px"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Relatório por aluno</h2></div>
+    <p class="sub">Busque por turma e aluno para gerar um relatório completo: faltas (com o resumo das aulas perdidas), material esquecido, temas não feitos e comentários.</p>
+    <div class="card"><div class="row">
+      <div><label class="lbl">Turma</label>${selectTurma('relT',resTurma)}</div>
+      <div><label class="lbl">Aluno</label><span id="relAWrap">${alunosSelect('relA',resTurma)}</span></div></div>
+      <div style="margin-top:12px"><button class="btn" onclick="gerarRelatorioAluno()">📄 Gerar relatório</button></div>
+      <div class="field" style="margin-top:16px"><label class="lbl">Adicionar comentário sobre o aluno</label>
+        <textarea id="relCom" placeholder="Observação específica sobre este aluno (comportamento, evolução, combinados com a família...)"></textarea>
+        <button class="btn ghost sm" style="margin-top:8px" onclick="addComentario()">+ Adicionar comentário</button></div>
+    </div>
+    <div class="card"><h3>Relatório gerado</h3><p class="hint">Revise e copie ou imprima.</p>
+      <div class="gen-box" id="relOut">Selecione turma e aluno e clique em “Gerar relatório”.</div>
+      <div class="row" style="margin-top:14px"><button class="btn amarelo" onclick="copiarRelatorio()">📋 Copiar relatório</button>
+      <button class="btn ghost" onclick="imprimirRelatorio()">🖨️ Imprimir / PDF</button></div></div>`;
+  document.getElementById('rT').onchange=e=>resTurma=e.target.value;
+  document.getElementById('rD').onchange=e=>resData=e.target.value;
+  document.getElementById('relT').onchange=e=>{document.getElementById('relAWrap').innerHTML=alunosSelect('relA',e.target.value);};
+};
+function alunosSelect(id,turmaId,sel){
+  const als=alunosDa(turmaId);
+  if(!als.length)return `<select id="${id}"><option value="">(sem alunos)</option></select>`;
+  return `<select id="${id}">${als.map(a=>`<option value="${a.id}" ${a.id===sel?'selected':''}>${a.nome}</option>`).join('')}</select>`;
+}
+function gerarResumo(){
+  const turmaId=document.getElementById('rT').value, data=document.getElementById('rD').value;
+  const turma=S.turmas.find(t=>t.id===turmaId);
+  const plano=S.planos.find(p=>p.turmaId===turmaId&&p.data===data);
+  const tema=S.temas.find(t=>t.turmaId===turmaId&&t.data===data);
+  const feitos=plano?plano.itens.filter(i=>i.done).map(i=>i.txt):[];
+  let txt=`Olá, famílias! 👋\n\nResumo da aula de hoje (${brDate(data)}) — ${turma.nome}:\n\n`;
+  if(plano){
+    txt+=`📖 Conteúdo: ${plano.conteudo||plano.titulo}\n`;
+    if(feitos.length)txt+=`✅ Trabalhamos: ${feitos.join(', ')}.\n`;
+  }else{
+    txt+=`📖 Tivemos mais um dia de aprendizado de inglês!\n`;
+  }
+  if(tema)txt+=`\n📚 Tema de casa: ${tema.descricao}\n`;
+  else txt+=`\n📚 Hoje não passamos tema de casa.\n`;
+  txt+=`\nQualquer dúvida, estamos à disposição.\nEquipe Togethere 💙\ninglês para chegar lá`;
+  document.getElementById('rOut').textContent=txt;
+}
+function copiarResumo(){
+  const t=document.getElementById('rOut').textContent;
+  if(t.startsWith('Clique'))return toast('Gere o resumo primeiro');
+  navigator.clipboard.writeText(t).then(()=>toast('Texto copiado!'),()=>toast('Selecione e copie manualmente'));
+}
+// resumo do que foi dado numa aula (para os dias de falta)
+function resumoAulaDoDia(turmaId,data){
+  const plano=S.planos.find(p=>p.turmaId===turmaId&&p.data===data);
+  const tema=S.temas.find(t=>t.turmaId===turmaId&&t.data===data);
+  let s='';
+  if(plano){ s=plano.conteudo||plano.titulo; const f=plano.itens.filter(i=>i.done).map(i=>i.txt); if(f.length)s+=' (trabalhado: '+f.join(', ')+')'; }
+  if(tema) s+=(s?' | ':'')+'Tema passado: '+tema.descricao;
+  return s||'aula não registrada no sistema';
+}
+function gerarRelatorioAluno(){
+  const turmaId=document.getElementById('relT').value, alunoId=document.getElementById('relA').value;
+  if(!alunoId)return toast('Escolha o aluno');
+  const aluno=S.alunos.find(a=>a.id===alunoId), turma=S.turmas.find(t=>t.id===turmaId);
+  const faltas=faltasDoAluno(alunoId,turmaId), mat=materialDoAluno(alunoId,turmaId);
+  const temas=temasNaoFeitosDoAluno(alunoId,turmaId), coms=comentariosDoAluno(alunoId);
+  let txt=`RELATÓRIO DO ALUNO\n${aluno.nome}\nTurma: ${turma.nome}${turma.professor?' · Prof. '+turma.professor:''}\nGerado em ${brDate(hoje())} por ${S.usuario}\n`;
+  txt+=`\n📋 FALTAS (${faltas.length})\n`;
+  if(faltas.length) faltas.forEach(d=>{ txt+=`• ${brDate(d)} — conteúdo da aula: ${resumoAulaDoDia(turmaId,d)}\n`; });
+  else txt+=`• Nenhuma falta registrada.\n`;
+  txt+=`\n🎒 MATERIAL NÃO TRAZIDO (${mat.length})\n`;
+  if(mat.length) mat.forEach(d=>{ txt+=`• ${brDate(d)}\n`; }); else txt+=`• Nenhum registro.\n`;
+  txt+=`\n📚 TEMAS DE CASA NÃO FEITOS (${temas.length})\n`;
+  if(temas.length) temas.forEach(t=>{ txt+=`• ${brDate(t.data)} — ${t.descricao}\n`; }); else txt+=`• Nenhum registro.\n`;
+  txt+=`\n💬 COMENTÁRIOS (${coms.length})\n`;
+  if(coms.length) coms.forEach(c=>{ txt+=`• ${brDate(c.data)} (${c.autor}): ${c.texto}\n`; }); else txt+=`• Nenhum comentário.\n`;
+  txt+=`\n—\nTogethere · inglês para chegar lá`;
+  document.getElementById('relOut').textContent=txt;
+}
+function addComentario(){
+  const alunoId=document.getElementById('relA').value;
+  if(!alunoId)return toast('Escolha o aluno');
+  const txt=document.getElementById('relCom').value.trim();
+  if(!txt)return toast('Escreva o comentário');
+  S.comentarios.push({id:uid(),alunoId,data:hoje(),texto:txt,autor:S.usuario});
+  document.getElementById('relCom').value=''; save(); toast('Comentário adicionado');
+  if(!document.getElementById('relOut').textContent.startsWith('Selecione')) gerarRelatorioAluno();
+}
+function copiarRelatorio(){
+  const t=document.getElementById('relOut').textContent;
+  if(t.startsWith('Selecione'))return toast('Gere o relatório primeiro');
+  navigator.clipboard.writeText(t).then(()=>toast('Relatório copiado!'),()=>toast('Selecione e copie manualmente'));
+}
+function imprimirRelatorio(){
+  const t=document.getElementById('relOut').textContent;
+  if(t.startsWith('Selecione'))return toast('Gere o relatório primeiro');
+  const w=window.open('','_blank');
+  w.document.write('<pre style="font-family:system-ui;white-space:pre-wrap;padding:30px;line-height:1.5">'+t.replace(/</g,'&lt;')+'</pre>');
+  w.document.close(); w.print();
+}
+
+/* ---- ALERTAS ---- */
+VIEWS.alertas=()=>{
+  const v=document.getElementById('view');
+  const fa=alertasFaltas(), ma=alertasMaterial();
+  const nome=id=>{const a=S.alunos.find(a=>a.id===id);return a?a.nome:'—';};
+  const turmaDe=id=>{const a=S.alunos.find(a=>a.id===id);return a?turmaNome(a.turmaId):'';};
+  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--vermelho)"></span><h2 class="display">Alertas da secretaria</h2></div>
+    <p class="sub">Alunos que precisam de contato com os responsáveis.</p>`;
+  if(!fa.length&&!ma.length){
+    v.appendChild(el('<div class="card empty"><div class="big">✅</div><b>Tudo em dia!</b><br>Nenhum aluno com faltas ou material acima do limite.</div>'));
+  }else{
+    if(fa.length){
+      v.appendChild(el(`<h3 style="margin:6px 0 12px;font-size:1rem">🚨 Faltas consecutivas (${fa.length})</h3>`));
+      fa.forEach(o=>v.appendChild(el(`<div class="alert-card"><div class="ic falta">📋</div>
+        <div class="info"><b>${nome(o.alunoId)}</b> <span class="pill">${turmaDe(o.alunoId)}</span><p>${o.motivo} — contatar responsável.</p></div>
+        <div class="acts"><button class="btn red sm" onclick="marcarContato('${o.alunoId}','falta')">✓ Contatei</button></div></div>`)));
+    }
+    if(ma.length){
+      v.appendChild(el(`<h3 style="margin:18px 0 12px;font-size:1rem">🎒 Material (${ma.length})</h3>`));
+      ma.forEach(o=>v.appendChild(el(`<div class="alert-card mat"><div class="ic mat">🎒</div>
+        <div class="info"><b>${nome(o.alunoId)}</b> <span class="pill">${turmaDe(o.alunoId)}</span><p>${o.motivo} — contatar responsável.</p></div>
+        <div class="acts"><button class="btn sm" style="background:var(--laranja)" onclick="marcarContato('${o.alunoId}','material')">✓ Contatei</button></div></div>`)));
+    }
+  }
+  // registro completo — somente para a direção
+  if(S.perfil==='direcao'){
+    const rf=registroGeral('falta'), rm=registroGeral('material'), rt=registroGeral('tema');
+    const linhas=(arr)=>arr.length
+      ? arr.map(o=>`<tr><td>${nome(o.alunoId)}</td><td><span class="pill">${turmaDe(o.alunoId)}</span></td><td>${brDate(o.data)}</td></tr>`).join('')
+      : '<tr><td colspan=3 style="color:var(--tinta-suave)">Nenhum registro.</td></tr>';
+    v.appendChild(el(`<div class="card" style="margin-top:28px;border-top:3px solid var(--marinho)">
+      <h3>📊 Registro completo da escola</h3><p class="hint">Visão da direção: todas as ocorrências registradas pelos professores.</p>
+      <div class="row" style="gap:10px;margin-bottom:18px">
+        <div class="kpi"><div class="k-ic" style="background:#fdeaea;color:var(--vermelho)">📋</div><div><div class="num">${rf.length}</div><small>Faltas</small></div></div>
+        <div class="kpi"><div class="k-ic" style="background:#ffeee5;color:var(--laranja)">🎒</div><div><div class="num">${rm.length}</div><small>Sem material</small></div></div>
+        <div class="kpi"><div class="k-ic" style="background:#fff0f6;color:var(--rosa)">📚</div><div><div class="num">${rt.length}</div><small>Tema não feito</small></div></div>
+      </div>
+      <h4 style="margin:6px 0 8px;font-size:.92rem">📋 Faltas (${rf.length})</h4>
+      <table><thead><tr><th>Aluno</th><th>Turma</th><th>Data</th></tr></thead><tbody>${linhas(rf)}</tbody></table>
+      <h4 style="margin:18px 0 8px;font-size:.92rem">🎒 Material não trazido (${rm.length})</h4>
+      <table><thead><tr><th>Aluno</th><th>Turma</th><th>Data</th></tr></thead><tbody>${linhas(rm)}</tbody></table>
+      <h4 style="margin:18px 0 8px;font-size:.92rem">📚 Tema de casa não feito (${rt.length})</h4>
+      <table><thead><tr><th>Aluno</th><th>Turma</th><th>Data</th></tr></thead><tbody>${linhas(rt)}</tbody></table>
+    </div>`));
+  }
+};
+function marcarContato(alunoId,tipo){
+  S.contatos.push({alunoId,tipo,data:hoje()});save();montarNav();VIEWS.alertas();toast('Contato registrado');
+}
+function desfazerContato(i){S.contatos.splice(i,1);save();montarNav();VIEWS.alertas();}
+
+/* ---- ATAS ---- */
+VIEWS.atas=()=>{
+  const v=document.getElementById('view');
+  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--amarelo)"></span><h2 class="display">Atas de reunião</h2></div>
+    <p class="sub">Registre decisões e participantes de cada reunião.</p>
+    <button class="btn" style="margin-bottom:16px" onclick="novaAta()">+ Nova ata</button>
+    <div id="aList"></div>`;
+  renderAtas();
+};
+function novaAta(){
+  modal(`<h3>📝 Nova ata <button class="close" onclick="fechar()">×</button></h3>
+    <div class="field"><label class="lbl">Título</label><input type="text" id="aT" placeholder="Ex: Reunião pedagógica de junho"></div>
+    <div class="row"><div class="field"><label class="lbl">Data</label><input type="date" id="aD" value="${hoje()}"></div>
+    <div class="field" style="flex:2"><label class="lbl">Participantes</label><input type="text" id="aP" placeholder="Quem participou"></div></div>
+    <div class="field"><label class="lbl">Pauta e decisões</label><textarea id="aTx" placeholder="O que foi discutido e decidido..."></textarea></div>
+    <button class="btn block" onclick="salvarAta()">Salvar ata</button>`);
+}
+function salvarAta(){
+  const t=document.getElementById('aT').value.trim();
+  if(!t)return toast('Dê um título');
+  S.atas.push({id:uid(),titulo:t,data:document.getElementById('aD').value,participantes:document.getElementById('aP').value,texto:document.getElementById('aTx').value});
+  save();fechar();renderAtas();toast('Ata salva');
+}
+function renderAtas(){
+  const list=document.getElementById('aList');
+  const as=[...S.atas].sort((a,b)=>b.data.localeCompare(a.data));
+  if(!as.length){list.innerHTML='<div class="card empty"><div class="big">📝</div>Nenhuma ata registrada.</div>';return;}
+  list.innerHTML=as.map(a=>`<div class="card"><h3>${a.titulo}</h3><p class="hint">${brDate(a.data)}${a.participantes?' · '+a.participantes:''}</p>
+    <p style="white-space:pre-wrap;line-height:1.6;font-size:.93rem">${a.texto||'<i style="color:var(--tinta-suave)">Sem detalhes.</i>'}</p>
+    <button class="btn ghost sm" style="margin-top:12px" onclick="delAta('${a.id}')">Excluir</button></div>`).join('');
+}
+function delAta(id){if(confirm('Excluir esta ata?')){S.atas=S.atas.filter(a=>a.id!==id);save();renderAtas();toast('Ata excluída');}}
+
+/* ---- TAREFAS (EISENHOWER) ---- */
+const QUADS={
+  1:{nome:'Fazer agora',sub:'Urgente + importante',cor:'var(--vermelho)'},
+  2:{nome:'Agendar',sub:'Importante, não urgente',cor:'var(--azul)'},
+  3:{nome:'Standby',sub:'Urgente, não importante',cor:'#b88600'},
+  4:{nome:'Eliminar',sub:'Nem urgente nem importante',cor:'var(--tinta-suave)'}
+};
+VIEWS.tarefas=()=>{
+  const v=document.getElementById('view');
+  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--marinho)"></span><h2 class="display">Tarefas internas</h2></div>
+    <p class="sub">Matriz de Eisenhower — priorize o que importa. (“Standby” no lugar de “Delegar”.)</p>
+    <div class="card"><div class="row">
+      <div style="flex:3"><label class="lbl">Nova tarefa</label><input type="text" id="tkTxt" placeholder="O que precisa ser feito?" onkeydown="if(event.key==='Enter')addTarefa()"></div>
+      <div><label class="lbl">Quadrante</label><select id="tkQ">${Object.entries(QUADS).map(([k,q])=>`<option value="${k}">${q.nome}</option>`).join('')}</select></div>
+    </div><div style="margin-top:12px"><button class="btn" onclick="addTarefa()">+ Adicionar</button></div></div>
+    <div class="emat" id="eMat"></div>`;
+  renderTarefas();
+};
+function addTarefa(){
+  const txt=document.getElementById('tkTxt').value.trim();
+  if(!txt)return toast('Escreva a tarefa');
+  S.tarefas.push({id:uid(),txt,quad:+document.getElementById('tkQ').value,feito:false});
+  document.getElementById('tkTxt').value='';save();renderTarefas();
+}
+function renderTarefas(){
+  const mat=document.getElementById('eMat');
+  mat.innerHTML=Object.entries(QUADS).map(([k,q])=>{
+    const ts=S.tarefas.filter(t=>t.quad==k);
+    return `<div class="quad q${k}"><h4><span class="dot" style="background:${q.cor}"></span>${q.nome}</h4><div class="qsub">${q.sub}</div>
+      ${ts.length?ts.map(t=>`<div class="task ${t.feito?'feito':''}">
+        <input type="checkbox" ${t.feito?'checked':''} onchange="toggleTarefa('${t.id}')" style="accent-color:${q.cor};width:18px;height:18px;flex:none;margin-top:1px;cursor:pointer">
+        <span class="t-txt">${t.txt}</span>
+        <button class="mv" onclick="moverTarefa('${t.id}')">mover</button>
+        <button class="del" onclick="delTarefa('${t.id}')">×</button></div>`).join(''):'<div style="font-size:.82rem;color:var(--tinta-suave);padding:8px 0">Vazio</div>'}
+    </div>`;
+  }).join('');
+}
+function toggleTarefa(id){const t=S.tarefas.find(t=>t.id===id);t.feito=!t.feito;save();renderTarefas();}
+function delTarefa(id){S.tarefas=S.tarefas.filter(t=>t.id!==id);save();renderTarefas();}
+function moverTarefa(id){
+  const t=S.tarefas.find(t=>t.id===id);
+  modal(`<h3>Mover tarefa <button class="close" onclick="fechar()">×</button></h3>
+    <p class="hint" style="margin-bottom:14px">“${t.txt}”</p>
+    ${Object.entries(QUADS).map(([k,q])=>`<button class="btn ghost block" style="margin-bottom:8px;justify-content:flex-start" onclick="confirmaMover('${id}',${k})"><span class="dot" style="width:10px;height:10px;border-radius:50%;background:${q.cor};display:inline-block;margin-right:8px"></span><b>${q.nome}</b> — ${q.sub}</button>`).join('')}`);
+}
+function confirmaMover(id,q){const t=S.tarefas.find(t=>t.id===id);t.quad=q;save();fechar();renderTarefas();toast('Tarefa movida');}
+
+/* ---- TURMAS E ALUNOS ---- */
+VIEWS.turmas=()=>{
+  const v=document.getElementById('view');
+  const ehProf=S.perfil==='professor';
+  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Turmas e alunos</h2></div>
+    <p class="sub">${ehProf?'Suas turmas e seus alunos.':'Todas as turmas da escola. Você pode cadastrar novas turmas e alunos.'}</p>
+    <div class="card"><h3>Nova turma</h3><div class="row">
+      <div style="flex:2"><label class="lbl">Nome da turma</label><input type="text" id="nT" placeholder="Ex: A2 ADULTS NOITE"></div>
+      <div><label class="lbl">Nível</label><select id="nN"><option value="kids">kids</option><option value="junior">junior</option><option value="teens" selected>teens</option><option value="adults">adults</option><option value="talking">talking</option></select></div>
+    </div><div style="margin-top:12px"><button class="btn" onclick="addTurma()">+ Criar turma</button></div></div>
+    <div class="card" style="padding:14px 18px"><input type="text" id="buscaAluno" placeholder="🔎 Buscar aluno pelo nome (em todas as turmas)" value="${_buscaAluno||''}" oninput="filtrarAlunos(this.value)"></div>
+    <div id="turmaList"></div>
+    <div class="card" style="border-color:#fdd"><h3 style="color:var(--vermelho)">Zona de risco</h3><p class="hint">Apaga TODOS os dados (turmas, alunos, chamadas, tarefas) e recarrega a base original do relatório.</p>
+      <button class="btn red sm" onclick="resetar()">Restaurar dados originais</button></div>`;
+  renderTurmaList();
+};
+let _buscaAluno='';
+function filtrarAlunos(v){ _buscaAluno=v; renderTurmaList(); }
+function addTurma(){
+  const nome=document.getElementById('nT').value.trim();
+  if(!nome)return toast('Dê um nome à turma');
+  const t={id:uid(),nome,nivel:document.getElementById('nN').value,horario:''};
+  if(S.perfil==='professor'){const u=S.usuarios.find(u=>u.nome===S.usuario);t.professor=u&&u.ensina;}
+  S.turmas.push(t);
+  save();VIEWS.turmas();toast('Turma criada');
+}
+function renderTurmaList(){
+  const list=document.getElementById('turmaList');
+  const ts=turmasVisiveis();
+  if(!ts.length){list.innerHTML='<div class="card empty"><div class="big">👥</div>Nenhuma turma. Crie a primeira!</div>';return;}
+  const f=_normTxt(_buscaAluno||'').trim();
+  if(f){   // modo busca: lista achatada de alunos que batem
+    const res=[];
+    ts.forEach(t=>alunosDa(t.id).forEach(a=>{ if(_normTxt(a.nome).includes(f)) res.push({a,t}); }));
+    list.innerHTML = res.length
+      ? `<div class="card"><h3>${res.length} aluno(s) encontrado(s)</h3>`+
+        res.map(r=>`<div class="check"><span>${r.a.nome} <span class="pill">${r.t.nome}</span></span>
+          <button class="btn ghost sm" onclick="delAluno('${r.a.id}')">remover</button></div>`).join('')+`</div>`
+      : `<div class="card empty"><div class="big">🔎</div>Nenhum aluno encontrado para “${_buscaAluno}”.</div>`;
+    return;
+  }
+  list.innerHTML=ts.map(t=>{
+    const als=alunosDa(t.id);
+    const prof=t.professor?` · Prof. ${t.professor}`:'';
+    const hor=t.horario?` · ${t.horario}`:'';
+    return `<div class="card"><h3>${t.nome} ${nivelTag(t.nivel)}</h3><p class="hint">${als.length} aluno(s)${prof}${hor}</p>
+      <table><tbody>${als.map(a=>`<tr><td>${a.nome}</td><td style="text-align:right"><button class="btn ghost sm" onclick="delAluno('${a.id}')">remover</button></td></tr>`).join('')||'<tr><td colspan=2 style="color:var(--tinta-suave)">Sem alunos ainda.</td></tr>'}</tbody></table>
+      <div class="row" style="margin-top:12px"><div style="flex:3"><input type="text" id="al_${t.id}" placeholder="Nome do novo aluno" onkeydown="if(event.key==='Enter')addAluno('${t.id}')"></div>
+      <button class="btn ghost" onclick="addAluno('${t.id}')">+ Aluno</button></div>
+      <button class="btn ghost sm" style="margin-top:12px;color:var(--vermelho)" onclick="delTurma('${t.id}')">Excluir turma</button></div>`;
+  }).join('');
+}
+function addAluno(turmaId){
+  const inp=document.getElementById('al_'+turmaId);
+  const nome=inp.value.trim();if(!nome)return toast('Digite o nome');
+  S.alunos.push({id:uid(),nome,turmaId});save();renderTurmaList();toast('Aluno adicionado');
+}
+function delAluno(id){if(confirm('Remover este aluno?')){S.alunos=S.alunos.filter(a=>a.id!==id);save();renderTurmaList();montarNav();}}
+function delTurma(id){if(confirm('Excluir turma e seus alunos?')){S.turmas=S.turmas.filter(t=>t.id!==id);S.alunos=S.alunos.filter(a=>a.turmaId!==id);save();VIEWS.turmas();montarNav();toast('Turma excluída');}}
+function resetar(){if(confirm('Isso apaga TODOS os dados. Continuar?')){localStorage.removeItem(KEY);location.reload();}}
+
+/* ---- ACESSOS (somente direção) ---- */
+VIEWS.acessos=()=>{
+  const v=document.getElementById('view');
+  const rotulo={direcao:'Direção',professor:'Professor(a)',secretaria:'Secretaria'};
+  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--marinho)"></span><h2 class="display">Acessos e senhas</h2></div>
+    <p class="sub">Redefina as senhas da equipe. A senha padrão é <b>12345</b>.</p>
+    <div class="card"><h3>Usuários</h3><p class="hint">Toque em “Redefinir para 12345” ou digite uma nova senha e salve.</p>
+    <table><thead><tr><th>Usuário</th><th>Perfil</th><th>Nova senha</th><th></th></tr></thead><tbody>
+    ${S.usuarios.map((u,i)=>`<tr>
+      <td><b>${u.nome}</b></td>
+      <td><span class="pill">${rotulo[u.perfil]}</span></td>
+      <td><input type="text" id="sn_${i}" placeholder="nova senha" style="max-width:160px"></td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="btn sm" onclick="salvarSenha(${i})">Salvar</button>
+        <button class="btn ghost sm" onclick="resetSenha(${i})">Redefinir p/ 12345</button>
+      </td></tr>`).join('')}
+    </tbody></table></div>
+    <div class="card"><h3>+ Novo usuário</h3><div class="row">
+      <div><label class="lbl">Nome de acesso</label><input type="text" id="nuNome" placeholder="Ex: Ana"></div>
+      <div><label class="lbl">Perfil</label><select id="nuPerfil"><option value="professor">Professor(a)</option><option value="secretaria">Secretaria</option><option value="direcao">Direção</option></select></div>
+      <div><label class="lbl">Professor da turma (opcional)</label><input type="text" id="nuEnsina" placeholder="Nome usado nas turmas"></div>
+    </div><div style="margin-top:12px"><button class="btn" onclick="addUsuario()">Criar usuário (senha 12345)</button></div></div>
+    <div class="card"><h3>Backup dos dados</h3><p class="hint">Baixe uma cópia de segurança (arquivo .json) ou restaure os dados a partir de um backup.</p>
+      <div class="row">
+        <button class="btn" onclick="exportarBackup()">⬇️ Baixar backup agora</button>
+        <button class="btn ghost" onclick="document.getElementById('impFile').click()">⬆️ Restaurar de um arquivo</button>
+      </div>
+      <input type="file" id="impFile" accept="application/json,.json" style="display:none" onchange="importarBackup(this)">
+      <p class="hint" style="margin-top:10px">Guarde o arquivo no seu computador ou no Drive. Restaurar <b>substitui</b> todos os dados atuais.</p>
+    </div>`;
+};
+function exportarBackup(){
+  const dados=JSON.stringify(Object.assign({},S,{usuario:null,perfil:null}));
+  const blob=new Blob([dados],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='backup-togethere-'+hoje()+'.json';
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},200);
+  toast('Backup baixado');
+}
+function importarBackup(input){
+  const f=input.files&&input.files[0]; if(!f){return;}
+  const r=new FileReader();
+  r.onload=function(){
+    let obj;
+    try{ obj=JSON.parse(r.result); }catch(e){ toast('Arquivo inválido (não é um backup válido)'); return; }
+    if(!obj || !obj.usuarios || !obj.alunos){ toast('Arquivo não parece um backup do app'); return; }
+    if(!confirm('Isto vai SUBSTITUIR todos os dados atuais pelos do backup. Deseja continuar?')) return;
+    S=migrar(obj); S.usuario=null; S.perfil=null;
+    localStorage.setItem(KEY, JSON.stringify(S));
+    toast('Restaurando…');
+    cloudPut().then(function(){ location.reload(); });
+  };
+  r.readAsText(f); input.value='';
+}
+function salvarSenha(i){
+  const nova=document.getElementById('sn_'+i).value.trim();
+  if(!nova)return toast('Digite a nova senha');
+  S.usuarios[i].senha=nova; save(); VIEWS.acessos(); toast('Senha atualizada para '+S.usuarios[i].nome);
+}
+function resetSenha(i){
+  S.usuarios[i].senha='12345'; save(); VIEWS.acessos(); toast('Senha de '+S.usuarios[i].nome+' redefinida (12345)');
+}
+function addUsuario(){
+  const nome=document.getElementById('nuNome').value.trim();
+  if(!nome)return toast('Dê um nome de acesso');
+  if(S.usuarios.some(u=>u.nome.toLowerCase()===nome.toLowerCase()))return toast('Já existe um usuário com esse nome');
+  S.usuarios.push({nome,perfil:document.getElementById('nuPerfil').value,senha:'12345',ensina:document.getElementById('nuEnsina').value.trim()||null});
+  save(); VIEWS.acessos(); toast('Usuário criado com senha 12345');
+}
+
+/* =========================================================================
+   BOOT
+   ========================================================================= */
+(async function boot(){
+  const lp=document.getElementById('loginPanel'); if(lp) lp.innerHTML='<p class="hint" style="text-align:center">Conectando ao servidor…</p>';
+  const remoto = await cloudGet(7000);
+  if (remoto && remoto.usuarios && remoto.usuarios.length){
+    S = migrar(remoto);
+    localStorage.setItem(KEY, JSON.stringify(S));
+    marcarSync('ok');
+  } else if (cloudOn()){
+    cloudPut();                 // nuvem vazia → semeia com os dados atuais
+  }
+  S.usuario=null; S.perfil=null;   // segurança: sempre pede login ao abrir
+  renderLogin();
+})();
+</script>
 </body>
 </html>
