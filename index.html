@@ -383,31 +383,14 @@ function pesoFalta(turmaId){const t=S.turmas.find(x=>x.id===turmaId);return (t&&
 /* dados reais da escola (relatório Sponte 12/06/2026) */
 function seed(){
   const T=[
-    ['A1 ADULTS NOITE','adults','Leandro','Ter–Qui 20:00–21:00',['Brenda Kulmann da Silva','Christian Fernandes de Barros','Fabiano silva da luz','Karina Cristine da Silva Rodrigues']],
-    ['A1 JUNIOR 2 HORAS','junior','Camila','Ter 18:30–20:30',['Antônia Nelci Birchols Vargas','Arthur Macalli Santos Fonseca','Bernardo Sulzbach Santos','Eduardo Bitello da Cunha','Henrique Santos Petró','Thiago Micael Martins Brasil','Vicente Sulzbach Santos','Vitor Hugo Maia dos Santos']],
-    ['A1 KIDS MANHÃ','kids','Fernanda','Seg–Qua 10:15–11:30',['Clara Pires Recus','Helena Valerio Dalpiaz','Laura Monteiro Cardoso','Luísa da Rosa Lopes','Maria Eduarda Santos de Souza','Valentina Algayer Mestre','Vitor de Freitas Sbruzzi de Toledo']],
-    ['A1 TEENS TARDE','teens','Mariana','Seg 14:00–16:45',['Anderson Bitello da Cunha','Danilo Schãffer de Vargas','Davi Saltiel','Guilherme Fofonka dos Santos','Henrique Zacarias Espindola']],
-    ['A1 TEENS TARDINHA','teens','Camila','Seg–Qua 18:15–19:30',['Arthur Marcelino Pinheiro','Davi de jesus Soster','Isabela Alexandre Quintilhano Dos Santos','Isabela Fontoura da Trindade','Lara Vargas dos Santos','Mikaella Pawlowskij Leites']],
-    ['A1+ JUNIOR MANHÃ','junior','Franco','Seg–Qua 10:15–11:30',['Catherine Cardoso Shvantes Bottini','Enzo Ferrari Velasques','Isabelle Ymai','Julia Nasario de Dillenburg','Lorenzo Braga Klahn','Manuela Canal Guedes','Maria Clara Sarmento Silveira','Martina Dupont Braga','Thomas de Freitas Sbruzzi de Toledo','Valentina Bitencourt Castro','Valentina Gonçalves pacheco']],
-    ['A1+ JUNIOR TARDINHA (Ter–Qui)','junior','Mariana','Ter–Qui 18:15–19:30',['Antônio Pires Recus','Eduardo Frigeri Fraga','Guilherme alves Fink','Julia Aguirre Lopes dos Santos','Júlia Miranda peker','Lorenzo Mazoni Margoni','Luca Vargas Lazzarotto da Fonseca','Manuela Rodrigues Schafer','Murilo Baptista Marques']],
-    ['A2 JUNIOR TARDINHA','junior','Mariana','Seg–Qua 18:15–19:30',['Davi de Vargas Jachemet','Debora Dutra Pereira de Oliveira','Fernando Rauter Becker','Laura Britzke de Albuquerque','Lorenzo Santos da Costa','Sophia Viegas Pereira','Valentina Kirchhoff']],
-    ['A2 TEENS TARDINHA','teens','Franco','Ter–Qui 18:15–19:30',['Artur Fellini Tedesco','Breno Apolinario Dias','Bruna Vitoria Brito de Almeida','Enrico Sccotti Mattos','Fernanda Cardoso Binotto','Gabriel Pereira dos Santos','Gabriela Porto Jerônimo','Helena Avila Henriques','Isabelly Pereira Dos santos','Isadora Douglas Polese','Lucca Jesus Capelão']],
-    ['A2+ JUNIOR TARDINHA','junior','Leandro','Seg–Qua 18:15–19:30',['Anne Frare Ferreira','Arthur Sousa da Rocha','Bernardo Francisco Felix Teixeira','Felipe Tavares Goerl','Isadora Dos santos Rezende','João Gabriel da Rosa Terra','Kaua Pawlowskij Leites','Leandra Fogaça Albuquerque','Teodora felix Teixeira','Valentina Coimbra Pacheco']],
-    ['A2+ JUNIOR TARDINHA (Ter–Qui)','junior','Leandro','Ter–Qui 18:15–19:30',['Felipe Nunes da Fonseca','Livia Galatto','Lorenzo Oliveira Capellão']],
-    ['B1 TEENS TARDE (Terça)','teens','Vlad','Ter 14:00–16:45',['Felipe Erichsen Maciel','Giovanna Andreola Masiero','João Vitor kirchhoff','Laura Cardoso Tiebbohl','Maria Eduarda Wabner','Marina Henn Lange','Mateus Scolari Conceição Rolim','Matteo Simas','Monica Fogassa Toledo']],
-    ['B1 TEENS TARDINHA','teens','Fernanda','Seg–Qua 18:15–19:30',['Arthur Benedetti Soares','Arthur Siqueira Conte','Augusto Kurtz da Silveira','Bernardo Abreu Benites Lopes','Betina Benedetti Soares','Carolina De Marchi Pereira','Davi Orlando Oliveira Peltz','Guilherme Ramos Fernandes de Souza','Lara dos santos schmidt','Luciano Gonçalves dias da Silva','Mariana Frigeri Fraga','Yao Jui Kuo']],
-    ['B1+ TEENS TARDE (Qui)','teens','Vlad','Qui 14:00–16:45',['Bruno Eduardo Lima Martins','Daniela Dos Santos Zimmer','Davi Azevedo de Sá','Felipe Fraga Binotte','Fernando Silveira Cruz','Isabela Fernandes Pereira','João Pedro Nunes Bohn','Lara Ferreira da Silva','Perola Mariana Petry Coelho']],
-    ['B1+ TEENS 2025/2','teens','Mariana','Ter 14:00–16:45',['Lucas Abreu da Silva','Milena Fonseca Cardozo','Pin Liang Kuo']],
-    ['B2 TEENS (Quinta)','teens','Mariana','Qui 14:00–16:45',['Carol Pires Ribeiro','Giovanna Antoniolli de Macedo','Isadora Dias','Lara Pires Ribeiro','Marina Basotti Dill','Victor Nunes Martins']],
-    ['B2 TEENS TARDE','teens','Mariana','Qua 14:00–16:45',['Alexandra Pereira da Silva','Gustavo Mercelo Splett','João Victor da Silva Vargas','José Lucimar Moraes Orça Neto','Kassio Hiran Bahr Ledebuhr','Murilo Martins Loeblin']],
-    ['Pré A1 KIDS MANHÃ (Ter–Qui)','kids','Camila','Ter–Qui 10:15–11:30',['Maria Antônia Markiewicz Pereira','Rafael Oliveira Weschenfelder Schmidt']],
-    ['Pré A1+ KIDS MANHÃ','kids','Mariana','Seg–Qua 10:15–11:30',['Clara Cardoso Binotto Bernardes','Eduardo Bobsin Martins','Elisa Soska Machado','Isabela Santos Petró','Nicolas Gomes Zilio','Nicolas Gonçalves pacheco','Pietro Pagno Benvegnu','Romeo Pereira Izabel','Sofia Lorenz Silva']],
-    ['C1 TEENS TARDE (Prep.)','teens','Franco','Seg 14:00–16:45',['Aleckssandra da Rosa Tavares','Isabella Pacheco Lima','Laís Antunes Motta Fernandes','Lucas Barcelos Mousquer','Maria Eduarda Pacheco Lima','Matheus Sakai','Murilo Garcia','Natália Tavares Goerl']],
+    ['A2 TEENS TARDINHA','teens','Franco','Ter–Qui 18:15–19:30',2,['Artur Fellini Tedesco','Breno Apolinario Dias','Bruna Vitoria Brito de Almeida','Enrico Sccotti Mattos','Fernanda Cardoso Binotto','Gabriel Pereira dos Santos','Gabriela Porto Jerônimo','Helena Avila Henriques','Isabelly Pereira Dos santos','Isadora Douglas Polese','Lucca Jesus Capelão']],
+    ['A1+ JUNIOR MANHÃ','junior','Franco','Seg–Qua 10:15–11:30',2,['Catherine Cardoso Shvantes Bottini','Enzo Ferrari Velasques','Isabelle Ymai','Julia Nasario de Dillenburg','Lorenzo Braga Klahn','Manuela Canal Guedes','Maria Clara Sarmento Silveira','Martina Dupont Braga','Thomas de Freitas Sbruzzi de Toledo','Valentina Bitencourt Castro','Valentina Gonçalves pacheco']],
+    ['C1 TEENS TARDE (Prep.)','teens','Franco','Seg 14:00–16:45',1,['Aleckssandra da Rosa Tavares','Isabella Pacheco Lima','Laís Antunes Motta Fernandes','Lucas Barcelos Mousquer','Maria Eduarda Pacheco Lima','Matheus Sakai','Murilo Garcia','Natália Tavares Goerl']],
   ];
   const turmas=[], alunos=[];
-  T.forEach(([nome,nivel,prof,hor,als])=>{
+  T.forEach(([nome,nivel,prof,hor,vezes,als])=>{
     const id=uid();
-    turmas.push({id,nome,nivel,professor:prof,horario:hor});
+    turmas.push({id,nome,nivel,professor:prof,horario:hor,vezesSemana:vezes});
     als.forEach(n=>alunos.push({id:uid(),nome:n,turmaId:id}));
   });
   const usuarios=[
@@ -423,12 +406,8 @@ function seed(){
     versao:2,
     usuario:null, perfil:null, usuarios, turmas, alunos,
     presencas:[], material:[], temas:[], testes:[], contatos:[], planos:[], comentarios:[],
-    atas:[{id:uid(),titulo:'Implantação do app de gestão',data:hoje(),participantes:'Direção e equipe',texto:'Início do uso do sistema Togethere: presença, temas de casa, testes, material, alertas para a secretaria e tarefas internas.'}],
-    tarefas:[
-      {id:uid(),txt:'Configurar acessos da equipe',quad:1,feito:true},
-      {id:uid(),txt:'Definir rotina diária de chamada',quad:2,feito:false},
-      {id:uid(),txt:'Conferir contatos dos responsáveis',quad:3,feito:false},
-    ],
+    atas:[],
+    tarefas:[],
   };
 }
 
@@ -893,10 +872,10 @@ VIEWS.planos=()=>{
   renderPlanos();
 };
 let _buscaPlano='';
-function novoPlano(){
+function novoPlano(turmaPreset){
   modal(`<h3>🗒️ Novo plano de aula <button class="close" onclick="fechar()">×</button></h3>
     <div class="field"><label class="lbl">Título</label><input type="text" id="plTit" placeholder="Ex: Present Perfect — experiências"></div>
-    <div class="row"><div class="field"><label class="lbl">Turma</label>${selectTurma('plTurma',primeiraTurma())}</div>
+    <div class="row"><div class="field"><label class="lbl">Turma</label>${selectTurma('plTurma',turmaPreset||primeiraTurma())}</div>
     <div class="field"><label class="lbl">Data</label><input type="date" id="plData" value="${hoje()}"></div></div>
     <div class="field"><label class="lbl">Itens do plano (um por linha)</label><textarea id="plItens" placeholder="Warm-up&#10;Apresentar estrutura&#10;Listening&#10;Speaking em duplas&#10;Tema de casa"></textarea></div>
     <button class="btn block" onclick="salvarPlano()">Criar plano</button>`);
@@ -1177,10 +1156,11 @@ function confirmaMover(id,q){const t=S.tarefas.find(t=>t.id===id);t.quad=q;save(
 
 /* ---- TURMAS E ALUNOS ---- */
 VIEWS.turmas=()=>{
+  painelTurma=null;
   const v=document.getElementById('view');
   const ehProf=S.perfil==='professor';
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Turmas e alunos</h2></div>
-    <p class="sub">${ehProf?'Suas turmas e seus alunos.':'Todas as turmas da escola. Você pode cadastrar novas turmas e alunos.'}</p>
+    <p class="sub">${ehProf?'Suas turmas. Toque numa turma para abrir o painel (plano, chamada, material, temas).':'Todas as turmas da escola. Toque numa turma para abrir o painel; ou cadastre uma nova.'}</p>
     <div class="card"><h3>Nova turma</h3><div class="row">
       <div style="flex:2"><label class="lbl">Nome da turma</label><input type="text" id="nT" placeholder="Ex: A2 ADULTS NOITE"></div>
       <div><label class="lbl">Nível</label><select id="nN"><option value="kids">kids</option><option value="junior">junior</option><option value="teens" selected>teens</option><option value="adults">adults</option><option value="talking">talking</option></select></div>
@@ -1188,8 +1168,8 @@ VIEWS.turmas=()=>{
     </div><div style="margin-top:12px"><button class="btn" onclick="addTurma()">+ Criar turma</button></div></div>
     <div class="card" style="padding:14px 18px"><input type="text" id="buscaAluno" placeholder="🔎 Buscar aluno pelo nome (em todas as turmas)" value="${_buscaAluno||''}" oninput="filtrarAlunos(this.value)"></div>
     <div id="turmaList"></div>
-    <div class="card" style="border-color:#fdd"><h3 style="color:var(--vermelho)">Zona de risco</h3><p class="hint">Apaga TODOS os dados (turmas, alunos, chamadas, tarefas) e recarrega a base original do relatório.</p>
-      <button class="btn red sm" onclick="resetar()">Restaurar dados originais</button></div>`;
+    <div class="card" style="border-color:#fdd"><h3 style="color:var(--vermelho)">Zona de risco</h3><p class="hint">Apaga <b>todos os dados</b> (chamadas, temas, planos, testes…) e volta às turmas iniciais. Exige a <b>senha de um(a) diretor(a)</b> e baixa um <b>backup automático</b> antes de apagar.</p>
+      <button class="btn red sm" onclick="resetarSeguro()">Restaurar dados originais</button></div>`;
   renderTurmaList();
 };
 let _buscaAluno='';
@@ -1221,22 +1201,71 @@ function renderTurmaList(){
     const als=alunosDa(t.id);
     const prof=t.professor?` · Prof. ${t.professor}`:'';
     const hor=t.horario?` · ${t.horario}`:'';
-    const freq=` · ${(t.vezesSemana===1)?'1x/semana (falta dupla)':'2x/semana'}`;
-    return `<div class="card"><h3>${t.nome} ${nivelTag(t.nivel)}</h3><p class="hint">${als.length} aluno(s)${prof}${hor}${freq}</p>
-      <table><tbody>${als.map(a=>`<tr><td>${a.nome}</td><td style="text-align:right"><button class="btn ghost sm" onclick="delAluno('${a.id}')">remover</button></td></tr>`).join('')||'<tr><td colspan=2 style="color:var(--tinta-suave)">Sem alunos ainda.</td></tr>'}</tbody></table>
-      <div class="row" style="margin-top:12px"><div style="flex:3"><input type="text" id="al_${t.id}" placeholder="Nome do novo aluno" onkeydown="if(event.key==='Enter')addAluno('${t.id}')"></div>
-      <button class="btn ghost" onclick="addAluno('${t.id}')">+ Aluno</button></div>
-      <button class="btn ghost sm" style="margin-top:12px;color:var(--vermelho)" onclick="delTurma('${t.id}')">Excluir turma</button></div>`;
+    const freq=` · ${(t.vezesSemana===1)?'1x/sem (falta dupla)':'2x/sem'}`;
+    return `<div class="card" style="cursor:pointer" onclick="abrirTurma('${t.id}')">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="flex:1"><h3 style="margin:0">${t.nome} ${nivelTag(t.nivel)}</h3>
+          <p class="hint" style="margin:4px 0 0">${als.length} aluno(s)${prof}${hor}${freq}</p></div>
+        <span style="font-size:1.7rem;color:var(--azul);line-height:1">›</span>
+      </div></div>`;
   }).join('');
 }
+let painelTurma=null;
+function abrirTurma(id){ painelTurma=id; presTurma=matTurma=temaTurma=id; renderPainelTurma(); }
+function voltarTurmas(){ painelTurma=null; VIEWS.turmas(); }
+function paAcao(destino){
+  const id=painelTurma; presTurma=matTurma=temaTurma=id; painelTurma=null;
+  if(destino==='plano'){ ir('planos'); novoPlano(id); }
+  else ir(destino);
+}
+function renderPainelTurma(){
+  const id=painelTurma, t=S.turmas.find(x=>x.id===id);
+  if(!t){ painelTurma=null; return VIEWS.turmas(); }
+  const als=alunosDa(id);
+  const freq=(t.vezesSemana===1)?'1x por semana (cada falta conta em dobro)':'2x por semana';
+  const btn=(cor,acao,emoji,titulo,sub)=>`<button class="btn block" style="background:${cor};justify-content:flex-start;text-align:left;margin-bottom:10px;height:auto;padding:14px 16px" onclick="paAcao('${acao}')">${emoji} ${titulo}<span style="display:block;font-weight:400;font-size:.78rem;opacity:.85;margin-top:2px">${sub}</span></button>`;
+  const v=document.getElementById('view');
+  v.innerHTML=`<button class="btn ghost sm" onclick="voltarTurmas()">‹ Voltar para turmas</button>
+    <div class="section-title" style="margin-top:10px"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">${t.nome}</h2></div>
+    <p class="sub">${nivelTag(t.nivel)} · ${als.length} aluno(s)${t.professor?' · Prof. '+t.professor:''}${t.horario?' · '+t.horario:''} · ${freq}</p>
+    <div class="card"><h3>O que você quer fazer?</h3>
+      ${btn('var(--azul)','presenca','📋','Fazer a chamada','presença, falta, chegou atrasado e saiu mais cedo')}
+      ${btn('var(--azul)','plano','🗒️','Criar plano de aula','checklist da aula + virar item em tema de casa')}
+      ${btn('var(--laranja)','material','🎒','Material não trazido','marcar quem veio sem material')}
+      ${btn('var(--rosa)','temas','📚','Temas de casa','registrar tema e marcar quem não entregou')}
+    </div>
+    <div class="card"><h3>Alunos (${als.length})</h3>
+      ${als.map(a=>`<div class="check"><span>${a.nome}</span><button class="btn ghost sm" style="margin-left:auto" onclick="delAluno('${a.id}')">remover</button></div>`).join('')||'<p class="hint">Sem alunos ainda.</p>'}
+      <div class="row" style="margin-top:12px"><div style="flex:3"><input type="text" id="al_${id}" placeholder="Nome do novo aluno" onkeydown="if(event.key==='Enter')addAluno('${id}')"></div>
+      <button class="btn ghost" onclick="addAluno('${id}')">+ Aluno</button></div></div>
+    <button class="btn ghost sm" style="color:var(--vermelho)" onclick="delTurma('${id}')">Excluir turma</button>`;
+  window.scrollTo(0,0);
+}
+function _refreshTurmas(){ if(painelTurma) renderPainelTurma(); else renderTurmaList(); }
 function addAluno(turmaId){
   const inp=document.getElementById('al_'+turmaId);
   const nome=inp.value.trim();if(!nome)return toast('Digite o nome');
-  S.alunos.push({id:uid(),nome,turmaId});save();renderTurmaList();toast('Aluno adicionado');
+  S.alunos.push({id:uid(),nome,turmaId});save();_refreshTurmas();montarNav();toast('Aluno adicionado');
 }
-function delAluno(id){if(confirm('Remover este aluno?')){S.alunos=S.alunos.filter(a=>a.id!==id);save();renderTurmaList();montarNav();}}
-function delTurma(id){if(confirm('Excluir turma e seus alunos?')){S.turmas=S.turmas.filter(t=>t.id!==id);S.alunos=S.alunos.filter(a=>a.turmaId!==id);save();VIEWS.turmas();montarNav();toast('Turma excluída');}}
-function resetar(){if(confirm('Isso apaga TODOS os dados. Continuar?')){localStorage.removeItem(KEY);location.reload();}}
+function delAluno(id){if(confirm('Remover este aluno?')){S.alunos=S.alunos.filter(a=>a.id!==id);save();_refreshTurmas();montarNav();}}
+function delTurma(id){if(confirm('Excluir turma e seus alunos?')){S.turmas=S.turmas.filter(t=>t.id!==id);S.alunos=S.alunos.filter(a=>a.turmaId!==id);painelTurma=null;save();VIEWS.turmas();montarNav();toast('Turma excluída');}}
+function resetarSeguro(){
+  modal(`<h3>⚠️ Restaurar dados originais <button class="close" onclick="fechar()">×</button></h3>
+    <p class="hint" style="margin-bottom:12px">Isto <b>apaga todos os dados atuais</b> (chamadas, temas, planos, testes, comentários…) e volta à base inicial de turmas. Um <b>backup será baixado automaticamente</b> antes de apagar.</p>
+    <div class="field"><label class="lbl">Senha de um(a) diretor(a)</label><input type="password" id="resetSenha" placeholder="senha da direção"></div>
+    <button class="btn block red" onclick="confirmarReset()">Baixar backup e restaurar</button>`);
+  setTimeout(()=>{const i=document.getElementById('resetSenha');if(i)i.focus();},60);
+}
+function confirmarReset(){
+  const senha=(document.getElementById('resetSenha').value||'');
+  const dir=S.usuarios.find(u=>u.perfil==='direcao' && u.senha===senha);
+  if(!dir){ toast('Senha de diretor(a) incorreta'); return; }
+  exportarBackup();                        // baixa o estado atual antes de apagar
+  S=seed(); S.usuario=null; S.perfil=null;
+  localStorage.setItem(KEY, JSON.stringify(S));
+  fechar(); toast('Restaurando…');
+  cloudPut().finally(()=>setTimeout(()=>location.reload(), 800));
+}
 
 /* ---- ACESSOS (somente direção) ---- */
 VIEWS.acessos=()=>{
