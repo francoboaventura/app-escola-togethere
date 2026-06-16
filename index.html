@@ -347,6 +347,7 @@ function migrar(s){
   }
   s.comentarios=s.comentarios||[]; // garante campos novos
   s.relatorios=s.relatorios||[];
+  s.aulasVip=s.aulasVip||[];
   (s.temas||[]).forEach(t=>{ if(!t.dataEntrega) t.dataEntrega=t.data; });
   (s.turmas||[]).forEach(t=>{
     if(!Array.isArray(t.dias)||!t.dias.length){
@@ -445,6 +446,7 @@ function seed(){
     atas:[],
     tarefas:[],
     relatorios:[],
+    aulasVip:[],
     config:{assinatura:'— Equipe Togethere\ninglês para chegar lá', escolaEmail:'admin@togethere.com.br'},
   };
 }
@@ -523,11 +525,10 @@ function registroGeral(tipo){
    ========================================================================= */
 const NAV=[
   {id:'painel', label:'Painel', em:'📊', grp:'Início', roles:['professor','secretaria','direcao']},
-  {id:'presenca', label:'Presença', em:'📋', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
-  {id:'temas', label:'Temas de casa', em:'📚', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
+  {id:'presenca', label:'Chamada do dia', em:'📋', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
   {id:'testes', label:'Testes', em:'✏️', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
-  {id:'material', label:'Material', em:'🎒', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
   {id:'planos', label:'Planos de aula', em:'🗒️', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
+  {id:'vip', label:'Aulas VIP', em:'👑', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
   {id:'relatorio', label:'Relatório do dia', em:'🧾', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
   {id:'resumo', label:'Relatórios e resumo', em:'✉️', grp:'Acompanhamento', roles:['professor','secretaria','direcao']},
   {id:'alertas', label:'Avisos', em:'🔔', grp:'Acompanhamento', roles:['secretaria','direcao'], badge:true},
@@ -679,17 +680,18 @@ VIEWS.presenca=()=>{
   presTurma=presTurma||primeiraTurma();
   if(!datasAula(presTurma).includes(presData)) presData=dataAulaPadrao(presTurma);
   const v=document.getElementById('view');
-  v.innerHTML=`${btnVoltaPainel()}<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Chamada</h2></div>
-    <p class="sub">Marque presença/falta e, se for o caso, atraso ou saída antecipada. Só aparecem os dias em que a turma tem aula.</p>
+  v.innerHTML=`${btnVoltaPainel()}<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Chamada do dia</h2></div>
+    <p class="sub">Tudo num lugar só: presença, <b>material</b> e <b>tema de casa</b> da aula. Só aparecem os dias em que a turma tem aula.</p>
     <div class="card"><div class="row">
       <div><label class="lbl">Turma</label>${selectTurma('pT',presTurma)}</div>
       <div><label class="lbl">Data da aula</label>${selectDataAula('pD',presTurma,presData)}</div>
     </div></div>
     <div class="card" id="pBox"></div>
+    <div class="card" id="pTema"></div>
     <div class="card"><input type="text" id="pBusca" placeholder="🔎 Buscar chamada anterior por data (ex.: 10/06)" value="${escAttr(presBusca)}" oninput="presBusca=this.value;renderPresLista()"><div id="pLista" style="margin-top:8px"></div></div>`;
   document.getElementById('pT').onchange=e=>{presTurma=e.target.value;presData=dataAulaPadrao(presTurma);VIEWS.presenca();};
-  document.getElementById('pD').onchange=e=>{presData=e.target.value;renderPres();};
-  renderPres(); renderPresLista();
+  document.getElementById('pD').onchange=e=>{presData=e.target.value;renderPres();renderTemaChamada();};
+  renderPres(); renderTemaChamada(); renderPresLista();
 };
 function presRec(criar){
   let rec=S.presencas.find(p=>p.turmaId===presTurma&&p.data===presData);
@@ -700,9 +702,11 @@ function renderPres(){
   const box=document.getElementById('pBox');
   const rec=S.presencas.find(p=>p.turmaId===presTurma&&p.data===presData)||{registros:{},atrasados:[],saiuCedo:[]};
   const reg=rec.registros||{}, atr=rec.atrasados||[], cedo=rec.saiuCedo||[];
+  const matRec=S.material.find(m=>m.turmaId===presTurma&&m.data===presData);
+  const matFalt=matRec?matRec.faltantes:[];
   const als=alunosDa(presTurma);
   if(!als.length){box.innerHTML='<div class="empty"><div class="big">👥</div>Nenhum aluno nesta turma ainda.</div>';return;}
-  box.innerHTML=`<h3>${als.length} alunos · ${brDate(presData)}</h3><p class="hint">Toque para alternar presença. Marque atraso / saída antecipada quando houver.</p>
+  box.innerHTML=`<h3>${als.length} alunos · ${brDate(presData)}</h3><p class="hint">Toque para alternar presença. Para quem veio, marque atraso, saída antecipada ou <b>sem material</b>.</p>
     ${als.map(a=>{
       const st=reg[a.id]||'presente';
       return `<div style="padding:10px 0;border-bottom:1px dashed var(--linha)">
@@ -714,20 +718,59 @@ function renderPres(){
         ${st==='presente'?`<div style="display:flex;gap:18px;margin-top:8px;flex-wrap:wrap">
           <label style="display:flex;align-items:center;gap:6px;font-size:.84rem;cursor:pointer"><input type="checkbox" ${atr.includes(a.id)?'checked':''} onchange="toggleAtraso('${a.id}')"> chegou atrasado</label>
           <label style="display:flex;align-items:center;gap:6px;font-size:.84rem;cursor:pointer"><input type="checkbox" ${cedo.includes(a.id)?'checked':''} onchange="toggleSaiuCedo('${a.id}')"> saiu mais cedo</label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:.84rem;cursor:pointer;color:var(--laranja)"><input type="checkbox" ${matFalt.includes(a.id)?'checked':''} onchange="toggleMatPres('${a.id}')"> 🎒 sem material</label>
         </div>`:''}
       </div>`;
     }).join('')}
-    <div style="margin-top:16px"><button class="btn" onclick="salvarPres()">Salvar chamada</button></div>`;
+    <div style="margin-top:16px"><button class="btn" onclick="salvarPres()">Salvar chamada e material</button></div>`;
+}
+function matRecPres(criar){
+  let rec=S.material.find(m=>m.turmaId===presTurma&&m.data===presData);
+  if(!rec && criar){ rec={id:uid(),turmaId:presTurma,data:presData,faltantes:[]}; S.material.push(rec); }
+  return rec;
+}
+function toggleMatPres(aid){
+  const rec=matRecPres(true);
+  const i=rec.faltantes.indexOf(aid);
+  if(i>=0)rec.faltantes.splice(i,1); else rec.faltantes.push(aid);
+  renderPres();
 }
 function setPres(id,st){
   const rec=presRec(true);
   rec.registros[id]=st;
-  if(st==='falta'){ rec.atrasados=(rec.atrasados||[]).filter(x=>x!==id); rec.saiuCedo=(rec.saiuCedo||[]).filter(x=>x!==id); }
+  if(st==='falta'){ rec.atrasados=(rec.atrasados||[]).filter(x=>x!==id); rec.saiuCedo=(rec.saiuCedo||[]).filter(x=>x!==id); const mr=S.material.find(m=>m.turmaId===presTurma&&m.data===presData); if(mr) mr.faltantes=mr.faltantes.filter(x=>x!==id); }
   renderPres();
 }
 function toggleAtraso(id){const rec=presRec(true);rec.atrasados=rec.atrasados||[];const i=rec.atrasados.indexOf(id);if(i>=0)rec.atrasados.splice(i,1);else rec.atrasados.push(id);renderPres();}
 function toggleSaiuCedo(id){const rec=presRec(true);rec.saiuCedo=rec.saiuCedo||[];const i=rec.saiuCedo.indexOf(id);if(i>=0)rec.saiuCedo.splice(i,1);else rec.saiuCedo.push(id);renderPres();}
-function salvarPres(){save();montarNav();renderPresLista();toast('Chamada salva');}
+function salvarPres(){save();montarNav();renderPresLista();toast('Chamada e material salvos');}
+function renderTemaChamada(){
+  const box=document.getElementById('pTema'); if(!box)return;
+  const due=S.temas.filter(t=>t.turmaId===presTurma && t.dataEntrega===presData);
+  let h=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0;flex:1">📚 Tema de casa</h3>
+    <button class="btn sm" style="background:var(--rosa)" onclick="temaDaChamada()">+ Lançar tema desta aula</button></div>`;
+  if(!due.length){
+    h+='<p class="hint" style="margin:8px 0 0">Nenhum tema com <b>entrega marcada para este dia</b>. Use o botão acima para lançar o tema desta aula e definir a data de entrega.</p>';
+  } else {
+    h+='<p class="hint" style="margin:8px 0 10px">Temas que vencem hoje. Padrão: <b>feito</b>. Marque quem fez <b>parcial</b> ou <b>não fez</b>.</p>';
+    h+=due.map(t=>{
+      const alvos=Object.keys(t.entregas);
+      return `<div style="border:1px solid var(--linha);border-radius:12px;padding:10px 12px;margin-bottom:10px">
+        <div style="margin-bottom:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap"><b style="flex:1">${t.descricao}</b> <span class="hint">entrega ${brDate(t.dataEntrega||presData)}</span>
+          <button class="btn ghost sm" onclick="editarTema('${t.id}')">✏️</button>
+          ${ehProfessor()?'':`<button class="btn ghost sm" style="color:var(--vermelho)" onclick="delTema('${t.id}')">🗑</button>`}</div>
+        ${alvos.map(aid=>{const a=S.alunos.find(x=>x.id===aid);const st=t.entregas[aid];
+          return `<div class="check"><span style="flex:1">${a?a.nome:'—'}</span>
+            <div class="seg"><button class="${st===true?'on-ok':''}" onclick="setTemaChamada('${t.id}','${aid}',true)">feito</button>
+            <button class="${st==='parcial'?'on-mid':''}" onclick="setTemaChamada('${t.id}','${aid}','parcial')">parcial</button>
+            <button class="${st===false?'on-no':''}" onclick="setTemaChamada('${t.id}','${aid}',false)">não feito</button></div></div>`;}).join('')}
+      </div>`;
+    }).join('');
+  }
+  box.innerHTML=h;
+}
+function setTemaChamada(tid,aid,val){const t=S.temas.find(t=>t.id===tid);if(!t)return;t.entregas[aid]=val;save();renderTemaChamada();}
+function temaDaChamada(){ _temaPlanoRef=null; modalTema(presTurma,'',presData,'extra'); }
 function carregaPres(data){presData=data;VIEWS.presenca();window.scrollTo({top:0,behavior:'smooth'});}
 function renderPresLista(){
   const box=document.getElementById('pLista'); if(!box)return;
@@ -763,7 +806,7 @@ VIEWS.temas=()=>{
 function escAttr(s){return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function modalTema(turmaId,descricao,data,origem){
   const als=alunosDa(turmaId);
-  const orig=(origem==='plano' && data) ? data : hoje();
+  const orig=data||hoje();
   modal(`<h3>📩 Tema de casa <button class="close" onclick="fechar()">×</button></h3>
     <div class="field"><label class="lbl">Descrição do tema</label><input type="text" id="mtDesc" value="${escAttr(descricao)}" placeholder="Ex: Workbook pág. 30, ex. 1 a 4"></div>
     <p class="hint" style="margin:-6px 0 10px">${origem==='plano'?'Vinculado ao plano de aula de':'Criado em'} <b>${brDate(orig)}</b>.</p>
@@ -800,9 +843,11 @@ function criarTema(turmaId,origem){
   save(); fechar(); toast('Tema de casa criado');
   if(rota==='temas'){ temaTurma=turmaId; VIEWS.temas(); }
   else if(rota==='planos'){ renderPlanos(); }
+  else if(rota==='presenca'){ renderTemaChamada(); }
 }
 let _temaPlanoRef=null;
 function temaDoPlano(pid,i){ const p=S.planos.find(p=>p.id===pid); if(!p)return; _temaPlanoRef={pid,i}; modalTema(p.turmaId,p.itens[i].txt,p.data,'plano'); }
+function temaExtraDoPlano(pid){ const p=S.planos.find(p=>p.id===pid); if(!p)return; _temaPlanoRef=null; modalTema(p.turmaId,'',p.data,'extra'); }
 function renderTemas(){
   const list=document.getElementById('tList');
   let ts=S.temas.filter(t=>t.turmaId===temaTurma);
@@ -831,9 +876,10 @@ function renderTemas(){
       ${ehProfessor()?'':`<button class="btn ghost sm" style="margin-top:12px;color:var(--vermelho)" onclick="delTema('${t.id}')">Excluir tema</button>`}</div>`;
   }).join('');
 }
-function setTema(tid,aid,val){const t=S.temas.find(t=>t.id===tid);t.entregas[aid]=val;save();renderTemas();}
-function todosEntregaram(tid){const t=S.temas.find(t=>t.id===tid);if(!t)return;Object.keys(t.entregas).forEach(k=>t.entregas[k]=true);save();renderTemas();toast('Todos marcados como feito');}
-function delTema(id){if(ehProfessor())return toast('Sem permissão');if(confirm('Excluir este tema de casa?')){S.temas=S.temas.filter(t=>t.id!==id);save();renderTemas();toast('Tema excluído');}}
+function refreshTemaCtx(){ if(document.getElementById('tList')) renderTemas(); else if(document.getElementById('pTema')) renderTemaChamada(); }
+function setTema(tid,aid,val){const t=S.temas.find(t=>t.id===tid);t.entregas[aid]=val;save();refreshTemaCtx();}
+function todosEntregaram(tid){const t=S.temas.find(t=>t.id===tid);if(!t)return;Object.keys(t.entregas).forEach(k=>t.entregas[k]=true);save();refreshTemaCtx();toast('Todos marcados como feito');}
+function delTema(id){if(ehProfessor())return toast('Sem permissão');if(confirm('Excluir este tema de casa?')){S.temas=S.temas.filter(t=>t.id!==id);save();refreshTemaCtx();toast('Tema excluído');}}
 function editarTema(id){
   const t=S.temas.find(x=>x.id===id); if(!t)return;
   modal(`<h3>✏️ Editar tema <button class="close" onclick="fechar()">×</button></h3>
@@ -848,7 +894,7 @@ function salvarEdicaoTema(id){
   const d=document.getElementById('etDesc').value.trim(); if(!d)return toast('Descreva o tema');
   t.descricao=d; t.data=document.getElementById('etData').value;
   const en=(document.getElementById('etEntrega')||{}).value; if(en) t.dataEntrega=en;
-  save(); fechar(); renderTemas(); toast('Tema atualizado');
+  save(); fechar(); refreshTemaCtx(); toast('Tema atualizado');
 }
 
 /* ---- TESTES ---- */
@@ -981,7 +1027,8 @@ function renderPlanos(){
     return `<div class="card"><div style="display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap"><div style="flex:1;min-width:160px"><h3 style="margin:0">${p.titulo}</h3><p class="hint" style="margin:4px 0 0">${turmaNome(p.turmaId)} · ${brDate(p.data)} · ${feitos}/${p.itens.length} itens feitos</p></div>
       <div style="display:flex;gap:6px;align-items:center">${acaoTitulo}<button class="btn ghost sm" onclick="editarPlano('${p.id}')">✏️ editar</button></div></div>
       <div style="margin-top:10px">${p.itens.map((it,i)=>`<div class="check ${it.done?'done':''}"><input type="checkbox" ${it.done?'checked':''} onchange="togglePlano('${p.id}',${i})"><span>${it.txt}${it.virouTema?' <span class="pill" style="background:#fff0f6;color:var(--rosa)">📩 virou tema</span>':''}</span><button class="btn ghost sm" style="margin-left:auto" title="Transformar em tema de casa" onclick="temaDoPlano('${p.id}',${i})">📩 tema</button></div>`).join('')}</div>
-      <div class="field" style="margin-top:14px"><label class="lbl">Anotações</label><textarea onchange="setPlanoCampo('${p.id}','anotacoes',this.value)" placeholder="Observações sobre a aula...">${p.anotacoes||''}</textarea></div>
+      <div class="field" style="margin-top:14px"><label class="lbl">Anotações</label><textarea onchange="setPlanoCampo('${p.id}','anotacoes',this.value)" placeholder="Observações sobre a aula...">${p.anotacoes||''}</textarea>
+        <button class="btn ghost sm" style="margin-top:8px;color:var(--rosa)" onclick="temaExtraDoPlano('${p.id}')">📩 Criar tema de casa (não previsto no plano)</button></div>
       ${ehProfessor()?'':`<button class="btn ghost sm" style="color:var(--vermelho)" onclick="delPlano('${p.id}')">Excluir plano</button>`}</div>`;
   }).join('');
 }
@@ -1148,8 +1195,72 @@ function renderAvisoRelatorios(v){
 function alunosSelect(id,turmaId,sel){
   const als=alunosDa(turmaId);
   if(!als.length)return `<select id="${id}"><option value="">(sem alunos)</option></select>`;
-  return `<select id="${id}">${als.map(a=>`<option value="${a.id}" ${a.id===sel?'selected':''}>${a.nome}</option>`).join('')}</select>`;
+  return `<select id="${id}">${als.map(a=>`<option value="${a.id}" ${a.id===sel?'selected':''}>${a.vip?'👑 ':''}${a.nome}</option>`).join('')}</select>`;
 }
+/* ===== AULAS VIP (aulas avulsas por aluno) ===== */
+let vipTurma=null, vipAluno=null;
+function fmtDur(min){ min=+min||0; const h=Math.floor(min/60), m=min%60; if(!min)return '0min'; return (h?h+'h':'')+(m?(h?' ':'')+m+'min':''); }
+VIEWS.vip=()=>{
+  const tid=painelTurma||vipTurma||primeiraTurma(); vipTurma=tid;
+  const v=document.getElementById('view');
+  const als=alunosDa(tid);
+  if(vipAluno && !als.some(a=>a.id===vipAluno)) vipAluno=null;
+  vipAluno=vipAluno||(als[0]&&als[0].id)||null;
+  v.innerHTML=`${btnVoltaPainel()}<div class="section-title"><span class="feijao fj" style="background:#C8A200"></span><h2 class="display">👑 Aulas VIP</h2></div>
+    <p class="sub">Aulas avulsas de um aluno (fora da grade fixa). Registre descrição, data e duração — e tire o relatório no fim.</p>
+    <div class="card"><div class="row">
+      ${painelTurma?'':`<div><label class="lbl">Turma</label>${selectTurma('vipT',tid)}</div>`}
+      <div style="flex:1"><label class="lbl">Aluno</label>${alunosSelect('vipA',tid,vipAluno)}</div>
+    </div></div>
+    <div class="card"><h3>Nova aula VIP</h3>
+      <div class="field"><label class="lbl">Descrição da aula</label><input type="text" id="vipDesc" placeholder="Ex: Conversação — entrevista de emprego"></div>
+      <div class="row">
+        <div class="field"><label class="lbl">Data</label><input type="date" id="vipData" value="${hoje()}"></div>
+        <div class="field"><label class="lbl">Duração (min)</label><input type="number" id="vipDur" value="60" min="5" step="5"></div>
+      </div>
+      <button class="btn" onclick="addAulaVip()">+ Adicionar aula VIP</button></div>
+    <div class="card" id="vipBox"></div>`;
+  const st=document.getElementById('vipT'); if(st) st.onchange=e=>{vipTurma=e.target.value;vipAluno=null;VIEWS.vip();};
+  const sa=document.getElementById('vipA'); if(sa) sa.onchange=e=>{vipAluno=e.target.value;renderVipLista();};
+  renderVipLista();
+};
+function addAulaVip(){
+  const aid=(document.getElementById('vipA')||{}).value||vipAluno;
+  if(!aid)return toast('Selecione um aluno');
+  const desc=document.getElementById('vipDesc').value.trim(); if(!desc)return toast('Descreva a aula');
+  const data=document.getElementById('vipData').value; if(!data)return toast('Escolha a data');
+  const dur=+document.getElementById('vipDur').value||0;
+  S.aulasVip.push({id:uid(),alunoId:aid,data,descricao:desc,duracaoMin:dur});
+  const al=S.alunos.find(a=>a.id===aid); if(al) al.vip=true;
+  vipAluno=aid; save(); VIEWS.vip(); toast('Aula VIP adicionada');
+}
+function delAulaVip(id){ if(!confirm('Excluir esta aula VIP?'))return; S.aulasVip=S.aulasVip.filter(x=>x.id!==id); save(); renderVipLista(); }
+function renderVipLista(){
+  const box=document.getElementById('vipBox'); if(!box)return;
+  const aid=vipAluno, al=S.alunos.find(a=>a.id===aid);
+  if(!aid||!al){ box.innerHTML='<p class="hint">Selecione um aluno.</p>'; return; }
+  const aulas=S.aulasVip.filter(x=>x.alunoId===aid).sort((a,b)=>b.data.localeCompare(a.data));
+  const totalMin=aulas.reduce((s,a)=>s+(+a.duracaoMin||0),0);
+  let h=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0;flex:1">Aulas VIP de ${al.nome}</h3>
+    <button class="btn amarelo sm" ${aulas.length?'':'disabled style="opacity:.5;cursor:not-allowed"'} onclick="copiarRelatorioVip()">📋 Copiar relatório</button></div>`;
+  if(!aulas.length){ box.innerHTML=h+'<p class="hint" style="margin:8px 0 0">Nenhuma aula VIP registrada para este aluno.</p>'; return; }
+  h+=`<p class="hint" style="margin:8px 0 10px"><b>${aulas.length}</b> aula(s) · total <b>${fmtDur(totalMin)}</b></p>`;
+  h+=aulas.map(a=>`<div class="check"><span style="flex:1">${brDate(a.data)} · ${a.descricao} <span class="pill">${fmtDur(a.duracaoMin)}</span></span><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delAulaVip('${a.id}')">excluir</button></div>`).join('');
+  box.innerHTML=h;
+}
+function corpoRelatorioVip(aid){
+  const al=S.alunos.find(a=>a.id===aid); if(!al)return'';
+  const turma=S.turmas.find(t=>t.id===al.turmaId)||{};
+  const aulas=S.aulasVip.filter(x=>x.alunoId===aid).sort((a,b)=>a.data.localeCompare(b.data));
+  const totalMin=aulas.reduce((s,a)=>s+(+a.duracaoMin||0),0);
+  let b=`Relatório de aulas VIP — ${al.nome}${turma.nome?` (${turma.nome})`:''}\n`;
+  if(aulas.length) b+=`Período: ${brDate(aulas[0].data)} a ${brDate(aulas[aulas.length-1].data)}\n`;
+  b+=`\n`+aulas.map(a=>`• ${brDate(a.data)} — ${a.descricao} (${fmtDur(a.duracaoMin)})`).join('\n');
+  b+=`\n\nTotal: ${aulas.length} aula(s) · ${fmtDur(totalMin)}\n`;
+  b+=`\n${(S.config&&S.config.assinatura)||ASSINATURA_PADRAO}`;
+  return b;
+}
+function copiarRelatorioVip(){ const txt=corpoRelatorioVip(vipAluno); if(!txt)return; navigator.clipboard.writeText(txt).then(()=>toast('Relatório VIP copiado'),()=>toast('Não foi possível copiar')); }
 function gerarResumo(){
   const turmaId=document.getElementById('rT').value, data=document.getElementById('rD').value;
   const turma=S.turmas.find(t=>t.id===turmaId);
@@ -1375,7 +1486,7 @@ VIEWS.turmas=()=>{
     </div>
     <div class="field" style="margin-top:10px"><label class="lbl">Dias de aula</label><div style="display:flex;flex-wrap:wrap;gap:6px">
       ${[1,2,3,4,5,6].map(d=>`<label style="display:flex;align-items:center;gap:5px;font-size:.88rem;border:1px solid var(--linha);border-radius:9px;padding:6px 10px;cursor:pointer"><input type="checkbox" class="nDia" value="${d}"> ${DIAS_SEMANA[d]}</label>`).join('')}
-    </div><p class="hint" style="margin:6px 0 0">A chamada, o material e os planos só permitirão datas nesses dias. Aulas 1x/semana contam falta em dobro.</p></div>
+    </div><p class="hint" style="margin:6px 0 0">A chamada e os planos só permitirão datas nesses dias. Aulas 1x/semana contam falta em dobro. <b>Aluno VIP</b> (aula avulsa) é registrado dentro da turma, em "👑 Aulas VIP".</p></div>
     <div style="margin-top:12px"><button class="btn" onclick="addTurma()">+ Criar turma</button></div></div>`}
     <div class="card" style="padding:14px 18px"><input type="text" id="buscaAluno" placeholder="🔎 Buscar aluno pelo nome (em todas as turmas)" value="${_buscaAluno||''}" oninput="filtrarAlunos(this.value)"></div>
     <div id="turmaList"></div>
@@ -1463,16 +1574,15 @@ function renderPainelTurma(){
       <p class="hint" style="margin:2px 0 0">Última chamada: ${ultTxt}${prox?` · Próximo plano: <b>${prox.titulo}</b> (${brDate(prox.data)})`:''}</p>
     </div>
     <div class="card"><h3>O que você quer fazer?</h3>
-      ${btn('var(--azul)','presenca','📋','Fazer a chamada','presença, falta, chegou atrasado e saiu mais cedo')}
+      ${btn('var(--azul)','presenca','📋','Chamada do dia','presença, atraso, saída antecipada, material e tema de casa — tudo aqui')}
       ${btn('var(--azul)','planos','🗒️','Planos de aula','ver o plano pendente e marcar como feito; criar novos')}
-      ${btn('var(--laranja)','material','🎒','Material não trazido','marcar quem veio sem material')}
-      ${btn('var(--rosa)','temas','📚','Temas de casa','registrar tema e marcar feito / parcial / não feito')}
       ${btn('var(--roxo)','testes','✏️','Testes','lançar as notas da turma')}
+      ${btn('#C8A200','vip','👑','Aulas VIP','registrar aulas avulsas de alunos VIP (descrição, data, duração) e tirar o relatório')}
       ${btn('var(--vermelho)','relatorio','🧾','Relatório do dia','gerar o resumo da aula para enviar às famílias')}
     </div>
     <div class="card"><h3>Alunos (${als.length})</h3>
       ${podeCadastrar?'<p class="hint" style="margin:0 0 8px">E-mail do responsável (usado para enviar o relatório da aula).</p>':''}
-      ${als.map(a=>`<div style="padding:8px 0;border-bottom:1px dashed var(--linha)"><div style="display:flex;align-items:center;gap:8px"><span style="flex:1">${a.nome}</span>${podeCadastrar?`<button class="btn ghost sm" onclick="delAluno('${a.id}')">remover</button>`:''}</div>
+      ${als.map(a=>`<div style="padding:8px 0;border-bottom:1px dashed var(--linha)"><div style="display:flex;align-items:center;gap:8px"><span style="flex:1">${a.vip?'👑 ':''}${a.nome}</span>${podeCadastrar?`<button class="btn ghost sm" onclick="delAluno('${a.id}')">remover</button>`:''}</div>
         ${podeCadastrar?`<input type="email" value="${escAttr(a.email||'')}" placeholder="email.responsavel@exemplo.com" style="margin-top:6px;font-size:.85rem" onchange="setAlunoEmail('${a.id}',this.value)">`:''}</div>`).join('')||'<p class="hint">Sem alunos ainda.</p>'}
       ${podeCadastrar?`<div class="row" style="margin-top:12px"><div style="flex:3"><input type="text" id="al_${id}" placeholder="Nome do novo aluno" onkeydown="if(event.key==='Enter')addAluno('${id}')"></div>
       <button class="btn ghost" onclick="addAluno('${id}')">+ Aluno</button></div>`:''}</div>
