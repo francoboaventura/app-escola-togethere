@@ -346,6 +346,15 @@ function migrar(s){
     s.versao=2;
   }
   s.comentarios=s.comentarios||[]; // garante campos novos
+  s.relatorios=s.relatorios||[];
+  (s.temas||[]).forEach(t=>{ if(!t.dataEntrega) t.dataEntrega=t.data; });
+  (s.turmas||[]).forEach(t=>{
+    if(!Array.isArray(t.dias)||!t.dias.length){
+      t.dias=diasFromHorario(t.horario);
+      if(!t.dias.length) t.dias = (t.vezesSemana===1)?[1]:[1,3];
+    }
+    t.vezesSemana=t.dias.length;
+  });
   s.config=s.config||{assinatura:'— Equipe Togethere\ninglês para chegar lá', escolaEmail:'admin@togethere.com.br'};
   return s;
 }
@@ -396,19 +405,28 @@ async function cloudEmail(to, subject, body){
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function hoje(){return new Date().toISOString().slice(0,10);}
 function diasAtras(n){const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().slice(0,10);}
-function pesoFalta(turmaId){const t=S.turmas.find(x=>x.id===turmaId);return (t&&t.vezesSemana===1)?2:1;}
+function pesoFalta(turmaId){const t=S.turmas.find(x=>x.id===turmaId);const n=(t&&t.dias&&t.dias.length)?t.dias.length:(t&&t.vezesSemana);return n===1?2:1;}
+const DIAS_SEMANA=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function weekdayOf(s){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d).getDay();}
+function diasFromHorario(hor){const map={seg:1,ter:2,qua:3,qui:4,sex:5,sab:6,dom:0};const f=[];(hor||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(/[^a-z]+/).forEach(tok=>{const k=tok.slice(0,3);if(map[k]!=null&&!f.includes(map[k]))f.push(map[k]);});return f.sort((a,b)=>a-b);}
+function diasTurmaLabel(t){return (t&&t.dias&&t.dias.length)?t.dias.map(d=>DIAS_SEMANA[d]).join('/'):'';}
+function datasAula(turmaId,atras,frente){atras=atras==null?8:atras;frente=frente==null?2:frente;const t=S.turmas.find(x=>x.id===turmaId);if(!t||!t.dias||!t.dias.length)return[];const out=[];const a=new Date();a.setDate(a.getDate()-atras*7);const b=new Date();b.setDate(b.getDate()+frente*7);for(let d=new Date(a);d<=b;d.setDate(d.getDate()+1)){if(t.dias.includes(d.getDay()))out.push(ymd(new Date(d)));}return out;}
+function dataAulaPadrao(turmaId,datas){datas=datas||datasAula(turmaId);if(!datas.length)return hoje();const h=hoje();const pas=datas.filter(d=>d<=h).sort((x,y)=>y.localeCompare(x));if(pas.length)return pas[0];return datas.slice().sort()[0];}
+function selectDataAula(id,turmaId,sel){let ds=datasAula(turmaId);if(!ds.length)return`<select id="${id}"><option value="">(defina os dias de aula da turma)</option></select>`;if(sel&&!ds.includes(sel))ds.push(sel);ds=[...new Set(ds)].sort((x,y)=>y.localeCompare(x));const def=sel||dataAulaPadrao(turmaId,ds);return`<select id="${id}">${ds.map(d=>`<option value="${d}" ${d===def?'selected':''}>${brDate(d)} · ${DIAS_SEMANA[weekdayOf(d)]}</option>`).join('')}</select>`;}
+function proximaEntrega(turmaId,fromYmd){const ds=datasAula(turmaId,2,8).sort();const f=ds.filter(d=>d>(fromYmd||hoje()));return f[0]||ds[ds.length-1]||fromYmd||hoje();}
 
 /* dados reais da escola (relatório Sponte 12/06/2026) */
 function seed(){
   const T=[
-    ['A2 TEENS TARDINHA','teens','Franco','Ter–Qui 18:15–19:30',2,['Artur Fellini Tedesco','Breno Apolinario Dias','Bruna Vitoria Brito de Almeida','Enrico Sccotti Mattos','Fernanda Cardoso Binotto','Gabriel Pereira dos Santos','Gabriela Porto Jerônimo','Helena Avila Henriques','Isabelly Pereira Dos santos','Isadora Douglas Polese','Lucca Jesus Capelão']],
-    ['A1+ JUNIOR MANHÃ','junior','Franco','Seg–Qua 10:15–11:30',2,['Catherine Cardoso Shvantes Bottini','Enzo Ferrari Velasques','Isabelle Ymai','Julia Nasario de Dillenburg','Lorenzo Braga Klahn','Manuela Canal Guedes','Maria Clara Sarmento Silveira','Martina Dupont Braga','Thomas de Freitas Sbruzzi de Toledo','Valentina Bitencourt Castro','Valentina Gonçalves pacheco']],
-    ['C1 TEENS TARDE (Prep.)','teens','Franco','Seg 14:00–16:45',1,['Aleckssandra da Rosa Tavares','Isabella Pacheco Lima','Laís Antunes Motta Fernandes','Lucas Barcelos Mousquer','Maria Eduarda Pacheco Lima','Matheus Sakai','Murilo Garcia','Natália Tavares Goerl']],
+    ['A2 TEENS TARDINHA','teens','Franco','Ter–Qui 18:15–19:30',[2,4],['Artur Fellini Tedesco','Breno Apolinario Dias','Bruna Vitoria Brito de Almeida','Enrico Sccotti Mattos','Fernanda Cardoso Binotto','Gabriel Pereira dos Santos','Gabriela Porto Jerônimo','Helena Avila Henriques','Isabelly Pereira Dos santos','Isadora Douglas Polese','Lucca Jesus Capelão']],
+    ['A1+ JUNIOR MANHÃ','junior','Franco','Seg–Qua 10:15–11:30',[1,3],['Catherine Cardoso Shvantes Bottini','Enzo Ferrari Velasques','Isabelle Ymai','Julia Nasario de Dillenburg','Lorenzo Braga Klahn','Manuela Canal Guedes','Maria Clara Sarmento Silveira','Martina Dupont Braga','Thomas de Freitas Sbruzzi de Toledo','Valentina Bitencourt Castro','Valentina Gonçalves pacheco']],
+    ['C1 TEENS TARDE (Prep.)','teens','Franco','Seg 14:00–16:45',[1],['Aleckssandra da Rosa Tavares','Isabella Pacheco Lima','Laís Antunes Motta Fernandes','Lucas Barcelos Mousquer','Maria Eduarda Pacheco Lima','Matheus Sakai','Murilo Garcia','Natália Tavares Goerl']],
   ];
   const turmas=[], alunos=[];
-  T.forEach(([nome,nivel,prof,hor,vezes,als])=>{
+  T.forEach(([nome,nivel,prof,hor,dias,als])=>{
     const id=uid();
-    turmas.push({id,nome,nivel,professor:prof,horario:hor,vezesSemana:vezes});
+    turmas.push({id,nome,nivel,professor:prof,horario:hor,dias,vezesSemana:dias.length});
     als.forEach(n=>alunos.push({id:uid(),nome:n,turmaId:id}));
   });
   const usuarios=[
@@ -426,6 +444,7 @@ function seed(){
     presencas:[], material:[], temas:[], testes:[], contatos:[], planos:[], comentarios:[],
     atas:[],
     tarefas:[],
+    relatorios:[],
     config:{assinatura:'— Equipe Togethere\ninglês para chegar lá', escolaEmail:'admin@togethere.com.br'},
   };
 }
@@ -509,11 +528,12 @@ const NAV=[
   {id:'testes', label:'Testes', em:'✏️', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
   {id:'material', label:'Material', em:'🎒', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
   {id:'planos', label:'Planos de aula', em:'🗒️', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
+  {id:'relatorio', label:'Relatório do dia', em:'🧾', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
   {id:'resumo', label:'Relatórios e resumo', em:'✉️', grp:'Acompanhamento', roles:['professor','secretaria','direcao']},
-  {id:'alertas', label:'Alertas', em:'🔔', grp:'Acompanhamento', roles:['secretaria','direcao'], badge:true},
-  {id:'atas', label:'Atas de reunião', em:'📝', grp:'Acompanhamento', roles:['secretaria','direcao']},
+  {id:'alertas', label:'Avisos', em:'🔔', grp:'Acompanhamento', roles:['secretaria','direcao'], badge:true},
+  {id:'atas', label:'Atas de reunião', em:'📝', grp:'Acompanhamento', roles:['direcao']},
   {id:'tarefas', label:'Tarefas internas', em:'🎯', grp:'Gestão', roles:['direcao']},
-  {id:'turmas', label:'Turmas e alunos', em:'👥', grp:'Gestão', roles:['professor','secretaria','direcao']},
+  {id:'turmas', label:'Turmas e alunos', em:'👥', grp:'Gestão', roles:['professor','direcao']},
   {id:'acessos', label:'Acessos', em:'🔑', grp:'Gestão', roles:['direcao']},
 ];
 function ehProfessor(){ return S.perfil==='professor'; }
@@ -647,8 +667,8 @@ VIEWS.painel=()=>{
     <h3>Atalhos</h3><p class="hint">O que você quer fazer agora?</p>
     <div class="row">
       ${S.perfil!=='secretaria'?'<button class="btn ghost" onclick="ir(\'presenca\')">📋 Fazer chamada</button>':''}
-      ${S.perfil!=='secretaria'?'<button class="btn ghost" onclick="ir(\'resumo\')">✉️ Resumo p/ pais</button>':''}
-      ${S.perfil!=='professor'?'<button class="btn ghost" onclick="ir(\'alertas\')">🔔 Alertas</button>':''}
+      <button class="btn ghost" onclick="ir('resumo')">✉️ Relatórios</button>
+      ${S.perfil!=='professor'?'<button class="btn ghost" onclick="ir(\'alertas\')">🔔 Avisos</button>':''}
       ${S.perfil==='direcao'?'<button class="btn ghost" onclick="ir(\'tarefas\')">🎯 Tarefas internas</button>':''}
     </div></div>`));
 };
@@ -657,16 +677,17 @@ VIEWS.painel=()=>{
 let presTurma=null, presData=hoje(), presBusca='';
 VIEWS.presenca=()=>{
   presTurma=presTurma||primeiraTurma();
+  if(!datasAula(presTurma).includes(presData)) presData=dataAulaPadrao(presTurma);
   const v=document.getElementById('view');
   v.innerHTML=`${btnVoltaPainel()}<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Chamada</h2></div>
-    <p class="sub">Marque presença/falta e, se for o caso, atraso ou saída antecipada. Faltas alimentam os alertas.</p>
+    <p class="sub">Marque presença/falta e, se for o caso, atraso ou saída antecipada. Só aparecem os dias em que a turma tem aula.</p>
     <div class="card"><div class="row">
       <div><label class="lbl">Turma</label>${selectTurma('pT',presTurma)}</div>
-      <div><label class="lbl">Data da aula</label><input type="date" id="pD" value="${presData}"></div>
+      <div><label class="lbl">Data da aula</label>${selectDataAula('pD',presTurma,presData)}</div>
     </div></div>
     <div class="card" id="pBox"></div>
     <div class="card"><input type="text" id="pBusca" placeholder="🔎 Buscar chamada anterior por data (ex.: 10/06)" value="${escAttr(presBusca)}" oninput="presBusca=this.value;renderPresLista()"><div id="pLista" style="margin-top:8px"></div></div>`;
-  document.getElementById('pT').onchange=e=>{presTurma=e.target.value;renderPres();renderPresLista();};
+  document.getElementById('pT').onchange=e=>{presTurma=e.target.value;presData=dataAulaPadrao(presTurma);VIEWS.presenca();};
   document.getElementById('pD').onchange=e=>{presData=e.target.value;renderPres();};
   renderPres(); renderPresLista();
 };
@@ -707,7 +728,7 @@ function setPres(id,st){
 function toggleAtraso(id){const rec=presRec(true);rec.atrasados=rec.atrasados||[];const i=rec.atrasados.indexOf(id);if(i>=0)rec.atrasados.splice(i,1);else rec.atrasados.push(id);renderPres();}
 function toggleSaiuCedo(id){const rec=presRec(true);rec.saiuCedo=rec.saiuCedo||[];const i=rec.saiuCedo.indexOf(id);if(i>=0)rec.saiuCedo.splice(i,1);else rec.saiuCedo.push(id);renderPres();}
 function salvarPres(){save();montarNav();renderPresLista();toast('Chamada salva');}
-function carregaPres(data){presData=data;const el=document.getElementById('pD');if(el)el.value=data;renderPres();window.scrollTo({top:0,behavior:'smooth'});}
+function carregaPres(data){presData=data;VIEWS.presenca();window.scrollTo({top:0,behavior:'smooth'});}
 function renderPresLista(){
   const box=document.getElementById('pLista'); if(!box)return;
   const recs=S.presencas.filter(p=>p.turmaId===presTurma);
@@ -742,21 +763,25 @@ VIEWS.temas=()=>{
 function escAttr(s){return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function modalTema(turmaId,descricao,data,origem){
   const als=alunosDa(turmaId);
+  const orig=(origem==='plano' && data) ? data : hoje();
   modal(`<h3>📩 Tema de casa <button class="close" onclick="fechar()">×</button></h3>
     <div class="field"><label class="lbl">Descrição do tema</label><input type="text" id="mtDesc" value="${escAttr(descricao)}" placeholder="Ex: Workbook pág. 30, ex. 1 a 4"></div>
-    <div class="row"><div class="field"><label class="lbl">Data</label><input type="date" id="mtData" value="${data||hoje()}"></div>
+    <p class="hint" style="margin:-6px 0 10px">${origem==='plano'?'Vinculado ao plano de aula de':'Criado em'} <b>${brDate(orig)}</b>.</p>
+    <div class="row"><div class="field"><label class="lbl">Data de entrega</label>${selectDataAula('mtEntrega',turmaId,proximaEntrega(turmaId,orig))}</div>
     <div class="field"><label class="lbl">Para quem?</label><select id="mtAlvo" onchange="document.getElementById('mtAlunos').style.display=this.value==='alguns'?'block':'none'">
       <option value="todos">Turma toda</option><option value="alguns">Escolher alunos</option></select></div></div>
     <div id="mtAlunos" style="display:none;max-height:230px;overflow:auto;border:1px solid var(--linha);border-radius:10px;padding:4px 12px;margin-bottom:14px">
       ${als.map(a=>`<label class="check" style="cursor:pointer"><input type="checkbox" class="mtChk" value="${a.id}"><span>${a.nome}</span></label>`).join('')||'<p class="hint">Turma sem alunos.</p>'}
     </div>
+    <input type="hidden" id="mtOrig" value="${orig}">
     <button class="btn block" onclick="criarTema('${turmaId}','${origem||'extra'}')">Criar tema</button>`);
   setTimeout(()=>{const i=document.getElementById('mtDesc'); if(i&&!i.value) i.focus();},60);
 }
 function criarTema(turmaId,origem){
   const desc=document.getElementById('mtDesc').value.trim();
   if(!desc)return toast('Descreva o tema');
-  const data=document.getElementById('mtData').value;
+  const data=document.getElementById('mtOrig').value||hoje();
+  const entrega=(document.getElementById('mtEntrega')||{}).value||proximaEntrega(turmaId,data);
   let alvos;
   if(document.getElementById('mtAlvo').value==='alguns'){
     alvos=[...document.querySelectorAll('.mtChk:checked')].map(c=>c.value);
@@ -765,12 +790,19 @@ function criarTema(turmaId,origem){
     alvos=alunosDa(turmaId).map(a=>a.id);
   }
   const ent={}; alvos.forEach(id=>ent[id]=true);   // padrão: todos entregaram (marca-se quem NÃO entregou)
-  S.temas.push({id:uid(),turmaId,data,descricao:desc,entregas:ent,origem:origem||'extra'});
+  const id=uid();
+  S.temas.push({id,turmaId,data,dataEntrega:entrega,descricao:desc,entregas:ent,origem:origem||'extra'});
+  if(origem==='plano' && _temaPlanoRef){
+    const p=S.planos.find(x=>x.id===_temaPlanoRef.pid);
+    if(p && p.itens[_temaPlanoRef.i]){ p.itens[_temaPlanoRef.i].virouTema=true; p.itens[_temaPlanoRef.i].temaId=id; }
+  }
+  _temaPlanoRef=null;
   save(); fechar(); toast('Tema de casa criado');
   if(rota==='temas'){ temaTurma=turmaId; VIEWS.temas(); }
   else if(rota==='planos'){ renderPlanos(); }
 }
-function temaDoPlano(pid,i){ const p=S.planos.find(p=>p.id===pid); if(!p)return; modalTema(p.turmaId,p.itens[i].txt,p.data,'plano'); }
+let _temaPlanoRef=null;
+function temaDoPlano(pid,i){ const p=S.planos.find(p=>p.id===pid); if(!p)return; _temaPlanoRef={pid,i}; modalTema(p.turmaId,p.itens[i].txt,p.data,'plano'); }
 function renderTemas(){
   const list=document.getElementById('tList');
   let ts=S.temas.filter(t=>t.turmaId===temaTurma);
@@ -787,7 +819,7 @@ function renderTemas(){
     const alvoLabel=(totalTurma>0 && alvos.length>=totalTurma)?'Turma toda':alvos.length+' aluno(s)';
     const badge=t.origem==='plano'?'<span class="pill" style="background:#e6f0fb;color:var(--azul)">do plano</span>':'<span class="pill">extra</span>';
     return `<div class="card"><div style="display:flex;align-items:flex-start;gap:8px"><div style="flex:1"><h3 style="margin:0">${t.descricao}</h3>
-      <p class="hint" style="margin:4px 0 0">${brDate(t.data)} · ${alvoLabel} · ${naoFeito} não feito${parcial?` · ${parcial} parcial`:''} &nbsp;${badge}</p></div>
+      <p class="hint" style="margin:4px 0 0">${t.origem==='plano'?'Aula':'Criado'} ${brDate(t.data)}${t.dataEntrega?` · 📅 entrega ${brDate(t.dataEntrega)}`:''} · ${alvoLabel} · ${naoFeito} não feito${parcial?` · ${parcial} parcial`:''} &nbsp;${badge}</p></div>
       <button class="btn ghost sm" onclick="editarTema('${t.id}')">✏️ editar</button></div>
       <p class="hint" style="margin:8px 0 8px">Padrão: <b>feito</b>. Marque quem fez <b>parcialmente</b> ou <b>não fez</b>.</p>
       <button class="btn ghost sm" style="margin-bottom:6px" onclick="todosEntregaram('${t.id}')">✓ Todos feito</button>
@@ -806,7 +838,8 @@ function editarTema(id){
   const t=S.temas.find(x=>x.id===id); if(!t)return;
   modal(`<h3>✏️ Editar tema <button class="close" onclick="fechar()">×</button></h3>
     <div class="field"><label class="lbl">Descrição</label><input type="text" id="etDesc" value="${escAttr(t.descricao)}"></div>
-    <div class="field"><label class="lbl">Data</label><input type="date" id="etData" value="${t.data}"></div>
+    <div class="row"><div class="field"><label class="lbl">Data da aula/origem</label><input type="date" id="etData" value="${t.data}"></div>
+    <div class="field"><label class="lbl">Data de entrega</label>${selectDataAula('etEntrega',t.turmaId,t.dataEntrega||proximaEntrega(t.turmaId,t.data))}</div></div>
     <button class="btn block" onclick="salvarEdicaoTema('${id}')">Salvar alterações</button>`);
   setTimeout(()=>{const i=document.getElementById('etDesc'); if(i)i.focus();},60);
 }
@@ -814,6 +847,7 @@ function salvarEdicaoTema(id){
   const t=S.temas.find(x=>x.id===id); if(!t)return;
   const d=document.getElementById('etDesc').value.trim(); if(!d)return toast('Descreva o tema');
   t.descricao=d; t.data=document.getElementById('etData').value;
+  const en=(document.getElementById('etEntrega')||{}).value; if(en) t.dataEntrega=en;
   save(); fechar(); renderTemas(); toast('Tema atualizado');
 }
 
@@ -858,15 +892,16 @@ function setNota(tid,aid,val){const t=S.testes.find(t=>t.id===tid);t.notas[aid]=
 let matTurma=null, matData=hoje(), matBusca='';
 VIEWS.material=()=>{
   matTurma=matTurma||primeiraTurma();
+  if(!datasAula(matTurma).includes(matData)) matData=dataAulaPadrao(matTurma);
   const v=document.getElementById('view');
   v.innerHTML=`${btnVoltaPainel()}<div class="section-title"><span class="feijao fj" style="background:var(--laranja)"></span><h2 class="display">Material não trazido</h2></div>
     <p class="sub">Marque quem veio sem material. Alimenta os alertas: 3 aulas seguidas ou 5 alternadas.</p>
     <div class="card"><div class="row">
       <div><label class="lbl">Turma</label>${selectTurma('mT',matTurma)}</div>
-      <div><label class="lbl">Data da aula</label><input type="date" id="mD" value="${matData}"></div></div></div>
+      <div><label class="lbl">Data da aula</label>${selectDataAula('mD',matTurma,matData)}</div></div></div>
     <div class="card" id="mBox"></div>
     <div class="card"><input type="text" id="mBusca" placeholder="🔎 Buscar registro anterior por data" value="${escAttr(matBusca)}" oninput="matBusca=this.value;renderMatLista()"><div id="mLista" style="margin-top:8px"></div></div>`;
-  document.getElementById('mT').onchange=e=>{matTurma=e.target.value;renderMat();renderMatLista();};
+  document.getElementById('mT').onchange=e=>{matTurma=e.target.value;matData=dataAulaPadrao(matTurma);VIEWS.material();};
   document.getElementById('mD').onchange=e=>{matData=e.target.value;renderMat();};
   renderMat(); renderMatLista();
 };
@@ -913,18 +948,22 @@ VIEWS.planos=()=>{
 };
 let _buscaPlano='';
 function novoPlano(turmaPreset){
+  const tp=turmaPreset||primeiraTurma();
   modal(`<h3>🗒️ Novo plano de aula <button class="close" onclick="fechar()">×</button></h3>
     <div class="field"><label class="lbl">Título</label><input type="text" id="plTit" placeholder="Ex: Present Perfect — experiências"></div>
-    <div class="row"><div class="field"><label class="lbl">Turma</label>${selectTurma('plTurma',turmaPreset||primeiraTurma())}</div>
-    <div class="field"><label class="lbl">Data</label><input type="date" id="plData" value="${hoje()}"></div></div>
+    <div class="row"><div class="field"><label class="lbl">Turma</label>${selectTurma('plTurma',tp)}</div>
+    <div class="field"><label class="lbl">Data da aula</label><span id="plDataWrap">${selectDataAula('plData',tp)}</span></div></div>
     <div class="field"><label class="lbl">Itens do plano (um por linha)</label><textarea id="plItens" placeholder="Warm-up&#10;Apresentar estrutura&#10;Listening&#10;Speaking em duplas&#10;Tema de casa"></textarea></div>
     <button class="btn block" onclick="salvarPlano()">Criar plano</button>`);
+  setTimeout(()=>{const s=document.getElementById('plTurma'); if(s) s.onchange=e=>{document.getElementById('plDataWrap').innerHTML=selectDataAula('plData',e.target.value);};},60);
 }
 function salvarPlano(){
   const tit=document.getElementById('plTit').value.trim();
   if(!tit)return toast('Dê um título');
+  const data=document.getElementById('plData').value;
+  if(!data)return toast('Selecione a data da aula (defina os dias da turma, se necessário)');
   const itens=document.getElementById('plItens').value.split('\n').map(s=>s.trim()).filter(Boolean).map(t=>({txt:t,done:false}));
-  S.planos.push({id:uid(),titulo:tit,turmaId:document.getElementById('plTurma').value,data:document.getElementById('plData').value,itens,anotacoes:'',conteudo:'',realizado:false});
+  S.planos.push({id:uid(),titulo:tit,turmaId:document.getElementById('plTurma').value,data,itens,anotacoes:'',conteudo:'',realizado:false});
   save();fechar();renderPlanos();toast('Plano criado');
 }
 function renderPlanos(){
@@ -941,7 +980,7 @@ function renderPlanos(){
       : `<button class="btn sm" onclick="marcarPlanoFeito('${p.id}')">✓ marcar como feito</button>`;
     return `<div class="card"><div style="display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap"><div style="flex:1;min-width:160px"><h3 style="margin:0">${p.titulo}</h3><p class="hint" style="margin:4px 0 0">${turmaNome(p.turmaId)} · ${brDate(p.data)} · ${feitos}/${p.itens.length} itens feitos</p></div>
       <div style="display:flex;gap:6px;align-items:center">${acaoTitulo}<button class="btn ghost sm" onclick="editarPlano('${p.id}')">✏️ editar</button></div></div>
-      <div style="margin-top:10px">${p.itens.map((it,i)=>`<div class="check ${it.done?'done':''}"><input type="checkbox" ${it.done?'checked':''} onchange="togglePlano('${p.id}',${i})"><span>${it.txt}</span><button class="btn ghost sm" style="margin-left:auto" title="Transformar em tema de casa" onclick="temaDoPlano('${p.id}',${i})">📩 tema</button></div>`).join('')}</div>
+      <div style="margin-top:10px">${p.itens.map((it,i)=>`<div class="check ${it.done?'done':''}"><input type="checkbox" ${it.done?'checked':''} onchange="togglePlano('${p.id}',${i})"><span>${it.txt}${it.virouTema?' <span class="pill" style="background:#fff0f6;color:var(--rosa)">📩 virou tema</span>':''}</span><button class="btn ghost sm" style="margin-left:auto" title="Transformar em tema de casa" onclick="temaDoPlano('${p.id}',${i})">📩 tema</button></div>`).join('')}</div>
       <div class="field" style="margin-top:14px"><label class="lbl">Anotações</label><textarea onchange="setPlanoCampo('${p.id}','anotacoes',this.value)" placeholder="Observações sobre a aula...">${p.anotacoes||''}</textarea></div>
       ${ehProfessor()?'':`<button class="btn ghost sm" style="color:var(--vermelho)" onclick="delPlano('${p.id}')">Excluir plano</button>`}</div>`;
   }).join('');
@@ -955,7 +994,7 @@ function editarPlano(id){
   const p=S.planos.find(x=>x.id===id); if(!p)return;
   modal(`<h3>✏️ Editar plano <button class="close" onclick="fechar()">×</button></h3>
     <div class="field"><label class="lbl">Título</label><input type="text" id="epTit" value="${escAttr(p.titulo)}"></div>
-    <div class="row"><div class="field"><label class="lbl">Data</label><input type="date" id="epData" value="${p.data}"></div>
+    <div class="row"><div class="field"><label class="lbl">Data da aula</label>${selectDataAula('epData',p.turmaId,p.data)}</div>
     <div class="field"><label class="lbl">Conteúdo da aula</label><input type="text" id="epCont" value="${escAttr(p.conteudo||'')}" placeholder="Ex: Present perfect"></div></div>
     <div class="field"><label class="lbl">Itens (um por linha)</label><textarea id="epItens">${escAttr((p.itens||[]).map(i=>i.txt).join('\n'))}</textarea></div>
     <div class="field"><label class="lbl">Anotações</label><textarea id="epNotas">${escAttr(p.anotacoes||'')}</textarea></div>
@@ -999,77 +1038,111 @@ VIEWS.resumo=()=>{
     <div class="card"><h3>Relatório gerado</h3><p class="hint">Revise e copie ou imprima.</p>
       <div class="gen-box" id="relOut">Selecione turma e aluno e clique em “Gerar relatório”.</div>
       <div class="row" style="margin-top:14px"><button class="btn amarelo" onclick="copiarRelatorio()">📋 Copiar relatório</button>
-      <button class="btn ghost" onclick="imprimirRelatorio()">🖨️ Imprimir / PDF</button></div></div>
-    ${ehProfessor()?'':`
-    <div class="section-title" style="margin-top:30px"><span class="feijao fj" style="background:var(--ok)"></span><h2 class="display">Enviar relatório da aula às famílias</h2></div>
-    <p class="sub">Quando a aula está completa (chamada e material salvos + plano marcado como feito), o relatório fica liberado. Revise o texto e envie por e-mail aos responsáveis (em cópia oculta).</p>
-    <div class="card"><label class="lbl">Turma</label>${selectTurma('envT',envTurma||resTurma)}<div id="envLista" style="margin-top:12px"></div></div>`}`;
+      <button class="btn ghost" onclick="imprimirRelatorio()">🖨️ Imprimir / PDF</button></div></div>`;
   document.getElementById('rT').onchange=e=>resTurma=e.target.value;
   document.getElementById('rD').onchange=e=>resData=e.target.value;
   document.getElementById('relT').onchange=e=>{document.getElementById('relAWrap').innerHTML=alunosSelect('relA',e.target.value);};
-  const envSel=document.getElementById('envT');
-  if(envSel){ envTurma=envTurma||resTurma||primeiraTurma(); envSel.onchange=e=>{envTurma=e.target.value;renderEnvioAula();}; renderEnvioAula(); }
 };
 const ASSINATURA_PADRAO='— Equipe Togethere\ninglês para chegar lá';
-function corpoRelatorioAula(plano){
-  const turma=S.turmas.find(t=>t.id===plano.turmaId)||{};
-  const temasDia=S.temas.filter(x=>x.turmaId===plano.turmaId && x.data===plano.data);
-  const feitos=(plano.itens||[]).filter(i=>i.done).map(i=>i.txt);
-  let b=`Olá, famílias! 👋\n\nSegue o resumo da aula de ${brDate(plano.data)} — turma ${turma.nome}.\n\n`;
-  b+=`📖 Matéria do dia: ${plano.conteudo||plano.titulo}\n`;
+function emailsResponsaveis(turmaId){ return alunosDa(turmaId).map(a=>(a.email||'').trim()).filter(e=>e.indexOf('@')>0); }
+
+/* ===== RELATÓRIO DO DIA (professor gera; secretaria/direção enviam em Avisos) ===== */
+function corpoRelatorioDia(turmaId,dataAula){
+  const turma=S.turmas.find(t=>t.id===turmaId)||{};
+  const planos=S.planos.filter(p=>p.turmaId===turmaId && p.data===dataAula);
+  const materia=planos.map(p=>p.conteudo||p.titulo).filter(Boolean).join(' · ');
+  const feitos=[].concat(...planos.map(p=>(p.itens||[]).filter(i=>i.done).map(i=>i.txt)));
+  const temas=S.temas.filter(t=>t.turmaId===turmaId && t.data===dataAula);
+  const anota=planos.map(p=>p.anotacoes).filter(Boolean).join(' ');
+  let b=`Olá, famílias! 👋\n\nResumo da aula de ${brDate(dataAula)} — turma ${turma.nome}.\n\n`;
+  b+=`📖 Matéria do dia: ${materia||'(registrar no plano de aula)'}\n`;
   if(feitos.length) b+=`✅ Trabalhamos: ${feitos.join(', ')}.\n`;
-  b+=`\n📚 Tema de casa: ${temasDia.length? temasDia.map(t=>t.descricao).join('; ') : 'sem tema para esta aula'}\n`;
-  if(plano.anotacoes) b+=`\n📝 Observações: ${plano.anotacoes}\n`;
+  if(temas.length){ b+=`\n📚 Tema de casa:\n`+temas.map(t=>`• ${t.descricao}${t.dataEntrega?` (entrega ${brDate(t.dataEntrega)})`:''}`).join('\n')+`\n`; }
+  else { b+=`\n📚 Tema de casa: sem tema para esta aula\n`; }
+  if(anota) b+=`\n📝 Observações: ${anota}\n`;
   b+=`\n${(S.config&&S.config.assinatura)||ASSINATURA_PADRAO}`;
   return b;
 }
-function aulaPronta(plano){
-  const T=plano.turmaId, D=plano.data;
-  const chamada=S.presencas.some(p=>p.turmaId===T&&p.data===D);
-  const material=S.material.some(m=>m.turmaId===T&&m.data===D);
-  const tema=S.temas.some(x=>x.turmaId===T&&x.data===D);
-  const realizado=!!plano.realizado;
-  return {chamada,material,tema,realizado, ready: chamada&&material&&realizado};
+let relTurma=null, relBuscaRel='';
+VIEWS.relatorio=()=>{
+  const tid=painelTurma||relTurma||primeiraTurma(); relTurma=tid;
+  const v=document.getElementById('view');
+  const t=S.turmas.find(x=>x.id===tid)||{};
+  const meus=S.relatorios.filter(r=>r.turmaId===tid).sort((a,b)=>(b.criadoEm||'').localeCompare(a.criadoEm||'')||b.id.localeCompare(a.id));
+  const ultimo=meus[0];
+  v.innerHTML=`${btnVoltaPainel()}<div class="section-title"><span class="feijao fj" style="background:var(--vermelho)"></span><h2 class="display">Relatório do dia</h2></div>
+    <p class="sub">Gere o resumo da aula. Ele fica disponível para a secretaria/direção <b>enviarem aos pais</b> na aba <b>Avisos</b>.</p>
+    <div class="card"><div class="row">
+      ${painelTurma?`<div style="flex:1"><label class="lbl">Turma</label><input type="text" value="${escAttr(t.nome||'')}" disabled></div>`:`<div><label class="lbl">Turma</label>${selectTurma('relDiaTurma',tid)}</div>`}
+      <div><label class="lbl">Data da aula</label>${selectDataAula('relDiaData',tid,dataAulaPadrao(tid))}</div>
+    </div><div style="margin-top:12px"><button class="btn" onclick="gerarRelatorioDia()">🧾 Gerar relatório do dia</button></div></div>
+    ${ultimo?`<div class="card"><h3>Último relatório gerado</h3><p class="hint">${brDate(ultimo.data)} · gerado em ${ultimo.criadoEm?brDate(ultimo.criadoEm):''} · ${ultimo.enviado?'<span style="color:var(--ok)">já enviado às famílias</span>':'aguardando envio pela secretaria/direção'}</p>
+      <div class="gen-box">${escAttr(ultimo.corpo)}</div>
+      <div style="margin-top:10px"><button class="btn amarelo" onclick="copiarRelatorioFamilia('${ultimo.id}')">📋 Copiar texto</button></div></div>`:'<div class="card empty"><div class="big">🧾</div>Nenhum relatório gerado ainda para esta turma.</div>'}
+    <div class="card"><h3>Relatórios anteriores</h3><input type="text" id="relBuscaRel" placeholder="🔎 Buscar por data (ex.: 10/06)" value="${escAttr(relBuscaRel)}" oninput="relBuscaRel=this.value;renderRelHist()"><div id="relHist" style="margin-top:8px"></div></div>`;
+  const sel=document.getElementById('relDiaTurma'); if(sel) sel.onchange=e=>{relTurma=e.target.value;VIEWS.relatorio();};
+  renderRelHist();
+};
+function renderRelHist(){
+  const box=document.getElementById('relHist'); if(!box)return;
+  let rs=S.relatorios.filter(r=>r.turmaId===relTurma).sort((a,b)=>(b.criadoEm||'').localeCompare(a.criadoEm||'')||b.id.localeCompare(a.id));
+  const q=(relBuscaRel||'').trim();
+  if(q) rs=rs.filter(r=>r.data.includes(q)||brDate(r.data).includes(q)); else rs=rs.slice(1,13);
+  if(!rs.length){ box.innerHTML='<p class="hint">'+(q?'Nenhum relatório encontrado.':'Nenhum relatório anterior.')+'</p>'; return; }
+  box.innerHTML=rs.map(r=>`<div class="check"><span>${brDate(r.data)}${r.enviado?' <span class="pill" style="background:#e7f6ef;color:var(--ok)">enviado</span>':''}</span><button class="btn ghost sm" style="margin-left:auto" onclick="verRelatorio('${r.id}')">ver</button></div>`).join('');
 }
-function emailsResponsaveis(turmaId){ return alunosDa(turmaId).map(a=>(a.email||'').trim()).filter(e=>e.indexOf('@')>0); }
-function setCorpoFamilia(pid,val){const p=S.planos.find(x=>x.id===pid);if(p){p.corpoFamilia=val;save();}}
-function renderEnvioAula(){
-  const box=document.getElementById('envLista'); if(!box)return;
-  const planos=S.planos.filter(p=>p.turmaId===envTurma && p.realizado).sort((a,b)=>b.data.localeCompare(a.data));
-  const emails=emailsResponsaveis(envTurma);
-  if(!planos.length){ box.innerHTML='<p class="hint">Nenhuma aula realizada nesta turma ainda. Marque um plano de aula como feito para liberar o relatório.</p>'; return; }
-  const aviso = emails.length?'':'<p class="hint" style="color:var(--vermelho)">Nenhum responsável com e-mail cadastrado nesta turma. Cadastre os e-mails no painel da turma (em Turmas e alunos) para poder enviar.</p>';
-  const chk=(ok,txt)=>`<span style="display:inline-block;margin-right:12px;font-size:.8rem">${ok?'✅':'⬜'} ${txt}</span>`;
-  box.innerHTML=aviso+planos.map(p=>{
-    const r=aulaPronta(p);
-    const corpo=p.corpoFamilia||corpoRelatorioAula(p);
-    return `<div class="card" style="background:#f8fbff">
-      <h3 style="margin:0 0 6px">${p.titulo} · ${brDate(p.data)}</h3>
-      <div style="margin-bottom:8px">${chk(r.chamada,'chamada')}${chk(r.material,'material')}${chk(r.realizado,'plano feito')}${chk(r.tema,'tema do dia')}</div>
-      ${p.enviadoEm?`<p class="hint" style="color:var(--ok);margin:0 0 8px">✓ Enviado em ${brDate(p.enviadoEm)} para ${p.enviadoQtd||emails.length} responsável(is). Você pode reenviar se necessário.</p>`:''}
-      <textarea id="corpo_${p.id}" style="min-height:170px" oninput="setCorpoFamilia('${p.id}',this.value)">${escAttr(corpo)}</textarea>
-      <div class="row" style="margin-top:10px;align-items:center;gap:10px">
-        <button class="btn" ${(!r.ready||!emails.length)?'disabled style="opacity:.5;cursor:not-allowed"':''} onclick="enviarRelatorioAula('${p.id}')">✉️ Enviar para responsáveis (${emails.length})</button>
-        ${!r.ready?'<span class="hint">Falta completar chamada, material e/ou marcar o plano como feito.</span>':''}
-      </div></div>`;
-  }).join('');
+function verRelatorio(id){const r=S.relatorios.find(x=>x.id===id);if(!r)return;modal(`<h3>Relatório · ${brDate(r.data)} <button class="close" onclick="fechar()">×</button></h3><div class="gen-box">${escAttr(r.corpo)}</div><div style="margin-top:10px"><button class="btn amarelo" onclick="copiarRelatorioFamilia('${r.id}')">📋 Copiar</button></div>`);}
+function gerarRelatorioDia(){
+  const tid=relTurma;
+  const data=(document.getElementById('relDiaData')||{}).value;
+  if(!data) return toast('Selecione a data da aula');
+  const corpo=corpoRelatorioDia(tid,data);
+  S.relatorios.push({id:uid(),turmaId:tid,data,corpo,criadoEm:hoje(),criadoPor:S.usuario,enviado:false});
+  save(); VIEWS.relatorio(); toast('Relatório gerado — disponível para envio em Avisos');
 }
-async function enviarRelatorioAula(pid){
-  const p=S.planos.find(x=>x.id===pid); if(!p)return;
-  if(!aulaPronta(p).ready) return toast('A aula ainda não está completa');
-  const emails=emailsResponsaveis(p.turmaId);
-  if(!emails.length) return toast('Cadastre os e-mails dos responsáveis');
-  const corpo=(document.getElementById('corpo_'+pid)||{}).value || corpoRelatorioAula(p);
-  const turma=S.turmas.find(t=>t.id===p.turmaId)||{};
-  const assunto=`Resumo da aula de ${brDate(p.data)} — ${turma.nome} · Togethere`;
-  if(!confirm('Enviar o relatório por e-mail para '+emails.length+' responsável(is) da turma '+turma.nome+'?')) return;
+/* ----- Avisos: enviar/copiar relatórios (secretaria/direção) ----- */
+function setRelCorpo(id,val){const r=S.relatorios.find(x=>x.id===id);if(r){r.corpo=val;save();}}
+function copiarRelatorioFamilia(id){
+  const r=S.relatorios.find(x=>x.id===id); if(!r)return;
+  const corpo=(document.getElementById('relc_'+id)||{}).value||r.corpo;
+  navigator.clipboard.writeText(corpo).then(()=>toast('Copiado! Cole no WhatsApp'),()=>toast('Não foi possível copiar'));
+}
+async function enviarRelatorioFamilia(id){
+  const r=S.relatorios.find(x=>x.id===id); if(!r)return;
+  const emails=emailsResponsaveis(r.turmaId);
+  if(!emails.length) return toast('Nenhum responsável com e-mail nesta turma');
+  const corpo=(document.getElementById('relc_'+id)||{}).value||r.corpo;
+  const t=S.turmas.find(x=>x.id===r.turmaId)||{};
+  const assunto=`Resumo da aula de ${brDate(r.data)} — ${t.nome} · Togethere`;
+  if(!confirm('Enviar o relatório por e-mail para '+emails.length+' responsável(is) da turma '+t.nome+'?')) return;
   toast('Enviando…');
   const res=await cloudEmail(emails,assunto,corpo);
-  if(res && res.ok){
-    p.enviadoEm=hoje(); p.enviadoQtd=emails.length; p.corpoFamilia=corpo; save(); renderEnvioAula();
-    toast('Relatório enviado a '+emails.length+' responsável(is) ✅');
-  } else {
-    toast('Não foi possível enviar'+(res&&res.erro?': '+res.erro:''));
+  if(res && res.ok){ r.enviado=true; r.enviadoEm=hoje(); r.enviadoQtd=emails.length; r.corpo=corpo; save(); VIEWS.alertas(); toast('Relatório enviado a '+emails.length+' responsável(is) ✅'); }
+  else toast('Não foi possível enviar'+(res&&res.erro?': '+res.erro:''));
+}
+function renderAvisoRelatorios(v){
+  const pend=S.relatorios.filter(r=>!r.enviado).sort((a,b)=>(b.criadoEm||'').localeCompare(a.criadoEm||'')||b.id.localeCompare(a.id));
+  const env=S.relatorios.filter(r=>r.enviado).sort((a,b)=>(b.enviadoEm||'').localeCompare(a.enviadoEm||''));
+  const wrap=el('<div class="card" style="border-top:3px solid var(--ok)"><h3>📨 Relatórios de aula para enviar</h3><p class="hint">Gerados pelos professores. Revise, envie por e-mail aos responsáveis ou copie para o WhatsApp.</p><div id="avRelBox"></div></div>');
+  v.appendChild(wrap);
+  const box=wrap.querySelector('#avRelBox');
+  if(!pend.length){ box.innerHTML='<p class="hint">Nenhum relatório pendente de envio.</p>'; }
+  else box.innerHTML=pend.map(r=>{
+    const t=S.turmas.find(x=>x.id===r.turmaId)||{};
+    const emails=emailsResponsaveis(r.turmaId);
+    return `<div class="card" style="background:#f8fbff">
+      <h4 style="margin:0 0 6px">${t.nome||'—'} · ${brDate(r.data)}</h4>
+      ${emails.length?'':'<p class="hint" style="color:var(--vermelho)">Sem e-mail de responsável nesta turma — você ainda pode copiar para o WhatsApp.</p>'}
+      <textarea id="relc_${r.id}" style="min-height:170px" oninput="setRelCorpo('${r.id}',this.value)">${escAttr(r.corpo)}</textarea>
+      <div class="row" style="margin-top:10px;gap:10px">
+        <button class="btn" ${emails.length?'':'disabled style="opacity:.5;cursor:not-allowed"'} onclick="enviarRelatorioFamilia('${r.id}')">✉️ Enviar para pais (${emails.length})</button>
+        <button class="btn amarelo" onclick="copiarRelatorioFamilia('${r.id}')">📋 Copiar (WhatsApp)</button>
+      </div></div>`;
+  }).join('');
+  if(env.length){
+    const sentDiv=el('<div style="margin-top:12px"></div>');
+    sentDiv.innerHTML='<p class="hint" style="margin:0 0 6px">✓ Já enviados</p>'+env.slice(0,12).map(r=>{const t=S.turmas.find(x=>x.id===r.turmaId)||{};return `<div class="check"><span>${t.nome||'—'} · ${brDate(r.data)} — enviado ${r.enviadoEm?brDate(r.enviadoEm):''} (${r.enviadoQtd||0})</span></div>`;}).join('');
+    wrap.appendChild(sentDiv);
   }
 }
 function alunosSelect(id,turmaId,sel){
@@ -1162,8 +1235,9 @@ VIEWS.alertas=()=>{
   const fa=alertasFaltas(), ma=alertasMaterial();
   const nome=id=>{const a=S.alunos.find(a=>a.id===id);return a?a.nome:'—';};
   const turmaDe=id=>{const a=S.alunos.find(a=>a.id===id);return a?turmaNome(a.turmaId):'';};
-  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--vermelho)"></span><h2 class="display">Alertas da secretaria</h2></div>
-    <p class="sub">Alunos que precisam de contato com os responsáveis.</p>`;
+  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--vermelho)"></span><h2 class="display">Avisos</h2></div>
+    <p class="sub">Relatórios de aula para enviar às famílias e alunos que precisam de contato.</p>`;
+  renderAvisoRelatorios(v);
   if(!fa.length&&!ma.length){
     v.appendChild(el('<div class="card empty"><div class="big">✅</div><b>Tudo em dia!</b><br>Nenhum aluno com faltas ou material acima do limite.</div>'));
   }else{
@@ -1297,8 +1371,12 @@ VIEWS.turmas=()=>{
     ${ehProf?'':`<div class="card"><h3>Nova turma</h3><div class="row">
       <div style="flex:2"><label class="lbl">Nome da turma</label><input type="text" id="nT" placeholder="Ex: A2 ADULTS NOITE"></div>
       <div><label class="lbl">Nível</label><select id="nN"><option value="kids">kids</option><option value="junior">junior</option><option value="teens" selected>teens</option><option value="adults">adults</option><option value="talking">talking</option></select></div>
-      <div><label class="lbl">Aulas por semana</label><select id="nFreq"><option value="2" selected>2x (falta = 1)</option><option value="1">1x (falta = 2)</option></select></div>
-    </div><div style="margin-top:12px"><button class="btn" onclick="addTurma()">+ Criar turma</button></div></div>`}
+      <div style="flex:1"><label class="lbl">Horário (opcional)</label><input type="text" id="nHor" placeholder="Ex: 18:15–19:30"></div>
+    </div>
+    <div class="field" style="margin-top:10px"><label class="lbl">Dias de aula</label><div style="display:flex;flex-wrap:wrap;gap:6px">
+      ${[1,2,3,4,5,6].map(d=>`<label style="display:flex;align-items:center;gap:5px;font-size:.88rem;border:1px solid var(--linha);border-radius:9px;padding:6px 10px;cursor:pointer"><input type="checkbox" class="nDia" value="${d}"> ${DIAS_SEMANA[d]}</label>`).join('')}
+    </div><p class="hint" style="margin:6px 0 0">A chamada, o material e os planos só permitirão datas nesses dias. Aulas 1x/semana contam falta em dobro.</p></div>
+    <div style="margin-top:12px"><button class="btn" onclick="addTurma()">+ Criar turma</button></div></div>`}
     <div class="card" style="padding:14px 18px"><input type="text" id="buscaAluno" placeholder="🔎 Buscar aluno pelo nome (em todas as turmas)" value="${_buscaAluno||''}" oninput="filtrarAlunos(this.value)"></div>
     <div id="turmaList"></div>
     ${ehProf?'':`<div class="card" style="border-color:#fdd"><h3 style="color:var(--vermelho)">Zona de risco</h3><p class="hint">Apaga <b>todos os dados</b> (chamadas, temas, planos, testes…) e volta às turmas iniciais. Exige a <b>senha de um(a) diretor(a)</b> e baixa um <b>backup automático</b> antes de apagar.</p>
@@ -1311,7 +1389,10 @@ function addTurma(){
   if(ehProfessor())return toast('Sem permissão');
   const nome=document.getElementById('nT').value.trim();
   if(!nome)return toast('Dê um nome à turma');
-  const t={id:uid(),nome,nivel:document.getElementById('nN').value,horario:'',vezesSemana:+document.getElementById('nFreq').value};
+  const dias=[...document.querySelectorAll('.nDia:checked')].map(c=>+c.value).sort((a,b)=>a-b);
+  if(!dias.length)return toast('Selecione ao menos um dia de aula');
+  const hor=(document.getElementById('nHor').value||'').trim();
+  const t={id:uid(),nome,nivel:document.getElementById('nN').value,horario:hor,dias,vezesSemana:dias.length};
   if(S.perfil==='professor'){const u=S.usuarios.find(u=>u.nome===S.usuario);t.professor=u&&u.ensina;}
   S.turmas.push(t);
   save();VIEWS.turmas();toast('Turma criada');
@@ -1335,7 +1416,7 @@ function renderTurmaList(){
     const als=alunosDa(t.id);
     const prof=t.professor?` · Prof. ${t.professor}`:'';
     const hor=t.horario?` · ${t.horario}`:'';
-    const freq=` · ${(t.vezesSemana===1)?'1x/sem (falta dupla)':'2x/sem'}`;
+    const freq=` · ${diasTurmaLabel(t)||((t.vezesSemana===1)?'1x/sem':'2x/sem')}${t.vezesSemana===1?' (falta dupla)':''}`;
     return `<div class="card" style="cursor:pointer" onclick="abrirTurma('${t.id}')">
       <div style="display:flex;align-items:center;gap:10px">
         <div style="flex:1"><h3 style="margin:0">${t.nome} ${nivelTag(t.nivel)}</h3>
@@ -1371,7 +1452,7 @@ function renderPainelTurma(){
   const podeCadastrar=!ehProfessor();
   v.innerHTML=`<button class="btn ghost sm" onclick="voltarTurmas()">‹ Voltar para turmas</button>
     <div class="section-title" style="margin-top:10px"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">${t.nome}</h2></div>
-    <p class="sub">${nivelTag(t.nivel)} · ${als.length} aluno(s)${t.professor?' · Prof. '+t.professor:''}${t.horario?' · '+t.horario:''} · ${freq}</p>
+    <p class="sub">${nivelTag(t.nivel)} · ${als.length} aluno(s)${t.professor?' · Prof. '+t.professor:''}${diasTurmaLabel(t)?' · '+diasTurmaLabel(t):''}${t.horario?' · '+t.horario:''} · ${freq}</p>
     <div class="card"><h3>Visão geral</h3>
       <div class="dash-grid">
         <div class="stat"><div class="n">${als.length}</div><div class="l">alunos</div></div>
@@ -1387,6 +1468,7 @@ function renderPainelTurma(){
       ${btn('var(--laranja)','material','🎒','Material não trazido','marcar quem veio sem material')}
       ${btn('var(--rosa)','temas','📚','Temas de casa','registrar tema e marcar feito / parcial / não feito')}
       ${btn('var(--roxo)','testes','✏️','Testes','lançar as notas da turma')}
+      ${btn('var(--vermelho)','relatorio','🧾','Relatório do dia','gerar o resumo da aula para enviar às famílias')}
     </div>
     <div class="card"><h3>Alunos (${als.length})</h3>
       ${podeCadastrar?'<p class="hint" style="margin:0 0 8px">E-mail do responsável (usado para enviar o relatório da aula).</p>':''}
