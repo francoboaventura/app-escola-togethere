@@ -348,6 +348,18 @@ function migrar(s){
   s.comentarios=s.comentarios||[]; // garante campos novos
   s.relatorios=s.relatorios||[];
   s.aulasVip=s.aulasVip||[];
+  s.vipAlunos=s.vipAlunos||[];
+  (s.aulasVip||[]).forEach(a=>{
+    if(!a.vipId && a.alunoId){
+      const al=(s.alunos||[]).find(x=>x.id===a.alunoId);
+      const nome=al?al.nome:'Aluno VIP';
+      let vp=s.vipAlunos.find(x=>x.nome===nome);
+      if(!vp){ vp={id:uid(),nome}; s.vipAlunos.push(vp); }
+      a.vipId=vp.id; delete a.alunoId;
+    }
+    if(typeof a.faltou==='undefined') a.faltou=false;
+  });
+  (s.alunos||[]).forEach(a=>{ if('vip' in a) delete a.vip; });
   (s.temas||[]).forEach(t=>{ if(!t.dataEntrega) t.dataEntrega=t.data; });
   (s.turmas||[]).forEach(t=>{
     if(!Array.isArray(t.dias)||!t.dias.length){
@@ -446,6 +458,7 @@ function seed(){
     atas:[],
     tarefas:[],
     relatorios:[],
+    vipAlunos:[],
     aulasVip:[],
     config:{assinatura:'— Equipe Togethere\ninglês para chegar lá', escolaEmail:'admin@togethere.com.br'},
   };
@@ -528,9 +541,9 @@ const NAV=[
   {id:'presenca', label:'Chamada do dia', em:'📋', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
   {id:'testes', label:'Testes', em:'✏️', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
   {id:'planos', label:'Planos de aula', em:'🗒️', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
-  {id:'vip', label:'Aulas VIP', em:'👑', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
   {id:'relatorio', label:'Relatório do dia', em:'🧾', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
   {id:'resumo', label:'Relatórios e resumo', em:'✉️', grp:'Acompanhamento', roles:['professor','secretaria','direcao']},
+  {id:'vip', label:'Alunos VIP', em:'👑', grp:'Acompanhamento', roles:['professor','direcao']},
   {id:'alertas', label:'Avisos', em:'🔔', grp:'Acompanhamento', roles:['secretaria','direcao'], badge:true},
   {id:'atas', label:'Atas de reunião', em:'📝', grp:'Acompanhamento', roles:['direcao']},
   {id:'tarefas', label:'Tarefas internas', em:'🎯', grp:'Gestão', roles:['direcao']},
@@ -1195,72 +1208,85 @@ function renderAvisoRelatorios(v){
 function alunosSelect(id,turmaId,sel){
   const als=alunosDa(turmaId);
   if(!als.length)return `<select id="${id}"><option value="">(sem alunos)</option></select>`;
-  return `<select id="${id}">${als.map(a=>`<option value="${a.id}" ${a.id===sel?'selected':''}>${a.vip?'👑 ':''}${a.nome}</option>`).join('')}</select>`;
+  return `<select id="${id}">${als.map(a=>`<option value="${a.id}" ${a.id===sel?'selected':''}>${a.nome}</option>`).join('')}</select>`;
 }
+function temaExtraTurma(turmaId){ _temaPlanoRef=null; modalTema(turmaId,'',hoje(),'extra'); }
 /* ===== AULAS VIP (aulas avulsas por aluno) ===== */
-let vipTurma=null, vipAluno=null;
+let vipSel=null;
 function fmtDur(min){ min=+min||0; const h=Math.floor(min/60), m=min%60; if(!min)return '0min'; return (h?h+'h':'')+(m?(h?' ':'')+m+'min':''); }
 VIEWS.vip=()=>{
-  const tid=painelTurma||vipTurma||primeiraTurma(); vipTurma=tid;
   const v=document.getElementById('view');
-  const als=alunosDa(tid);
-  if(vipAluno && !als.some(a=>a.id===vipAluno)) vipAluno=null;
-  vipAluno=vipAluno||(als[0]&&als[0].id)||null;
-  v.innerHTML=`${btnVoltaPainel()}<div class="section-title"><span class="feijao fj" style="background:#C8A200"></span><h2 class="display">👑 Aulas VIP</h2></div>
-    <p class="sub">Aulas avulsas de um aluno (fora da grade fixa). Registre descrição, data e duração — e tire o relatório no fim.</p>
-    <div class="card"><div class="row">
-      ${painelTurma?'':`<div><label class="lbl">Turma</label>${selectTurma('vipT',tid)}</div>`}
-      <div style="flex:1"><label class="lbl">Aluno</label>${alunosSelect('vipA',tid,vipAluno)}</div>
-    </div></div>
-    <div class="card"><h3>Nova aula VIP</h3>
+  const lista=S.vipAlunos.slice().sort((a,b)=>a.nome.localeCompare(b.nome));
+  if(vipSel && !lista.some(a=>a.id===vipSel)) vipSel=null;
+  vipSel=vipSel||(lista[0]&&lista[0].id)||null;
+  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:#C8A200"></span><h2 class="display">👑 Alunos VIP</h2></div>
+    <p class="sub">Contexto à parte das turmas. Cadastre o aluno VIP e lance cada aula individualmente — descrição, data, duração e se o aluno compareceu. No fim, tire o relatório.</p>
+    <div class="card"><h3>Alunos VIP</h3>
+      <div class="row"><div style="flex:3"><input type="text" id="vipNome" placeholder="Nome do aluno VIP" onkeydown="if(event.key==='Enter')addVipAluno()"></div>
+      <button class="btn ghost" onclick="addVipAluno()">+ Aluno VIP</button></div>
+      ${lista.length?`<div class="field" style="margin-top:12px"><label class="lbl">Selecionar aluno</label><select id="vipSelAluno" onchange="vipSel=this.value;VIEWS.vip()">${lista.map(a=>`<option value="${a.id}" ${a.id===vipSel?'selected':''}>${a.nome}</option>`).join('')}</select></div>`:'<p class="hint" style="margin:10px 0 0">Nenhum aluno VIP cadastrado ainda.</p>'}
+    </div>
+    ${vipSel?`<div class="card"><h3>Lançar aula</h3>
       <div class="field"><label class="lbl">Descrição da aula</label><input type="text" id="vipDesc" placeholder="Ex: Conversação — entrevista de emprego"></div>
       <div class="row">
         <div class="field"><label class="lbl">Data</label><input type="date" id="vipData" value="${hoje()}"></div>
         <div class="field"><label class="lbl">Duração (min)</label><input type="number" id="vipDur" value="60" min="5" step="5"></div>
       </div>
-      <button class="btn" onclick="addAulaVip()">+ Adicionar aula VIP</button></div>
-    <div class="card" id="vipBox"></div>`;
-  const st=document.getElementById('vipT'); if(st) st.onchange=e=>{vipTurma=e.target.value;vipAluno=null;VIEWS.vip();};
-  const sa=document.getElementById('vipA'); if(sa) sa.onchange=e=>{vipAluno=e.target.value;renderVipLista();};
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:2px 0 12px"><input type="checkbox" id="vipFaltou"> ❌ Aluno não compareceu</label>
+      <button class="btn" onclick="addAulaVip()">+ Lançar aula</button></div>
+      <div class="card" id="vipBox"></div>`:''}`;
   renderVipLista();
 };
+function addVipAluno(){
+  const nome=(document.getElementById('vipNome').value||'').trim(); if(!nome)return toast('Digite o nome');
+  const a={id:uid(),nome}; S.vipAlunos.push(a); vipSel=a.id; save(); VIEWS.vip(); toast('Aluno VIP cadastrado');
+}
+function delVipAluno(id){
+  if(!confirm('Excluir este aluno VIP e todas as suas aulas?'))return;
+  S.vipAlunos=S.vipAlunos.filter(a=>a.id!==id); S.aulasVip=S.aulasVip.filter(x=>x.vipId!==id);
+  if(vipSel===id)vipSel=null; save(); VIEWS.vip(); toast('Aluno VIP excluído');
+}
 function addAulaVip(){
-  const aid=(document.getElementById('vipA')||{}).value||vipAluno;
-  if(!aid)return toast('Selecione um aluno');
+  const vid=vipSel; if(!vid)return toast('Selecione um aluno VIP');
   const desc=document.getElementById('vipDesc').value.trim(); if(!desc)return toast('Descreva a aula');
   const data=document.getElementById('vipData').value; if(!data)return toast('Escolha a data');
   const dur=+document.getElementById('vipDur').value||0;
-  S.aulasVip.push({id:uid(),alunoId:aid,data,descricao:desc,duracaoMin:dur});
-  const al=S.alunos.find(a=>a.id===aid); if(al) al.vip=true;
-  vipAluno=aid; save(); VIEWS.vip(); toast('Aula VIP adicionada');
+  const faltou=!!document.getElementById('vipFaltou').checked;
+  S.aulasVip.push({id:uid(),vipId:vid,data,descricao:desc,duracaoMin:dur,faltou});
+  save(); renderVipLista();
+  const d=document.getElementById('vipDesc'); if(d)d.value='';
+  const f=document.getElementById('vipFaltou'); if(f)f.checked=false;
+  toast(faltou?'Aula lançada (não compareceu)':'Aula lançada');
 }
 function delAulaVip(id){ if(!confirm('Excluir esta aula VIP?'))return; S.aulasVip=S.aulasVip.filter(x=>x.id!==id); save(); renderVipLista(); }
 function renderVipLista(){
   const box=document.getElementById('vipBox'); if(!box)return;
-  const aid=vipAluno, al=S.alunos.find(a=>a.id===aid);
-  if(!aid||!al){ box.innerHTML='<p class="hint">Selecione um aluno.</p>'; return; }
-  const aulas=S.aulasVip.filter(x=>x.alunoId===aid).sort((a,b)=>b.data.localeCompare(a.data));
-  const totalMin=aulas.reduce((s,a)=>s+(+a.duracaoMin||0),0);
-  let h=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0;flex:1">Aulas VIP de ${al.nome}</h3>
-    <button class="btn amarelo sm" ${aulas.length?'':'disabled style="opacity:.5;cursor:not-allowed"'} onclick="copiarRelatorioVip()">📋 Copiar relatório</button></div>`;
-  if(!aulas.length){ box.innerHTML=h+'<p class="hint" style="margin:8px 0 0">Nenhuma aula VIP registrada para este aluno.</p>'; return; }
-  h+=`<p class="hint" style="margin:8px 0 10px"><b>${aulas.length}</b> aula(s) · total <b>${fmtDur(totalMin)}</b></p>`;
-  h+=aulas.map(a=>`<div class="check"><span style="flex:1">${brDate(a.data)} · ${a.descricao} <span class="pill">${fmtDur(a.duracaoMin)}</span></span><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delAulaVip('${a.id}')">excluir</button></div>`).join('');
+  const vid=vipSel, al=S.vipAlunos.find(a=>a.id===vid);
+  if(!vid||!al){ box.innerHTML=''; return; }
+  const aulas=S.aulasVip.filter(x=>x.vipId===vid).sort((a,b)=>b.data.localeCompare(a.data));
+  const comp=aulas.filter(a=>!a.faltou); const compMin=comp.reduce((s,a)=>s+(+a.duracaoMin||0),0);
+  const faltas=aulas.length-comp.length;
+  let h=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0;flex:1">Aulas de ${al.nome}</h3>
+    <button class="btn amarelo sm" ${aulas.length?'':'disabled style="opacity:.5;cursor:not-allowed"'} onclick="copiarRelatorioVip()">📋 Copiar relatório</button>
+    <button class="btn ghost sm" style="color:var(--vermelho)" onclick="delVipAluno('${vid}')">excluir aluno</button></div>`;
+  if(!aulas.length){ box.innerHTML=h+'<p class="hint" style="margin:8px 0 0">Nenhuma aula lançada ainda.</p>'; return; }
+  h+=`<p class="hint" style="margin:8px 0 10px"><b>${comp.length}</b> aula(s) com presença (${fmtDur(compMin)})${faltas?` · <b>${faltas}</b> falta(s)`:''}</p>`;
+  h+=aulas.map(a=>`<div class="check"><span style="flex:1">${brDate(a.data)} · ${a.descricao} <span class="pill">${fmtDur(a.duracaoMin)}</span>${a.faltou?' <span class="pill" style="background:#ffe9e9;color:var(--vermelho)">não compareceu</span>':''}</span><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delAulaVip('${a.id}')">excluir</button></div>`).join('');
   box.innerHTML=h;
 }
-function corpoRelatorioVip(aid){
-  const al=S.alunos.find(a=>a.id===aid); if(!al)return'';
-  const turma=S.turmas.find(t=>t.id===al.turmaId)||{};
-  const aulas=S.aulasVip.filter(x=>x.alunoId===aid).sort((a,b)=>a.data.localeCompare(b.data));
-  const totalMin=aulas.reduce((s,a)=>s+(+a.duracaoMin||0),0);
-  let b=`Relatório de aulas VIP — ${al.nome}${turma.nome?` (${turma.nome})`:''}\n`;
+function corpoRelatorioVip(vid){
+  const al=S.vipAlunos.find(a=>a.id===vid); if(!al)return'';
+  const aulas=S.aulasVip.filter(x=>x.vipId===vid).sort((a,b)=>a.data.localeCompare(b.data));
+  const comp=aulas.filter(a=>!a.faltou); const compMin=comp.reduce((s,a)=>s+(+a.duracaoMin||0),0);
+  const faltas=aulas.length-comp.length;
+  let b=`Relatório de aulas VIP — ${al.nome}\n`;
   if(aulas.length) b+=`Período: ${brDate(aulas[0].data)} a ${brDate(aulas[aulas.length-1].data)}\n`;
-  b+=`\n`+aulas.map(a=>`• ${brDate(a.data)} — ${a.descricao} (${fmtDur(a.duracaoMin)})`).join('\n');
-  b+=`\n\nTotal: ${aulas.length} aula(s) · ${fmtDur(totalMin)}\n`;
+  b+=`\n`+aulas.map(a=>`• ${brDate(a.data)} — ${a.descricao} (${fmtDur(a.duracaoMin)})${a.faltou?' — NÃO COMPARECEU':''}`).join('\n');
+  b+=`\n\nAulas com presença: ${comp.length} (${fmtDur(compMin)})${faltas?` · Faltas: ${faltas}`:''}\n`;
   b+=`\n${(S.config&&S.config.assinatura)||ASSINATURA_PADRAO}`;
   return b;
 }
-function copiarRelatorioVip(){ const txt=corpoRelatorioVip(vipAluno); if(!txt)return; navigator.clipboard.writeText(txt).then(()=>toast('Relatório VIP copiado'),()=>toast('Não foi possível copiar')); }
+function copiarRelatorioVip(){ const txt=corpoRelatorioVip(vipSel); if(!txt)return; navigator.clipboard.writeText(txt).then(()=>toast('Relatório VIP copiado'),()=>toast('Não foi possível copiar')); }
 function gerarResumo(){
   const turmaId=document.getElementById('rT').value, data=document.getElementById('rD').value;
   const turma=S.turmas.find(t=>t.id===turmaId);
@@ -1577,12 +1603,12 @@ function renderPainelTurma(){
       ${btn('var(--azul)','presenca','📋','Chamada do dia','presença, atraso, saída antecipada, material e tema de casa — tudo aqui')}
       ${btn('var(--azul)','planos','🗒️','Planos de aula','ver o plano pendente e marcar como feito; criar novos')}
       ${btn('var(--roxo)','testes','✏️','Testes','lançar as notas da turma')}
-      ${btn('#C8A200','vip','👑','Aulas VIP','registrar aulas avulsas de alunos VIP (descrição, data, duração) e tirar o relatório')}
+      <button class="btn block" style="background:var(--rosa);justify-content:flex-start;text-align:left;margin-bottom:10px;height:auto;padding:14px 16px" onclick="temaExtraTurma('${id}')">📩 Tema extra<span style="display:block;font-weight:400;font-size:.78rem;opacity:.85;margin-top:2px">atribuir um tema de casa à turma toda ou a alunos específicos</span></button>
       ${btn('var(--vermelho)','relatorio','🧾','Relatório do dia','gerar o resumo da aula para enviar às famílias')}
     </div>
     <div class="card"><h3>Alunos (${als.length})</h3>
       ${podeCadastrar?'<p class="hint" style="margin:0 0 8px">E-mail do responsável (usado para enviar o relatório da aula).</p>':''}
-      ${als.map(a=>`<div style="padding:8px 0;border-bottom:1px dashed var(--linha)"><div style="display:flex;align-items:center;gap:8px"><span style="flex:1">${a.vip?'👑 ':''}${a.nome}</span>${podeCadastrar?`<button class="btn ghost sm" onclick="delAluno('${a.id}')">remover</button>`:''}</div>
+      ${als.map(a=>`<div style="padding:8px 0;border-bottom:1px dashed var(--linha)"><div style="display:flex;align-items:center;gap:8px"><span style="flex:1">${a.nome}</span>${podeCadastrar?`<button class="btn ghost sm" onclick="delAluno('${a.id}')">remover</button>`:''}</div>
         ${podeCadastrar?`<input type="email" value="${escAttr(a.email||'')}" placeholder="email.responsavel@exemplo.com" style="margin-top:6px;font-size:.85rem" onchange="setAlunoEmail('${a.id}',this.value)">`:''}</div>`).join('')||'<p class="hint">Sem alunos ainda.</p>'}
       ${podeCadastrar?`<div class="row" style="margin-top:12px"><div style="flex:3"><input type="text" id="al_${id}" placeholder="Nome do novo aluno" onkeydown="if(event.key==='Enter')addAluno('${id}')"></div>
       <button class="btn ghost" onclick="addAluno('${id}')">+ Aluno</button></div>`:''}</div>
