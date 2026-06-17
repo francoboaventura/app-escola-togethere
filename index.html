@@ -543,7 +543,8 @@ const NAV=[
   {id:'testes', label:'Testes', em:'✏️', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
   {id:'planos', label:'Planos de aula', em:'🗒️', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
   {id:'relatorio', label:'Relatório do dia', em:'🧾', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
-  {id:'resumo', label:'Relatórios e resumo', em:'✉️', grp:'Acompanhamento', roles:['professor','secretaria','direcao']},
+  {id:'resumo', label:'Relatórios por aluno', em:'📄', grp:'Acompanhamento', roles:['secretaria','direcao']},
+  {id:'relturma', label:'Relatórios por turma', em:'🏫', grp:'Acompanhamento', roles:['secretaria','direcao']},
   {id:'vip', label:'Alunos VIP', em:'👑', grp:'Acompanhamento', roles:['professor','direcao']},
   {id:'alertas', label:'Avisos', em:'🔔', grp:'Acompanhamento', roles:['secretaria','direcao'], badge:true},
   {id:'atas', label:'Atas de reunião', em:'📝', grp:'Acompanhamento', roles:['direcao']},
@@ -731,9 +732,18 @@ function renderPres(){
   const reg=rec.registros||{}, atr=rec.atrasados||[], cedo=rec.saiuCedo||[];
   const matRec=S.material.find(m=>m.turmaId===presTurma&&m.data===presData);
   const matFalt=matRec?matRec.faltantes:[];
+  const temasHoje=S.temas.filter(t=>t.turmaId===presTurma && t.dataEntrega===presData);
   const als=alunosDa(presTurma);
   if(!als.length){box.innerHTML='<div class="empty"><div class="big">👥</div>Nenhum aluno nesta turma ainda.</div>';return;}
-  box.innerHTML=`<h3>${als.length} alunos · ${brDate(presData)}</h3><p class="hint">Toque para alternar presença. Para quem veio, marque atraso, saída antecipada ou <b>sem material</b>.</p>
+  const temaCtrl=(a)=> temasHoje.filter(t=>a.id in (t.entregas||{})).map(t=>{
+    const st=t.entregas[a.id];
+    return `<div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">
+      <span style="font-size:.82rem;flex:1;min-width:120px;color:var(--rosa)">📚 ${escAttr(t.descricao)}</span>
+      <div class="seg"><button class="${st===true?'on-ok':''}" onclick="setTemaChamada('${t.id}','${a.id}',true)">feito</button>
+      <button class="${st==='parcial'?'on-mid':''}" onclick="setTemaChamada('${t.id}','${a.id}','parcial')">parcial</button>
+      <button class="${st===false?'on-no':''}" onclick="setTemaChamada('${t.id}','${a.id}',false)">não feito</button></div>
+    </div>`;}).join('');
+  box.innerHTML=`<h3>${als.length} alunos · ${brDate(presData)}</h3><p class="hint">Toque para alternar presença. Marque atraso, saída antecipada, <b>sem material</b> e a entrega do <b>tema</b> em cada aluno.</p>
     ${als.map(a=>{
       const st=reg[a.id]||'presente';
       return `<div style="padding:10px 0;border-bottom:1px dashed var(--linha)">
@@ -747,6 +757,7 @@ function renderPres(){
           <label style="display:flex;align-items:center;gap:6px;font-size:.84rem;cursor:pointer"><input type="checkbox" ${cedo.includes(a.id)?'checked':''} onchange="toggleSaiuCedo('${a.id}')"> saiu mais cedo</label>
           <label style="display:flex;align-items:center;gap:6px;font-size:.84rem;cursor:pointer;color:var(--laranja)"><input type="checkbox" ${matFalt.includes(a.id)?'checked':''} onchange="toggleMatPres('${a.id}')"> 🎒 sem material</label>
         </div>`:''}
+        ${temaCtrl(a)}
       </div>`;
     }).join('')}
     <div style="margin-top:16px"><button class="btn" onclick="salvarPres()">Salvar chamada e material</button></div>`;
@@ -777,26 +788,16 @@ function renderTemaChamada(){
   let h=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0;flex:1">📚 Tema de casa</h3>
     <button class="btn sm" style="background:var(--rosa)" onclick="temaDaChamada()">+ Lançar tema desta aula</button></div>`;
   if(!due.length){
-    h+='<p class="hint" style="margin:8px 0 0">Nenhum tema com <b>entrega marcada para este dia</b>. Use o botão acima para lançar o tema desta aula e definir a data de entrega.</p>';
+    h+='<p class="hint" style="margin:8px 0 0">Nenhum tema com entrega marcada para este dia. Use o botão acima para lançar o tema desta aula e definir a data de entrega.</p>';
   } else {
-    h+='<p class="hint" style="margin:8px 0 10px">Temas que vencem hoje. Padrão: <b>feito</b>. Marque quem fez <b>parcial</b> ou <b>não fez</b>.</p>';
-    h+=due.map(t=>{
-      const alvos=Object.keys(t.entregas);
-      return `<div style="border:1px solid var(--linha);border-radius:12px;padding:10px 12px;margin-bottom:10px">
-        <div style="margin-bottom:6px;display:flex;align-items:center;gap:6px;flex-wrap:wrap"><b style="flex:1">${t.descricao}</b> <span class="hint">entrega ${brDate(t.dataEntrega||presData)}</span>
-          <button class="btn ghost sm" onclick="editarTema('${t.id}')">✏️</button>
-          ${ehProfessor()?'':`<button class="btn ghost sm" style="color:var(--vermelho)" onclick="delTema('${t.id}')">🗑</button>`}</div>
-        ${alvos.map(aid=>{const a=S.alunos.find(x=>x.id===aid);const st=t.entregas[aid];
-          return `<div class="check"><span style="flex:1">${a?a.nome:'—'}</span>
-            <div class="seg"><button class="${st===true?'on-ok':''}" onclick="setTemaChamada('${t.id}','${aid}',true)">feito</button>
-            <button class="${st==='parcial'?'on-mid':''}" onclick="setTemaChamada('${t.id}','${aid}','parcial')">parcial</button>
-            <button class="${st===false?'on-no':''}" onclick="setTemaChamada('${t.id}','${aid}',false)">não feito</button></div></div>`;}).join('')}
-      </div>`;
-    }).join('');
+    h+='<p class="hint" style="margin:8px 0 10px">A conferência (feito / parcial / não feito) está em cada aluno, na lista da chamada acima.</p>';
+    h+=due.map(t=>`<div class="check"><span style="flex:1">📌 <b>${escAttr(t.descricao)}</b> · entrega ${brDate(t.dataEntrega||presData)}</span>
+      <button class="btn ghost sm" onclick="editarTema('${t.id}')">✏️</button>
+      ${ehProfessor()?'':`<button class="btn ghost sm" style="color:var(--vermelho)" onclick="delTema('${t.id}')">🗑</button>`}</div>`).join('');
   }
   box.innerHTML=h;
 }
-function setTemaChamada(tid,aid,val){const t=S.temas.find(t=>t.id===tid);if(!t)return;t.entregas[aid]=val;save();renderTemaChamada();}
+function setTemaChamada(tid,aid,val){const t=S.temas.find(t=>t.id===tid);if(!t)return;t.entregas[aid]=val;save();renderPres();renderTemaChamada();}
 function temaDaChamada(){ _temaPlanoRef=null; modalTema(presTurma,'',presData,'extra'); }
 function carregaPres(data){presData=data;VIEWS.presenca();window.scrollTo({top:0,behavior:'smooth'});}
 function renderPresLista(){
@@ -903,7 +904,7 @@ function renderTemas(){
       ${ehProfessor()?'':`<button class="btn ghost sm" style="margin-top:12px;color:var(--vermelho)" onclick="delTema('${t.id}')">Excluir tema</button>`}</div>`;
   }).join('');
 }
-function refreshTemaCtx(){ if(document.getElementById('tList')) renderTemas(); else if(document.getElementById('pTema')) renderTemaChamada(); }
+function refreshTemaCtx(){ if(document.getElementById('tList')) renderTemas(); else if(document.getElementById('pTema')) renderTemaChamada(); else if(document.getElementById('plList')) renderPlanos(); }
 function setTema(tid,aid,val){const t=S.temas.find(t=>t.id===tid);t.entregas[aid]=val;save();refreshTemaCtx();}
 function todosEntregaram(tid){const t=S.temas.find(t=>t.id===tid);if(!t)return;Object.keys(t.entregas).forEach(k=>t.entregas[k]=true);save();refreshTemaCtx();toast('Todos marcados como feito');}
 function delTema(id){if(ehProfessor())return toast('Sem permissão');if(confirm('Excluir este tema de casa?')){S.temas=S.temas.filter(t=>t.id!==id);save();refreshTemaCtx();toast('Tema excluído');}}
@@ -1013,7 +1014,7 @@ function renderMatLista(){
 VIEWS.planos=()=>{
   const v=document.getElementById('view');
   v.innerHTML=`${btnVoltaPainel()}<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Planos de aula</h2></div>
-    <p class="sub">Planos <b>pendentes</b> (ainda não realizados). Marque como feito ao dar a aula. Use a busca para ver os já realizados.</p>
+    <p class="sub">Lista dos planos por data. <b>Clique para abrir</b> e ler os itens, o tema e as anotações. Use a busca para ver os já realizados.</p>
     <button class="btn" style="margin-bottom:14px" onclick="novoPlano(painelTurma||'')">+ Novo plano de aula</button>
     <div class="card" style="padding:14px 18px"><input type="text" id="buscaPlano" placeholder="🔎 Buscar plano (título, conteúdo, turma ou data)" value="${escAttr(_buscaPlano)}" oninput="_buscaPlano=this.value;renderPlanos()"></div>
     <div id="plList"></div>`;
@@ -1053,27 +1054,66 @@ function salvarPlano(){
   S.planos.push({id:uid(),titulo:tit,turmaId:document.getElementById('plTurma').value,data,itens,anotacoes:'',conteudo:'',realizado:false});
   save();fechar();renderPlanos();toast('Plano criado');
 }
+let _planoAberto=null;
+function togglePlanoAberto(id){ _planoAberto = (_planoAberto===id)?null:id; renderPlanos(); }
+function planoCard(p){
+  const feitos=p.itens.filter(i=>i.done).length;
+  const naofeitos=p.itens.length-feitos;
+  const temas=S.temas.filter(t=>t.turmaId===p.turmaId && t.data===p.data);
+  const aberto=_planoAberto===p.id;
+  const statusPill=p.realizado?`<span class="pill" style="background:#e7f6ef;color:var(--ok)">✓ realizado</span>`:`<span class="pill" style="background:#fff7e6;color:var(--laranja)">pendente</span>`;
+  return `<div class="card" style="padding:0;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:8px;padding:14px 16px;cursor:pointer" onclick="togglePlanoAberto('${p.id}')">
+      <div style="flex:1;min-width:140px"><b>${brDate(p.data)}</b> · ${p.titulo}<div class="hint" style="margin-top:2px">${turmaNome(p.turmaId)} · ${feitos}/${p.itens.length} itens · ${statusPill}${temas.length?` · 📚 ${temas.length} tema(s)`:''}</div></div>
+      <button class="btn ghost sm" onclick="event.stopPropagation();editarPlano('${p.id}')">✏️ editar</button>
+      <span style="opacity:.5;font-size:.8rem">${aberto?'▲':'▼'}</span>
+    </div>
+    ${aberto?`<div style="padding:0 16px 16px">
+      <p class="hint" style="margin:0 0 6px">✅ ${feitos} feito(s) · ⭕ ${naofeitos} não feito(s)</p>
+      <div>${p.itens.map((it,i)=>`<div class="check ${it.done?'done':''}"><input type="checkbox" ${it.done?'checked':''} onchange="togglePlano('${p.id}',${i})"><span>${it.txt}${it.virouTema?' <span class="pill" style="background:#fff0f6;color:var(--rosa)">📩 virou tema</span>':''}</span><button class="btn ghost sm" style="margin-left:auto" title="Transformar em tema de casa" onclick="temaDoPlano('${p.id}',${i})">📩 tema</button></div>`).join('')||'<p class="hint">Plano sem itens.</p>'}</div>
+      <div class="card" style="background:#fff0f6;margin-top:12px;border:1px solid #ffd9ea"><h4 style="margin:0 0 8px">📚 Tema desta aula</h4>
+        ${temas.length?temas.map(t=>`<div style="border-bottom:1px solid #ffd9ea;padding-bottom:10px;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px"><b style="flex:1">${escAttr(t.descricao)}</b><span class="pill">entrega ${brDate(t.dataEntrega||t.data)}</span><button class="btn ghost sm" onclick="editarTema('${t.id}')">✏️</button>${ehProfessor()?'':`<button class="btn ghost sm" style="color:var(--vermelho)" onclick="delTema('${t.id}')">🗑</button>`}</div>
+          ${Object.keys(t.entregas).map(aid=>{const a=S.alunos.find(x=>x.id===aid);const st=t.entregas[aid];
+            return `<div class="check"><span style="flex:1">${a?a.nome:'—'}</span>
+              <div class="seg"><button class="${st===true?'on-ok':''}" onclick="setTema('${t.id}','${aid}',true)">feito</button>
+              <button class="${st==='parcial'?'on-mid':''}" onclick="setTema('${t.id}','${aid}','parcial')">parcial</button>
+              <button class="${st===false?'on-no':''}" onclick="setTema('${t.id}','${aid}',false)">não feito</button></div></div>`;}).join('')}
+        </div>`).join(''):'<p class="hint" style="margin:0 0 8px">Nenhum tema vinculado a esta aula.</p>'}
+        <button class="btn ghost sm" style="margin-top:2px;color:var(--rosa)" onclick="temaExtraDoPlano('${p.id}')">📩 Criar tema desta aula</button></div>
+      <div class="field" style="margin-top:12px"><label class="lbl">Anotações</label><textarea onchange="setPlanoCampo('${p.id}','anotacoes',this.value)" placeholder="Observações sobre a aula...">${p.anotacoes||''}</textarea></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center">
+        ${p.realizado?`<button class="btn ghost sm" onclick="reabrirPlano('${p.id}')">↩︎ reabrir</button>`:`<button class="btn sm" onclick="marcarPlanoFeito('${p.id}')">✓ marcar como feito</button>`}
+        <button class="btn amarelo sm" onclick="gerarRelatorioDoPlano('${p.id}')">🧾 Gerar relatório</button>
+        ${ehProfessor()?'':`<button class="btn ghost sm" style="color:var(--vermelho);margin-left:auto" onclick="delPlano('${p.id}')">🗑 Excluir</button>`}
+      </div>
+    </div>`:''}
+  </div>`;
+}
 function renderPlanos(){
   const list=document.getElementById('plList');
   const raw=(_buscaPlano||'').trim(), q=_normTxt(raw);
-  let ps=(painelTurma?S.planos.filter(p=>p.turmaId===painelTurma):[...S.planos]);
-  if(q){ ps=ps.filter(p=> _normTxt(p.titulo).includes(q) || _normTxt(p.conteudo||'').includes(q) || _normTxt(turmaNome(p.turmaId)).includes(q) || p.data.includes(raw) || brDate(p.data).includes(raw)).sort((a,b)=>b.data.localeCompare(a.data)); }
-  else { ps=ps.filter(p=>!p.realizado).sort((a,b)=>a.data.localeCompare(b.data)); }   // pendentes, próximos primeiro
-  if(!ps.length){list.innerHTML=`<div class="card empty"><div class="big">${q?'🔎':'✅'}</div>${q?'Nenhum plano encontrado.':'Nenhum plano de aula pendente. Crie um novo no botão acima.'}</div>`;return;}
-  list.innerHTML=ps.map(p=>{
-    const feitos=p.itens.filter(i=>i.done).length;
-    const acaoTitulo = p.realizado
-      ? `<span class="pill" style="background:#e7f6ef;color:var(--ok)">✓ realizado${p.realizadoEm?' em '+brDate(p.realizadoEm):''}</span> <button class="btn ghost sm" onclick="reabrirPlano('${p.id}')">reabrir</button>`
-      : `<button class="btn sm" onclick="marcarPlanoFeito('${p.id}')">✓ marcar como feito</button>`;
-    return `<div class="card"><div style="display:flex;align-items:flex-start;gap:8px;flex-wrap:wrap"><div style="flex:1;min-width:160px"><h3 style="margin:0">${p.titulo}</h3><p class="hint" style="margin:4px 0 0">${turmaNome(p.turmaId)} · ${brDate(p.data)} · ${feitos}/${p.itens.length} itens feitos</p></div>
-      <div style="display:flex;gap:6px;align-items:center">${acaoTitulo}<button class="btn ghost sm" onclick="editarPlano('${p.id}')">✏️ editar</button></div></div>
-      <div style="margin-top:10px">${p.itens.map((it,i)=>`<div class="check ${it.done?'done':''}"><input type="checkbox" ${it.done?'checked':''} onchange="togglePlano('${p.id}',${i})"><span>${it.txt}${it.virouTema?' <span class="pill" style="background:#fff0f6;color:var(--rosa)">📩 virou tema</span>':''}</span><button class="btn ghost sm" style="margin-left:auto" title="Transformar em tema de casa" onclick="temaDoPlano('${p.id}',${i})">📩 tema</button></div>`).join('')}</div>
-      <div class="field" style="margin-top:14px"><label class="lbl">Anotações</label><textarea onchange="setPlanoCampo('${p.id}','anotacoes',this.value)" placeholder="Observações sobre a aula...">${p.anotacoes||''}</textarea>
-        <button class="btn ghost sm" style="margin-top:8px;color:var(--rosa)" onclick="temaExtraDoPlano('${p.id}')">📩 Criar tema de casa (não previsto no plano)</button></div>
-      ${ehProfessor()?'':`<button class="btn ghost sm" style="color:var(--vermelho)" onclick="delPlano('${p.id}')">Excluir plano</button>`}</div>`;
-  }).join('');
+  const base=(painelTurma?S.planos.filter(p=>p.turmaId===painelTurma):[...S.planos]);
+  if(q){
+    const ps=base.filter(p=> _normTxt(p.titulo).includes(q) || _normTxt(p.conteudo||'').includes(q) || _normTxt(turmaNome(p.turmaId)).includes(q) || p.data.includes(raw) || brDate(p.data).includes(raw)).sort((a,b)=>b.data.localeCompare(a.data));
+    list.innerHTML = ps.length ? ps.map(planoCard).join('') : `<div class="card empty"><div class="big">🔎</div>Nenhum plano encontrado.</div>`;
+    return;
+  }
+  const pend=base.filter(p=>!p.realizado).sort((a,b)=>a.data.localeCompare(b.data));
+  const feitos=base.filter(p=>p.realizado).sort((a,b)=>b.data.localeCompare(a.data));
+  if(!pend.length && !feitos.length){ list.innerHTML=`<div class="card empty"><div class="big">✅</div>Nenhum plano de aula ainda. Crie um novo no botão acima.</div>`; return; }
+  let html=`<p style="font-weight:700;margin:4px 0 8px;opacity:.7">⏳ Pendentes (${pend.length})</p>`;
+  html += pend.length ? pend.map(planoCard).join('') : '<p class="hint" style="margin:0 0 8px">Nenhum plano pendente.</p>';
+  html += `<p style="font-weight:700;margin:20px 0 8px;opacity:.7">✓ Realizados (${feitos.length})</p>`;
+  html += feitos.length ? feitos.map(planoCard).join('') : '<p class="hint" style="margin:0">Nenhum plano realizado ainda.</p>';
+  list.innerHTML=html;
 }
 function marcarPlanoFeito(pid){const p=S.planos.find(p=>p.id===pid);if(!p)return;p.realizado=true;p.realizadoEm=hoje();save();renderPlanos();toast('Plano marcado como feito');}
+function gerarRelatorioDoPlano(pid){
+  const p=S.planos.find(x=>x.id===pid); if(!p)return;
+  upsertRelatorio(p.turmaId,p.data,corpoRelatorioDia(p.turmaId,p.data));
+  save(); toast('Relatório gerado — veja em Avisos');
+}
 function reabrirPlano(pid){const p=S.planos.find(p=>p.id===pid);if(!p)return;p.realizado=false;p.realizadoEm=null;save();renderPlanos();toast('Plano reaberto');}
 function togglePlano(pid,i){const p=S.planos.find(p=>p.id===pid);p.itens[i].done=!p.itens[i].done;save();renderPlanos();}
 function setPlanoCampo(pid,campo,val){const p=S.planos.find(p=>p.id===pid);p[campo]=val;save();}
@@ -1099,37 +1139,30 @@ function salvarEdicaoPlano(id){
 }
 
 /* ---- RESUMO PARA PAIS ---- */
-let resTurma=null, resData=hoje(), envTurma=null;
+let resTurma=null, resData=hoje(), envTurma=null, resDe=ymd(new Date(Date.now()-30*864e5)), resAte=hoje();
 VIEWS.resumo=()=>{
   resTurma=resTurma||primeiraTurma();
   const v=document.getElementById('view');
-  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--vermelho)"></span><h2 class="display">Resumo da aula para os pais</h2></div>
-    <p class="sub">Gera um texto pronto a partir do plano de aula e do tema do dia.</p>
-    <div class="card"><div class="row">
-      <div><label class="lbl">Turma</label>${selectTurma('rT',resTurma)}</div>
-      <div><label class="lbl">Data da aula</label><input type="date" id="rD" value="${resData}"></div></div>
-      <div style="margin-top:12px"><button class="btn" onclick="gerarResumo()">✨ Gerar resumo</button></div></div>
-    <div class="card"><h3>Texto gerado</h3><p class="hint">Revise e copie para enviar no grupo dos responsáveis.</p>
-      <div class="gen-box" id="rOut">Clique em “Gerar resumo” para criar o texto.</div>
-      <div style="margin-top:14px"><button class="btn amarelo" onclick="copiarResumo()">📋 Copiar texto</button></div></div>
-
-    <div class="section-title" style="margin-top:30px"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Relatório por aluno</h2></div>
-    <p class="sub">Busque por turma e aluno para gerar um relatório completo: faltas (com o resumo das aulas perdidas), material esquecido, temas não feitos e comentários.</p>
+  const podeComentar = S.perfil!=='secretaria';   // secretaria não edita/adiciona nada
+  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Relatórios por aluno</h2></div>
+    <p class="sub">Gere o relatório completo de um aluno — faltas (com o resumo das aulas perdidas), material esquecido, temas não feitos e comentários — e copie ou imprima para enviar ao responsável.</p>
     <div class="card"><div class="row">
       <div><label class="lbl">Turma</label>${selectTurma('relT',resTurma)}</div>
       <div><label class="lbl">Aluno</label><span id="relAWrap">${alunosSelect('relA',resTurma)}</span></div></div>
+      <div class="row" style="margin-top:10px">
+        <div><label class="lbl">De</label><input type="date" id="relDe" value="${resDe}" onchange="resDe=this.value"></div>
+        <div><label class="lbl">Até</label><input type="date" id="relAte" value="${resAte}" onchange="resAte=this.value"></div></div>
+      <p class="hint" style="margin:6px 0 0">O relatório considera apenas o período acima (evita relatórios gigantes).</p>
       <div style="margin-top:12px"><button class="btn" onclick="gerarRelatorioAluno()">📄 Gerar relatório</button></div>
-      <div class="field" style="margin-top:16px"><label class="lbl">Adicionar comentário sobre o aluno</label>
+      ${podeComentar?`<div class="field" style="margin-top:16px"><label class="lbl">Adicionar comentário sobre o aluno</label>
         <textarea id="relCom" placeholder="Observação específica sobre este aluno (comportamento, evolução, combinados com a família...)"></textarea>
-        <button class="btn ghost sm" style="margin-top:8px" onclick="addComentario()">+ Adicionar comentário</button></div>
+        <button class="btn ghost sm" style="margin-top:8px" onclick="addComentario()">+ Adicionar comentário</button></div>`:''}
     </div>
     <div class="card"><h3>Relatório gerado</h3><p class="hint">Revise e copie ou imprima.</p>
       <div class="gen-box" id="relOut">Selecione turma e aluno e clique em “Gerar relatório”.</div>
       <div class="row" style="margin-top:14px"><button class="btn amarelo" onclick="copiarRelatorio()">📋 Copiar relatório</button>
       <button class="btn ghost" onclick="imprimirRelatorio()">🖨️ Imprimir / PDF</button></div></div>`;
-  document.getElementById('rT').onchange=e=>resTurma=e.target.value;
-  document.getElementById('rD').onchange=e=>resData=e.target.value;
-  document.getElementById('relT').onchange=e=>{document.getElementById('relAWrap').innerHTML=alunosSelect('relA',e.target.value);};
+  document.getElementById('relT').onchange=e=>{resTurma=e.target.value;document.getElementById('relAWrap').innerHTML=alunosSelect('relA',e.target.value);};
 };
 const ASSINATURA_PADRAO='— Equipe Togethere\ninglês para chegar lá';
 function emailsResponsaveis(turmaId){ return alunosDa(turmaId).map(a=>(a.email||'').trim()).filter(e=>e.indexOf('@')>0); }
@@ -1180,20 +1213,43 @@ function renderRelHist(){
   box.innerHTML=rs.map(r=>`<div class="check"><span>${brDate(r.data)}${r.enviado?' <span class="pill" style="background:#e7f6ef;color:var(--ok)">enviado</span>':''}</span><button class="btn ghost sm" style="margin-left:auto" onclick="verRelatorio('${r.id}')">ver</button></div>`).join('');
 }
 function verRelatorio(id){const r=S.relatorios.find(x=>x.id===id);if(!r)return;modal(`<h3>Relatório · ${brDate(r.data)} <button class="close" onclick="fechar()">×</button></h3><div class="gen-box">${escAttr(r.corpo)}</div><div style="margin-top:10px"><button class="btn amarelo" onclick="copiarRelatorioFamilia('${r.id}')">📋 Copiar</button></div>`);}
+function upsertRelatorio(turmaId,data,corpo){
+  let r=S.relatorios.find(x=>x.turmaId===turmaId && x.data===data);
+  if(r){ r.corpo=corpo; r.criadoEm=hoje(); r.criadoPor=S.usuario; }   // mesma aula: atualiza, mantém status de enviado
+  else { r={id:uid(),turmaId,data,corpo,criadoEm:hoje(),criadoPor:S.usuario,enviado:false}; S.relatorios.push(r); }
+  return r;
+}
 function gerarRelatorioDia(){
   const tid=relTurma;
   const data=(document.getElementById('relDiaData')||{}).value;
   if(!data) return toast('Selecione a data da aula');
-  const corpo=corpoRelatorioDia(tid,data);
-  S.relatorios.push({id:uid(),turmaId:tid,data,corpo,criadoEm:hoje(),criadoPor:S.usuario,enviado:false});
-  save(); VIEWS.relatorio(); toast('Relatório gerado — disponível para envio em Avisos');
+  upsertRelatorio(tid,data,corpoRelatorioDia(tid,data));
+  save(); VIEWS.relatorio(); toast('Relatório gerado — disponível para a secretaria em Avisos');
 }
 /* ----- Avisos: enviar/copiar relatórios (secretaria/direção) ----- */
 function setRelCorpo(id,val){const r=S.relatorios.find(x=>x.id===id);if(r){r.corpo=val;save();}}
+function copiarTexto(txt, msg){
+  txt=String(txt||'');
+  if(!txt) return toast('Nada para copiar');
+  const ok=()=>toast(msg||'Copiado!');
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(ok, ()=>fallbackCopia(txt,msg));
+  } else { fallbackCopia(txt,msg); }
+}
+function fallbackCopia(txt,msg){
+  try{
+    const ta=document.createElement('textarea');
+    ta.value=txt; ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.top='-1000px'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.focus(); ta.select(); ta.setSelectionRange(0, txt.length);
+    const sucesso=document.execCommand('copy');
+    document.body.removeChild(ta);
+    toast(sucesso ? (msg||'Copiado!') : 'Não foi possível copiar — selecione manualmente');
+  }catch(e){ toast('Não foi possível copiar — selecione manualmente'); }
+}
 function copiarRelatorioFamilia(id){
   const r=S.relatorios.find(x=>x.id===id); if(!r)return;
   const corpo=(document.getElementById('relc_'+id)||{}).value||r.corpo;
-  navigator.clipboard.writeText(corpo).then(()=>toast('Copiado! Cole no WhatsApp'),()=>toast('Não foi possível copiar'));
+  copiarTexto(corpo,'Copiado! Cole no WhatsApp');
 }
 async function enviarRelatorioFamilia(id){
   const r=S.relatorios.find(x=>x.id===id); if(!r)return;
@@ -1209,30 +1265,73 @@ async function enviarRelatorioFamilia(id){
   else toast('Não foi possível enviar'+(res&&res.erro?': '+res.erro:''));
 }
 function renderAvisoRelatorios(v){
-  const pend=S.relatorios.filter(r=>!r.enviado).sort((a,b)=>(b.criadoEm||'').localeCompare(a.criadoEm||'')||b.id.localeCompare(a.id));
-  const env=S.relatorios.filter(r=>r.enviado).sort((a,b)=>(b.enviadoEm||'').localeCompare(a.enviadoEm||''));
-  const wrap=el('<div class="card" style="border-top:3px solid var(--ok)"><h3>📨 Relatórios de aula para enviar</h3><p class="hint">Gerados pelos professores. Revise, envie por e-mail aos responsáveis ou copie para o WhatsApp.</p><div id="avRelBox"></div></div>');
+  let pend=S.relatorios.filter(r=>!r.enviado).sort((a,b)=>(b.criadoEm||'').localeCompare(a.criadoEm||'')||b.id.localeCompare(a.id));
+  // garante 1 por (turma, data) — se houver duplicatas antigas, mostra a mais recente
+  const vistos={}; pend=pend.filter(r=>{const k=r.turmaId+'|'+r.data; if(vistos[k])return false; vistos[k]=true; return true;});
+  const wrap=el('<div class="card" style="border-top:3px solid var(--ok)"><h3>📨 Relatórios de aula para enviar</h3><p class="hint">Caem aqui quando o professor realiza a aula. Clique em <b>Copiar</b>, cole no grupo de WhatsApp da turma e marque como enviado (aí some daqui). Somente leitura — o histórico fica em <b>Relatórios por turma</b>.</p><div id="avRelBox"></div></div>');
   v.appendChild(wrap);
   const box=wrap.querySelector('#avRelBox');
-  if(!pend.length){ box.innerHTML='<p class="hint">Nenhum relatório pendente de envio.</p>'; }
-  else box.innerHTML=pend.map(r=>{
+  if(!pend.length){ box.innerHTML='<p class="hint">Nenhum relatório pendente. Tudo enviado! ✅</p>'; return; }
+  box.innerHTML=pend.map(r=>{
     const t=S.turmas.find(x=>x.id===r.turmaId)||{};
-    const emails=emailsResponsaveis(r.turmaId);
     return `<div class="card" style="background:#f8fbff">
       <h4 style="margin:0 0 6px">${t.nome||'—'} · ${brDate(r.data)}</h4>
-      ${emails.length?'':'<p class="hint" style="color:var(--vermelho)">Sem e-mail de responsável nesta turma — você ainda pode copiar para o WhatsApp.</p>'}
-      <textarea id="relc_${r.id}" style="min-height:170px" oninput="setRelCorpo('${r.id}',this.value)">${escAttr(r.corpo)}</textarea>
+      <div class="gen-box">${escAttr(r.corpo)}</div>
       <div class="row" style="margin-top:10px;gap:10px">
-        <button class="btn" ${emails.length?'':'disabled style="opacity:.5;cursor:not-allowed"'} onclick="enviarRelatorioFamilia('${r.id}')">✉️ Enviar para pais (${emails.length})</button>
         <button class="btn amarelo" onclick="copiarRelatorioFamilia('${r.id}')">📋 Copiar (WhatsApp)</button>
+        <button class="btn ghost" onclick="marcarRelatorioEnviado('${r.id}')">✓ Marcar como enviado</button>
       </div></div>`;
   }).join('');
-  if(env.length){
-    const sentDiv=el('<div style="margin-top:12px"></div>');
-    sentDiv.innerHTML='<p class="hint" style="margin:0 0 6px">✓ Já enviados</p>'+env.slice(0,12).map(r=>{const t=S.turmas.find(x=>x.id===r.turmaId)||{};return `<div class="check"><span>${t.nome||'—'} · ${brDate(r.data)} — enviado ${r.enviadoEm?brDate(r.enviadoEm):''} (${r.enviadoQtd||0})</span></div>`;}).join('');
-    wrap.appendChild(sentDiv);
-  }
 }
+function refreshRelViews(){ if(rota==='alertas') VIEWS.alertas(); else if(rota==='relturma') renderRelTurmaHist(); }
+function marcarRelatorioEnviado(id){ const r=S.relatorios.find(x=>x.id===id); if(!r)return; r.enviado=true; r.enviadoEm=hoje(); save(); refreshRelViews(); toast('Relatório marcado como enviado'); }
+function reabrirRelatorio(id){ const r=S.relatorios.find(x=>x.id===id); if(!r)return; r.enviado=false; r.enviadoEm=null; save(); refreshRelViews(); }
+/* ===== RELATÓRIOS POR TURMA (gerar por aula específica + histórico) ===== */
+let relturmaTurma=null, relturmaData='', relturmaBusca='';
+VIEWS.relturma=()=>{
+  relturmaTurma=relturmaTurma||primeiraTurma();
+  const v=document.getElementById('view');
+  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Relatórios por turma</h2></div>
+    <p class="sub">Gere ou consulte o relatório de uma <b>aula específica</b> (turma + data) e copie para enviar no grupo. Todos ficam pesquisáveis por data abaixo.</p>
+    <div class="card"><h3>Gerar relatório de uma aula</h3><div class="row">
+      <div><label class="lbl">Turma</label>${selectTurma('rtT',relturmaTurma)}</div>
+      <div><label class="lbl">Data da aula</label><span id="rtDWrap">${selectDataAula('rtD',relturmaTurma,relturmaData||dataAulaPadrao(relturmaTurma))}</span></div></div>
+      <div style="margin-top:12px"><button class="btn" onclick="gerarRelTurma()">📄 Gerar relatório</button></div>
+      <div class="gen-box" id="rtOut" style="margin-top:14px">Selecione turma e data e clique em “Gerar relatório”.</div>
+      <div style="margin-top:12px"><button class="btn amarelo" onclick="copiarRelTurma()">📋 Copiar</button></div></div>
+    <div class="card"><h3>Histórico — todos os relatórios</h3>
+      <input type="text" id="rtBusca" placeholder="🔎 Buscar por data (ex.: 10/06) ou turma" value="${escAttr(relturmaBusca)}" oninput="relturmaBusca=this.value;renderRelTurmaHist()">
+      <div id="rtHist" style="margin-top:10px"></div></div>`;
+  const s=document.getElementById('rtT'); if(s) s.onchange=e=>{relturmaTurma=e.target.value;relturmaData='';document.getElementById('rtDWrap').innerHTML=selectDataAula('rtD',relturmaTurma,dataAulaPadrao(relturmaTurma));};
+  renderRelTurmaHist();
+};
+function gerarRelTurma(){
+  const tid=document.getElementById('rtT').value;
+  const data=(document.getElementById('rtD')||{}).value;
+  if(!data)return toast('Selecione a data da aula');
+  relturmaTurma=tid; relturmaData=data;
+  document.getElementById('rtOut').textContent=corpoRelatorioDia(tid,data);
+}
+function copiarRelTurma(){
+  const t=document.getElementById('rtOut').textContent;
+  if(!t||t.startsWith('Selecione'))return toast('Gere o relatório primeiro');
+  copiarTexto(t,'Relatório copiado!');
+}
+function renderRelTurmaHist(){
+  const box=document.getElementById('rtHist'); if(!box)return;
+  const q=(relturmaBusca||'').trim(), qn=_normTxt(q);
+  let rs=S.relatorios.slice().sort((a,b)=>b.data.localeCompare(a.data)||(b.criadoEm||'').localeCompare(a.criadoEm||''));
+  if(q) rs=rs.filter(r=> r.data.includes(q) || brDate(r.data).includes(q) || _normTxt(turmaNome(r.turmaId)).includes(qn));
+  if(!rs.length){ box.innerHTML='<p class="hint">'+(q?'Nenhum relatório encontrado.':'Nenhum relatório gerado ainda.')+'</p>'; return; }
+  box.innerHTML=rs.map(r=>{const t=S.turmas.find(x=>x.id===r.turmaId)||{};
+    return `<div class="check"><span style="flex:1">${brDate(r.data)} · ${t.nome||'—'} ${r.enviado?'<span class="pill" style="background:#e7f6ef;color:var(--ok)">enviado</span>':'<span class="pill" style="background:#fff7e6;color:var(--laranja)">pendente</span>'}</span>
+      <button class="btn ghost sm" onclick="verRelTurma('${r.id}')">ver</button>
+      <button class="btn ghost sm" onclick="copiarRelatorioFamilia('${r.id}')">📋 copiar</button></div>`;}).join('');
+}
+function verRelTurma(id){const r=S.relatorios.find(x=>x.id===id);if(!r)return;const t=S.turmas.find(x=>x.id===r.turmaId)||{};
+  modal(`<h3>${t.nome||'—'} · ${brDate(r.data)} <button class="close" onclick="fechar()">×</button></h3><div class="gen-box">${escAttr(r.corpo)}</div>
+    <div class="row" style="margin-top:10px;gap:8px"><button class="btn amarelo" onclick="copiarRelatorioFamilia('${id}')">📋 Copiar</button>
+    ${r.enviado?`<button class="btn ghost" onclick="reabrirRelatorio('${id}');fechar()">marcar como não enviado</button>`:`<button class="btn ghost" onclick="marcarRelatorioEnviado('${id}');fechar()">✓ marcar como enviado</button>`}</div>`);}
 function alunosSelect(id,turmaId,sel){
   const als=alunosDa(turmaId);
   if(!als.length)return `<select id="${id}"><option value="">(sem alunos)</option></select>`;
@@ -1314,7 +1413,7 @@ function corpoRelatorioVip(vid){
   b+=`\n${(S.config&&S.config.assinatura)||ASSINATURA_PADRAO}`;
   return b;
 }
-function copiarRelatorioVip(){ const txt=corpoRelatorioVip(vipSel); if(!txt)return; navigator.clipboard.writeText(txt).then(()=>toast('Relatório VIP copiado'),()=>toast('Não foi possível copiar')); }
+function copiarRelatorioVip(){ const txt=corpoRelatorioVip(vipSel); if(!txt)return toast('Nada para copiar'); copiarTexto(txt,'Relatório VIP copiado'); }
 function gerarResumo(){
   const turmaId=document.getElementById('rT').value, data=document.getElementById('rD').value;
   const turma=S.turmas.find(t=>t.id===turmaId);
@@ -1336,7 +1435,7 @@ function gerarResumo(){
 function copiarResumo(){
   const t=document.getElementById('rOut').textContent;
   if(t.startsWith('Clique'))return toast('Gere o resumo primeiro');
-  navigator.clipboard.writeText(t).then(()=>toast('Texto copiado!'),()=>toast('Selecione e copie manualmente'));
+  copiarTexto(t,'Texto copiado!');
 }
 // resumo do que foi dado numa aula (para os dias de falta)
 function resumoAulaDoDia(turmaId,data){
@@ -1350,12 +1449,15 @@ function resumoAulaDoDia(turmaId,data){
 function gerarRelatorioAluno(){
   const turmaId=document.getElementById('relT').value, alunoId=document.getElementById('relA').value;
   if(!alunoId)return toast('Escolha o aluno');
+  const de=(document.getElementById('relDe')||{}).value||'', ate=(document.getElementById('relAte')||{}).value||'';
+  if(de&&ate&&de>ate)return toast('A data inicial é maior que a final');
+  const inRange=d=> (!de||d>=de) && (!ate||d<=ate);
   const aluno=S.alunos.find(a=>a.id===alunoId), turma=S.turmas.find(t=>t.id===turmaId);
-  const faltas=faltasDoAluno(alunoId,turmaId), mat=materialDoAluno(alunoId,turmaId);
-  const temas=temasNaoFeitosDoAluno(alunoId,turmaId), coms=comentariosDoAluno(alunoId);
-  const atrasos=atrasosDoAluno(alunoId,turmaId), saidas=saidasCedoDoAluno(alunoId,turmaId);
+  const faltas=faltasDoAluno(alunoId,turmaId).filter(inRange), mat=materialDoAluno(alunoId,turmaId).filter(inRange);
+  const temas=temasNaoFeitosDoAluno(alunoId,turmaId).filter(t=>inRange(t.data)), coms=comentariosDoAluno(alunoId).filter(c=>inRange(c.data));
+  const atrasos=atrasosDoAluno(alunoId,turmaId).filter(inRange), saidas=saidasCedoDoAluno(alunoId,turmaId).filter(inRange);
   const peso=pesoFalta(turmaId);
-  let txt=`RELATÓRIO DO ALUNO\n${aluno.nome}\nTurma: ${turma.nome}${turma.professor?' · Prof. '+turma.professor:''}\nGerado em ${brDate(hoje())} por ${S.usuario}\n`;
+  let txt=`RELATÓRIO DO ALUNO\n${aluno.nome}\nTurma: ${turma.nome}${turma.professor?' · Prof. '+turma.professor:''}\nPeríodo: ${de?brDate(de):'início'} a ${ate?brDate(ate):'hoje'}\nGerado em ${brDate(hoje())} por ${S.usuario}\n`;
   txt+=`\n📋 FALTAS (${faltas.length}${peso===2?` aulas = ${faltas.length*2} faltas (turma 1x/semana)`:''})\n`;
   if(faltas.length) faltas.forEach(d=>{ txt+=`• ${brDate(d)} — conteúdo da aula: ${resumoAulaDoDia(turmaId,d)}\n`; });
   else txt+=`• Nenhuma falta registrada.\n`;
@@ -1384,7 +1486,7 @@ function addComentario(){
 function copiarRelatorio(){
   const t=document.getElementById('relOut').textContent;
   if(t.startsWith('Selecione'))return toast('Gere o relatório primeiro');
-  navigator.clipboard.writeText(t).then(()=>toast('Relatório copiado!'),()=>toast('Selecione e copie manualmente'));
+  copiarTexto(t,'Relatório copiado!');
 }
 function imprimirRelatorio(){
   const t=document.getElementById('relOut').textContent;
