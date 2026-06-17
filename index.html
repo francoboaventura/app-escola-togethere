@@ -368,7 +368,8 @@ function migrar(s){
     }
     t.vezesSemana=t.dias.length;
   });
-  s.config=s.config||{assinatura:'— Equipe Togethere\ninglês para chegar lá', escolaEmail:'admin@togethere.com.br'};
+  s.config=s.config||{assinatura:'— Equipe Togethere\ninglês para chegar lá', escolaEmail:'inglestogethere@gmail.com'};
+  if(s.config.escolaEmail==='admin@togethere.com.br') s.config.escolaEmail='inglestogethere@gmail.com';
   return s;
 }
 /* ============== NUVEM — sincronização com o Google Apps Script ==============
@@ -410,7 +411,7 @@ async function cloudEmail(to, subject, body){
   try{
     const r=await fetch(CLOUD_URL+'?action=email&secret='+encodeURIComponent(CLOUD_SECRET),{
       method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({to, subject, body, from:(S.config&&S.config.escolaEmail)||'admin@togethere.com.br'})
+      body:JSON.stringify({to, subject, body, from:(S.config&&S.config.escolaEmail)||'inglestogethere@gmail.com'})
     });
     return await r.json();
   }catch(e){ return {ok:false, erro:String(e)}; }
@@ -460,7 +461,7 @@ function seed(){
     relatorios:[],
     vipAlunos:[],
     aulasVip:[],
-    config:{assinatura:'— Equipe Togethere\ninglês para chegar lá', escolaEmail:'admin@togethere.com.br'},
+    config:{assinatura:'— Equipe Togethere\ninglês para chegar lá', escolaEmail:'inglestogethere@gmail.com'},
   };
 }
 
@@ -634,7 +635,20 @@ function el(html){const d=document.createElement('div');d.innerHTML=html.trim();
 function toast(msg){const t=document.getElementById('toast');t.innerHTML='✓ '+msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200);}
 function modal(html){const m=document.getElementById('modal');m.innerHTML=html;document.getElementById('modalBg').classList.add('show');}
 function fechar(){document.getElementById('modalBg').classList.remove('show');}
-document.getElementById('modalBg').onclick=e=>{if(e.target.id==='modalBg')fechar();};
+function modalTemConteudo(){
+  const m=document.getElementById('modal'); if(!m) return false;
+  const campos=m.querySelectorAll('input, textarea, select');
+  for(const c of campos){
+    if(c.type==='checkbox'||c.type==='radio'){ if(c.checked) return true; }
+    else if((c.value||'').trim()!=='') return true;
+  }
+  return false;
+}
+function fecharFora(){
+  if(modalTemConteudo()){ if(confirm('Você ainda não salvou. Fechar e descartar o que digitou?')) fechar(); }
+  else fechar();
+}
+document.getElementById('modalBg').onclick=e=>{if(e.target.id==='modalBg')fecharFora();};
 function turmaNome(id){const t=S.turmas.find(t=>t.id===id);return t?t.nome:'—';}
 function nivelTag(n){return `<span class="tag ${n}">${n}</span>`;}
 function alunosDa(turmaId){return S.alunos.filter(a=>a.turmaId===turmaId);}
@@ -1006,15 +1020,29 @@ VIEWS.planos=()=>{
   renderPlanos();
 };
 let _buscaPlano='';
+function itensPendentesAnteriores(turmaId){
+  const planos=S.planos.filter(p=>p.turmaId===turmaId).sort((a,b)=>b.data.localeCompare(a.data)||b.id.localeCompare(a.id));
+  const ult=planos[0];
+  if(!ult) return [];
+  return (ult.itens||[]).filter(i=>!i.done && !i.virouTema).map(i=>i.txt);
+}
 function novoPlano(turmaPreset){
   const tp=turmaPreset||primeiraTurma();
+  const sug=itensPendentesAnteriores(tp);
   modal(`<h3>🗒️ Novo plano de aula <button class="close" onclick="fechar()">×</button></h3>
     <div class="field"><label class="lbl">Título</label><input type="text" id="plTit" placeholder="Ex: Present Perfect — experiências"></div>
     <div class="row"><div class="field"><label class="lbl">Turma</label>${selectTurma('plTurma',tp)}</div>
     <div class="field"><label class="lbl">Data da aula</label><span id="plDataWrap">${selectDataAula('plData',tp)}</span></div></div>
-    <div class="field"><label class="lbl">Itens do plano (um por linha)</label><textarea id="plItens" placeholder="Warm-up&#10;Apresentar estrutura&#10;Listening&#10;Speaking em duplas&#10;Tema de casa"></textarea></div>
+    <div class="field"><label class="lbl">Itens do plano (um por linha)</label>
+      <p class="hint" id="plSugHint" style="margin:0 0 6px;${sug.length?'':'display:none'}">↩️ Itens não concluídos da última aula já vêm como sugestão. Edite à vontade.</p>
+      <textarea id="plItens" placeholder="Warm-up&#10;Apresentar estrutura&#10;Listening&#10;Speaking em duplas&#10;Tema de casa">${sug.join('\n')}</textarea></div>
     <button class="btn block" onclick="salvarPlano()">Criar plano</button>`);
-  setTimeout(()=>{const s=document.getElementById('plTurma'); if(s) s.onchange=e=>{document.getElementById('plDataWrap').innerHTML=selectDataAula('plData',e.target.value);};},60);
+  setTimeout(()=>{const s=document.getElementById('plTurma'); if(s) s.onchange=e=>{
+    document.getElementById('plDataWrap').innerHTML=selectDataAula('plData',e.target.value);
+    const novos=itensPendentesAnteriores(e.target.value);
+    const ta=document.getElementById('plItens'); if(ta) ta.value=novos.join('\n');
+    const hint=document.getElementById('plSugHint'); if(hint) hint.style.display=novos.length?'block':'none';
+  };},60);
 }
 function salvarPlano(){
   const tit=document.getElementById('plTit').value.trim();
@@ -1666,7 +1694,7 @@ VIEWS.acessos=()=>{
       <div><label class="lbl">Professor da turma (opcional)</label><input type="text" id="nuEnsina" placeholder="Nome usado nas turmas"></div>
     </div><div style="margin-top:12px"><button class="btn" onclick="addUsuario()">Criar usuário (senha 12345)</button></div></div>
     <div class="card"><h3>Assinatura e e-mail da escola</h3><p class="hint">Usados no relatório enviado às famílias. O e-mail é o remetente/cópia da escola.</p>
-      <div class="field"><label class="lbl">E-mail da escola (remetente)</label><input type="email" id="cfgEmail" value="${escAttr((S.config&&S.config.escolaEmail)||'')}" placeholder="admin@togethere.com.br"></div>
+      <div class="field"><label class="lbl">E-mail da escola (remetente)</label><input type="email" id="cfgEmail" value="${escAttr((S.config&&S.config.escolaEmail)||'')}" placeholder="inglestogethere@gmail.com"></div>
       <div class="field"><label class="lbl">Assinatura</label><textarea id="cfgAssin" placeholder="— Equipe Togethere">${escAttr((S.config&&S.config.assinatura)||'')}</textarea></div>
       <button class="btn" onclick="salvarConfig()">Salvar assinatura</button></div>
     <div class="card"><h3>Backup dos dados</h3><p class="hint">Baixe uma cópia de segurança (arquivo .json) ou restaure os dados a partir de um backup.</p>
