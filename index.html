@@ -300,8 +300,10 @@ tr:last-child td{border-bottom:none}
       </div>
       <nav class="nav" id="nav"></nav>
       <div class="foot">
-        <div id="syncDot" onclick="cloudPut()" style="font-size:.72rem;color:#9fb1d1;margin-bottom:8px;cursor:pointer" title="Clique para sincronizar agora">☁️ …</div>
+        <div id="syncDot" onclick="puxarDaNuvem()" style="font-size:.72rem;color:#9fb1d1;margin-bottom:8px;cursor:pointer" title="Clique para puxar os dados mais recentes da nuvem">☁️ …</div>
+        <button onclick="puxarDaNuvem()" style="margin-bottom:8px">🔄 Atualizar (puxar da nuvem)</button>
         <div id="perfilLabel" style="margin-bottom:8px"></div>
+        <div style="font-size:.66rem;color:#9fb1d1;margin-bottom:6px">versão <span id="appVer"></span></div>
         <button onclick="logout()">🚪 Sair</button>
       </div>
     </aside>
@@ -376,6 +378,7 @@ function migrar(s){
    CLOUD_SECRET precisa ser IGUAL ao APP_SECRET que você colocou no Apps Script. */
 const CLOUD_URL    = 'https://script.google.com/macros/s/AKfycbylxwXqDh5ohAL4qLTn7WBQAu4juwt2bwgdiuGHDl1Ll3d1ViK-mdbeMghnG4UH3GNH/exec';
 const CLOUD_SECRET = 'togethere-junho-7Q2';
+const APP_VERSAO = '2026.06.17 · b15';   // aparece no rodapé; mude a cada publicação no GitHub
 /* ============================================================================ */
 let _syncTimer=null;
 function cloudOn(){ return CLOUD_URL && CLOUD_URL.indexOf('/exec')>0; }
@@ -384,27 +387,50 @@ function marcarSync(st){
   if(e) e.textContent = st==='ok' ? '☁️ sincronizado' : st==='off' ? '⚠️ sem conexão' : '☁️ sincronizando…';
 }
 async function cloudGet(timeout){
-  if(!cloudOn()) return null;
-  const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),timeout||7000);
+  if(!cloudOn()) return {ok:false, off:true};
+  const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),timeout||8000);
   try{
     const r=await fetch(CLOUD_URL+'?action=get&secret='+encodeURIComponent(CLOUD_SECRET),{signal:ctrl.signal});
     clearTimeout(t);
     const j=await r.json();
-    return (j && Object.keys(j).length) ? j : null;
-  }catch(e){ clearTimeout(t); return null; }
+    return {ok:true, state:(j && Object.keys(j).length)?j:null};   // ok=respondeu; state=null só quando REALMENTE vazio
+  }catch(e){ clearTimeout(t); return {ok:false}; }                 // ok=false → erro/sem conexão (NÃO é nuvem vazia)
 }
-function cloudPut(){
+function temAtividade(s){
+  if(!s) return false;
+  return ['presencas','material','temas','testes','contatos','planos','comentarios','atas','tarefas','relatorios','vipAlunos','aulasVip']
+    .some(k=>Array.isArray(s[k]) && s[k].length);
+}
+function cloudPut(force){
   if(!cloudOn()) return Promise.resolve();
   marcarSync('...');
   const limpo=Object.assign({},S,{usuario:null,perfil:null});   // sessão não vai para a nuvem
-  return fetch(CLOUD_URL+'?action=put&secret='+encodeURIComponent(CLOUD_SECRET),{
+  const url=CLOUD_URL+'?action=put&secret='+encodeURIComponent(CLOUD_SECRET)+(force?'&force=1':'');
+  return fetch(url,{
     method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(limpo)
-  }).then(()=>marcarSync('ok')).catch(()=>marcarSync('off'));
+  }).then(r=>r.json().catch(()=>({ok:true})))
+    .then(j=>{ marcarSync(j&&j.bloqueado?'off':'ok'); return j; })
+    .catch(()=>{ marcarSync('off'); });
 }
 function save(){
   localStorage.setItem(KEY,JSON.stringify(S));
   clearTimeout(_syncTimer);
   _syncTimer=setTimeout(cloudPut,800);   // agrupa edições rápidas antes de enviar
+}
+async function puxarDaNuvem(){
+  marcarSync('...');
+  const res=await cloudGet(8000);
+  if(res.ok && res.state && res.state.usuarios && res.state.usuarios.length){
+    const u=S.usuario, p=S.perfil;
+    S=migrar(res.state); S.usuario=u; S.perfil=p;
+    localStorage.setItem(KEY,JSON.stringify(S));
+    marcarSync('ok'); toast('Dados atualizados da nuvem ✓');
+    try{ if(typeof rota!=='undefined' && rota && VIEWS[rota]) VIEWS[rota](); montarNav(); }catch(e){}
+  } else if(res.ok && !res.state){
+    marcarSync('ok'); toast('A nuvem ainda está vazia');
+  } else {
+    marcarSync('off'); toast('Sem conexão com a nuvem agora');
+  }
 }
 async function cloudEmail(to, subject, body){
   if(!cloudOn()) return {ok:false, erro:'nuvem não configurada'};
@@ -1770,7 +1796,7 @@ function confirmarReset(){
   S=seed(); S.usuario=null; S.perfil=null;
   localStorage.setItem(KEY, JSON.stringify(S));
   fechar(); toast('Restaurando…');
-  cloudPut().finally(()=>setTimeout(()=>location.reload(), 800));
+  cloudPut(true).finally(()=>setTimeout(()=>location.reload(), 800));
 }
 
 /* ---- ACESSOS (somente direção) ---- */
@@ -1835,7 +1861,7 @@ function importarBackup(input){
     S=migrar(obj); S.usuario=null; S.perfil=null;
     localStorage.setItem(KEY, JSON.stringify(S));
     toast('Restaurando…');
-    cloudPut().then(function(){ location.reload(); });
+    cloudPut(true).then(function(){ location.reload(); });
   };
   r.readAsText(f); input.value='';
 }
@@ -1860,15 +1886,18 @@ function addUsuario(){
    ========================================================================= */
 (async function boot(){
   const lp=document.getElementById('loginPanel'); if(lp) lp.innerHTML='<p class="hint" style="text-align:center">Conectando ao servidor…</p>';
-  const remoto = await cloudGet(7000);
-  if (remoto && remoto.usuarios && remoto.usuarios.length){
-    S = migrar(remoto);
+  const res = await cloudGet(8000);
+  if (res.ok && res.state && res.state.usuarios && res.state.usuarios.length){
+    S = migrar(res.state);                 // nuvem respondeu com dados → usa a nuvem
     localStorage.setItem(KEY, JSON.stringify(S));
     marcarSync('ok');
-  } else if (cloudOn()){
-    cloudPut();                 // nuvem vazia → semeia com os dados atuais
+  } else if (res.ok && !res.state){
+    cloudPut();                            // servidor respondeu e está REALMENTE vazio → primeira vez: envia a base
+  } else {
+    marcarSync('off');                     // erro/sem conexão → NUNCA sobrescreve a nuvem; mantém o local
   }
   S.usuario=null; S.perfil=null;   // segurança: sempre pede login ao abrir
+  const av=document.getElementById('appVer'); if(av) av.textContent=APP_VERSAO;
   renderLogin();
 })();
 
