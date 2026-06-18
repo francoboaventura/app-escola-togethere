@@ -363,6 +363,7 @@ function migrar(s){
   });
   (s.alunos||[]).forEach(a=>{ if('vip' in a) delete a.vip; });
   (s.temas||[]).forEach(t=>{ if(!t.dataEntrega) t.dataEntrega=t.data; });
+  (s.presencas||[]).forEach(p=>{ if(typeof p.fechada==='undefined') p.fechada=true; });   // chamadas já existentes = salvas
   (s.turmas||[]).forEach(t=>{
     if(!Array.isArray(t.dias)||!t.dias.length){
       t.dias=diasFromHorario(t.horario);
@@ -729,10 +730,11 @@ VIEWS.painel=()=>{
 };
 
 /* ---- PRESENÇA ---- */
-let presTurma=null, presData=hoje(), presBusca='';
+let presTurma=null, presData=hoje(), presBusca='', presEditando=false;
 VIEWS.presenca=()=>{
   presTurma=presTurma||primeiraTurma();
   if(!datasAula(presTurma).includes(presData)) presData=dataAulaPadrao(presTurma);
+  presEditando=false;
   const v=document.getElementById('view');
   v.innerHTML=`${btnVoltaPainel()}<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Chamada do dia</h2></div>
     <p class="sub">Tudo num lugar só: presença, <b>material</b> e <b>tema de casa</b> da aula. Só aparecem os dias em que a turma tem aula.</p>
@@ -744,7 +746,7 @@ VIEWS.presenca=()=>{
     <div class="card" id="pTema"></div>
     <div class="card"><input type="text" id="pBusca" placeholder="🔎 Buscar chamada anterior por data (ex.: 10/06)" value="${escAttr(presBusca)}" oninput="presBusca=this.value;renderPresLista()"><div id="pLista" style="margin-top:8px"></div></div>`;
   document.getElementById('pT').onchange=e=>{presTurma=e.target.value;presData=dataAulaPadrao(presTurma);VIEWS.presenca();};
-  document.getElementById('pD').onchange=e=>{presData=e.target.value;renderPres();renderTemaChamada();};
+  document.getElementById('pD').onchange=e=>{presData=e.target.value;presEditando=false;renderPres();renderTemaChamada();};
   renderPres(); renderTemaChamada(); renderPresLista();
 };
 function presRec(criar){
@@ -754,13 +756,41 @@ function presRec(criar){
 }
 function renderPres(){
   const box=document.getElementById('pBox');
+  const als=alunosDa(presTurma);
+  if(!als.length){box.innerHTML='<div class="empty"><div class="big">👥</div>Nenhum aluno nesta turma ainda.</div>';return;}
   const rec=S.presencas.find(p=>p.turmaId===presTurma&&p.data===presData)||{registros:{},atrasados:[],saiuCedo:[]};
   const reg=rec.registros||{}, atr=rec.atrasados||[], cedo=rec.saiuCedo||[];
   const matRec=S.material.find(m=>m.turmaId===presTurma&&m.data===presData);
   const matFalt=matRec?matRec.faltantes:[];
   const temasHoje=S.temas.filter(t=>t.turmaId===presTurma && t.dataEntrega===presData);
-  const als=alunosDa(presTurma);
-  if(!als.length){box.innerHTML='<div class="empty"><div class="big">👥</div>Nenhum aluno nesta turma ainda.</div>';return;}
+  const travada = rec.fechada && !presEditando;
+
+  // ----- MODO TRAVADO: chamada já salva (só leitura) -----
+  if(travada){
+    const linhas=als.map(a=>{
+      const st=reg[a.id]||'presente';
+      let tags;
+      if(st==='falta'){ tags='<span style="color:var(--vermelho);font-weight:600">Falta</span>'; }
+      else{
+        const extra=[];
+        if(atr.includes(a.id))extra.push('chegou atrasado');
+        if(cedo.includes(a.id))extra.push('saiu mais cedo');
+        if(matFalt.includes(a.id))extra.push('🎒 sem material');
+        tags='<span style="color:var(--ok);font-weight:600">Presente</span>'+(extra.length?' · '+extra.join(' · '):'');
+      }
+      const tmt=temasHoje.filter(t=>a.id in (t.entregas||{})).map(t=>{const s=t.entregas[a.id];return '📚 '+(s===true?'tema feito':s==='parcial'?'tema parcial':'tema não feito');});
+      return `<div style="padding:8px 0;border-bottom:1px dashed var(--linha)"><b>${a.nome}</b> — ${tags}${tmt.length?`<div class="hint" style="margin-top:2px">${tmt.join(' · ')}</div>`:''}</div>`;
+    }).join('');
+    const nf=als.filter(a=>(reg[a.id]||'presente')==='falta').length;
+    box.innerHTML=`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="flex:1;min-width:150px"><h3 style="margin:0;color:var(--ok)">✅ Chamada salva</h3><p class="hint" style="margin:2px 0 0">${brDate(presData)} · ${als.length} aluno(s) · ${nf} falta(s)</p></div>
+        <button class="btn" onclick="editarChamada()">✏️ Editar chamada</button>
+      </div>
+      <div style="margin-top:12px">${linhas}</div>`;
+    return;
+  }
+
+  // ----- MODO EDIÇÃO -----
   const temaCtrl=(a)=> temasHoje.filter(t=>a.id in (t.entregas||{})).map(t=>{
     const st=t.entregas[a.id];
     return `<div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">
@@ -769,7 +799,7 @@ function renderPres(){
       <button class="${st==='parcial'?'on-mid':''}" onclick="setTemaChamada('${t.id}','${a.id}','parcial')">parcial</button>
       <button class="${st===false?'on-no':''}" onclick="setTemaChamada('${t.id}','${a.id}',false)">não feito</button></div>
     </div>`;}).join('');
-  box.innerHTML=`<h3>${als.length} alunos · ${brDate(presData)}</h3><p class="hint">Toque para alternar presença. Marque atraso, saída antecipada, <b>sem material</b> e a entrega do <b>tema</b> em cada aluno.</p>
+  box.innerHTML=`<h3>${als.length} alunos · ${brDate(presData)}</h3><p class="hint">Toque para alternar presença. Marque atraso, saída antecipada, <b>sem material</b> e a entrega do <b>tema</b> em cada aluno. Ao terminar, clique em <b>Salvar</b>.</p>
     ${als.map(a=>{
       const st=reg[a.id]||'presente';
       return `<div style="padding:10px 0;border-bottom:1px dashed var(--linha)">
@@ -786,7 +816,7 @@ function renderPres(){
         ${temaCtrl(a)}
       </div>`;
     }).join('')}
-    <div style="margin-top:16px"><button class="btn" onclick="salvarPres()">Salvar chamada e material</button></div>`;
+    <div style="margin-top:16px"><button class="btn" onclick="salvarPres()">${rec.fechada?'Salvar alterações':'Salvar chamada e material'}</button></div>`;
 }
 function matRecPres(criar){
   let rec=S.material.find(m=>m.turmaId===presTurma&&m.data===presData);
@@ -807,7 +837,14 @@ function setPres(id,st){
 }
 function toggleAtraso(id){const rec=presRec(true);rec.atrasados=rec.atrasados||[];const i=rec.atrasados.indexOf(id);if(i>=0)rec.atrasados.splice(i,1);else rec.atrasados.push(id);renderPres();}
 function toggleSaiuCedo(id){const rec=presRec(true);rec.saiuCedo=rec.saiuCedo||[];const i=rec.saiuCedo.indexOf(id);if(i>=0)rec.saiuCedo.splice(i,1);else rec.saiuCedo.push(id);renderPres();}
-function salvarPres(){save();montarNav();renderPresLista();toast('Chamada e material salvos');}
+function salvarPres(){
+  const rec=presRec(true);          // garante o registro (alunos sem marcação ficam 'presente')
+  rec.fechada=true; presEditando=false;
+  save();montarNav();renderPres();renderTemaChamada();renderPresLista();
+  toast('Chamada salva ✓');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function editarChamada(){ presEditando=true; renderPres(); renderTemaChamada(); toast('Chamada reaberta para edição'); }
 function renderTemaChamada(){
   const box=document.getElementById('pTema'); if(!box)return;
   const due=S.temas.filter(t=>t.turmaId===presTurma && t.dataEntrega===presData);
