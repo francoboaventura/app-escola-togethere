@@ -349,6 +349,7 @@ function migrar(s){
   }
   s.comentarios=s.comentarios||[]; // garante campos novos
   s.relatorios=s.relatorios||[];
+  s.boletins=s.boletins||[];
   s.aulasVip=s.aulasVip||[];
   s.vipAlunos=s.vipAlunos||[];
   (s.aulasVip||[]).forEach(a=>{
@@ -370,6 +371,11 @@ function migrar(s){
       if(!t.dias.length) t.dias = (t.vezesSemana===1)?[1]:[1,3];
     }
     t.vezesSemana=t.dias.length;
+    if(!t.cefr) t.cefr=cefrFromNome(t.nome);   // tenta achar A1/A2/B1+/C1... no nome
+  });
+  (s.testes||[]).forEach(t=>{                  // novo modelo: nota por habilidade
+    t.notas=t.notas||{};
+    Object.keys(t.notas).forEach(aid=>{ if(typeof t.notas[aid]!=='object'||t.notas[aid]===null) t.notas[aid]={}; });
   });
   s.config=s.config||{assinatura:'— Equipe Togethere\ninglês para chegar lá', escolaEmail:'inglestogethere@gmail.com'};
   if(s.config.escolaEmail==='admin@togethere.com.br') s.config.escolaEmail='inglestogethere@gmail.com';
@@ -379,7 +385,8 @@ function migrar(s){
    CLOUD_SECRET precisa ser IGUAL ao APP_SECRET que você colocou no Apps Script. */
 const CLOUD_URL    = 'https://script.google.com/macros/s/AKfycbylxwXqDh5ohAL4qLTn7WBQAu4juwt2bwgdiuGHDl1Ll3d1ViK-mdbeMghnG4UH3GNH/exec';
 const CLOUD_SECRET = 'togethere-junho-7Q2';
-const APP_VERSAO = '2026.06.17 · b15';   // aparece no rodapé; mude a cada publicação no GitHub
+const APP_VERSAO = '2026.06.18 · b16';   // aparece no rodapé; mude a cada publicação no GitHub
+const LOGO_B64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAAZUElEQVR4nO2de3xcxXXHf2dm9q5WWj0sy/iJnxiMn4ANBBpwKAESkkJ4JzQhbQh1m6Zp0ubVJgGS8IHQTz8hIa82oSEtpJCSByRNSRuDCSVg80hqY4wdv2Nbth62pJVW+7gzc/rHSELItixztXdX8nx9P0aydnUvu9+de2bmzBnCTT+Bx/NGEeW+AM/YxgvkiYQXyBMJL5AnEl4gTyS8QJ5IeIE8kfACeSLhBfJEwgvkiYQXyBMJL5AnEl4gTyS8QJ5IeIE8kfACeSLhBfJEwgvkiYQXyBMJL5AnEl4gTyS8QJ5IeIE8kfACeSLhBfJEwgvkiYQXyBMJL5AnEl4gTyS8QJ5IeIE8kfACeSLhBfJEwgvkiYQXyBMJL5AnEl4gTyS8QJ5IeIE8kfACeSLhBfJEwgvkiYQXyBMJL5AnEqrcFxATBIBA7r/0un/n/q8ZAA/88YyI8SkQEQgkCAAYsMxsGZqZGQwYBgDm1/QhQJBTDJIgiAQJ6jONAWZY9lIdgfEjEBHcW24Z1ljWxmoLBiRBiaqUmlATpJMqlRBTJ1QpIaoSIjRcUyWLoQ2NbckUQm1zoW3LFDJ5Xcxroy0M97klBRJCCiICM6y3qZ8xLxARJBEDRltT1DAWStY1JGdNrF48vXb+lNqzZtdPqktOq69qTAepQCTkcGGfsdzVG3b0hq2ZQktXYfP+7s37e3a2ZfcczO1syZq8+/0CgRKCBMH2N2onLDRGN5wjQAhiwIYWBQ1C3YTUijkN581vfPP8iUtn1k+pT4rBwc4gLB8hyhFER3k4AOSKZtO+7k3N3Wu3Hvq/PV0v7ugoFjSKFkkJSUoKC1h7Ioo09gRytypjGXkNoGli6vKlU962bPIfnDpx5sTU4Ecay+zC5/6oyH1zdE9ei6N5IEyiI7i19UDP9rbsw8/tffKVtpbuYjFTgBJISiXJ2hMrWhpLArlWx4QWBR2kEytmT/jwpfPeunjSpNqke4Bltn1By4AtowMzmJkBBpR47RdnC3pfR/6nv9n/H2v3vbCjA3mNQIqkFP36jnvGjEBSkLGM3nBSU/Wfrpz1gZWzTpta635kLKO/ZYrnYlzo465q4B+f397xyLp9j/6medveDAwjlVCKjOXx7dEYEEgIArPNhqpKffKPTv2ry+ZNqa9yPzKWh49dSo2Lpiy/1izlQrPmlbYfrNv3g7V7C5kCUgmZEAPCjT8qXSApyeQ0gFveOvfDl85benIdAG1ZxNjejBBr2Q66wT277dC3V+98/OWW1rYsAjVeNapcgYQgtszZcMXpTXdcv+iyJSehApqcY8L93TF3d2vrLtz9n1sfeHp366EcEkIFcpzd1CpUICnJ5LUkuvXahZ9456mphKjMVmcY3GCj06i9u/iPj2+9/8mdre05VCsphRkvff5KFEhJ0j3FmVNrv/3BswYansHh6hjCzYG4i9/Xkbv9x5v/Y+3eTGdepAOMi+mRihNICdJdhXecP+O+W5ZPqU9qy7Ky71kjYbBG63/fdesjm376/F5IKaukMWPboQoSyE06md5w1dvnf/39y5SgGBqekTcB0SVmhmF2Ufb3f73n9h9t2rYnI2oCYAw3RRUkkCLSveEd713ymStOc93jMRTxjBzniiDq6A0//dDGb6/eAaKx2xRVikBKkO4ufvTqBffcuCS225axnMlpouFmQwlghhRUlxrNieeBxvWx3+z/+AMbtu3NyHQwFvv5FSGQkqQzhQ9dcdo3bloWGlai5Pa49++lXZ2X3PW/kGIYg4iIi3r+yfXPfu5CKYiHnUo7LgYCo4PZ4oe/t/7hNTtRHQhJY2tStvzpHFKSzhTedcGsr71vqbFx2DOANtyRKUINJxCIUNCHsuGon90lohjLE2uCh/7y7LPmNNz2yKZcXsuUGkO3szLnRAtBJqcXzGu87+YzCUQ0CrHqyCECKRKK6OiHVESKErJUlyUFuQy1T1w+f/XfXzB3Str0hKpkpxt1yikQATA2kZAP/sWKienAchmiZuaRHqWDCEKQNnz+/MZnP/+WlUsn667CWHGonAIJSTanb71u4fLZDdqM1aHC0UJJMpYn1yUf/9QffOBtp+iuwph4QcomkCAyOb3ktIl/9475A4NsJzhSkGVOJcS/3HLWJ69faLKhqviRjLLewgj33LjEBQGV/jrFhSBihrF89w2LP33dQp0pVPhAfHkEUoJstvieC2ddvHCSHrPzXCXCZcZpw3ddt/Dum8/UuVCMxjh4iSiPQJYZSnxw5WyM3rDKeIIIUpKx/MnL53/xxiWmJ5SV+jqVQSAlyGbDGy6cddHpTWN3mr3UuMxubfizV572yesX6myxMvtlZRhItAAk3XzBzDhP6gKLgW9dVtfIk3IY0KZvCdgx30YhRidvybVD2vLd1y9q7y5+9+e/Uw0pbWz03zyKxC2QINiCmTOj/oLTmtjlO8cCEQZ/gt3XjelghE9XgpKJMrTWrh2ylr/+vqW7WrNP/vaATCcqapw6doEE2YK+9uxpVQmhLavSC+S6eM0d+e+s2TVwx7YMQdjXkcexLsBlp7ZkCrf9ZLOgY7RARMRFc8U508+cVe9OER1BsKBUIB/5yLnLP/vkrpYekVSVM18Wt0DGsKpJvPvc6Ygr/rLMkmh3e+/t/7YeQ8IIQahODD/KzMyQ1N6V/8KDG459MkHoLk5qTJ05q34UB9YFwVhurEn85GNvOv+2p4rGkqAKmbePVSAisOFUTcItIY1zfCOhSNUnSdLgl33kYRAJkvXJYz5MCjKSUoF8o5c53G/Whs+YWf/VPznjz77+vEoHujIMivW+LohQMCtPa5pYm7TMcY5tMEMbHnIcbxA9wqNE6YVKkrZ8y8pZ77l4ju4pysrolMUqEBFg7NlzJxBgK6szMTaQRMz8rZuWzZhWawumEuY54u1ZMCBp3qRqVPDQaiVDBMuor07ce9NS1rYSXsNYBTLMIlBzT6qJ86TjDClIW75q+bRrL5xlugtlv5HFJxABbJCsklMbquBboAi40YQvXbuwaWI1wjK3QzG2QARYW18dNNYkgNGtvjKCkxOUpCHHyGdRCEd4+tGOUocmgsgYnje55i/fforJFss7FxRfN55AzKhOymRCuu/jJNSsuwpHHAcaydPZsu4pHvNhWhC6i7mieWMXOXKEgGVe9ZbZ/7R6R2tnQSgq18hivAOJzFUqttmLPlx7MKup+vablh0+Ev2dNTuHH5QjIta2qaHqQ1efPsKR6PNOaRw4b4lwNdqmNlTddcPiD9y7TiSC0mbdHp24R6IHVZ2LCfc+TptQddvVC4b8aMuBnu88sWP4GQcC2NjJdcnPXzX06cNT6s+JIGLmd587/Qsz63ft7xGBKEsjFG83nigf2rIUphgykFgIrTZ8aAR3JYe2fU8JyzeQOAQiGEYqkH992TyEplxpi/EJxGAI6inobEG77+NkPAXRA7jLv/LMqaImYQyXxaCYWyAc1wSCZ3gEkWWe3VT9jjOmUF7HHV26a4jvVAwQZQu6K6cBvx3F6OCSVT508RwedoV/6YjzFgYhKOwNX23O4HjqqniGQRAxcO7cCdOmpm3RxN8GxTsbLwBtN+/vgRdolCCCtTyhJrhs8Ukox/Rq7JOpRJv2dcNPZYwervz5O8+YgtdnO8VDrAJZBhLy11sPFbV1pVI80XHlTFbMmVBVGxhjY/5gxioQM0OJXW3ZHW29fd96IuPGx2c0Vi2YWovQxjwgFK9ArhpQT/G5bQfZNUie0cCVz37zqRMR2rhnimI9Wz8/X99Cfk3qaLNoem38J41bIMuMpHzq1faWTEFWzNKCuGCAwQasDzsMYN/w8Lz7KJ46JU2xz4jFLRAzZEIebM3+75Z2AOaEMMhJYwC3LasEqcMOCQiXM9Xv03G8Mq73vmBabXU6aU2sKWblqZFIgr75xM6rlk+rhLTwUmLBDJKg/oU+pgW530H/HuFBWA30QiQgJkA1InkKgjkQ9aD+TzVrkBj5hzydVOkqmc0Wh6Y9lZIyCGQsU5Vas7F1U3P3khl11nJZJnFKDIMtSIIADpFdg87/QuYpFHej0Nk3dDOwYbT7WxESk5BegeQpaLgS6ZUgBQBsQDQSjYRAQgi43L24JjbK0wJJQbrXPPrS/iUz6iyXu9LnqMOmr9UpbkXbt9DxOLKbYfpdEQKumOjAp8ZttKkNwlZk/wsAmu9FeiEar8GE65FcDLjW6OhvFgFAKiEbahJ7W2Kdli9ffaBAfuuJnZlcKMR4mtZgwIIkzEHsuQUvL8Pue9C9GRBQClJAEGABAwyKoKEB4wpLQUkoBSZ0bcKOL2LjCuz/DMLd/fYceTUdualGokAJMOI0qFwCQSbl/ubM957ZI4jKHEqP4OQ8olFP18gIdPwbXlmGPfchzPV50xcaD9/PGtRHA0MKKIWwgB13YtOb0HIHoAEBHCXhmoGBPNoYX86y3T2sZUolvvDjV3e397oN2OM8u/uIKkkYyYyKoGzBFF1hnqM+2gAStgO7rsOW9yO7D0qCqN+b44ctWIOAhELvAez4HDZfgOKrgAQPdYgBECxzUZuYh9fKJhAzZEIcbMl+5Zc7BMW+qIAAoDqQUgrw8BuBM5Ro7cwf6Mobe7R0VQNI5F/Gqxei+YcgCUHH2xU/+hVoCIKQ6FiLV85H1yMgCdZDrpKA0HBP3sQ8TV3O+NVYlung/tU7XtnXrQTF2wgRgIbqRCqQ4OEMcjutFLuLP3xhvxREBGNZ28FJ0EZbqQt79OZ36I6NLBPAKKkz6CoAAymR78SW63Hon0BqqENAJhceyhYh4+uCobwCMQOKuroKn3h4I8ebIeSEmVATNKUDWB5+laNlppS648ebHl6711pIQUoMToKWSmxRe89Rdo+qA9Ho76rRBxtIASuw9S/Qesdgh5wxbZliT06TiDU3scybrRjDsjZ4fN2+f39uzx+fd3JsNTddlYKkErObqnftzVAgh3nRmQFJ3QXznq+su31W/dKT62c2pWqSShDAFiSQeQyd50GmYO2qxf89Jd3BdvhNpN4obEEESOz4HFQDGj/s7p5urdT2th6dC2V1Is6s8/Lv1sPMFIiPPrDh0sUnNdUmR6sy3DGxloWk5XMafvVS87HDBgZJIqm27OnasqPD7Rf/GmIx5DlgC6bLZ78wpa6DDVGp8p0YZMES2z6KhacjfTHYMAsA21t7Ee88Bsq+Ww/cItGEbG/v/bP7/49i3PzRvdBvXXQSqxFNQLrtvUSgZDpQdUlVP+hIF1XqkKruVNWdCVHydc1ghmAYgx3vhW4B9cn64s4OUNzz0+UXCC6argkeffr39/zPdiVIx9ICC0EMXHjqxBlTa3nE6eiW2djDFhNa0la6Y9gu3ejBFlKi5wD2fpQhpEBPXq9+pQ1JGfOASEUIBMBaljWJTz2w4bnth9x2u6U+IwHGcnVSrrpoNue1EJXyUowUNpASrQ9zz2qw2NuR7coWSYoTsQWCG4UlCi1fc8+6/Z15GUuvXhJZxkcumTd7doPOhWUv1nT8MAzZXR8CmR+90FLoysf/v1ApAsHV403K/W3Za766LpPTKH3OKxGYuS6lvv/nK5IJafJGjbGNFywLIXu2FjseefjFHiTKUHmyggRCXxXp4Ln1Lavu/62rPlHqZkgKMpbPn9/4s0+dP7kuqTN5Btyy+TGRqsTMpGjPhi+8uucAgiD+/ecrSyAA2ljVkHx4za6PPLjBvbvxOHTJopOev/MP/+SSeVWCdKZgekPWTDh82LD/EOaIR8wrjIksG0xP/u6Uhh0wSUFxN0HlHwc6HG1YpYOvPbq5Jqnuum6hKylU0ubAOTSzMXX/quV/d+VpP1q37783tm7c130wUzA53b9v6uueAdVwhF/EFNrRrzI+DARoK6pqzDXz1t7ZvEAEuZhnFSti3/gjogTpnuLtf7zktnctcMtWSn1PGdjI3X17sKe4s61376Hcga58V04XQsPor2ZgOtD6DZgjDPmsWlTKkegjYVjIwD7dvOgtP7ibRNHGXL+rYgWCc6ir8FdXLbj3fUuNZSKKIcS1zJZxrI0m12PjGdBHWppUPFrWV6lgEBFndGr+g99szTSRCjnGjLJKvIUNoC3L+uTXfrYFjHtvWgoghq3BRb+mrkFCf8ZpPwaQyLai262jGCqLFDbuMAjMlmqr8vMb9rd2TBGqGGdOUMUF0UMwllVN8LXHNt/4zRe689oVl4zn1ESQgoYG0e5rFBQZJWzZg2iHYUGSlzbthlUlm4M7MpUuEABtWdUnH3pi5yV3PbO3I+/2rSnb1bjPtqwFUdxl+oaHkFQlyyQ5OmNAILh+WX1y3eb2829bs+bVdiXJln6I6CgQAIhqCK4sgRgTk93xn3ZsCARAG5Y1iT3tubd96Zk7f7rFdcrimXY9AqIWlEDsJYuHJynC+C9nzAgEwBgWSVkEPvOv66/56rqWTEEJsqUfaXw9BADBXFSdjJKPTx0fPSYVf5s4lgSCW8tBUPXJHz/z+3M/++QPn98n+vOU47oEAiwoQGpB32KICsBF7i3Z+vhPPcYEQn/JcJkOdh/MXffl5/70n19s6ym6Qh8xzQS5ZTp1bwVQKQIRw2Jr5zQIE+cgEMaiQA5jWSSkqEp8b/XOcz775P2/2k0EQeR2dy8trvhB7WUIAtjS5x8eCwaE4Ew+tbVzKmQYU0ZbP2NVIPQNGbNMB7vaej/wjefffvevX9zZqWTfHa2UGgnAomoh0sth8VrljTLBTBBoy9fv72n0LdBx09cU1QS/eKl55R1P33zfb3a39w4s4CqVRu4u1nhtjGUwjoplgQRW71mmc7VKxj1ENuYFgmuKLMuaoDe03/3F9hWfefJj33+5rbswoNHoh9gkAUbTzag+Cda+VtGnHAiybOjBLSsR89pMd/a4T1gyjOug1QXt2fArj21Z9Ilf/vUDG1ozBTcd4TQavdeXwBaiHtM+hmPsIVZaDAuR4K0dU9fuXUhBznDcb+j4EQj9u7uTIlmTaOsJ7/3ZlsWfXv2+b7749OZ2p5Ebe7Sj0iCRACwmfRwNi6BN2SIhBiS+vP4KXUgJUYat1Cs6nSMKrlNmtEVvqNLBu98044Y3zfjDhZOqk33vtLYsCIQIaUaukFTPU9h0EVhGqZL5xrAsRMKub599xoP3kijPBOG4FcjhZtS1YfSGkDR3et2VZ0294dzp557SOPAYFyE54Y77BM6h/X+LnV+GSoBjnc7UVqhqe9EPv/jUthUy2Rv//QvjXiAH9S8jtAWDokGVWj6n4bpzpl919rQZE6qqk68lRWnLroA1jTQB0tVCZGy7HK2/jNOh0MhE2nx7w6Wrfv43Mpktiz04QQQaQBAJAW0ZeQNtgvqqyelg5elNN55/8qmT0/Mm1wx+sBvaHoiQidD/ZwgWIJhWbLmYO15BQtFhhVdGHW2lSpmX2ua+5aF/6NUJjn34Z4ATS6ABhCBB0JphLAoGgUgm1ZlzGlbMbjh73oRF0+oWTq9NBUeNiw+bNrEgSeFuseMKHNpghJJUQoe0lSowW7qnXfbIF3d3ThGJvC1T84MTViAH9Yc+lmEto2igDaRAQs6eXDNzYmrOpJoFU9MLptZOqU9OqktOqAnqU8OuPeRObH8XMr+yRUmwpUgO1EaqlGnOTbjwoS9tb58lq3pMvOtAhnBCCzQYAkiQIDDDWEZoYSwsgwFJSIggqepSalJtsjqQgRKTaoOkkqlAdOe1kqIQ2tCEzZ2A7v2bpV+6adEa5KGNVKNXrMOyALOo4XXN89//849vOXiyTPaW1x54gY6GS1hzTQ0DlpktwzIM9yXZ29dPYhAAgmRAgmtXLX/szgv/tbGqh3NkQTLaej9mMixUYCDxzxvf9vEnPthTrJZBztjyD+N5gUaKM2RIHD0kL9ot4iBYk6udf9LOj53z6J8vfpwYKEKzFGSPa5c9BlkmMKSySOK3rXNvfea9/7n5zQh6hTBljHsG4wUqCVIYU0zB0pnTt9563kNXzl1LAgjBmlxFRnJJPK+vCc4AQMxkmQgshUUASOzpbLrvlUv/4fmr87lameq2LMrV5zocL1CpEMQA22I1hDlj6rbr5j979bxnFzTuheyvVW/6aou7uofkavUSIAEJALlisHrvsl/sXv7vm1Z2ZpqQzEppKuG2NRgvUGkRZBnExSqYhEp1r5z58qkNzRdN3zi/vnle/YFqVZDC9q1PZBiIrnz19u4pr3bMfKb59NW7l+08NAM6gaBXqdBYEXOy2EjwAsWBi360UQirYCWEQZCfmj7UEGTTQb4myOeKQWhVzgQt2YZDuToUUwCgikIVBdnKVMdR0Uubxw2WhWUQsUhmidj1qvZ3TdrPk8ECTCAGGMQQBsLIVDeBLQvLZLnMHfXh8QLFBwOGxUC3jVTo1uAPDBbAecRUaYHOMHiBygaz69NX6L1phIwZ0z2ViRfIEwkvkCcSXiBPJLxAnkh4gTyR8AJ5IuEF8kTCC+SJhBfIEwkvkCcSXiBPJLxAnkh4gTyR8AJ5IuEF8kTCC+SJhBfIEwkvkCcSXiBPJLxAnkh4gTyR8AJ5IuEF8kTCC+SJhBfIEwkvkCcSXiBPJLxAnkh4gTyR8AJ5IuEF8kTCC+SJhBfIEwkvkCcSXiBPJLxAnkh4gTyR8AJ5IuEF8kTCC+SJhBfIE4n/B49hDPC7R1CFAAAAAElFTkSuQmCC';
 /* ============================================================================ */
 let _syncTimer=null;
 function cloudOn(){ return CLOUD_URL && CLOUD_URL.indexOf('/exec')>0; }
@@ -399,7 +406,7 @@ async function cloudGet(timeout){
 }
 function temAtividade(s){
   if(!s) return false;
-  return ['presencas','material','temas','testes','contatos','planos','comentarios','atas','tarefas','relatorios','vipAlunos','aulasVip']
+  return ['presencas','material','temas','testes','contatos','planos','comentarios','atas','tarefas','relatorios','vipAlunos','aulasVip','boletins']
     .some(k=>Array.isArray(s[k]) && s[k].length);
 }
 function cloudPut(force){
@@ -460,14 +467,14 @@ function proximaEntrega(turmaId,fromYmd){const ds=datasAula(turmaId,2,8).sort();
 /* dados reais da escola (relatório Sponte 12/06/2026) */
 function seed(){
   const T=[
-    ['A2 TEENS TARDINHA','teens','Franco','Ter–Qui 18:15–19:30',[2,4],['Artur Fellini Tedesco','Breno Apolinario Dias','Bruna Vitoria Brito de Almeida','Enrico Sccotti Mattos','Fernanda Cardoso Binotto','Gabriel Pereira dos Santos','Gabriela Porto Jerônimo','Helena Avila Henriques','Isabelly Pereira Dos santos','Isadora Douglas Polese','Lucca Jesus Capelão']],
-    ['A1+ JUNIOR MANHÃ','junior','Franco','Seg–Qua 10:15–11:30',[1,3],['Catherine Cardoso Shvantes Bottini','Enzo Ferrari Velasques','Isabelle Ymai','Julia Nasario de Dillenburg','Lorenzo Braga Klahn','Manuela Canal Guedes','Maria Clara Sarmento Silveira','Martina Dupont Braga','Thomas de Freitas Sbruzzi de Toledo','Valentina Bitencourt Castro','Valentina Gonçalves pacheco']],
-    ['C1 TEENS TARDE (Prep.)','teens','Franco','Seg 14:00–16:45',[1],['Aleckssandra da Rosa Tavares','Isabella Pacheco Lima','Laís Antunes Motta Fernandes','Lucas Barcelos Mousquer','Maria Eduarda Pacheco Lima','Matheus Sakai','Murilo Garcia','Natália Tavares Goerl']],
+    ['A2 TEENS TARDINHA','teens','A2','Franco','Ter–Qui 18:15–19:30',[2,4],['Artur Fellini Tedesco','Breno Apolinario Dias','Bruna Vitoria Brito de Almeida','Enrico Sccotti Mattos','Fernanda Cardoso Binotto','Gabriel Pereira dos Santos','Gabriela Porto Jerônimo','Helena Avila Henriques','Isabelly Pereira Dos santos','Isadora Douglas Polese','Lucca Jesus Capelão']],
+    ['A1+ JUNIOR MANHÃ','junior','A1+','Franco','Seg–Qua 10:15–11:30',[1,3],['Catherine Cardoso Shvantes Bottini','Enzo Ferrari Velasques','Isabelle Ymai','Julia Nasario de Dillenburg','Lorenzo Braga Klahn','Manuela Canal Guedes','Maria Clara Sarmento Silveira','Martina Dupont Braga','Thomas de Freitas Sbruzzi de Toledo','Valentina Bitencourt Castro','Valentina Gonçalves pacheco']],
+    ['C1 TEENS TARDE (Prep.)','teens','C1','Franco','Seg 14:00–16:45',[1],['Aleckssandra da Rosa Tavares','Isabella Pacheco Lima','Laís Antunes Motta Fernandes','Lucas Barcelos Mousquer','Maria Eduarda Pacheco Lima','Matheus Sakai','Murilo Garcia','Natália Tavares Goerl']],
   ];
   const turmas=[], alunos=[];
-  T.forEach(([nome,nivel,prof,hor,dias,als])=>{
+  T.forEach(([nome,nivel,cefr,prof,hor,dias,als])=>{
     const id=uid();
-    turmas.push({id,nome,nivel,professor:prof,horario:hor,dias,vezesSemana:dias.length});
+    turmas.push({id,nome,nivel,cefr,professor:prof,horario:hor,dias,vezesSemana:dias.length});
     als.forEach(n=>alunos.push({id:uid(),nome:n,turmaId:id}));
   });
   const usuarios=[
@@ -488,6 +495,7 @@ function seed(){
     relatorios:[],
     vipAlunos:[],
     aulasVip:[],
+    boletins:[],
     config:{assinatura:'— Equipe Togethere\ninglês para chegar lá', escolaEmail:'inglestogethere@gmail.com'},
   };
 }
@@ -989,41 +997,269 @@ function salvarEdicaoTema(id){
 }
 
 /* ---- TESTES ---- */
-let testeTurma=null;
+/* ===== TESTES E BOLETIM ===== */
+const SKILLS=['Grammar','Vocabulary','Listening','Reading','Writing','Speaking'];
+function cefrFromNome(nome){ const m=(nome||'').toUpperCase().match(/\b([ABC][12]\+?)\b/); return m?m[1]:''; }
+function cefrRank(c){ const o=['A1','A1+','A2','A2+','B1','B1+','B2','B2+','C1','C2']; const i=o.indexOf((c||'').toUpperCase()); return i<0?-1:i; }
+function numTestes(turma){
+  if(!turma) return 3;
+  if(turma.nivel==='kids') return 0;                 // KIDS: sem teste formal
+  if(cefrRank(turma.cefr)>=cefrRank('B2')) return 2;  // B2, B2+, C1, C2 → 2 testes
+  return 3;                                           // júnior, teens até B1+, demais → 3 testes
+}
+function bandaConceito(n){
+  if(n===''||n==null||isNaN(n)) return {label:'—',cor:'#9aa6b6',bg:'transparent'};
+  n=+n;
+  if(n>=100) return {label:'distinction',cor:'#B8860B',bg:'#FBF3D6'};    // 100 = distinction (dourado)
+  if(n>=90) return {label:'merit',cor:'var(--azul)',bg:'#E7F0FB'};       // 90–99 merit (azul)
+  if(n>=60) return {label:'pass',cor:'var(--ok)',bg:'#E6F6F0'};          // 60–89 pass (verde)
+  return {label:'in need of improvement',cor:'var(--vermelho)',bg:'#FDECEC'}; // 0–59 (vermelho)
+}
+function legendaConceitos(){
+  const it=(c,t)=>`<span style="display:inline-flex;align-items:center;gap:5px;font-size:.76rem;margin:0 10px 4px 0"><span style="width:12px;height:12px;border-radius:3px;background:${c};display:inline-block"></span>${t}</span>`;
+  return `<div style="display:flex;flex-wrap:wrap;align-items:center;margin-top:4px">${it('var(--vermelho)','0–59 in need of improvement')}${it('var(--ok)','60–89 pass')}${it('var(--azul)','90–99 merit')}${it('#B8860B','100 distinction')}</div>`;
+}
+function testeDaTurma(turmaId,numero,criar){
+  let t=S.testes.find(x=>x.turmaId===turmaId && x.numero===numero);
+  if(!t && criar){ t={id:uid(),turmaId,numero,data:hoje(),notas:{}}; S.testes.push(t); }
+  return t;
+}
+function notaSkill(t,aid,skill){ return (t&&t.notas&&t.notas[aid]&&t.notas[aid][skill]!=null)?t.notas[aid][skill]:''; }
+function mediaTesteAluno(t,aid){
+  if(!t||!t.notas||!t.notas[aid]) return null;
+  const v=SKILLS.map(s=>t.notas[aid][s]).filter(x=>x!==''&&x!=null&&!isNaN(x)).map(Number);
+  return v.length?v.reduce((a,n)=>a+n,0)/v.length:null;
+}
+function mediaSkillAno(turmaId,aid,skill){
+  const v=S.testes.filter(t=>t.turmaId===turmaId).map(t=>t.notas&&t.notas[aid]?t.notas[aid][skill]:'').filter(x=>x!==''&&x!=null&&!isNaN(x)).map(Number);
+  return v.length?Math.round(v.reduce((a,n)=>a+n,0)/v.length):null;
+}
+function boletimDe(turmaId,aid,criar){
+  let b=S.boletins.find(x=>x.turmaId===turmaId && x.alunoId===aid);
+  if(!b && criar){ b={id:uid(),turmaId,alunoId:aid,ano:new Date().getFullYear(),conceitos:{},parecer:'',conceitoGeral:'',criadoEm:hoje(),criadoPor:S.usuario}; S.boletins.push(b); }
+  return b;
+}
+
+let testeTurma=null, boletimAluno=null;
 VIEWS.testes=()=>{
   testeTurma=testeTurma||primeiraTurma();
   const v=document.getElementById('view');
-  v.innerHTML=`${btnVoltaPainel()}<div class="section-title"><span class="feijao fj" style="background:var(--roxo)"></span><h2 class="display">Resultados de testes</h2></div>
-    <p class="sub">Lance as notas e veja a média da turma.</p>
-    <div class="card"><h3>Novo teste</h3><div class="row">
-      <div><label class="lbl">Turma</label>${selectTurma('teT',testeTurma)}</div>
-      <div style="flex:2"><label class="lbl">Nome do teste</label><input type="text" id="teNome" placeholder="Ex: Unit 5 — Reading"></div>
-      <div><label class="lbl">Data</label><input type="date" id="teD" value="${hoje()}"></div></div>
-      <div style="margin-top:12px"><button class="btn" onclick="addTeste()">Criar teste</button></div></div>
-    <div id="teList"></div>`;
-  document.getElementById('teT').onchange=e=>testeTurma=e.target.value;
-  renderTestes();
+  v.innerHTML=`${btnVoltaPainel()}<div class="section-title"><span class="feijao fj" style="background:var(--roxo)"></span><h2 class="display">Testes e boletim</h2></div>
+    <p class="sub">Notas por habilidade em cada teste e o boletim de fim de ano com parecer e relatório individual.</p>
+    <div class="card"><label class="lbl">Turma</label>${selectTurma('teT',testeTurma)}<div id="teInfo" style="margin-top:8px"></div></div>
+    <div id="teTestes"></div>
+    <div id="teBoletim"></div>`;
+  document.getElementById('teT').onchange=e=>{testeTurma=e.target.value;boletimAluno=null;VIEWS.testes();};
+  renderTestesArea(); renderBoletimArea();
 };
-function addTeste(){
-  const nome=document.getElementById('teNome').value.trim();
-  if(!nome)return toast('Dê um nome ao teste');
-  const turmaId=document.getElementById('teT').value;
-  S.testes.push({id:uid(),turmaId,nome,data:document.getElementById('teD').value,notas:{}});
-  save();VIEWS.testes();toast('Teste criado');
+function setTesteData(num,val){ const t=testeDaTurma(testeTurma,num,true); t.data=val; save(); }
+function setTesteNota(num,aid,skill,el){
+  const t=testeDaTurma(testeTurma,num,true);
+  let val=el.value===''?'':Math.max(0,Math.min(100,Math.round(+el.value)));
+  if(el.value!==''&&val!==+el.value) el.value=val;
+  t.notas[aid]=t.notas[aid]||{}; t.notas[aid][skill]=val; save();
+  const b=bandaConceito(val); el.style.background=b.bg; el.style.color=b.cor;
+  const m=mediaTesteAluno(t,aid), mc=document.getElementById(`tm_${num}_${aid}`);
+  if(mc){ const mb=bandaConceito(m==null?'':Math.round(m)); mc.textContent=m==null?'—':Math.round(m); mc.style.color=mb.cor; }
 }
-function renderTestes(){
-  const list=document.getElementById('teList');
-  const ts=S.testes.filter(t=>t.turmaId===testeTurma).sort((a,b)=>b.data.localeCompare(a.data));
-  if(!ts.length){list.innerHTML='<div class="card empty"><div class="big">✏️</div>Nenhum teste para esta turma.</div>';return;}
-  list.innerHTML=ts.map(t=>{
-    const als=alunosDa(t.turmaId);
-    const notas=als.map(a=>t.notas[a.id]).filter(n=>n!=null&&n!=='');
-    const media=notas.length?(notas.reduce((s,n)=>s+(+n),0)/notas.length).toFixed(1):'—';
-    return `<div class="card"><h3>${t.nome}</h3><p class="hint">${brDate(t.data)} · Média da turma: <b>${media}</b></p>
-      <table><tbody>${als.map(a=>`<tr><td>${a.nome}</td><td style="width:110px"><input type="number" step="0.5" min="0" max="10" value="${t.notas[a.id]??''}" placeholder="—" onchange="setNota('${t.id}','${a.id}',this.value)"></td></tr>`).join('')}</tbody></table></div>`;
-  }).join('');
+function renderTestesArea(){
+  const box=document.getElementById('teTestes'); if(!box)return;
+  const turma=S.turmas.find(t=>t.id===testeTurma)||{};
+  const n=numTestes(turma);
+  const info=document.getElementById('teInfo');
+  if(info) info.innerHTML=`${turma.nivel?nivelTag(turma.nivel):''} ${turma.cefr?`<span class="tag teens">${turma.cefr}</span>`:''} <span class="hint">· ${n===0?'<b>sem testes formais</b> — avaliação por desempenho em aula':'<b>'+n+' testes</b> no ano'}</span>`;
+  if(n===0){
+    box.innerHTML=`<div class="card" style="background:#fff7fb"><p class="hint" style="margin:0">Turmas <b>KIDS</b> não têm testes formais. A avaliação é por desempenho em aula — registre os conceitos por habilidade direto no <b>boletim de fim de ano</b> abaixo.</p></div>`;
+    return;
+  }
+  const als=alunosDa(testeTurma);
+  let h=`<div class="card" style="padding:12px 16px">${legendaConceitos()}</div>`;
+  for(let num=1;num<=n;num++){
+    const t=testeDaTurma(testeTurma,num,false);
+    h+=`<div class="card"><div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px">
+        <h3 style="margin:0;flex:1">${num}º Teste</h3>
+        <label class="lbl" style="margin:0">Data</label><input type="date" value="${t?t.data:''}" onchange="setTesteData(${num},this.value)" style="width:auto"></div>`;
+    if(!als.length){ h+='<p class="hint">Nenhum aluno na turma.</p></div>'; continue; }
+    h+=`<div style="overflow-x:auto"><table style="border-collapse:collapse;min-width:100%"><thead><tr>
+      <th style="text-align:left;position:sticky;left:0;background:#fff;padding:4px 8px;font-size:.78rem">Aluno</th>
+      ${SKILLS.map(s=>`<th style="padding:4px 6px;font-size:.72rem" title="${s}">${s.slice(0,4)}</th>`).join('')}
+      <th style="padding:4px 6px;font-size:.72rem">Média</th></tr></thead><tbody>`;
+    h+=als.map(a=>{
+      const m=mediaTesteAluno(t,a.id), mb=bandaConceito(m==null?'':Math.round(m));
+      return `<tr><td style="text-align:left;position:sticky;left:0;background:#fff;white-space:nowrap;padding:4px 8px;font-size:.84rem">${a.nome}</td>
+        ${SKILLS.map(s=>{ const val=notaSkill(t,a.id,s), b=bandaConceito(val);
+          return `<td style="padding:2px 3px"><input type="number" min="0" max="100" value="${val}" onchange="setTesteNota(${num},'${a.id}','${s}',this)" style="width:48px;text-align:center;background:${b.bg};color:${b.cor};font-weight:600;border-radius:8px;padding:6px 2px"></td>`; }).join('')}
+        <td id="tm_${num}_${a.id}" style="text-align:center;font-weight:700;color:${mb.cor}">${m==null?'—':Math.round(m)}</td></tr>`;
+    }).join('');
+    h+=`</tbody></table></div></div>`;
+  }
+  box.innerHTML=h;
 }
-function setNota(tid,aid,val){const t=S.testes.find(t=>t.id===tid);t.notas[aid]=val===''?'':+val;save();renderTestes();}
+function setBoletimConceito(skill,el){
+  const b=boletimDe(testeTurma,boletimAluno,true);
+  let val=el.value===''?'':Math.max(0,Math.min(100,Math.round(+el.value)));
+  if(el.value!==''&&val!==+el.value) el.value=val;
+  b.conceitos[skill]=val; save();
+  const bd=bandaConceito(val); el.style.background=bd.bg; el.style.color=bd.cor;
+  const lc=document.getElementById('bcl_'+skill); if(lc){ lc.textContent=bd.label; lc.style.color=bd.cor; }
+  const g=document.getElementById('bGeral'); if(g) g.placeholder=(mediaConceitosBoletim()??'')+'';
+}
+function setBoletimGeral(val){ const b=boletimDe(testeTurma,boletimAluno,true); b.conceitoGeral= val===''?'':Math.max(0,Math.min(100,Math.round(+val))); save(); }
+function setBoletimParecer(val){ const b=boletimDe(testeTurma,boletimAluno,true); b.parecer=val; save(); }
+function mediaConceitosBoletim(){
+  if(!boletimAluno) return null;
+  const b=boletimDe(testeTurma,boletimAluno,false)||{conceitos:{}};
+  const v=SKILLS.map(s=>(b.conceitos&&b.conceitos[s]!=null&&b.conceitos[s]!=='')?b.conceitos[s]:mediaSkillAno(testeTurma,boletimAluno,s))
+    .filter(x=>x!==''&&x!=null&&!isNaN(x)).map(Number);
+  return v.length?Math.round(v.reduce((a,n)=>a+n,0)/v.length):null;
+}
+function renderBoletimArea(){
+  const box=document.getElementById('teBoletim'); if(!box)return;
+  const als=alunosDa(testeTurma);
+  let h=`<div class="section-title" style="margin-top:26px"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Boletim de fim de ano</h2></div>
+    <p class="sub">Conceitos finais por habilidade, parecer descritivo e conceito geral — acompanha o relatório individual completo do aluno.</p>
+    <div class="card"><label class="lbl">Aluno</label>
+      <select id="boAluno"><option value="">— escolha o aluno —</option>${als.map(a=>`<option value="${a.id}" ${a.id===boletimAluno?'selected':''}>${a.nome}</option>`).join('')}</select></div>`;
+  if(boletimAluno){
+    const b=boletimDe(testeTurma,boletimAluno,false)||{conceitos:{},parecer:'',conceitoGeral:''};
+    h+=`<div class="card"><h3>Conceitos finais por habilidade</h3>${legendaConceitos()}
+      <p class="hint" style="margin:6px 0">Sugeridos pela média dos testes do ano — ajuste como quiser. (Em KIDS, preencha conforme o desempenho em aula.)</p>
+      <table style="border-collapse:collapse"><tbody>${SKILLS.map(s=>{
+        const sug=mediaSkillAno(testeTurma,boletimAluno,s);
+        const val=(b.conceitos&&b.conceitos[s]!=null&&b.conceitos[s]!=='')?b.conceitos[s]:(sug==null?'':sug);
+        const bd=bandaConceito(val);
+        return `<tr><td style="text-align:left;padding:5px 10px 5px 0">${s}</td>
+          <td style="padding:3px 0"><input type="number" min="0" max="100" value="${val}" onchange="setBoletimConceito('${s}',this)" style="width:72px;text-align:center;background:${bd.bg};color:${bd.cor};font-weight:600;border-radius:8px;padding:7px 4px"></td>
+          <td id="bcl_${s}" style="padding:5px 0 5px 12px;color:${bd.cor};font-weight:600;font-size:.86rem">${bd.label}</td></tr>`;
+      }).join('')}</tbody></table>
+      <div class="field" style="margin-top:14px"><label class="lbl">Conceito final geral</label>
+        <input type="number" min="0" max="100" id="bGeral" value="${b.conceitoGeral??''}" placeholder="${mediaConceitosBoletim()??''}" onchange="setBoletimGeral(this.value)" style="width:90px;text-align:center">
+        <span class="hint"> deixe em branco para usar a média das habilidades</span></div>
+      <div class="field" style="margin-top:12px"><label class="lbl">Parecer descritivo geral</label>
+        <textarea id="bParecer" placeholder="Comentário geral sobre o desempenho e a evolução do aluno no nível…" oninput="setBoletimParecer(this.value)">${escAttr(b.parecer||'')}</textarea></div>
+      <div style="margin-top:12px"><button class="btn" onclick="gerarBoletim()">📄 Gerar boletim completo</button></div></div>
+    <div class="card"><h3>Boletim gerado</h3><p class="hint">Pré-visualização na identidade Togethere. Imprima ou salve em PDF para entregar à família; ou copie o texto para o WhatsApp.</p>
+      <iframe id="boFrame" title="Boletim" style="width:100%;height:600px;border:1px solid var(--linha);border-radius:14px;background:#fff;display:none"></iframe>
+      <div class="gen-box" id="boVazio">Clique em “Gerar boletim completo”.</div>
+      <div class="row" style="margin-top:14px"><button class="btn" onclick="imprimirBoletim()">🖨️ Imprimir / PDF</button>
+      <button class="btn amarelo" onclick="copiarBoletim()">📋 Copiar texto</button></div></div>`;
+  }
+  box.innerHTML=h;
+  const sel=document.getElementById('boAluno'); if(sel) sel.onchange=e=>{ boletimAluno=e.target.value||null; renderBoletimArea(); };
+}
+let _boletimHTML='', _boletimTxt='';
+function gerarBoletim(){
+  if(!boletimAluno) return toast('Escolha o aluno');
+  const r=montarBoletimHTML(testeTurma, boletimAluno);
+  _boletimHTML=r.html; _boletimTxt=r.txt;
+  const fr=document.getElementById('boFrame'), vz=document.getElementById('boVazio');
+  if(fr){ fr.srcdoc=r.html; fr.style.display='block'; }
+  if(vz) vz.style.display='none';
+}
+function montarBoletimHTML(turmaId, alunoId){
+  const turma=S.turmas.find(t=>t.id===turmaId)||{}, aluno=S.alunos.find(a=>a.id===alunoId)||{};
+  const b=boletimDe(turmaId,alunoId,true);
+  const esc=s=>(s==null?'':s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const ano=b.ano||new Date().getFullYear();
+  // conceitos finais por habilidade
+  const concs=SKILLS.map(s=>{
+    let v=(b.conceitos[s]!=null&&b.conceitos[s]!=='')?b.conceitos[s]:mediaSkillAno(turmaId,alunoId,s);
+    return {s, v:(v===''||v==null?'':v), bd:bandaConceito(v===''||v==null?'':v)};
+  });
+  let geral=(b.conceitoGeral!=null&&b.conceitoGeral!=='')?b.conceitoGeral:mediaConceitosBoletim();
+  const bg=bandaConceito(geral===''||geral==null?'':geral);
+  const chip=l=> l==='in need of improvement'?'needs work':l;
+  const skillsHTML=concs.map(c=>`<div class="sk"><span class="skn">${c.s}</span><span class="skv" style="color:${c.bd.cor}">${c.v===''?'—':c.v}</span><span class="chip" style="background:${c.bd.bg};color:${c.bd.cor}">${chip(c.bd.label)}</span></div>`).join('');
+  // dados de acompanhamento (ano todo)
+  const faltas=faltasDoAluno(alunoId,turmaId), atrasos=atrasosDoAluno(alunoId,turmaId), saidas=saidasCedoDoAluno(alunoId,turmaId);
+  const mat=materialDoAluno(alunoId,turmaId), temas=temasNaoFeitosDoAluno(alunoId,turmaId), coms=comentariosDoAluno(alunoId);
+  const peso=pesoFalta(turmaId);
+  const li=arr=>arr.length?('<ul>'+arr.join('')+'</ul>'):'<div class="ok">Nenhum registro ✓</div>';
+  const bloco=(t,n,inner)=>`<div class="b"><div class="t">${t} <span class="n">${n}</span></div>${inner}</div>`;
+  const repHTML=
+    bloco('Frequência', faltas.length?`${faltas.length} falta(s)${peso===2?` = ${faltas.length*2}`:''}`:'em dia',
+      faltas.length?li(faltas.map(d=>`<li>${brDate(d)} — ${esc(resumoAulaDoDia(turmaId,d))}</li>`)):'<div class="ok">Sem faltas ✓</div>')+
+    bloco('Atrasos', atrasos.length||'0', atrasos.length?li(atrasos.map(d=>`<li>${brDate(d)}</li>`)):'<div class="ok">Sem atrasos ✓</div>')+
+    bloco('Saídas antecipadas', saidas.length||'0', saidas.length?li(saidas.map(d=>`<li>${brDate(d)}</li>`)):'<div class="ok">Nenhuma ✓</div>')+
+    bloco('Material', mat.length?`${mat.length} aula(s) sem material`:'em dia', mat.length?li(mat.map(d=>`<li>${brDate(d)}</li>`)):'<div class="ok">Sempre com material ✓</div>')+
+    bloco('Temas de casa', temas.length?`${temas.length} pendência(s)`:'em dia', temas.length?li(temas.map(t=>`<li>${brDate(t.data)} — ${esc(t.descricao)} (${t.status==='parcial'?'parcial':'não feito'})</li>`)):'<div class="ok">Temas em dia ✓</div>')+
+    bloco('Comentários', coms.length||'0', coms.length?li(coms.map(c=>`<li>${brDate(c.data)} (${esc(c.autor)}): ${esc(c.texto)}</li>`)):'<div class="ok">Nenhum comentário</div>');
+  const assinatura=(S.config&&S.config.assinatura)||'Equipe Togethere';
+  const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Boletim — ${esc(aluno.nome)}</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Urbanist:ital,wght@0,400;0,500;0,600;1,400&family=Zilla+Slab:ital,wght@1,600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--azul:#005EAF;--amarelo:#FFC800;--vermelho:#E52524;--ok:#16A07A;--tinta:#10243a;--linha:#e7eef6}
+html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:'Urbanist',system-ui,sans-serif;color:var(--tinta);background:#eef3f8;padding:24px;line-height:1.5}
+.page{max-width:760px;margin:0 auto;background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 10px 40px rgba(0,40,90,.12)}
+.hd{background:linear-gradient(135deg,#0a6dc4,var(--azul));color:#fff;padding:26px 32px;display:flex;align-items:center;gap:16px}
+.hd img{width:58px;height:58px;border-radius:14px;flex:none;box-shadow:0 4px 14px rgba(0,0,0,.20)}
+.hd .nm{font-family:'Poppins',sans-serif;font-weight:700;font-size:1.5rem;letter-spacing:-.5px;line-height:1}
+.hd .tg{font-family:'Zilla Slab',serif;font-style:italic;font-weight:600;opacity:.95;font-size:.95rem;margin-top:4px}
+.hd .doc{margin-left:auto;text-align:right;font-family:'Poppins',sans-serif;font-weight:600}
+.hd .doc b{font-size:1.3rem;display:block;line-height:1}
+.hd .doc span{font-size:.82rem;opacity:.92}
+.who{padding:22px 32px 4px}
+.who .al{font-family:'Poppins',sans-serif;font-weight:700;font-size:1.45rem;color:var(--azul);letter-spacing:-.4px}
+.who .meta{color:#5b6b7c;font-size:.9rem;margin-top:3px}
+.sec{padding:14px 32px}
+.sec h2{font-family:'Poppins',sans-serif;font-weight:600;font-size:.74rem;letter-spacing:.12em;text-transform:uppercase;color:#8595a6;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.sec h2::before{content:"";width:18px;height:4px;border-radius:3px;background:var(--amarelo)}
+.geral{display:flex;align-items:center;gap:18px;background:#f6f9fd;border:1px solid var(--linha);border-radius:14px;padding:16px 22px}
+.geral .num{font-family:'Poppins',sans-serif;font-weight:700;font-size:2.5rem;line-height:1}
+.geral .lab{font-family:'Poppins',sans-serif;font-weight:600;font-size:1.1rem;text-transform:capitalize}
+.geral .cap{font-size:.82rem;color:#5b6b7c}
+.skills{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.sk{border:1px solid var(--linha);border-radius:12px;padding:11px 14px;display:flex;align-items:center;gap:10px}
+.sk .skn{font-family:'Poppins',sans-serif;font-weight:600;flex:1;font-size:.95rem}
+.sk .skv{font-family:'Poppins',sans-serif;font-weight:700;font-size:1.25rem;min-width:34px;text-align:right}
+.chip{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:4px 9px;border-radius:999px;white-space:nowrap}
+.leg{margin-top:10px;font-size:.72rem;color:#8595a6}
+.parecer{background:#fffaf0;border-left:4px solid var(--amarelo);border-radius:0 12px 12px 0;padding:14px 18px;font-size:.96rem;white-space:pre-wrap}
+.rep{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rep .b{border:1px solid var(--linha);border-radius:12px;padding:12px 14px}
+.rep .b .t{font-family:'Poppins',sans-serif;font-weight:600;font-size:.82rem;margin-bottom:6px}
+.rep .b .t .n{font-weight:700;color:var(--azul)}
+.rep ul{list-style:none;font-size:.82rem;color:#42525f}
+.rep li{padding:3px 0;border-top:1px dashed var(--linha)}
+.rep li:first-child{border-top:0}
+.ok{color:var(--ok);font-size:.82rem;font-weight:600}
+.ft{padding:18px 32px 26px;border-top:1px solid var(--linha);margin-top:10px;color:#5b6b7c;font-size:.85rem;display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
+.ft .tag{font-family:'Zilla Slab',serif;font-style:italic;font-weight:600;color:var(--azul);font-size:1.05rem;white-space:nowrap}
+@media print{body{background:#fff;padding:0}.page{box-shadow:none;border-radius:0;max-width:100%}}
+@page{margin:12mm}
+</style></head>
+<body><div class="page">
+  <div class="hd"><img src="${LOGO_B64}" alt="Togethere">
+    <div><div class="nm">Togethere</div><div class="tg">inglês para chegar lá</div></div>
+    <div class="doc"><b>Boletim</b><span>${ano}</span></div></div>
+  <div class="who"><div class="al">${esc(aluno.nome)}</div>
+    <div class="meta">${esc(turma.nome)}${turma.cefr?' · Nível '+esc(turma.cefr):''}${turma.professor?' · Prof. '+esc(turma.professor):''} · Emitido em ${brDate(hoje())}</div></div>
+  <div class="sec"><h2>Conceito final geral</h2>
+    <div class="geral"><div class="num" style="color:${bg.cor}">${geral===''||geral==null?'—':geral}</div>
+      <div><div class="lab" style="color:${bg.cor}">${bg.label}</div><div class="cap">Resultado do aluno no nível ${esc(turma.cefr||turma.nome)}</div></div></div></div>
+  <div class="sec"><h2>Desempenho por habilidade</h2><div class="skills">${skillsHTML}</div>
+    <div class="leg">0–59 in need of improvement · 60–89 pass · 90–99 merit · 100 distinction</div></div>
+  <div class="sec"><h2>Parecer descritivo</h2><div class="parecer">${esc((b.parecer||'').trim())||'—'}</div></div>
+  <div class="sec"><h2>Acompanhamento no ano</h2><div class="rep">${repHTML}</div></div>
+  <div class="ft"><div>${esc(assinatura).replace(/\n/g,'<br>')}<br><small>Emitido por ${esc(S.usuario)} em ${brDate(hoje())}</small></div><div class="tag">Togethere</div></div>
+</div></body></html>`;
+  // versão texto (para copiar / WhatsApp)
+  let txt=`BOLETIM ${ano}\n${aluno.nome}\nTurma: ${turma.nome}${turma.cefr?' · Nível '+turma.cefr:''}${turma.professor?' · Prof. '+turma.professor:''}\nGerado em ${brDate(hoje())} por ${S.usuario}\n`;
+  txt+=`\n🎯 CONCEITOS FINAIS POR HABILIDADE\n`+concs.map(c=>`• ${c.s}: ${c.v===''?'—':c.v}  (${c.bd.label})`).join('\n')+`\n`;
+  txt+=`\n🏅 CONCEITO FINAL GERAL: ${geral===''||geral==null?'—':geral}  (${bg.label})\n`;
+  txt+=`\n📝 PARECER DESCRITIVO\n${(b.parecer||'').trim()||'(sem parecer)'}\n`;
+  txt+=`\n════════════════════\n\n`+corpoRelatorioAluno(alunoId,turmaId,'','');
+  return {html, txt};
+}
+function copiarBoletim(){ if(!_boletimTxt)return toast('Gere o boletim primeiro'); copiarTexto(_boletimTxt,'Boletim copiado!'); }
+function imprimirBoletim(){ if(!_boletimHTML)return toast('Gere o boletim primeiro');
+  const w=window.open('','_blank'); if(!w)return toast('Permita pop-ups para imprimir');
+  w.document.open(); w.document.write(_boletimHTML); w.document.close();
+  setTimeout(()=>{ try{w.focus();w.print();}catch(e){} }, 600); }
+
 
 /* ---- MATERIAL ---- */
 let matTurma=null, matData=hoje(), matBusca='';
@@ -1509,11 +1745,7 @@ function resumoAulaDoDia(turmaId,data){
   if(tema) s+=(s?' | ':'')+'Tema passado: '+tema.descricao;
   return s||'aula não registrada no sistema';
 }
-function gerarRelatorioAluno(){
-  const turmaId=document.getElementById('relT').value, alunoId=document.getElementById('relA').value;
-  if(!alunoId)return toast('Escolha o aluno');
-  const de=(document.getElementById('relDe')||{}).value||'', ate=(document.getElementById('relAte')||{}).value||'';
-  if(de&&ate&&de>ate)return toast('A data inicial é maior que a final');
+function corpoRelatorioAluno(alunoId,turmaId,de,ate){
   const inRange=d=> (!de||d>=de) && (!ate||d<=ate);
   const aluno=S.alunos.find(a=>a.id===alunoId), turma=S.turmas.find(t=>t.id===turmaId);
   const faltas=faltasDoAluno(alunoId,turmaId).filter(inRange), mat=materialDoAluno(alunoId,turmaId).filter(inRange);
@@ -1535,7 +1767,14 @@ function gerarRelatorioAluno(){
   txt+=`\n💬 COMENTÁRIOS (${coms.length})\n`;
   if(coms.length) coms.forEach(c=>{ txt+=`• ${brDate(c.data)} (${c.autor}): ${c.texto}\n`; }); else txt+=`• Nenhum comentário.\n`;
   txt+=`\n—\nTogethere · inglês para chegar lá`;
-  document.getElementById('relOut').textContent=txt;
+  return txt;
+}
+function gerarRelatorioAluno(){
+  const turmaId=document.getElementById('relT').value, alunoId=document.getElementById('relA').value;
+  if(!alunoId)return toast('Escolha o aluno');
+  const de=(document.getElementById('relDe')||{}).value||'', ate=(document.getElementById('relAte')||{}).value||'';
+  if(de&&ate&&de>ate)return toast('A data inicial é maior que a final');
+  document.getElementById('relOut').textContent=corpoRelatorioAluno(alunoId,turmaId,de,ate);
 }
 function addComentario(){
   const alunoId=document.getElementById('relA').value;
@@ -1700,7 +1939,8 @@ VIEWS.turmas=()=>{
     <p class="sub">${ehProf?'Suas turmas. Toque numa turma para abrir o painel (chamada, plano, material, temas, testes).':'Todas as turmas da escola. Toque numa turma para abrir o painel; ou cadastre uma nova.'}</p>
     ${ehProf?'':`<div class="card"><h3>Nova turma</h3><div class="row">
       <div style="flex:2"><label class="lbl">Nome da turma</label><input type="text" id="nT" placeholder="Ex: A2 ADULTS NOITE"></div>
-      <div><label class="lbl">Nível</label><select id="nN"><option value="kids">kids</option><option value="junior">junior</option><option value="teens" selected>teens</option><option value="adults">adults</option><option value="talking">talking</option></select></div>
+      <div><label class="lbl">Categoria</label><select id="nN"><option value="kids">kids</option><option value="junior">junior</option><option value="teens" selected>teens</option><option value="adults">adults</option><option value="talking">talking</option></select></div>
+      <div><label class="lbl">Nível CEFR</label><select id="nC"><option value="">—</option>${['A1','A1+','A2','A2+','B1','B1+','B2','B2+','C1','C2'].map(c=>`<option value="${c}">${c}</option>`).join('')}</select></div>
       <div style="flex:1"><label class="lbl">Horário (opcional)</label><input type="text" id="nHor" placeholder="Ex: 18:15–19:30"></div>
     </div>
     <div class="field" style="margin-top:10px"><label class="lbl">Dias de aula</label><div style="display:flex;flex-wrap:wrap;gap:6px">
@@ -1722,7 +1962,8 @@ function addTurma(){
   const dias=[...document.querySelectorAll('.nDia:checked')].map(c=>+c.value).sort((a,b)=>a-b);
   if(!dias.length)return toast('Selecione ao menos um dia de aula');
   const hor=(document.getElementById('nHor').value||'').trim();
-  const t={id:uid(),nome,nivel:document.getElementById('nN').value,horario:hor,dias,vezesSemana:dias.length};
+  const cefr=(document.getElementById('nC')||{}).value||cefrFromNome(nome);
+  const t={id:uid(),nome,nivel:document.getElementById('nN').value,cefr,horario:hor,dias,vezesSemana:dias.length};
   if(S.perfil==='professor'){const u=S.usuarios.find(u=>u.nome===S.usuario);t.professor=u&&u.ensina;}
   S.turmas.push(t);
   save();VIEWS.turmas();toast('Turma criada');
@@ -1749,7 +1990,7 @@ function renderTurmaList(){
     const freq=` · ${diasTurmaLabel(t)||((t.vezesSemana===1)?'1x/sem':'2x/sem')}${t.vezesSemana===1?' (falta dupla)':''}`;
     return `<div class="card" style="cursor:pointer" onclick="abrirTurma('${t.id}')">
       <div style="display:flex;align-items:center;gap:10px">
-        <div style="flex:1"><h3 style="margin:0">${t.nome} ${nivelTag(t.nivel)}</h3>
+        <div style="flex:1"><h3 style="margin:0">${t.nome} ${nivelTag(t.nivel)}${t.cefr?` <span class="tag teens">${t.cefr}</span>`:''}</h3>
           <p class="hint" style="margin:4px 0 0">${als.length} aluno(s)${prof}${hor}${freq}</p></div>
         <span style="font-size:1.7rem;color:var(--azul);line-height:1">›</span>
       </div></div>`;
@@ -1782,7 +2023,7 @@ function renderPainelTurma(){
   const podeCadastrar=!ehProfessor();
   v.innerHTML=`<button class="btn ghost sm" onclick="voltarTurmas()">‹ Voltar para turmas</button>
     <div class="section-title" style="margin-top:10px"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">${t.nome}</h2></div>
-    <p class="sub">${nivelTag(t.nivel)} · ${als.length} aluno(s)${t.professor?' · Prof. '+t.professor:''}${diasTurmaLabel(t)?' · '+diasTurmaLabel(t):''}${t.horario?' · '+t.horario:''} · ${freq}</p>
+    <p class="sub">${nivelTag(t.nivel)}${t.cefr?` <span class="tag teens">${t.cefr}</span>`:''} · ${als.length} aluno(s)${t.professor?' · Prof. '+t.professor:''}${diasTurmaLabel(t)?' · '+diasTurmaLabel(t):''}${t.horario?' · '+t.horario:''} · ${freq}</p>
     <div class="card"><h3>Visão geral</h3>
       <div class="dash-grid">
         <div class="stat"><div class="n">${als.length}</div><div class="l">alunos</div></div>
