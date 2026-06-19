@@ -1170,20 +1170,11 @@ function montarBoletimHTML(turmaId, alunoId){
   const bg=bandaConceito(geral===''||geral==null?'':geral);
   const chip=l=> l==='in need of improvement'?'needs work':l;
   const skillsHTML=concs.map(c=>`<div class="sk"><span class="skn">${c.s}</span><span class="skv" style="color:${c.bd.cor}">${c.v===''?'—':c.v}</span><span class="chip" style="background:${c.bd.bg};color:${c.bd.cor}">${chip(c.bd.label)}</span></div>`).join('');
-  // dados de acompanhamento (ano todo)
+  // acompanhamento (apenas totais do ano — sem detalhar datas/itens)
   const faltas=faltasDoAluno(alunoId,turmaId), atrasos=atrasosDoAluno(alunoId,turmaId), saidas=saidasCedoDoAluno(alunoId,turmaId);
-  const mat=materialDoAluno(alunoId,turmaId), temas=temasNaoFeitosDoAluno(alunoId,turmaId), coms=comentariosDoAluno(alunoId);
-  const peso=pesoFalta(turmaId);
-  const li=arr=>arr.length?('<ul>'+arr.join('')+'</ul>'):'<div class="ok">Nenhum registro ✓</div>';
-  const bloco=(t,n,inner)=>`<div class="b"><div class="t">${t} <span class="n">${n}</span></div>${inner}</div>`;
-  const repHTML=
-    bloco('Frequência', faltas.length?`${faltas.length} falta(s)${peso===2?` = ${faltas.length*2}`:''}`:'em dia',
-      faltas.length?li(faltas.map(d=>`<li>${brDate(d)} — ${esc(resumoAulaDoDia(turmaId,d))}</li>`)):'<div class="ok">Sem faltas ✓</div>')+
-    bloco('Atrasos', atrasos.length||'0', atrasos.length?li(atrasos.map(d=>`<li>${brDate(d)}</li>`)):'<div class="ok">Sem atrasos ✓</div>')+
-    bloco('Saídas antecipadas', saidas.length||'0', saidas.length?li(saidas.map(d=>`<li>${brDate(d)}</li>`)):'<div class="ok">Nenhuma ✓</div>')+
-    bloco('Material', mat.length?`${mat.length} aula(s) sem material`:'em dia', mat.length?li(mat.map(d=>`<li>${brDate(d)}</li>`)):'<div class="ok">Sempre com material ✓</div>')+
-    bloco('Temas de casa', temas.length?`${temas.length} pendência(s)`:'em dia', temas.length?li(temas.map(t=>`<li>${brDate(t.data)} — ${esc(t.descricao)} (${t.status==='parcial'?'parcial':'não feito'})</li>`)):'<div class="ok">Temas em dia ✓</div>')+
-    bloco('Comentários', coms.length||'0', coms.length?li(coms.map(c=>`<li>${brDate(c.data)} (${esc(c.autor)}): ${esc(c.texto)}</li>`)):'<div class="ok">Nenhum comentário</div>');
+  const mat=materialDoAluno(alunoId,turmaId), temas=temasNaoFeitosDoAluno(alunoId,turmaId);
+  const tile=(v,k)=>`<div class="st"><div class="v">${v}</div><div class="k">${k}</div></div>`;
+  const repHTML=`<div class="stats">${tile(faltas.length,'Faltas')}${tile(atrasos.length,'Atrasos')}${tile(saidas.length,'Saídas antecip.')}${tile(mat.length,'Aulas sem material')}${tile(temas.length,'Temas pendentes')}</div>`;
   const assinatura=(S.config&&S.config.assinatura)||'Equipe Togethere';
   const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Boletim — ${esc(aluno.nome)}</title>
@@ -1217,15 +1208,13 @@ body{font-family:'Urbanist',system-ui,sans-serif;color:var(--tinta);background:#
 .sk .skv{font-family:'Poppins',sans-serif;font-weight:700;font-size:1.25rem;min-width:34px;text-align:right}
 .chip{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:4px 9px;border-radius:999px;white-space:nowrap}
 .leg{margin-top:10px;font-size:.72rem;color:#8595a6}
-.parecer{background:#fffaf0;border-left:4px solid var(--amarelo);border-radius:0 12px 12px 0;padding:14px 18px;font-size:.96rem;white-space:pre-wrap}
-.rep{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.rep .b{border:1px solid var(--linha);border-radius:12px;padding:12px 14px}
-.rep .b .t{font-family:'Poppins',sans-serif;font-weight:600;font-size:.82rem;margin-bottom:6px}
-.rep .b .t .n{font-weight:700;color:var(--azul)}
-.rep ul{list-style:none;font-size:.82rem;color:#42525f}
-.rep li{padding:3px 0;border-top:1px dashed var(--linha)}
-.rep li:first-child{border-top:0}
-.ok{color:var(--ok);font-size:.82rem;font-weight:600}
+.parecer{background:#fffaf0;border-left:5px solid var(--amarelo);border-radius:0 14px 14px 0;padding:20px 22px;font-size:1.02rem;line-height:1.65;white-space:pre-wrap;min-height:200px}
+.parecer.vazio{color:#9aa6b6;font-style:italic}
+.stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+.st{border:1px solid var(--linha);border-radius:12px;padding:14px 8px;text-align:center}
+.st .v{font-family:'Poppins',sans-serif;font-weight:700;font-size:1.7rem;line-height:1;color:var(--azul)}
+.st .k{font-size:.72rem;color:#5b6b7c;margin-top:5px;line-height:1.2}
+@media(max-width:560px){.stats{grid-template-columns:repeat(3,1fr)}.skills{grid-template-columns:1fr}}
 .ft{padding:18px 32px 26px;border-top:1px solid var(--linha);margin-top:10px;color:#5b6b7c;font-size:.85rem;display:flex;justify-content:space-between;align-items:flex-end;gap:16px}
 .ft .tag{font-family:'Zilla Slab',serif;font-style:italic;font-weight:600;color:var(--azul);font-size:1.05rem;white-space:nowrap}
 @media print{body{background:#fff;padding:0}.page{box-shadow:none;border-radius:0;max-width:100%}}
@@ -1242,8 +1231,8 @@ body{font-family:'Urbanist',system-ui,sans-serif;color:var(--tinta);background:#
       <div><div class="lab" style="color:${bg.cor}">${bg.label}</div><div class="cap">Resultado do aluno no nível ${esc(turma.cefr||turma.nome)}</div></div></div></div>
   <div class="sec"><h2>Desempenho por habilidade</h2><div class="skills">${skillsHTML}</div>
     <div class="leg">0–59 in need of improvement · 60–89 pass · 90–99 merit · 100 distinction</div></div>
-  <div class="sec"><h2>Parecer descritivo</h2><div class="parecer">${esc((b.parecer||'').trim())||'—'}</div></div>
-  <div class="sec"><h2>Acompanhamento no ano</h2><div class="rep">${repHTML}</div></div>
+  <div class="sec"><h2>Parecer descritivo do professor</h2><div class="parecer${(b.parecer||'').trim()?'':' vazio'}">${esc((b.parecer||'').trim())||'Sem parecer registrado.'}</div></div>
+  <div class="sec"><h2>Acompanhamento no ano</h2>${repHTML}</div>
   <div class="ft"><div>${esc(assinatura).replace(/\n/g,'<br>')}<br><small>Emitido por ${esc(S.usuario)} em ${brDate(hoje())}</small></div><div class="tag">Togethere</div></div>
 </div></body></html>`;
   // versão texto (para copiar / WhatsApp)
@@ -1251,7 +1240,8 @@ body{font-family:'Urbanist',system-ui,sans-serif;color:var(--tinta);background:#
   txt+=`\n🎯 CONCEITOS FINAIS POR HABILIDADE\n`+concs.map(c=>`• ${c.s}: ${c.v===''?'—':c.v}  (${c.bd.label})`).join('\n')+`\n`;
   txt+=`\n🏅 CONCEITO FINAL GERAL: ${geral===''||geral==null?'—':geral}  (${bg.label})\n`;
   txt+=`\n📝 PARECER DESCRITIVO\n${(b.parecer||'').trim()||'(sem parecer)'}\n`;
-  txt+=`\n════════════════════\n\n`+corpoRelatorioAluno(alunoId,turmaId,'','');
+  txt+=`\n📊 ACOMPANHAMENTO NO ANO\nFaltas: ${faltas.length} · Atrasos: ${atrasos.length} · Saídas antecipadas: ${saidas.length} · Aulas sem material: ${mat.length} · Temas pendentes: ${temas.length}\n`;
+  txt+=`\n—\nTogethere · inglês para chegar lá`;
   return {html, txt};
 }
 function copiarBoletim(){ if(!_boletimTxt)return toast('Gere o boletim primeiro'); copiarTexto(_boletimTxt,'Boletim copiado!'); }
