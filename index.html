@@ -304,6 +304,7 @@ tr:last-child td{border-bottom:none}
         <button onclick="puxarDaNuvem()" style="margin-bottom:8px">🔄 Atualizar (puxar da nuvem)</button>
         <div id="perfilLabel" style="margin-bottom:8px"></div>
         <div style="font-size:.66rem;color:#9fb1d1;margin-bottom:6px">versão <span id="appVer"></span></div>
+        <button onclick="trocarMinhaSenha()" style="margin-bottom:8px">🔑 Trocar minha senha</button>
         <button onclick="logout()">🚪 Sair</button>
       </div>
     </aside>
@@ -343,10 +344,16 @@ function load(){
 }
 function migrar(s){
   s.versao=s.versao||1;
-  if(s.versao<2){                 // padroniza senhas para 12345
-    (s.usuarios||[]).forEach(u=>{u.senha='12345';});
+  if(s.versao<2){                 // (legado) não mexe mais em senhas
     s.versao=2;
   }
+  if(s.versao<3){                 // Segurança: senhas saem do app; agora ficam só no servidor (com hash)
+    (s.usuarios||[]).forEach(u=>{ delete u.senha; });
+    s.versao=3;
+  }
+  if(s.versao<4){ s.versao=4; }   // marca para os campos novos (nascimento/arquivado/saldo)
+  (s.alunos||[]).forEach(a=>{ if(typeof a.arquivado==='undefined') a.arquivado=false; if(typeof a.nascimento==='undefined') a.nascimento=''; });
+  (s.turmas||[]).forEach(t=>{ if(typeof t.arquivada==='undefined') t.arquivada=false; });
   s.comentarios=s.comentarios||[]; // garante campos novos
   s.relatorios=s.relatorios||[];
   s.boletins=s.boletins||[];
@@ -361,6 +368,7 @@ function migrar(s){
       a.vipId=vp.id; delete a.alunoId;
     }
     if(typeof a.faltou==='undefined') a.faltou=false;
+    if(typeof a.tema==='undefined') a.tema='';
   });
   (s.alunos||[]).forEach(a=>{ if('vip' in a) delete a.vip; });
   (s.temas||[]).forEach(t=>{ if(!t.dataEntrega) t.dataEntrega=t.data; });
@@ -382,10 +390,13 @@ function migrar(s){
   return s;
 }
 /* ============== NUVEM — sincronização com o Google Apps Script ==============
-   CLOUD_SECRET precisa ser IGUAL ao APP_SECRET que você colocou no Apps Script. */
+   Segurança: o segredo fixo saiu do código. O acesso agora é por LOGIN → TOKEN.
+   Cada pessoa entra com a sua senha (guardada com hash no servidor) e recebe um
+   token de sessão, que é o que viaja nas chamadas — nunca mais uma chave fixa. */
 const CLOUD_URL    = 'https://script.google.com/macros/s/AKfycbylxwXqDh5ohAL4qLTn7WBQAu4juwt2bwgdiuGHDl1Ll3d1ViK-mdbeMghnG4UH3GNH/exec';
-const CLOUD_SECRET = 'togethere-junho-7Q2';
-const APP_VERSAO = '2026.06.18 · b18';   // aparece no rodapé; mude a cada publicação no GitHub
+const TKEY='togethere_token', UKEY='togethere_user', PKEY='togethere_perfil';
+let CLOUD_TOKEN = (function(){ try{ return localStorage.getItem(TKEY)||null; }catch(e){ return null; } })();
+const APP_VERSAO = '2026.06.19 · b21';   // aparece no rodapé; mude a cada publicação no GitHub
 const LOGO_B64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAAZUElEQVR4nO2de3xcxXXHf2dm9q5WWj0sy/iJnxiMn4ANBBpwKAESkkJ4JzQhbQh1m6Zp0ubVJgGS8IHQTz8hIa82oSEtpJCSByRNSRuDCSVg80hqY4wdv2Nbth62pJVW+7gzc/rHSELItixztXdX8nx9P0aydnUvu9+de2bmzBnCTT+Bx/NGEeW+AM/YxgvkiYQXyBMJL5AnEl4gTyS8QJ5IeIE8kfACeSLhBfJEwgvkiYQXyBMJL5AnEl4gTyS8QJ5IeIE8kfACeSLhBfJEwgvkiYQXyBMJL5AnEl4gTyS8QJ5IeIE8kfACeSLhBfJEwgvkiYQXyBMJL5AnEl4gTyS8QJ5IeIE8kfACeSLhBfJEwgvkiYQXyBMJL5AnEl4gTyS8QJ5IeIE8kfACeSLhBfJEwgvkiYQXyBMJL5AnEqrcFxATBIBA7r/0un/n/q8ZAA/88YyI8SkQEQgkCAAYsMxsGZqZGQwYBgDm1/QhQJBTDJIgiAQJ6jONAWZY9lIdgfEjEBHcW24Z1ljWxmoLBiRBiaqUmlATpJMqlRBTJ1QpIaoSIjRcUyWLoQ2NbckUQm1zoW3LFDJ5Xcxroy0M97klBRJCCiICM6y3qZ8xLxARJBEDRltT1DAWStY1JGdNrF48vXb+lNqzZtdPqktOq69qTAepQCTkcGGfsdzVG3b0hq2ZQktXYfP+7s37e3a2ZfcczO1syZq8+/0CgRKCBMH2N2onLDRGN5wjQAhiwIYWBQ1C3YTUijkN581vfPP8iUtn1k+pT4rBwc4gLB8hyhFER3k4AOSKZtO+7k3N3Wu3Hvq/PV0v7ugoFjSKFkkJSUoKC1h7Ioo09gRytypjGXkNoGli6vKlU962bPIfnDpx5sTU4Ecay+zC5/6oyH1zdE9ei6N5IEyiI7i19UDP9rbsw8/tffKVtpbuYjFTgBJISiXJ2hMrWhpLArlWx4QWBR2kEytmT/jwpfPeunjSpNqke4Bltn1By4AtowMzmJkBBpR47RdnC3pfR/6nv9n/H2v3vbCjA3mNQIqkFP36jnvGjEBSkLGM3nBSU/Wfrpz1gZWzTpta635kLKO/ZYrnYlzo465q4B+f397xyLp9j/6medveDAwjlVCKjOXx7dEYEEgIArPNhqpKffKPTv2ry+ZNqa9yPzKWh49dSo2Lpiy/1izlQrPmlbYfrNv3g7V7C5kCUgmZEAPCjT8qXSApyeQ0gFveOvfDl85benIdAG1ZxNjejBBr2Q66wT277dC3V+98/OWW1rYsAjVeNapcgYQgtszZcMXpTXdcv+iyJSehApqcY8L93TF3d2vrLtz9n1sfeHp366EcEkIFcpzd1CpUICnJ5LUkuvXahZ9456mphKjMVmcY3GCj06i9u/iPj2+9/8mdre05VCsphRkvff5KFEhJ0j3FmVNrv/3BswYansHh6hjCzYG4i9/Xkbv9x5v/Y+3eTGdepAOMi+mRihNICdJdhXecP+O+W5ZPqU9qy7Ky71kjYbBG63/fdesjm376/F5IKaukMWPboQoSyE06md5w1dvnf/39y5SgGBqekTcB0SVmhmF2Ufb3f73n9h9t2rYnI2oCYAw3RRUkkCLSveEd713ymStOc93jMRTxjBzniiDq6A0//dDGb6/eAaKx2xRVikBKkO4ufvTqBffcuCS225axnMlpouFmQwlghhRUlxrNieeBxvWx3+z/+AMbtu3NyHQwFvv5FSGQkqQzhQ9dcdo3bloWGlai5Pa49++lXZ2X3PW/kGIYg4iIi3r+yfXPfu5CKYiHnUo7LgYCo4PZ4oe/t/7hNTtRHQhJY2tStvzpHFKSzhTedcGsr71vqbFx2DOANtyRKUINJxCIUNCHsuGon90lohjLE2uCh/7y7LPmNNz2yKZcXsuUGkO3szLnRAtBJqcXzGu87+YzCUQ0CrHqyCECKRKK6OiHVESKErJUlyUFuQy1T1w+f/XfXzB3Str0hKpkpxt1yikQATA2kZAP/sWKienAchmiZuaRHqWDCEKQNnz+/MZnP/+WlUsn667CWHGonAIJSTanb71u4fLZDdqM1aHC0UJJMpYn1yUf/9QffOBtp+iuwph4QcomkCAyOb3ktIl/9475A4NsJzhSkGVOJcS/3HLWJ69faLKhqviRjLLewgj33LjEBQGV/jrFhSBihrF89w2LP33dQp0pVPhAfHkEUoJstvieC2ddvHCSHrPzXCXCZcZpw3ddt/Dum8/UuVCMxjh4iSiPQJYZSnxw5WyM3rDKeIIIUpKx/MnL53/xxiWmJ5SV+jqVQSAlyGbDGy6cddHpTWN3mr3UuMxubfizV572yesX6myxMvtlZRhItAAk3XzBzDhP6gKLgW9dVtfIk3IY0KZvCdgx30YhRidvybVD2vLd1y9q7y5+9+e/Uw0pbWz03zyKxC2QINiCmTOj/oLTmtjlO8cCEQZ/gt3XjelghE9XgpKJMrTWrh2ylr/+vqW7WrNP/vaATCcqapw6doEE2YK+9uxpVQmhLavSC+S6eM0d+e+s2TVwx7YMQdjXkcexLsBlp7ZkCrf9ZLOgY7RARMRFc8U508+cVe9OER1BsKBUIB/5yLnLP/vkrpYekVSVM18Wt0DGsKpJvPvc6Ygr/rLMkmh3e+/t/7YeQ8IIQahODD/KzMyQ1N6V/8KDG459MkHoLk5qTJ05q34UB9YFwVhurEn85GNvOv+2p4rGkqAKmbePVSAisOFUTcItIY1zfCOhSNUnSdLgl33kYRAJkvXJYz5MCjKSUoF8o5c53G/Whs+YWf/VPznjz77+vEoHujIMivW+LohQMCtPa5pYm7TMcY5tMEMbHnIcbxA9wqNE6YVKkrZ8y8pZ77l4ju4pysrolMUqEBFg7NlzJxBgK6szMTaQRMz8rZuWzZhWawumEuY54u1ZMCBp3qRqVPDQaiVDBMuor07ce9NS1rYSXsNYBTLMIlBzT6qJ86TjDClIW75q+bRrL5xlugtlv5HFJxABbJCsklMbquBboAi40YQvXbuwaWI1wjK3QzG2QARYW18dNNYkgNGtvjKCkxOUpCHHyGdRCEd4+tGOUocmgsgYnje55i/fforJFss7FxRfN55AzKhOymRCuu/jJNSsuwpHHAcaydPZsu4pHvNhWhC6i7mieWMXOXKEgGVe9ZbZ/7R6R2tnQSgq18hivAOJzFUqttmLPlx7MKup+vablh0+Ev2dNTuHH5QjIta2qaHqQ1efPsKR6PNOaRw4b4lwNdqmNlTddcPiD9y7TiSC0mbdHp24R6IHVZ2LCfc+TptQddvVC4b8aMuBnu88sWP4GQcC2NjJdcnPXzX06cNT6s+JIGLmd587/Qsz63ft7xGBKEsjFG83nigf2rIUphgykFgIrTZ8aAR3JYe2fU8JyzeQOAQiGEYqkH992TyEplxpi/EJxGAI6inobEG77+NkPAXRA7jLv/LMqaImYQyXxaCYWyAc1wSCZ3gEkWWe3VT9jjOmUF7HHV26a4jvVAwQZQu6K6cBvx3F6OCSVT508RwedoV/6YjzFgYhKOwNX23O4HjqqniGQRAxcO7cCdOmpm3RxN8GxTsbLwBtN+/vgRdolCCCtTyhJrhs8Ukox/Rq7JOpRJv2dcNPZYwervz5O8+YgtdnO8VDrAJZBhLy11sPFbV1pVI80XHlTFbMmVBVGxhjY/5gxioQM0OJXW3ZHW29fd96IuPGx2c0Vi2YWovQxjwgFK9ArhpQT/G5bQfZNUie0cCVz37zqRMR2rhnimI9Wz8/X99Cfk3qaLNoem38J41bIMuMpHzq1faWTEFWzNKCuGCAwQasDzsMYN/w8Lz7KJ46JU2xz4jFLRAzZEIebM3+75Z2AOaEMMhJYwC3LasEqcMOCQiXM9Xv03G8Mq73vmBabXU6aU2sKWblqZFIgr75xM6rlk+rhLTwUmLBDJKg/oU+pgW530H/HuFBWA30QiQgJkA1InkKgjkQ9aD+TzVrkBj5hzydVOkqmc0Wh6Y9lZIyCGQsU5Vas7F1U3P3khl11nJZJnFKDIMtSIIADpFdg87/QuYpFHej0Nk3dDOwYbT7WxESk5BegeQpaLgS6ZUgBQBsQDQSjYRAQgi43L24JjbK0wJJQbrXPPrS/iUz6iyXu9LnqMOmr9UpbkXbt9DxOLKbYfpdEQKumOjAp8ZttKkNwlZk/wsAmu9FeiEar8GE65FcDLjW6OhvFgFAKiEbahJ7W2Kdli9ffaBAfuuJnZlcKMR4mtZgwIIkzEHsuQUvL8Pue9C9GRBQClJAEGABAwyKoKEB4wpLQUkoBSZ0bcKOL2LjCuz/DMLd/fYceTUdualGokAJMOI0qFwCQSbl/ubM957ZI4jKHEqP4OQ8olFP18gIdPwbXlmGPfchzPV50xcaD9/PGtRHA0MKKIWwgB13YtOb0HIHoAEBHCXhmoGBPNoYX86y3T2sZUolvvDjV3e397oN2OM8u/uIKkkYyYyKoGzBFF1hnqM+2gAStgO7rsOW9yO7D0qCqN+b44ctWIOAhELvAez4HDZfgOKrgAQPdYgBECxzUZuYh9fKJhAzZEIcbMl+5Zc7BMW+qIAAoDqQUgrw8BuBM5Ro7cwf6Mobe7R0VQNI5F/Gqxei+YcgCUHH2xU/+hVoCIKQ6FiLV85H1yMgCdZDrpKA0HBP3sQ8TV3O+NVYlung/tU7XtnXrQTF2wgRgIbqRCqQ4OEMcjutFLuLP3xhvxREBGNZ28FJ0EZbqQt79OZ36I6NLBPAKKkz6CoAAymR78SW63Hon0BqqENAJhceyhYh4+uCobwCMQOKuroKn3h4I8ebIeSEmVATNKUDWB5+laNlppS648ebHl6711pIQUoMToKWSmxRe89Rdo+qA9Ho76rRBxtIASuw9S/Qesdgh5wxbZliT06TiDU3scybrRjDsjZ4fN2+f39uzx+fd3JsNTddlYKkErObqnftzVAgh3nRmQFJ3QXznq+su31W/dKT62c2pWqSShDAFiSQeQyd50GmYO2qxf89Jd3BdvhNpN4obEEESOz4HFQDGj/s7p5urdT2th6dC2V1Is6s8/Lv1sPMFIiPPrDh0sUnNdUmR6sy3DGxloWk5XMafvVS87HDBgZJIqm27OnasqPD7Rf/GmIx5DlgC6bLZ78wpa6DDVGp8p0YZMES2z6KhacjfTHYMAsA21t7Ee88Bsq+Ww/cItGEbG/v/bP7/49i3PzRvdBvXXQSqxFNQLrtvUSgZDpQdUlVP+hIF1XqkKruVNWdCVHydc1ghmAYgx3vhW4B9cn64s4OUNzz0+UXCC6argkeffr39/zPdiVIx9ICC0EMXHjqxBlTa3nE6eiW2djDFhNa0la6Y9gu3ejBFlKi5wD2fpQhpEBPXq9+pQ1JGfOASEUIBMBaljWJTz2w4bnth9x2u6U+IwHGcnVSrrpoNue1EJXyUowUNpASrQ9zz2qw2NuR7coWSYoTsQWCG4UlCi1fc8+6/Z15GUuvXhJZxkcumTd7doPOhWUv1nT8MAzZXR8CmR+90FLoysf/v1ApAsHV403K/W3Za766LpPTKH3OKxGYuS6lvv/nK5IJafJGjbGNFywLIXu2FjseefjFHiTKUHmyggRCXxXp4Ln1Lavu/62rPlHqZkgKMpbPn9/4s0+dP7kuqTN5Btyy+TGRqsTMpGjPhi+8uucAgiD+/ecrSyAA2ljVkHx4za6PPLjBvbvxOHTJopOev/MP/+SSeVWCdKZgekPWTDh82LD/EOaIR8wrjIksG0xP/u6Uhh0wSUFxN0HlHwc6HG1YpYOvPbq5Jqnuum6hKylU0ubAOTSzMXX/quV/d+VpP1q37783tm7c130wUzA53b9v6uueAdVwhF/EFNrRrzI+DARoK6pqzDXz1t7ZvEAEuZhnFSti3/gjogTpnuLtf7zktnctcMtWSn1PGdjI3X17sKe4s61376Hcga58V04XQsPor2ZgOtD6DZgjDPmsWlTKkegjYVjIwD7dvOgtP7ibRNHGXL+rYgWCc6ir8FdXLbj3fUuNZSKKIcS1zJZxrI0m12PjGdBHWppUPFrWV6lgEBFndGr+g99szTSRCjnGjLJKvIUNoC3L+uTXfrYFjHtvWgoghq3BRb+mrkFCf8ZpPwaQyLai262jGCqLFDbuMAjMlmqr8vMb9rd2TBGqGGdOUMUF0UMwllVN8LXHNt/4zRe689oVl4zn1ESQgoYG0e5rFBQZJWzZg2iHYUGSlzbthlUlm4M7MpUuEABtWdUnH3pi5yV3PbO3I+/2rSnb1bjPtqwFUdxl+oaHkFQlyyQ5OmNAILh+WX1y3eb2829bs+bVdiXJln6I6CgQAIhqCK4sgRgTk93xn3ZsCARAG5Y1iT3tubd96Zk7f7rFdcrimXY9AqIWlEDsJYuHJynC+C9nzAgEwBgWSVkEPvOv66/56rqWTEEJsqUfaXw9BADBXFSdjJKPTx0fPSYVf5s4lgSCW8tBUPXJHz/z+3M/++QPn98n+vOU47oEAiwoQGpB32KICsBF7i3Z+vhPPcYEQn/JcJkOdh/MXffl5/70n19s6ym6Qh8xzQS5ZTp1bwVQKQIRw2Jr5zQIE+cgEMaiQA5jWSSkqEp8b/XOcz775P2/2k0EQeR2dy8trvhB7WUIAtjS5x8eCwaE4Ew+tbVzKmQYU0ZbP2NVIPQNGbNMB7vaej/wjefffvevX9zZqWTfHa2UGgnAomoh0sth8VrljTLBTBBoy9fv72n0LdBx09cU1QS/eKl55R1P33zfb3a39w4s4CqVRu4u1nhtjGUwjoplgQRW71mmc7VKxj1ENuYFgmuKLMuaoDe03/3F9hWfefJj33+5rbswoNHoh9gkAUbTzag+Cda+VtGnHAiybOjBLSsR89pMd/a4T1gyjOug1QXt2fArj21Z9Ilf/vUDG1ozBTcd4TQavdeXwBaiHtM+hmPsIVZaDAuR4K0dU9fuXUhBznDcb+j4EQj9u7uTIlmTaOsJ7/3ZlsWfXv2+b7749OZ2p5Ebe7Sj0iCRACwmfRwNi6BN2SIhBiS+vP4KXUgJUYat1Cs6nSMKrlNmtEVvqNLBu98044Y3zfjDhZOqk33vtLYsCIQIaUaukFTPU9h0EVhGqZL5xrAsRMKub599xoP3kijPBOG4FcjhZtS1YfSGkDR3et2VZ0294dzp557SOPAYFyE54Y77BM6h/X+LnV+GSoBjnc7UVqhqe9EPv/jUthUy2Rv//QvjXiAH9S8jtAWDokGVWj6n4bpzpl919rQZE6qqk68lRWnLroA1jTQB0tVCZGy7HK2/jNOh0MhE2nx7w6Wrfv43Mpktiz04QQQaQBAJAW0ZeQNtgvqqyelg5elNN55/8qmT0/Mm1wx+sBvaHoiQidD/ZwgWIJhWbLmYO15BQtFhhVdGHW2lSpmX2ua+5aF/6NUJjn34Z4ATS6ABhCBB0JphLAoGgUgm1ZlzGlbMbjh73oRF0+oWTq9NBUeNiw+bNrEgSeFuseMKHNpghJJUQoe0lSowW7qnXfbIF3d3ThGJvC1T84MTViAH9Yc+lmEto2igDaRAQs6eXDNzYmrOpJoFU9MLptZOqU9OqktOqAnqU8OuPeRObH8XMr+yRUmwpUgO1EaqlGnOTbjwoS9tb58lq3pMvOtAhnBCCzQYAkiQIDDDWEZoYSwsgwFJSIggqepSalJtsjqQgRKTaoOkkqlAdOe1kqIQ2tCEzZ2A7v2bpV+6adEa5KGNVKNXrMOyALOo4XXN89//849vOXiyTPaW1x54gY6GS1hzTQ0DlpktwzIM9yXZ29dPYhAAgmRAgmtXLX/szgv/tbGqh3NkQTLaej9mMixUYCDxzxvf9vEnPthTrJZBztjyD+N5gUaKM2RIHD0kL9ot4iBYk6udf9LOj53z6J8vfpwYKEKzFGSPa5c9BlkmMKSySOK3rXNvfea9/7n5zQh6hTBljHsG4wUqCVIYU0zB0pnTt9563kNXzl1LAgjBmlxFRnJJPK+vCc4AQMxkmQgshUUASOzpbLrvlUv/4fmr87lameq2LMrV5zocL1CpEMQA22I1hDlj6rbr5j979bxnFzTuheyvVW/6aou7uofkavUSIAEJALlisHrvsl/sXv7vm1Z2ZpqQzEppKuG2NRgvUGkRZBnExSqYhEp1r5z58qkNzRdN3zi/vnle/YFqVZDC9q1PZBiIrnz19u4pr3bMfKb59NW7l+08NAM6gaBXqdBYEXOy2EjwAsWBi360UQirYCWEQZCfmj7UEGTTQb4myOeKQWhVzgQt2YZDuToUUwCgikIVBdnKVMdR0Uubxw2WhWUQsUhmidj1qvZ3TdrPk8ECTCAGGMQQBsLIVDeBLQvLZLnMHfXh8QLFBwOGxUC3jVTo1uAPDBbAecRUaYHOMHiBygaz69NX6L1phIwZ0z2ViRfIEwkvkCcSXiBPJLxAnkh4gTyR8AJ5IuEF8kTCC+SJhBfIEwkvkCcSXiBPJLxAnkh4gTyR8AJ5IuEF8kTCC+SJhBfIEwkvkCcSXiBPJLxAnkh4gTyR8AJ5IuEF8kTCC+SJhBfIEwkvkCcSXiBPJLxAnkh4gTyR8AJ5IuEF8kTCC+SJhBfIEwkvkCcSXiBPJLxAnkh4gTyR8AJ5IuEF8kTCC+SJhBfIE4n/B49hDPC7R1CFAAAAAElFTkSuQmCC';
 /* ============================================================================ */
 let _syncTimer=null;
@@ -396,11 +407,13 @@ function marcarSync(st){
 }
 async function cloudGet(timeout){
   if(!cloudOn()) return {ok:false, off:true};
+  if(!CLOUD_TOKEN) return {ok:false, auth:true};                   // ainda não logou → sem token
   const ctrl=new AbortController(); const t=setTimeout(()=>ctrl.abort(),timeout||8000);
   try{
-    const r=await fetch(CLOUD_URL+'?action=get&secret='+encodeURIComponent(CLOUD_SECRET),{signal:ctrl.signal});
+    const r=await fetch(CLOUD_URL+'?action=get&token='+encodeURIComponent(CLOUD_TOKEN),{signal:ctrl.signal});
     clearTimeout(t);
     const j=await r.json();
+    if(j && j.ok===false && j.erro==='auth') return {ok:false, auth:true};   // token inválido/expirado
     return {ok:true, state:(j && Object.keys(j).length)?j:null};   // ok=respondeu; state=null só quando REALMENTE vazio
   }catch(e){ clearTimeout(t); return {ok:false}; }                 // ok=false → erro/sem conexão (NÃO é nuvem vazia)
 }
@@ -411,13 +424,17 @@ function temAtividade(s){
 }
 function cloudPut(force){
   if(!cloudOn()) return Promise.resolve();
+  if(!CLOUD_TOKEN) return Promise.resolve();                      // só sincroniza quem está logado
   marcarSync('...');
   const limpo=Object.assign({},S,{usuario:null,perfil:null});   // sessão não vai para a nuvem
-  const url=CLOUD_URL+'?action=put&secret='+encodeURIComponent(CLOUD_SECRET)+(force?'&force=1':'');
+  const url=CLOUD_URL+'?action=put&token='+encodeURIComponent(CLOUD_TOKEN)+(force?'&force=1':'');
   return fetch(url,{
     method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(limpo)
   }).then(r=>r.json().catch(()=>({ok:true})))
-    .then(j=>{ marcarSync(j&&j.bloqueado?'off':'ok'); return j; })
+    .then(j=>{
+      if(j && j.ok===false && j.erro==='auth'){ marcarSync('off'); toast('Sessão expirada. Saia e entre novamente.'); return j; }
+      marcarSync(j&&j.bloqueado?'off':'ok'); return j;
+    })
     .catch(()=>{ marcarSync('off'); });
 }
 function save(){
@@ -442,13 +459,53 @@ async function puxarDaNuvem(){
 }
 async function cloudEmail(to, subject, body){
   if(!cloudOn()) return {ok:false, erro:'nuvem não configurada'};
+  if(!CLOUD_TOKEN) return {ok:false, erro:'sessao'};
   try{
-    const r=await fetch(CLOUD_URL+'?action=email&secret='+encodeURIComponent(CLOUD_SECRET),{
+    const r=await fetch(CLOUD_URL+'?action=email&token='+encodeURIComponent(CLOUD_TOKEN),{
       method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
       body:JSON.stringify({to, subject, body, from:(S.config&&S.config.escolaEmail)||'inglestogethere@gmail.com'})
     });
     return await r.json();
   }catch(e){ return {ok:false, erro:String(e)}; }
+}
+/* ---- Autenticação no servidor (login → token) ---- */
+async function cloudLogin(usuario, senha){
+  if(!cloudOn()) return {ok:false, erro:'nuvem'};
+  try{
+    const r=await fetch(CLOUD_URL+'?action=login',{
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({usuario, senha})
+    });
+    return await r.json();
+  }catch(e){ return {ok:false, erro:'rede'}; }
+}
+async function cloudLogout(){
+  try{
+    if(CLOUD_TOKEN) await fetch(CLOUD_URL+'?action=logout',{
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({token:CLOUD_TOKEN})
+    });
+  }catch(e){}
+}
+async function cloudTrocarSenha(nova){
+  if(!CLOUD_TOKEN) return {ok:false, erro:'sessao'};
+  try{
+    const r=await fetch(CLOUD_URL+'?action=trocarSenha',{
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({token:CLOUD_TOKEN, nova})
+    });
+    return await r.json();
+  }catch(e){ return {ok:false, erro:'rede'}; }
+}
+async function cloudResetarSenha(alvo, nova){
+  if(!CLOUD_TOKEN) return {ok:false, erro:'sessao'};
+  try{
+    const r=await fetch(CLOUD_URL+'?action=resetarSenha',{
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({token:CLOUD_TOKEN, alvo, nova})
+    });
+    return await r.json();
+  }catch(e){ return {ok:false, erro:'rede'}; }
 }
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
 function hoje(){return new Date().toISOString().slice(0,10);}
@@ -478,16 +535,16 @@ function seed(){
     als.forEach(n=>alunos.push({id:uid(),nome:n,turmaId:id}));
   });
   const usuarios=[
-    {nome:'Franco',   perfil:'direcao',    senha:'12345', ensina:'Franco'},
-    {nome:'Fernanda', perfil:'direcao',    senha:'12345', ensina:'Fernanda'},
-    {nome:'Vlad',     perfil:'professor',  senha:'12345', ensina:'Vlad'},
-    {nome:'Mari',     perfil:'professor',  senha:'12345', ensina:'Mariana'},
-    {nome:'Leandro',  perfil:'professor',  senha:'12345', ensina:'Leandro'},
-    {nome:'Camila',   perfil:'professor',  senha:'12345', ensina:'Camila'},
-    {nome:'Reginaldo',perfil:'secretaria', senha:'12345', ensina:null},
+    {nome:'Franco',   perfil:'direcao',    ensina:'Franco'},
+    {nome:'Fernanda', perfil:'direcao',    ensina:'Fernanda'},
+    {nome:'Vlad',     perfil:'professor',  ensina:'Vlad'},
+    {nome:'Mari',     perfil:'professor',  ensina:'Mariana'},
+    {nome:'Leandro',  perfil:'professor',  ensina:'Leandro'},
+    {nome:'Camila',   perfil:'professor',  ensina:'Camila'},
+    {nome:'Reginaldo',perfil:'secretaria', ensina:null},
   ];
   return {
-    versao:2,
+    versao:3,
     usuario:null, perfil:null, usuarios, turmas, alunos,
     presencas:[], material:[], temas:[], testes:[], contatos:[], planos:[], comentarios:[],
     atas:[],
@@ -593,12 +650,15 @@ const PERFIS={
   secretaria:{nome:'Secretaria',cor:'var(--vermelho)',bg:'#fdeaea'},
   direcao:{nome:'Direção',cor:'#b88600',bg:'#fff8e0'}
 };
+let _verArquivadas=false;
 function turmasVisiveis(){
+  let ts=S.turmas;
   if(S.perfil==='professor'){
     const u=S.usuarios.find(u=>u.nome===S.usuario);
-    return S.turmas.filter(t=>t.professor===(u&&u.ensina));
+    ts=ts.filter(t=>t.professor===(u&&u.ensina));
   }
-  return S.turmas;
+  if(!_verArquivadas) ts=ts.filter(t=>!t.arquivada);
+  return ts;
 }
 let rota='painel', loginNome=null;
 
@@ -617,13 +677,35 @@ function renderLogin(){
     <p class="hint" style="margin-top:16px;text-align:center">Esqueceu a senha? Fale com a direção.</p>`;
   setTimeout(function(){var i=document.getElementById('loginUser'); if(i) i.focus();},80);
 }
-function fazerLogin(){
+async function fazerLogin(){
   const nome=(document.getElementById('loginUser').value||'').trim();
   const senha=(document.getElementById('loginSenha').value||'').trim();
   if(!nome||!senha) return toast('Preencha usuário e senha');
-  const u=S.usuarios.find(x=>x.nome.toLowerCase()===nome.toLowerCase());
-  if(!u || u.senha!==senha){ toast('Usuário ou senha incorretos'); return; }
-  S.usuario=u.nome; S.perfil=u.perfil;
+  const btn=document.querySelector('#loginPanel .btn.block'); if(btn){ btn.disabled=true; btn.textContent='Entrando…'; }
+  const resp=await cloudLogin(nome, senha);
+  if(btn){ btn.disabled=false; btn.textContent='Entrar'; }
+  if(!resp || resp.ok!==true){
+    if(resp && (resp.erro==='usuario'||resp.erro==='senha')) toast('Usuário ou senha incorretos');
+    else if(resp && resp.erro==='nuvem') toast('Nuvem não configurada');
+    else toast('Sem conexão com o servidor. Tente de novo.');
+    return;
+  }
+  // login aceito → guarda a sessão (token) neste aparelho
+  CLOUD_TOKEN=resp.token;
+  S.usuario=resp.usuario; S.perfil=resp.perfil;
+  try{ localStorage.setItem(TKEY,resp.token); localStorage.setItem(UKEY,resp.usuario); localStorage.setItem(PKEY,resp.perfil); }catch(e){}
+  // puxa o estado da nuvem já com o token recém-obtido
+  const res=await cloudGet(8000);
+  if(res.ok && res.state && res.state.usuarios && res.state.usuarios.length){
+    S=migrar(res.state); S.usuario=resp.usuario; S.perfil=resp.perfil;
+    try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){}
+    marcarSync('ok');
+  } else if(res.ok && !res.state){
+    marcarSync('ok');   // nuvem vazia: mantém a base local; save/boot cuidam de enviar
+  } else {
+    marcarSync('off');  // offline: entra com o estado local que já está carregado
+  }
+  const u=(S.usuarios||[]).find(x=>x.nome===resp.usuario) || {nome:resp.usuario, perfil:resp.perfil, ensina:null};
   aplicarLogin(u);
 }
 function aplicarLogin(u){
@@ -637,7 +719,12 @@ function aplicarLogin(u){
   document.getElementById('perfilLabel').innerHTML='Conectado como <b style="color:#fff">'+u.nome+'</b> · '+meta.nome;
   montarNav(); ir(NAV.find(n=>n.roles.includes(u.perfil)).id);
 }
-function logout(){ location.reload(); }
+function logout(){
+  try{ cloudLogout(); }catch(e){}
+  try{ localStorage.removeItem(TKEY); localStorage.removeItem(UKEY); localStorage.removeItem(PKEY); }catch(e){}
+  CLOUD_TOKEN=null;
+  location.reload();
+}
 
 function montarNav(){
   const nav=document.getElementById('nav'); nav.innerHTML='';
@@ -687,7 +774,8 @@ function fecharFora(){
 document.getElementById('modalBg').onclick=e=>{if(e.target.id==='modalBg')fecharFora();};
 function turmaNome(id){const t=S.turmas.find(t=>t.id===id);return t?t.nome:'—';}
 function nivelTag(n){return `<span class="tag ${n}">${n}</span>`;}
-function alunosDa(turmaId){return S.alunos.filter(a=>a.turmaId===turmaId);}
+function alunosDa(turmaId){return S.alunos.filter(a=>a.turmaId===turmaId && (_verArquivadas || !a.arquivado));}
+function idadeDe(nasc){ if(!nasc) return null; const p=String(nasc).split('-').map(Number); if(p.length<3||!p[0]) return null; const [y,m,d]=p; const h=new Date(); let a=h.getFullYear()-y; if((h.getMonth()+1)<m || ((h.getMonth()+1)===m && h.getDate()<d)) a--; return (a>=0&&a<130)?a:null; }
 function brDate(d){if(!d)return'';const[y,m,dd]=d.split('-');return`${dd}/${m}/${y}`;}
 function selectTurma(id,sel){
   const ts=turmasVisiveis();
@@ -698,6 +786,8 @@ function primeiraTurma(){return (turmasVisiveis()[0]||{}).id;}
 /* =========================================================================
    VIEWS
    ========================================================================= */
+/* ===== Dados do Sponte (19/06/2026) para a importação inicial ===== */
+const SPONTE_IMPORT = {"turmas": [{"nome": "A1 ADULTS NOITE(2026)", "professor": "Leandro", "horario": "Ter-Qui 20:00–21:00", "dias": [2, 4], "vezesSemana": 2, "nivel": "adults", "cefr": "A1", "estagio": "A1 ADULTS", "arquivada": false}, {"nome": "A1 JUNIOR 2 HORAS", "professor": "Camila", "horario": "Ter 18:30–20:30", "dias": [2], "vezesSemana": 1, "nivel": "junior", "cefr": "A1", "estagio": "A1 JUNIOR", "arquivada": false}, {"nome": "A1 KIDS MANHÃ (2026)", "professor": "Fernanda", "horario": "Seg-Qua 10:15–11:30", "dias": [1, 3], "vezesSemana": 2, "nivel": "kids", "cefr": "A1", "estagio": "A1 KIDS", "arquivada": false}, {"nome": "A1 TEENS TARDE (2026)", "professor": "Mariana", "horario": "Seg 14:00–16:45", "dias": [1], "vezesSemana": 1, "nivel": "teens", "cefr": "A1", "estagio": "A1 TEENS", "arquivada": false}, {"nome": "A1 TEENS TARDINHA (2026)", "professor": "Camila", "horario": "Seg-Qua 18:15–19:30", "dias": [1, 3], "vezesSemana": 2, "nivel": "teens", "cefr": "A1", "estagio": "A1 TEENS", "arquivada": false}, {"nome": "A1+ JUNIOR MANHÃ (2026)", "professor": "Franco", "horario": "Seg-Qua 10:15–11:30", "dias": [1, 3], "vezesSemana": 2, "nivel": "junior", "cefr": "A1+", "estagio": "A1+ JUNIOR", "arquivada": false}, {"nome": "A1+ JUNIOR TARDINHA(2026)(TER-QUI)", "professor": "Mariana", "horario": "Ter-Qui 18:15–19:30", "dias": [2, 4], "vezesSemana": 2, "nivel": "junior", "cefr": "A1+", "estagio": "A1+ JUNIOR", "arquivada": false}, {"nome": "A2 JUNIOR TARDINHA(2026)", "professor": "Mariana", "horario": "Seg-Qua 18:15–19:30", "dias": [1, 3], "vezesSemana": 2, "nivel": "junior", "cefr": "A2", "estagio": "A2 JUNIOR", "arquivada": false}, {"nome": "A2 TEENS TARDINHA(2026)", "professor": "Franco", "horario": "Ter-Qui 18:15–19:30", "dias": [2, 4], "vezesSemana": 2, "nivel": "teens", "cefr": "A2", "estagio": "A2 TEENS", "arquivada": false}, {"nome": "A2+ JUNIOR TARDINHA(2026)", "professor": "Leandro", "horario": "Seg-Qua 18:15–19:30", "dias": [1, 3], "vezesSemana": 2, "nivel": "junior", "cefr": "A2+", "estagio": "A2+ JUNIOR", "arquivada": false}, {"nome": "A2+ JUNIOR TARDINHA(2026)(TER-QUI)", "professor": "Leandro", "horario": "Ter-Qui 18:15–19:30", "dias": [2, 4], "vezesSemana": 2, "nivel": "junior", "cefr": "A2+", "estagio": "A2+ JUNIOR", "arquivada": false}, {"nome": "B1 TEENS TARDE (2026)(TERÇA)", "professor": "Vlad", "horario": "Ter 14:00–16:45", "dias": [2], "vezesSemana": 1, "nivel": "teens", "cefr": "B1", "estagio": "B1 TEENS", "arquivada": false}, {"nome": "B1 TEENS TARDINHA(2026)", "professor": "Fernanda", "horario": "Seg-Qua 18:15–19:30", "dias": [1, 3], "vezesSemana": 2, "nivel": "teens", "cefr": "B1", "estagio": "B1 TEENS", "arquivada": false}, {"nome": "B1+ TEENS TARDE (QUI)(2026)", "professor": "Vlad", "horario": "Qui 14:00–16:45", "dias": [4], "vezesSemana": 1, "nivel": "teens", "cefr": "B1+", "estagio": "B1+ TEENS", "arquivada": false}, {"nome": "B2 TEENS (QUINTA)2026", "professor": "Mariana", "horario": "Qui 14:00–16:45", "dias": [4], "vezesSemana": 1, "nivel": "teens", "cefr": "B2", "estagio": "B2 TEENS", "arquivada": false}, {"nome": "B2 TEENS TARDE(2026)", "professor": "Mariana", "horario": "Qua 14:00–16:45", "dias": [3], "vezesSemana": 1, "nivel": "teens", "cefr": "B2", "estagio": "B2 TEENS", "arquivada": false}, {"nome": "C1 TEENS TARDE (2026)", "professor": "Franco", "horario": "Seg 14:00–16:45", "dias": [1], "vezesSemana": 1, "nivel": "teens", "cefr": "C1", "estagio": "PREPARATÓRIO C1 (A)", "arquivada": false}, {"nome": "PRÉ A1 KIDS MANHÃ (2026)(TER-QUI)", "professor": "Camila", "horario": "Ter-Qui 10:15–11:30", "dias": [2, 4], "vezesSemana": 2, "nivel": "kids", "cefr": "A1", "estagio": "PreA1 KIDS", "arquivada": false}, {"nome": "PRÉ A1+ KIDS MANHÃ (2026)", "professor": "Mariana", "horario": "Seg-Qua 10:15–11:30", "dias": [1, 3], "vezesSemana": 2, "nivel": "kids", "cefr": "A1+", "estagio": "PreA1+ KIDS", "arquivada": false}], "alunos": [{"nome": "Clara Pires Recus", "turma": "A1 KIDS MANHÃ (2026)", "saldo": {"dadas": 32, "presencas": 29, "faltas": 3}, "arquivado": false}, {"nome": "Valentina Algayer Mestre", "turma": "A1 KIDS MANHÃ (2026)", "saldo": {"dadas": 32, "presencas": 32, "faltas": 0}, "arquivado": false}, {"nome": "Luísa da Rosa Lopes", "turma": "A1 KIDS MANHÃ (2026)", "saldo": {"dadas": 32, "presencas": 32, "faltas": 0}, "arquivado": false}, {"nome": "Helena Valerio Dalpiaz", "turma": "A1 KIDS MANHÃ (2026)", "saldo": {"dadas": 32, "presencas": 29, "faltas": 3}, "arquivado": false}, {"nome": "Vitor de Freitas Sbruzzi de Toledo", "turma": "A1 KIDS MANHÃ (2026)", "saldo": {"dadas": 34, "presencas": 32, "faltas": 2}, "arquivado": false}, {"nome": "Laura Monteiro Cardoso", "turma": "A1 KIDS MANHÃ (2026)", "saldo": {"dadas": 32, "presencas": 29, "faltas": 3}, "arquivado": false}, {"nome": "Maria Eduarda Santos de Souza", "turma": "A1 KIDS MANHÃ (2026)", "saldo": {"dadas": 32, "presencas": 31, "faltas": 1}, "arquivado": false}, {"nome": "Anderson Bitello da Cunha", "turma": "A1 TEENS TARDE (2026)", "saldo": {"dadas": 16, "presencas": 16, "faltas": 0}, "arquivado": false}, {"nome": "Guilherme Fofonka dos Santos", "turma": "A1 TEENS TARDE (2026)", "saldo": {"dadas": 16, "presencas": 15, "faltas": 1}, "arquivado": false}, {"nome": "Danilo Schãffer de Vargas", "turma": "A1 TEENS TARDE (2026)", "saldo": {"dadas": 16, "presencas": 14, "faltas": 2}, "arquivado": false}, {"nome": "Isabela Fontoura da Trindade", "turma": "A1 TEENS TARDE (2026)", "saldo": {"dadas": 6, "presencas": 6, "faltas": 0}, "arquivado": false}, {"nome": "Henrique Zacarias Espindola", "turma": "A1 TEENS TARDE (2026)", "saldo": {"dadas": 16, "presencas": 14, "faltas": 2}, "arquivado": false}, {"nome": "Davi Saltiel", "turma": "A1 TEENS TARDE (2026)", "saldo": {"dadas": 16, "presencas": 10, "faltas": 6}, "arquivado": false}, {"nome": "Isabelle Ymai", "turma": "A1+ JUNIOR MANHÃ (2026)", "saldo": {"dadas": 10, "presencas": 10, "faltas": 0}, "arquivado": false}, {"nome": "Valentina Bitencourt Castro", "turma": "A1+ JUNIOR MANHÃ (2026)", "saldo": {"dadas": 30, "presencas": 28, "faltas": 2}, "arquivado": false}, {"nome": "Julia Nasario de Dillenburg", "turma": "A1+ JUNIOR MANHÃ (2026)", "saldo": {"dadas": 30, "presencas": 30, "faltas": 0}, "arquivado": false}, {"nome": "Martina Dupont Braga", "turma": "A1+ JUNIOR MANHÃ (2026)", "saldo": {"dadas": 30, "presencas": 29, "faltas": 1}, "arquivado": false}, {"nome": "Valentina Gonçalves pacheco", "turma": "A1+ JUNIOR MANHÃ (2026)", "saldo": {"dadas": 30, "presencas": 27, "faltas": 3}, "arquivado": false}, {"nome": "Manuela Canal Guedes", "turma": "A1+ JUNIOR MANHÃ (2026)", "saldo": {"dadas": 30, "presencas": 29, "faltas": 1}, "arquivado": false}, {"nome": "Enzo Ferrari Velasques", "turma": "A1+ JUNIOR MANHÃ (2026)", "saldo": {"dadas": 30, "presencas": 29, "faltas": 1}, "arquivado": false}, {"nome": "Lorenzo Braga Klahn", "turma": "A1+ JUNIOR MANHÃ (2026)", "saldo": {"dadas": 30, "presencas": 29, "faltas": 1}, "arquivado": false}, {"nome": "Catherine Cardoso Shvantes Bottini", "turma": "A1+ JUNIOR MANHÃ (2026)", "saldo": {"dadas": 30, "presencas": 28, "faltas": 2}, "arquivado": false}, {"nome": "Thomas de Freitas Sbruzzi de Toledo", "turma": "A1+ JUNIOR MANHÃ (2026)", "saldo": {"dadas": 30, "presencas": 29, "faltas": 1}, "arquivado": false}, {"nome": "Maria Clara Sarmento Silveira", "turma": "A1+ JUNIOR MANHÃ (2026)", "saldo": {"dadas": 30, "presencas": 27, "faltas": 3}, "arquivado": false}, {"nome": "Júlia Miranda peker", "turma": "A1+ JUNIOR TARDINHA(2026)(TER-QUI)", "saldo": {"dadas": 32, "presencas": 19, "faltas": 13}, "arquivado": false}, {"nome": "Eduardo Frigeri Fraga", "turma": "A1+ JUNIOR TARDINHA(2026)(TER-QUI)", "saldo": {"dadas": 32, "presencas": 29, "faltas": 3}, "arquivado": false}, {"nome": "Manuela Rodrigues Schafer", "turma": "A1+ JUNIOR TARDINHA(2026)(TER-QUI)", "saldo": {"dadas": 32, "presencas": 24, "faltas": 8}, "arquivado": false}, {"nome": "Guilherme alves Fink", "turma": "A1+ JUNIOR TARDINHA(2026)(TER-QUI)", "saldo": {"dadas": 30, "presencas": 28, "faltas": 2}, "arquivado": false}, {"nome": "Antônio Pires Recus", "turma": "A1+ JUNIOR TARDINHA(2026)(TER-QUI)", "saldo": {"dadas": 32, "presencas": 27, "faltas": 5}, "arquivado": false}, {"nome": "Murilo Baptista Marques", "turma": "A1+ JUNIOR TARDINHA(2026)(TER-QUI)", "saldo": {"dadas": 32, "presencas": 27, "faltas": 5}, "arquivado": false}, {"nome": "Luca Vargas Lazzarotto da Fonseca", "turma": "A1+ JUNIOR TARDINHA(2026)(TER-QUI)", "saldo": {"dadas": 32, "presencas": 29, "faltas": 3}, "arquivado": false}, {"nome": "Julia Aguirre Lopes dos Santos", "turma": "A1+ JUNIOR TARDINHA(2026)(TER-QUI)", "saldo": {"dadas": 32, "presencas": 27, "faltas": 5}, "arquivado": false}, {"nome": "Laura Britzke de Albuquerque", "turma": "A2 JUNIOR TARDINHA(2026)", "saldo": {"dadas": 32, "presencas": 30, "faltas": 2}, "arquivado": false}, {"nome": "Fernando Rauter Becker", "turma": "A2 JUNIOR TARDINHA(2026)", "saldo": {"dadas": 28, "presencas": 23, "faltas": 5}, "arquivado": false}, {"nome": "Debora Dutra Pereira de Oliveira", "turma": "A2 JUNIOR TARDINHA(2026)", "saldo": {"dadas": 32, "presencas": 28, "faltas": 4}, "arquivado": false}, {"nome": "Sophia Viegas Pereira", "turma": "A2 JUNIOR TARDINHA(2026)", "saldo": {"dadas": 32, "presencas": 31, "faltas": 1}, "arquivado": false}, {"nome": "Valentina Kirchhoff", "turma": "A2 JUNIOR TARDINHA(2026)", "saldo": {"dadas": 32, "presencas": 30, "faltas": 2}, "arquivado": false}, {"nome": "Davi de Vargas Jachemet", "turma": "A2 JUNIOR TARDINHA(2026)", "saldo": {"dadas": 32, "presencas": 32, "faltas": 0}, "arquivado": false}, {"nome": "Lorenzo Santos da Costa", "turma": "A2 JUNIOR TARDINHA(2026)", "saldo": {"dadas": 32, "presencas": 30, "faltas": 2}, "arquivado": false}, {"nome": "Isadora Douglas Polese", "turma": "A2 TEENS TARDINHA(2026)", "saldo": {"dadas": 31, "presencas": 31, "faltas": 0}, "arquivado": false}, {"nome": "Helena Avila Henriques", "turma": "A2 TEENS TARDINHA(2026)", "saldo": {"dadas": 31, "presencas": 31, "faltas": 0}, "arquivado": false}, {"nome": "Gabriela Porto Jerônimo", "turma": "A2 TEENS TARDINHA(2026)", "saldo": {"dadas": 31, "presencas": 30, "faltas": 1}, "arquivado": false}, {"nome": "Artur Fellini Tedesco", "turma": "A2 TEENS TARDINHA(2026)", "saldo": {"dadas": 31, "presencas": 30, "faltas": 1}, "arquivado": false}, {"nome": "Bruna Vitoria Brito de Almeida", "turma": "A2 TEENS TARDINHA(2026)", "saldo": {"dadas": 31, "presencas": 31, "faltas": 0}, "arquivado": false}, {"nome": "Gabriel Pereira dos Santos", "turma": "A2 TEENS TARDINHA(2026)", "saldo": {"dadas": 31, "presencas": 31, "faltas": 0}, "arquivado": false}, {"nome": "Isabelly Pereira Dos santos", "turma": "A2 TEENS TARDINHA(2026)", "saldo": {"dadas": 31, "presencas": 28, "faltas": 3}, "arquivado": false}, {"nome": "Breno Apolinario Dias", "turma": "A2 TEENS TARDINHA(2026)", "saldo": {"dadas": 31, "presencas": 28, "faltas": 3}, "arquivado": false}, {"nome": "Enrico Sccotti Mattos", "turma": "A2 TEENS TARDINHA(2026)", "saldo": {"dadas": 31, "presencas": 29, "faltas": 2}, "arquivado": false}, {"nome": "Fernanda Cardoso Binotto", "turma": "A2 TEENS TARDINHA(2026)", "saldo": {"dadas": 31, "presencas": 28, "faltas": 3}, "arquivado": false}, {"nome": "Lucca Jesus Capelão", "turma": "A2 TEENS TARDINHA(2026)", "saldo": {"dadas": 31, "presencas": 30, "faltas": 1}, "arquivado": false}, {"nome": "Davi Orlando Oliveira Peltz", "turma": "B1 TEENS TARDINHA(2026)", "saldo": {"dadas": 31, "presencas": 30, "faltas": 1}, "arquivado": false}, {"nome": "Giovanna Andreola Masiero", "turma": "B1 TEENS TARDE (2026)(TERÇA)", "saldo": {"dadas": 10, "presencas": 8, "faltas": 2}, "arquivado": false}, {"nome": "Matteo Simas", "turma": "B1 TEENS TARDE (2026)(TERÇA)", "saldo": {"dadas": 10, "presencas": 9, "faltas": 1}, "arquivado": false}, {"nome": "Monica Fogassa Toledo", "turma": "B1 TEENS TARDE (2026)(TERÇA)", "saldo": {"dadas": 10, "presencas": 9, "faltas": 1}, "arquivado": false}, {"nome": "Bernardo Abreu Benites Lopes", "turma": "B1 TEENS TARDINHA(2026)", "saldo": {"dadas": 30, "presencas": 27, "faltas": 3}, "arquivado": false}, {"nome": "João Vitor kirchhoff", "turma": "B1 TEENS TARDE (2026)(TERÇA)", "saldo": {"dadas": 10, "presencas": 9, "faltas": 1}, "arquivado": false}, {"nome": "Mateus Scolari Conceição Rolim", "turma": "B1 TEENS TARDE (2026)(TERÇA)", "saldo": {"dadas": 11, "presencas": 8, "faltas": 3}, "arquivado": false}, {"nome": "Felipe Erichsen Maciel", "turma": "B1 TEENS TARDE (2026)(TERÇA)", "saldo": {"dadas": 10, "presencas": 9, "faltas": 1}, "arquivado": false}, {"nome": "Laura Cardoso Tiebbohl", "turma": "B1 TEENS TARDE (2026)(TERÇA)", "saldo": {"dadas": 3, "presencas": 2, "faltas": 1}, "arquivado": false}, {"nome": "Maria Eduarda Wabner", "turma": "B1 TEENS TARDE (2026)(TERÇA)", "saldo": {"dadas": 10, "presencas": 10, "faltas": 0}, "arquivado": false}, {"nome": "Marina Henn Lange", "turma": "B1 TEENS TARDE (2026)(TERÇA)", "saldo": {"dadas": 10, "presencas": 7, "faltas": 3}, "arquivado": false}, {"nome": "Lara dos santos schmidt", "turma": "B1 TEENS TARDINHA(2026)", "saldo": {"dadas": 31, "presencas": 31, "faltas": 0}, "arquivado": false}, {"nome": "Mariana Frigeri Fraga", "turma": "B1 TEENS TARDINHA(2026)", "saldo": {"dadas": 31, "presencas": 30, "faltas": 1}, "arquivado": false}, {"nome": "Luciano Gonçalves dias da Silva", "turma": "B1 TEENS TARDINHA(2026)", "saldo": {"dadas": 31, "presencas": 31, "faltas": 0}, "arquivado": false}, {"nome": "Augusto Kurtz da Silveira", "turma": "B1 TEENS TARDINHA(2026)", "saldo": {"dadas": 31, "presencas": 31, "faltas": 0}, "arquivado": false}, {"nome": "Carolina De Marchi Pereira", "turma": "B1 TEENS TARDINHA(2026)", "saldo": {"dadas": 31, "presencas": 31, "faltas": 0}, "arquivado": false}, {"nome": "Arthur Benedetti Soares", "turma": "B1 TEENS TARDINHA(2026)", "saldo": {"dadas": 31, "presencas": 30, "faltas": 1}, "arquivado": false}, {"nome": "Betina Benedetti Soares", "turma": "B1 TEENS TARDINHA(2026)", "saldo": {"dadas": 31, "presencas": 28, "faltas": 3}, "arquivado": false}, {"nome": "Guilherme Ramos Fernandes de Souza", "turma": "B1 TEENS TARDINHA(2026)", "saldo": {"dadas": 31, "presencas": 31, "faltas": 0}, "arquivado": false}, {"nome": "Yao Jui Kuo", "turma": "B1 TEENS TARDINHA(2026)", "saldo": {"dadas": 31, "presencas": 31, "faltas": 0}, "arquivado": false}, {"nome": "Arthur Siqueira Conte", "turma": "B1 TEENS TARDINHA(2026)", "saldo": {"dadas": 31, "presencas": 31, "faltas": 0}, "arquivado": false}, {"nome": "Perola Mariana Petry Coelho", "turma": "B1+ TEENS TARDE (QUI)(2026)", "saldo": {"dadas": 12, "presencas": 11, "faltas": 1}, "arquivado": false}, {"nome": "Daniela Dos Santos Zimmer", "turma": "B1+ TEENS TARDE (QUI)(2026)", "saldo": {"dadas": 12, "presencas": 7, "faltas": 5}, "arquivado": false}, {"nome": "Davi Azevedo de Sá", "turma": "B1+ TEENS TARDE (QUI)(2026)", "saldo": {"dadas": 12, "presencas": 11, "faltas": 1}, "arquivado": false}, {"nome": "Lara Ferreira da Silva", "turma": "B1+ TEENS TARDE (QUI)(2026)", "saldo": {"dadas": 12, "presencas": 11, "faltas": 1}, "arquivado": false}, {"nome": "Isabela Fernandes Pereira", "turma": "B1+ TEENS TARDE (QUI)(2026)", "saldo": {"dadas": 12, "presencas": 10, "faltas": 2}, "arquivado": false}, {"nome": "Bruno Eduardo Lima Martins", "turma": "B1+ TEENS TARDE (QUI)(2026)", "saldo": {"dadas": 8, "presencas": 7, "faltas": 1}, "arquivado": false}, {"nome": "Fernando Silveira Cruz", "turma": "B1+ TEENS TARDE (QUI)(2026)", "saldo": {"dadas": 8, "presencas": 7, "faltas": 1}, "arquivado": false}, {"nome": "Felipe Fraga Binotte", "turma": "B1+ TEENS TARDE (QUI)(2026)", "saldo": {"dadas": 8, "presencas": 7, "faltas": 1}, "arquivado": false}, {"nome": "João Pedro Nunes Bohn", "turma": "B1+ TEENS TARDE (QUI)(2026)", "saldo": {"dadas": 8, "presencas": 8, "faltas": 0}, "arquivado": false}, {"nome": "Isadora Dias", "turma": "B2 TEENS (QUINTA)2026", "saldo": {"dadas": 14, "presencas": 12, "faltas": 2}, "arquivado": false}, {"nome": "Marina Basotti Dill", "turma": "B2 TEENS (QUINTA)2026", "saldo": {"dadas": 14, "presencas": 13, "faltas": 1}, "arquivado": false}, {"nome": "Victor Nunes Martins", "turma": "B2 TEENS (QUINTA)2026", "saldo": {"dadas": 14, "presencas": 13, "faltas": 1}, "arquivado": false}, {"nome": "João Victor da Silva Vargas", "turma": "B2 TEENS TARDE(2026)", "saldo": {"dadas": 16, "presencas": 12, "faltas": 4}, "arquivado": false}, {"nome": "Carol Pires Ribeiro", "turma": "B2 TEENS (QUINTA)2026", "saldo": {"dadas": 14, "presencas": 14, "faltas": 0}, "arquivado": false}, {"nome": "Giovanna Antoniolli de Macedo", "turma": "B2 TEENS (QUINTA)2026", "saldo": {"dadas": 14, "presencas": 12, "faltas": 2}, "arquivado": false}, {"nome": "Lara Pires Ribeiro", "turma": "B2 TEENS (QUINTA)2026", "saldo": {"dadas": 14, "presencas": 14, "faltas": 0}, "arquivado": false}, {"nome": "Kassio Hiran Bahr Ledebuhr", "turma": "B2 TEENS TARDE(2026)", "saldo": {"dadas": 16, "presencas": 15, "faltas": 1}, "arquivado": false}, {"nome": "José Lucimar Moraes Orça Neto", "turma": "B2 TEENS TARDE(2026)", "saldo": {"dadas": 16, "presencas": 14, "faltas": 2}, "arquivado": false}, {"nome": "Gustavo Mercelo Splett", "turma": "B2 TEENS TARDE(2026)", "saldo": {"dadas": 16, "presencas": 14, "faltas": 2}, "arquivado": false}, {"nome": "Murilo Martins Loeblin", "turma": "B2 TEENS TARDE(2026)", "saldo": {"dadas": 16, "presencas": 16, "faltas": 0}, "arquivado": false}, {"nome": "Alexandra Pereira da Silva", "turma": "B2 TEENS TARDE(2026)", "saldo": {"dadas": 16, "presencas": 15, "faltas": 1}, "arquivado": false}, {"nome": "Aleckssandra da Rosa Tavares", "turma": "C1 TEENS TARDE (2026)", "saldo": {"dadas": 14, "presencas": 14, "faltas": 0}, "arquivado": false}, {"nome": "Murilo Garcia", "turma": "C1 TEENS TARDE (2026)", "saldo": {"dadas": 14, "presencas": 12, "faltas": 2}, "arquivado": false}, {"nome": "Laís Antunes Motta Fernandes", "turma": "C1 TEENS TARDE (2026)", "saldo": {"dadas": 14, "presencas": 10, "faltas": 4}, "arquivado": false}, {"nome": "Isabella Pacheco Lima", "turma": "C1 TEENS TARDE (2026)", "saldo": {"dadas": 14, "presencas": 14, "faltas": 0}, "arquivado": false}, {"nome": "Maria Eduarda Pacheco Lima", "turma": "C1 TEENS TARDE (2026)", "saldo": {"dadas": 14, "presencas": 13, "faltas": 1}, "arquivado": false}, {"nome": "Matheus Sakai", "turma": "C1 TEENS TARDE (2026)", "saldo": {"dadas": 14, "presencas": 12, "faltas": 2}, "arquivado": false}, {"nome": "Natália Tavares Goerl", "turma": "C1 TEENS TARDE (2026)", "saldo": {"dadas": 14, "presencas": 14, "faltas": 0}, "arquivado": false}, {"nome": "Lucas Barcelos Mousquer", "turma": "C1 TEENS TARDE (2026)", "saldo": {"dadas": 14, "presencas": 11, "faltas": 3}, "arquivado": false}, {"nome": "Enzo Saltiel Garighan", "turma": "PRÉ A1+ KIDS MANHÃ (2026)", "saldo": {"dadas": 16, "presencas": 8, "faltas": 8}, "arquivado": true}, {"nome": "Lavínia Müller Pellegrini", "turma": "PRÉ A1 KIDS MANHÃ (2026)(TER-QUI)", "saldo": {"dadas": 12, "presencas": 10, "faltas": 2}, "arquivado": true}, {"nome": "Maria Antônia Markiewicz Pereira", "turma": "PRÉ A1 KIDS MANHÃ (2026)(TER-QUI)", "saldo": {"dadas": 12, "presencas": 12, "faltas": 0}, "arquivado": false}, {"nome": "Antonella Mello De Oliveira", "turma": "PRÉ A1+ KIDS MANHÃ (2026)", "saldo": {"dadas": 1, "presencas": 0, "faltas": 1}, "arquivado": true}, {"nome": "Rafael Oliveira Weschenfelder Schmidt", "turma": "PRÉ A1 KIDS MANHÃ (2026)(TER-QUI)", "saldo": {"dadas": 10, "presencas": 10, "faltas": 0}, "arquivado": false}, {"nome": "Calebe Gomes Rossini", "turma": "PRÉ A1 KIDS MANHÃ (2026)(TER-QUI)", "saldo": {"dadas": 0, "presencas": 0, "faltas": 0}, "arquivado": true}, {"nome": "Bernardo Tresoldi Pereira Euzébio", "turma": "PRÉ A1+ KIDS MANHÃ (2026)", "saldo": {"dadas": 22, "presencas": 10, "faltas": 12}, "arquivado": true}, {"nome": "Sofia Lorenz Silva", "turma": "PRÉ A1+ KIDS MANHÃ (2026)", "saldo": {"dadas": 32, "presencas": 32, "faltas": 0}, "arquivado": false}, {"nome": "Romeo Pereira Izabel", "turma": "PRÉ A1+ KIDS MANHÃ (2026)", "saldo": {"dadas": 32, "presencas": 28, "faltas": 4}, "arquivado": false}, {"nome": "Nicolas Gomes Zilio", "turma": "PRÉ A1+ KIDS MANHÃ (2026)", "saldo": {"dadas": 28, "presencas": 24, "faltas": 4}, "arquivado": false}, {"nome": "Isabela Santos Petró", "turma": "PRÉ A1+ KIDS MANHÃ (2026)", "saldo": {"dadas": 32, "presencas": 29, "faltas": 3}, "arquivado": false}, {"nome": "Nicolas Gonçalves pacheco", "turma": "PRÉ A1+ KIDS MANHÃ (2026)", "saldo": {"dadas": 32, "presencas": 23, "faltas": 9}, "arquivado": false}, {"nome": "Eduardo Bobsin Martins", "turma": "PRÉ A1+ KIDS MANHÃ (2026)", "saldo": {"dadas": 32, "presencas": 28, "faltas": 4}, "arquivado": false}, {"nome": "Clara Cardoso Binotto Bernardes", "turma": "PRÉ A1+ KIDS MANHÃ (2026)", "saldo": {"dadas": 32, "presencas": 29, "faltas": 3}, "arquivado": false}, {"nome": "Elisa Soska Machado", "turma": "PRÉ A1+ KIDS MANHÃ (2026)", "saldo": {"dadas": 32, "presencas": 24, "faltas": 8}, "arquivado": false}, {"nome": "Pietro Pagno Benvegnu", "turma": "PRÉ A1+ KIDS MANHÃ (2026)", "saldo": {"dadas": 32, "presencas": 30, "faltas": 2}, "arquivado": false}], "corte": "2026-06-19"};
 const VIEWS={};
 
 /* ---- PAINEL ---- */
@@ -1692,6 +1782,7 @@ VIEWS.vip=()=>{
       ${lista.length?`<div class="field" style="margin-top:12px"><label class="lbl">Selecionar aluno</label><select id="vipSelAluno" onchange="vipSel=this.value;VIEWS.vip()">${lista.map(a=>`<option value="${a.id}" ${a.id===vipSel?'selected':''}>${a.nome}</option>`).join('')}</select></div>`:'<p class="hint" style="margin:10px 0 0">Nenhum aluno VIP cadastrado ainda.</p>'}
     </div>
     ${vipSel?`<div class="card"><h3>Lançar aula</h3>
+      <div class="field"><label class="lbl">Tema</label><input type="text" id="vipTema" placeholder="Ex: Simple Past · entrevista de emprego"></div>
       <div class="field"><label class="lbl">Descrição da aula</label><input type="text" id="vipDesc" placeholder="Ex: Conversação — entrevista de emprego"></div>
       <div class="row">
         <div class="field"><label class="lbl">Data</label><input type="date" id="vipData" value="${hoje()}"></div>
@@ -1713,12 +1804,14 @@ function delVipAluno(id){
 }
 function addAulaVip(){
   const vid=vipSel; if(!vid)return toast('Selecione um aluno VIP');
+  const tema=(document.getElementById('vipTema').value||'').trim();
   const desc=document.getElementById('vipDesc').value.trim(); if(!desc)return toast('Descreva a aula');
   const data=document.getElementById('vipData').value; if(!data)return toast('Escolha a data');
   const dur=+document.getElementById('vipDur').value||0;
   const faltou=!!document.getElementById('vipFaltou').checked;
-  S.aulasVip.push({id:uid(),vipId:vid,data,descricao:desc,duracaoMin:dur,faltou});
+  S.aulasVip.push({id:uid(),vipId:vid,data,tema,descricao:desc,duracaoMin:dur,faltou});
   save(); renderVipLista();
+  const t=document.getElementById('vipTema'); if(t)t.value='';
   const d=document.getElementById('vipDesc'); if(d)d.value='';
   const f=document.getElementById('vipFaltou'); if(f)f.checked=false;
   toast(faltou?'Aula lançada (não compareceu)':'Aula lançada');
@@ -1736,7 +1829,7 @@ function renderVipLista(){
     <button class="btn ghost sm" style="color:var(--vermelho)" onclick="delVipAluno('${vid}')">excluir aluno</button></div>`;
   if(!aulas.length){ box.innerHTML=h+'<p class="hint" style="margin:8px 0 0">Nenhuma aula lançada ainda.</p>'; return; }
   h+=`<p class="hint" style="margin:8px 0 10px"><b>${comp.length}</b> aula(s) com presença (${fmtDur(compMin)})${faltas?` · <b>${faltas}</b> falta(s)`:''}</p>`;
-  h+=aulas.map(a=>`<div class="check"><span style="flex:1">${brDate(a.data)} · ${a.descricao} <span class="pill">${fmtDur(a.duracaoMin)}</span>${a.faltou?' <span class="pill" style="background:#ffe9e9;color:var(--vermelho)">não compareceu</span>':''}</span><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delAulaVip('${a.id}')">excluir</button></div>`).join('');
+  h+=aulas.map(a=>`<div class="check"><span style="flex:1">${brDate(a.data)} · ${a.tema?`<b>${a.tema}</b> — `:''}${a.descricao} <span class="pill">${fmtDur(a.duracaoMin)}</span>${a.faltou?' <span class="pill" style="background:#ffe9e9;color:var(--vermelho)">não compareceu</span>':''}</span><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delAulaVip('${a.id}')">excluir</button></div>`).join('');
   box.innerHTML=h;
 }
 function corpoRelatorioVip(vid){
@@ -1746,7 +1839,7 @@ function corpoRelatorioVip(vid){
   const faltas=aulas.length-comp.length;
   let b=`Relatório de aulas VIP — ${al.nome}\n`;
   if(aulas.length) b+=`Período: ${brDate(aulas[0].data)} a ${brDate(aulas[aulas.length-1].data)}\n`;
-  b+=`\n`+aulas.map(a=>`• ${brDate(a.data)} — ${a.descricao} (${fmtDur(a.duracaoMin)})${a.faltou?' — NÃO COMPARECEU':''}`).join('\n');
+  b+=`\n`+aulas.map(a=>`• ${brDate(a.data)} — ${a.tema?a.tema+': ':''}${a.descricao} (${fmtDur(a.duracaoMin)})${a.faltou?' — NÃO COMPARECEU':''}`).join('\n');
   b+=`\n\nAulas com presença: ${comp.length} (${fmtDur(compMin)})${faltas?` · Faltas: ${faltas}`:''}\n`;
   b+=`\n${(S.config&&S.config.assinatura)||ASSINATURA_PADRAO}`;
   return b;
@@ -2024,6 +2117,7 @@ VIEWS.turmas=()=>{
       ${[1,2,3,4,5,6].map(d=>`<label style="display:flex;align-items:center;gap:5px;font-size:.88rem;border:1px solid var(--linha);border-radius:9px;padding:6px 10px;cursor:pointer"><input type="checkbox" class="nDia" value="${d}"> ${DIAS_SEMANA[d]}</label>`).join('')}
     </div><p class="hint" style="margin:6px 0 0">A chamada e os planos só permitirão datas nesses dias. Aulas 1x/semana contam falta em dobro. <b>Aluno VIP</b> (aula avulsa) é registrado dentro da turma, em "👑 Aulas VIP".</p></div>
     <div style="margin-top:12px"><button class="btn" onclick="addTurma()">+ Criar turma</button></div></div>`}
+    ${ehProf?'':`<div class="card" style="padding:12px 18px;display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn sm" onclick="abrirImportSponte()">⬇️ Importar do Sponte</button><button class="btn ghost sm" onclick="toggleVerArquivadas()">${_verArquivadas?'Ocultar arquivados':'Mostrar arquivados'}</button></div>`}
     <div class="card" style="padding:14px 18px"><input type="text" id="buscaAluno" placeholder="🔎 Buscar aluno pelo nome (em todas as turmas)" value="${_buscaAluno||''}" oninput="filtrarAlunos(this.value)"></div>
     <div id="turmaList"></div>
     ${ehProf?'':`<div class="card" style="border-color:#fdd"><h3 style="color:var(--vermelho)">Zona de risco</h3><p class="hint">Apaga <b>todos os dados</b> (chamadas, temas, planos, testes…) e volta às turmas iniciais. Exige a <b>senha de um(a) diretor(a)</b> e baixa um <b>backup automático</b> antes de apagar.</p>
@@ -2119,15 +2213,59 @@ function renderPainelTurma(){
     </div>
     <div class="card"><h3>Alunos (${als.length})</h3>
       ${podeCadastrar?'<p class="hint" style="margin:0 0 8px">E-mail do responsável (usado para enviar o relatório da aula).</p>':''}
-      ${als.map(a=>`<div style="padding:8px 0;border-bottom:1px dashed var(--linha)"><div style="display:flex;align-items:center;gap:8px"><span style="flex:1">${a.nome}</span>${podeCadastrar?`<button class="btn ghost sm" onclick="delAluno('${a.id}')">remover</button>`:''}</div>
-        ${podeCadastrar?`<input type="email" value="${escAttr(a.email||'')}" placeholder="email.responsavel@exemplo.com" style="margin-top:6px;font-size:.85rem" onchange="setAlunoEmail('${a.id}',this.value)">`:''}</div>`).join('')||'<p class="hint">Sem alunos ainda.</p>'}
+      ${als.map(a=>`<div style="padding:8px 0;border-bottom:1px dashed var(--linha)"><div style="display:flex;align-items:center;gap:8px"><span style="flex:1">${a.nome}${idadeDe(a.nascimento)!=null?` <span class="pill">${idadeDe(a.nascimento)} anos</span>`:''}${a.arquivado?' <span class="pill" style="background:#eee;color:#888">arquivado</span>':''}</span>${podeCadastrar?`<button class="btn ghost sm" onclick="toggleArquivarAluno('${a.id}')">${a.arquivado?'reativar':'arquivar'}</button><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delAluno('${a.id}')">remover</button>`:''}</div>
+        ${a.saldo?`<p class="hint" style="margin:4px 0 0">saldo inicial: ${a.saldo.dadas} aula(s) · ${a.saldo.presencas} presença(s) · ${a.saldo.faltas} falta(s)</p>`:''}
+        ${podeCadastrar?`<div class="row" style="margin-top:6px"><div style="flex:2"><input type="email" value="${escAttr(a.email||'')}" placeholder="email.responsavel@exemplo.com" style="font-size:.85rem" onchange="setAlunoEmail('${a.id}',this.value)"></div><div><input type="date" value="${escAttr(a.nascimento||'')}" title="Data de nascimento" style="font-size:.85rem" onchange="setAlunoNascimento('${a.id}',this.value)"></div></div>`:''}</div>`).join('')||'<p class="hint">Sem alunos ainda.</p>'}
       ${podeCadastrar?`<div class="row" style="margin-top:12px"><div style="flex:3"><input type="text" id="al_${id}" placeholder="Nome do novo aluno" onkeydown="if(event.key==='Enter')addAluno('${id}')"></div>
       <button class="btn ghost" onclick="addAluno('${id}')">+ Aluno</button></div>`:''}</div>
-    ${podeCadastrar?`<button class="btn ghost sm" style="color:var(--vermelho)" onclick="delTurma('${id}')">Excluir turma</button>`:''}`;
+    ${podeCadastrar?`<div style="display:flex;gap:8px;margin-top:6px"><button class="btn ghost sm" onclick="toggleArquivarTurma('${id}')">${t.arquivada?'Reativar turma':'Arquivar turma'}</button><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delTurma('${id}')">Excluir turma</button></div>`:''}`;
   window.scrollTo(0,0);
 }
 function _refreshTurmas(){ if(painelTurma) renderPainelTurma(); else renderTurmaList(); }
 function setAlunoEmail(id,val){const a=S.alunos.find(x=>x.id===id);if(!a)return;a.email=(val||'').trim();save();}
+function setAlunoNascimento(id,val){ if(ehProfessor())return; const a=S.alunos.find(x=>x.id===id); if(!a)return; a.nascimento=(val||'').trim(); save(); _refreshTurmas(); }
+function toggleArquivarAluno(id){ if(ehProfessor())return toast('Sem permissão'); const a=S.alunos.find(x=>x.id===id); if(!a)return; a.arquivado=!a.arquivado; save(); _refreshTurmas(); montarNav(); toast(a.arquivado?'Aluno arquivado':'Aluno reativado'); }
+function toggleArquivarTurma(id){ if(ehProfessor())return toast('Sem permissão'); const t=S.turmas.find(x=>x.id===id); if(!t)return; t.arquivada=!t.arquivada; if(t.arquivada && painelTurma===id) painelTurma=null; save(); VIEWS.turmas(); montarNav(); toast(t.arquivada?'Turma arquivada':'Turma reativada'); }
+function toggleVerArquivadas(){ _verArquivadas=!_verArquivadas; if(painelTurma) renderPainelTurma(); else VIEWS.turmas(); }
+/* ---- Importação do Sponte (aditiva, com preview e trava anti-sobrescrita) ---- */
+function _matchTurma(nome){ const n=_normTxt(nome).trim(); return S.turmas.find(t=>_normTxt(t.nome).trim()===n); }
+function _alunoExiste(turmaId,nome){ const n=_normTxt(nome).trim(); return S.alunos.some(a=>a.turmaId===turmaId && _normTxt(a.nome).trim()===n); }
+function _previewImport(){
+  let tNovas=0,tExist=0,aNovos=0,aArq=0,aPulados=0;
+  SPONTE_IMPORT.turmas.forEach(t=>{ _matchTurma(t.nome)?tExist++:tNovas++; });
+  SPONTE_IMPORT.alunos.forEach(a=>{ const t=_matchTurma(a.turma); if(t && _alunoExiste(t.id,a.nome)){aPulados++;return;} aNovos++; if(a.arquivado)aArq++; });
+  return {tNovas,tExist,aNovos,aArq,aPulados};
+}
+function abrirImportSponte(){
+  if(ehProfessor())return toast('Sem permissão');
+  const p=_previewImport();
+  modal(`<h3>⬇️ Importar do Sponte <button class="close" onclick="fechar()">×</button></h3>
+    <p class="hint" style="margin-bottom:10px">Relatório Sponte de 19/06/2026. A importação é <b>aditiva</b>: cria o que falta e <b>nunca apaga</b> nada que já existe no app.</p>
+    <div class="card" style="margin:0 0 12px"><b>O que será feito:</b>
+      <p class="hint" style="margin:8px 0 0">• ${p.tNovas} turma(s) nova(s)${p.tExist?` · ${p.tExist} já existente(s) (atualizo horário/professor)`:''}</p>
+      <p class="hint" style="margin:4px 0 0">• ${p.aNovos} aluno(s) novo(s)${p.aArq?` (sendo ${p.aArq} arquivado(s))`:''}</p>
+      ${p.aPulados?`<p class="hint" style="margin:4px 0 0">• ${p.aPulados} aluno(s) já no app — serão pulados</p>`:''}
+    </div>
+    <p class="hint" style="margin-bottom:12px">Cada aluno entra com o <b>saldo inicial</b> (aulas dadas, presenças, faltas) com corte em 19/06/2026.</p>
+    <button class="btn block" onclick="aplicarImportSponte()">Aplicar importação</button>`);
+}
+function aplicarImportSponte(){
+  if(ehProfessor())return;
+  let nt=0,na=0;
+  SPONTE_IMPORT.turmas.forEach(it=>{
+    let t=_matchTurma(it.nome);
+    if(!t){ t={id:uid(),nome:it.nome,nivel:it.nivel,cefr:it.cefr,professor:it.professor,horario:it.horario,dias:it.dias.slice(),vezesSemana:it.vezesSemana,arquivada:!!it.arquivada}; S.turmas.push(t); nt++; }
+    else { if(it.professor)t.professor=it.professor; if(it.horario)t.horario=it.horario; if(it.dias&&it.dias.length){t.dias=it.dias.slice();t.vezesSemana=it.vezesSemana;} }
+  });
+  SPONTE_IMPORT.alunos.forEach(ia=>{
+    const t=_matchTurma(ia.turma); if(!t) return;
+    if(_alunoExiste(t.id,ia.nome)) return;
+    S.alunos.push({id:uid(),nome:ia.nome,turmaId:t.id,saldo:ia.saldo,arquivado:!!ia.arquivado,nascimento:''});
+    na++;
+  });
+  save(); fechar(); VIEWS.turmas(); montarNav();
+  toast(`Importado: ${nt} turma(s), ${na} aluno(s)`);
+}
 function addAluno(turmaId){
   if(ehProfessor())return toast('Sem permissão');
   const inp=document.getElementById('al_'+turmaId);
@@ -2143,15 +2281,35 @@ function resetarSeguro(){
     <button class="btn block red" onclick="confirmarReset()">Baixar backup e restaurar</button>`);
   setTimeout(()=>{const i=document.getElementById('resetSenha');if(i)i.focus();},60);
 }
-function confirmarReset(){
+async function confirmarReset(){
   const senha=(document.getElementById('resetSenha').value||'');
-  const dir=S.usuarios.find(u=>u.perfil==='direcao' && u.senha===senha);
-  if(!dir){ toast('Senha de diretor(a) incorreta'); return; }
+  if(!senha){ toast('Digite sua senha'); return; }
+  const chk=await cloudLogin(S.usuario, senha);   // confirma a senha de quem está logado (direção)
+  if(!chk || chk.ok!==true){ toast('Senha incorreta'); return; }
   exportarBackup();                        // baixa o estado atual antes de apagar
   S=seed(); S.usuario=null; S.perfil=null;
-  localStorage.setItem(KEY, JSON.stringify(S));
+  try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
   fechar(); toast('Restaurando…');
   cloudPut(true).finally(()=>setTimeout(()=>location.reload(), 800));
+}
+function trocarMinhaSenha(){
+  modal(`<h3>🔑 Trocar minha senha <button class="close" onclick="fechar()">×</button></h3>
+    <p class="hint" style="margin-bottom:12px">Defina uma nova senha pessoal (mínimo 4 caracteres).</p>
+    <div class="field"><label class="lbl">Nova senha</label><input type="password" id="ms1" placeholder="nova senha"></div>
+    <div class="field"><label class="lbl">Repita a nova senha</label><input type="password" id="ms2" placeholder="repita a senha"></div>
+    <button class="btn block" onclick="confirmarTrocaSenha()">Salvar nova senha</button>`);
+  setTimeout(()=>{const i=document.getElementById('ms1');if(i)i.focus();},60);
+}
+async function confirmarTrocaSenha(){
+  const a=(document.getElementById('ms1').value||'');
+  const b=(document.getElementById('ms2').value||'');
+  if(a.length<4){ toast('A senha precisa ter ao menos 4 caracteres'); return; }
+  if(a!==b){ toast('As senhas não conferem'); return; }
+  const r=await cloudTrocarSenha(a);
+  if(r && r.ok){ fechar(); toast('Senha alterada ✓'); }
+  else if(r && r.erro==='sessao'){ toast('Sessão expirada. Saia e entre novamente.'); }
+  else if(r && r.erro==='curta'){ toast('A senha precisa ter ao menos 4 caracteres'); }
+  else { toast('Não foi possível alterar agora. Tente de novo.'); }
 }
 
 /* ---- ACESSOS (somente direção) ---- */
@@ -2159,8 +2317,8 @@ VIEWS.acessos=()=>{
   const v=document.getElementById('view');
   const rotulo={direcao:'Direção',professor:'Professor(a)',secretaria:'Secretaria'};
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--marinho)"></span><h2 class="display">Acessos e senhas</h2></div>
-    <p class="sub">Redefina as senhas da equipe. A senha padrão é <b>12345</b>.</p>
-    <div class="card"><h3>Usuários</h3><p class="hint">Toque em “Redefinir para 12345” ou digite uma nova senha e salve.</p>
+    <p class="sub">Defina ou troque as senhas da equipe. As senhas ficam guardadas com segurança (hash) no servidor — não no aparelho.</p>
+    <div class="card"><h3>Usuários</h3><p class="hint">Digite uma nova senha (mín. 4 caracteres) e toque em <b>Salvar</b>. Use isto também para liberar quem ainda não tem senha.</p>
     <table><thead><tr><th>Usuário</th><th>Perfil</th><th>Nova senha</th><th></th></tr></thead><tbody>
     ${S.usuarios.map((u,i)=>`<tr>
       <td><b>${u.nome}</b></td>
@@ -2168,14 +2326,15 @@ VIEWS.acessos=()=>{
       <td><input type="text" id="sn_${i}" placeholder="nova senha" style="max-width:160px"></td>
       <td style="text-align:right;white-space:nowrap">
         <button class="btn sm" onclick="salvarSenha(${i})">Salvar</button>
-        <button class="btn ghost sm" onclick="resetSenha(${i})">Redefinir p/ 12345</button>
       </td></tr>`).join('')}
     </tbody></table></div>
     <div class="card"><h3>+ Novo usuário</h3><div class="row">
       <div><label class="lbl">Nome de acesso</label><input type="text" id="nuNome" placeholder="Ex: Ana"></div>
       <div><label class="lbl">Perfil</label><select id="nuPerfil"><option value="professor">Professor(a)</option><option value="secretaria">Secretaria</option><option value="direcao">Direção</option></select></div>
       <div><label class="lbl">Professor da turma (opcional)</label><input type="text" id="nuEnsina" placeholder="Nome usado nas turmas"></div>
-    </div><div style="margin-top:12px"><button class="btn" onclick="addUsuario()">Criar usuário (senha 12345)</button></div></div>
+    </div>
+    <div class="field" style="margin-top:12px;max-width:260px"><label class="lbl">Senha inicial</label><input type="text" id="nuSenha" placeholder="mín. 4 caracteres"></div>
+    <div style="margin-top:12px"><button class="btn" onclick="addUsuario()">Criar usuário</button></div></div>
     <div class="card"><h3>Assinatura e e-mail da escola</h3><p class="hint">Usados no relatório enviado às famílias. O e-mail é o remetente/cópia da escola.</p>
       <div class="field"><label class="lbl">E-mail da escola (remetente)</label><input type="email" id="cfgEmail" value="${escAttr((S.config&&S.config.escolaEmail)||'')}" placeholder="inglestogethere@gmail.com"></div>
       <div class="field"><label class="lbl">Assinatura</label><textarea id="cfgAssin" placeholder="— Equipe Togethere">${escAttr((S.config&&S.config.assinatura)||'')}</textarea></div>
@@ -2220,39 +2379,65 @@ function importarBackup(input){
   };
   r.readAsText(f); input.value='';
 }
-function salvarSenha(i){
-  const nova=document.getElementById('sn_'+i).value.trim();
-  if(!nova)return toast('Digite a nova senha');
-  S.usuarios[i].senha=nova; save(); VIEWS.acessos(); toast('Senha atualizada para '+S.usuarios[i].nome);
-}
-function resetSenha(i){
-  S.usuarios[i].senha='12345'; save(); VIEWS.acessos(); toast('Senha de '+S.usuarios[i].nome+' redefinida (12345)');
+async function salvarSenha(i){
+  const nova=(document.getElementById('sn_'+i).value||'').trim();
+  if(nova.length<4)return toast('A senha precisa ter ao menos 4 caracteres');
+  const alvo=S.usuarios[i].nome;
+  const r=await cloudResetarSenha(alvo, nova);
+  if(r && r.ok){ const inp=document.getElementById('sn_'+i); if(inp) inp.value=''; toast('Senha definida para '+alvo); }
+  else if(r && r.erro==='permissao'){ toast('Apenas a direção pode redefinir senhas'); }
+  else if(r && r.erro==='sessao'){ toast('Sessão expirada. Saia e entre novamente.'); }
+  else if(r && r.erro==='dados'){ toast('Senha muito curta'); }
+  else { toast('Não foi possível salvar agora. Tente de novo.'); }
 }
 function addUsuario(){
   const nome=document.getElementById('nuNome').value.trim();
+  const senha=(document.getElementById('nuSenha').value||'').trim();
   if(!nome)return toast('Dê um nome de acesso');
+  if(senha.length<4)return toast('Defina uma senha inicial (mín. 4 caracteres)');
   if(S.usuarios.some(u=>u.nome.toLowerCase()===nome.toLowerCase()))return toast('Já existe um usuário com esse nome');
-  S.usuarios.push({nome,perfil:document.getElementById('nuPerfil').value,senha:'12345',ensina:document.getElementById('nuEnsina').value.trim()||null});
-  save(); VIEWS.acessos(); toast('Usuário criado com senha 12345');
+  const perfil=document.getElementById('nuPerfil').value;
+  const ensina=document.getElementById('nuEnsina').value.trim()||null;
+  S.usuarios.push({nome,perfil,ensina});
+  save();
+  cloudResetarSenha(nome, senha).then(r=>{
+    if(r && r.ok) toast('Usuário criado e senha definida');
+    else toast('Usuário criado, mas defina a senha pela linha dele (botão Salvar)');
+    VIEWS.acessos();
+  });
 }
 
 /* =========================================================================
    BOOT
    ========================================================================= */
 (async function boot(){
-  const lp=document.getElementById('loginPanel'); if(lp) lp.innerHTML='<p class="hint" style="text-align:center">Conectando ao servidor…</p>';
-  const res = await cloudGet(8000);
-  if (res.ok && res.state && res.state.usuarios && res.state.usuarios.length){
-    S = migrar(res.state);                 // nuvem respondeu com dados → usa a nuvem
-    localStorage.setItem(KEY, JSON.stringify(S));
-    marcarSync('ok');
-  } else if (res.ok && !res.state){
-    cloudPut();                            // servidor respondeu e está REALMENTE vazio → primeira vez: envia a base
-  } else {
-    marcarSync('off');                     // erro/sem conexão → NUNCA sobrescreve a nuvem; mantém o local
-  }
-  S.usuario=null; S.perfil=null;   // segurança: sempre pede login ao abrir
   const av=document.getElementById('appVer'); if(av) av.textContent=APP_VERSAO;
+  // existe sessão guardada neste aparelho?
+  let tk=null,tuser=null,tperfil=null;
+  try{ tk=localStorage.getItem(TKEY); tuser=localStorage.getItem(UKEY); tperfil=localStorage.getItem(PKEY); }catch(e){}
+  if(tk && tuser && tperfil){
+    CLOUD_TOKEN=tk;
+    const lp=document.getElementById('loginPanel'); if(lp) lp.innerHTML='<p class="hint" style="text-align:center">Reconectando…</p>';
+    const res=await cloudGet(8000);
+    if(res.ok && res.state && res.state.usuarios && res.state.usuarios.length){
+      S=migrar(res.state);                   // nuvem respondeu → usa a nuvem
+      try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){}
+      marcarSync('ok');
+    } else if(res.auth){
+      // token expirado/cancelado → limpa a sessão e pede login
+      CLOUD_TOKEN=null;
+      try{ localStorage.removeItem(TKEY); localStorage.removeItem(UKEY); localStorage.removeItem(PKEY); }catch(e){}
+      S.usuario=null; S.perfil=null; renderLogin(); return;
+    } else {
+      marcarSync('off');                     // offline → entra com o estado local (NUNCA sobrescreve a nuvem)
+    }
+    const u=(S.usuarios||[]).find(x=>x.nome===tuser) || {nome:tuser, perfil:tperfil, ensina:null};
+    S.usuario=u.nome; S.perfil=tperfil;
+    aplicarLogin(u);
+    return;
+  }
+  // sem sessão → tela de login
+  S.usuario=null; S.perfil=null;
   renderLogin();
 })();
 
