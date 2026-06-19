@@ -1010,14 +1010,14 @@ function numTestes(turma){
 function bandaConceito(n){
   if(n===''||n==null||isNaN(n)) return {label:'—',cor:'#9aa6b6',bg:'transparent'};
   n=+n;
-  if(n>=100) return {label:'distinction',cor:'#B8860B',bg:'#FBF3D6'};    // 100 = distinction (dourado)
-  if(n>=90) return {label:'merit',cor:'var(--azul)',bg:'#E7F0FB'};       // 90–99 merit (azul)
+  if(n>=90) return {label:'merit',cor:'var(--azul)',bg:'#E7F0FB'};       // 90–100 merit (azul)
   if(n>=60) return {label:'pass',cor:'var(--ok)',bg:'#E6F6F0'};          // 60–89 pass (verde)
   return {label:'in need of improvement',cor:'var(--vermelho)',bg:'#FDECEC'}; // 0–59 (vermelho)
 }
+const DIST_COR='#B8860B', DIST_BG='#FBF3D6';
 function legendaConceitos(){
   const it=(c,t)=>`<span style="display:inline-flex;align-items:center;gap:5px;font-size:.76rem;margin:0 10px 4px 0"><span style="width:12px;height:12px;border-radius:3px;background:${c};display:inline-block"></span>${t}</span>`;
-  return `<div style="display:flex;flex-wrap:wrap;align-items:center;margin-top:4px">${it('var(--vermelho)','0–59 in need of improvement')}${it('var(--ok)','60–89 pass')}${it('var(--azul)','90–99 merit')}${it('#B8860B','100 distinction')}</div>`;
+  return `<div style="display:flex;flex-wrap:wrap;align-items:center;margin-top:4px">${it('var(--vermelho)','0–59 in need of improvement')}${it('var(--ok)','60–89 pass')}${it('var(--azul)','90–100 merit')}${it(DIST_COR,'★ distinction (acima do nível, sem nota)')}</div>`;
 }
 function testeDaTurma(turmaId,numero,criar){
   let t=S.testes.find(x=>x.turmaId===turmaId && x.numero===numero);
@@ -1036,7 +1036,8 @@ function mediaSkillAno(turmaId,aid,skill){
 }
 function boletimDe(turmaId,aid,criar){
   let b=S.boletins.find(x=>x.turmaId===turmaId && x.alunoId===aid);
-  if(!b && criar){ b={id:uid(),turmaId,alunoId:aid,ano:new Date().getFullYear(),conceitos:{},parecer:'',conceitoGeral:'',criadoEm:hoje(),criadoPor:S.usuario}; S.boletins.push(b); }
+  if(!b && criar){ b={id:uid(),turmaId,alunoId:aid,ano:new Date().getFullYear(),conceitos:{},distincao:{},distincaoGeral:false,parecer:'',conceitoGeral:'',criadoEm:hoje(),criadoPor:S.usuario}; S.boletins.push(b); }
+  if(b) b.distincao=b.distincao||{};
   return b;
 }
 
@@ -1104,12 +1105,15 @@ function setBoletimConceito(skill,el){
   const lc=document.getElementById('bcl_'+skill); if(lc){ lc.textContent=bd.label; lc.style.color=bd.cor; }
   const g=document.getElementById('bGeral'); if(g) g.placeholder=(mediaConceitosBoletim()??'')+'';
 }
+function setBoletimDistincao(skill,el){ const b=boletimDe(testeTurma,boletimAluno,true); b.distincao[skill]=el.checked; save(); renderBoletimArea(); }
+function setBoletimDistincaoGeral(el){ const b=boletimDe(testeTurma,boletimAluno,true); b.distincaoGeral=el.checked; save(); renderBoletimArea(); }
 function setBoletimGeral(val){ const b=boletimDe(testeTurma,boletimAluno,true); b.conceitoGeral= val===''?'':Math.max(0,Math.min(100,Math.round(+val))); save(); }
 function setBoletimParecer(val){ const b=boletimDe(testeTurma,boletimAluno,true); b.parecer=val; save(); }
 function mediaConceitosBoletim(){
   if(!boletimAluno) return null;
-  const b=boletimDe(testeTurma,boletimAluno,false)||{conceitos:{}};
-  const v=SKILLS.map(s=>(b.conceitos&&b.conceitos[s]!=null&&b.conceitos[s]!=='')?b.conceitos[s]:mediaSkillAno(testeTurma,boletimAluno,s))
+  const b=boletimDe(testeTurma,boletimAluno,false)||{conceitos:{},distincao:{}};
+  const v=SKILLS.filter(s=>!(b.distincao&&b.distincao[s]))
+    .map(s=>(b.conceitos&&b.conceitos[s]!=null&&b.conceitos[s]!=='')?b.conceitos[s]:mediaSkillAno(testeTurma,boletimAluno,s))
     .filter(x=>x!==''&&x!=null&&!isNaN(x)).map(Number);
   return v.length?Math.round(v.reduce((a,n)=>a+n,0)/v.length):null;
 }
@@ -1121,20 +1125,24 @@ function renderBoletimArea(){
     <div class="card"><label class="lbl">Aluno</label>
       <select id="boAluno"><option value="">— escolha o aluno —</option>${als.map(a=>`<option value="${a.id}" ${a.id===boletimAluno?'selected':''}>${a.nome}</option>`).join('')}</select></div>`;
   if(boletimAluno){
-    const b=boletimDe(testeTurma,boletimAluno,false)||{conceitos:{},parecer:'',conceitoGeral:''};
+    const b=boletimDe(testeTurma,boletimAluno,false)||{conceitos:{},distincao:{},parecer:'',conceitoGeral:''};
     h+=`<div class="card"><h3>Conceitos finais por habilidade</h3>${legendaConceitos()}
-      <p class="hint" style="margin:6px 0">Sugeridos pela média dos testes do ano — ajuste como quiser. (Em KIDS, preencha conforme o desempenho em aula.)</p>
+      <p class="hint" style="margin:6px 0">Sugeridos pela média dos testes do ano — ajuste como quiser. Marque <b style="color:${DIST_COR}">★</b> quando o aluno superar o esperado para o nível (distinction, sem nota).</p>
       <table style="border-collapse:collapse"><tbody>${SKILLS.map(s=>{
+        const dist=!!(b.distincao&&b.distincao[s]);
         const sug=mediaSkillAno(testeTurma,boletimAluno,s);
         const val=(b.conceitos&&b.conceitos[s]!=null&&b.conceitos[s]!=='')?b.conceitos[s]:(sug==null?'':sug);
         const bd=bandaConceito(val);
         return `<tr><td style="text-align:left;padding:5px 10px 5px 0">${s}</td>
-          <td style="padding:3px 0"><input type="number" min="0" max="100" value="${val}" onchange="setBoletimConceito('${s}',this)" style="width:72px;text-align:center;background:${bd.bg};color:${bd.cor};font-weight:600;border-radius:8px;padding:7px 4px"></td>
-          <td id="bcl_${s}" style="padding:5px 0 5px 12px;color:${bd.cor};font-weight:600;font-size:.86rem">${bd.label}</td></tr>`;
+          <td style="padding:3px 0"><input type="number" min="0" max="100" value="${val}" ${dist?'disabled':''} onchange="setBoletimConceito('${s}',this)" style="width:72px;text-align:center;background:${dist?'#f1f3f6':bd.bg};color:${dist?'#9aa6b6':bd.cor};font-weight:600;border-radius:8px;padding:7px 4px;opacity:${dist?'.55':'1'}"></td>
+          <td id="bcl_${s}" style="padding:5px 0 5px 12px;color:${dist?DIST_COR:bd.cor};font-weight:600;font-size:.86rem">${dist?'★ distinction':bd.label}</td>
+          <td style="padding:5px 0 5px 14px"><label style="display:inline-flex;align-items:center;gap:5px;font-size:.82rem;color:${DIST_COR};white-space:nowrap;cursor:pointer"><input type="checkbox" ${dist?'checked':''} onchange="setBoletimDistincao('${s}',this)"> ★</label></td></tr>`;
       }).join('')}</tbody></table>
       <div class="field" style="margin-top:14px"><label class="lbl">Conceito final geral</label>
-        <input type="number" min="0" max="100" id="bGeral" value="${b.conceitoGeral??''}" placeholder="${mediaConceitosBoletim()??''}" onchange="setBoletimGeral(this.value)" style="width:90px;text-align:center">
-        <span class="hint"> deixe em branco para usar a média das habilidades</span></div>
+        <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+          <input type="number" min="0" max="100" id="bGeral" value="${b.conceitoGeral??''}" ${b.distincaoGeral?'disabled':''} placeholder="${mediaConceitosBoletim()??''}" onchange="setBoletimGeral(this.value)" style="width:90px;text-align:center;opacity:${b.distincaoGeral?'.55':'1'}">
+          <label style="display:inline-flex;align-items:center;gap:6px;color:${DIST_COR};font-weight:600;font-size:.9rem;cursor:pointer"><input type="checkbox" ${b.distincaoGeral?'checked':''} onchange="setBoletimDistincaoGeral(this)"> ★ Distinction</label></div>
+        <span class="hint">deixe em branco para usar a média das habilidades, ou marque ★ Distinction</span></div>
       <div class="field" style="margin-top:12px"><label class="lbl">Parecer descritivo geral</label>
         <textarea id="bParecer" placeholder="Comentário geral sobre o desempenho e a evolução do aluno no nível…" oninput="setBoletimParecer(this.value)">${escAttr(b.parecer||'')}</textarea></div>
       <div style="margin-top:12px"><button class="btn" onclick="gerarBoletim()">📄 Gerar boletim completo</button></div></div>
@@ -1163,13 +1171,17 @@ function montarBoletimHTML(turmaId, alunoId){
   const ano=b.ano||new Date().getFullYear();
   // conceitos finais por habilidade
   const concs=SKILLS.map(s=>{
+    const dist=!!(b.distincao&&b.distincao[s]);
     let v=(b.conceitos[s]!=null&&b.conceitos[s]!=='')?b.conceitos[s]:mediaSkillAno(turmaId,alunoId,s);
-    return {s, v:(v===''||v==null?'':v), bd:bandaConceito(v===''||v==null?'':v)};
+    return {s, dist, v:(v===''||v==null?'':v), bd:bandaConceito(v===''||v==null?'':v)};
   });
+  const distGeral=!!b.distincaoGeral;
   let geral=(b.conceitoGeral!=null&&b.conceitoGeral!=='')?b.conceitoGeral:mediaConceitosBoletim();
   const bg=bandaConceito(geral===''||geral==null?'':geral);
   const chip=l=> l==='in need of improvement'?'needs work':l;
-  const skillsHTML=concs.map(c=>`<div class="sk"><span class="skn">${c.s}</span><span class="skv" style="color:${c.bd.cor}">${c.v===''?'—':c.v}</span><span class="chip" style="background:${c.bd.bg};color:${c.bd.cor}">${chip(c.bd.label)}</span></div>`).join('');
+  const skillsHTML=concs.map(c=> c.dist
+    ? `<div class="sk dist"><span class="skn">${c.s}</span><span class="seal">★ Distinction</span></div>`
+    : `<div class="sk"><span class="skn">${c.s}</span><span class="skv" style="color:${c.bd.cor}">${c.v===''?'—':c.v}</span><span class="chip" style="background:${c.bd.bg};color:${c.bd.cor}">${chip(c.bd.label)}</span></div>`).join('');
   // acompanhamento (apenas totais do ano — sem detalhar datas/itens)
   const faltas=faltasDoAluno(alunoId,turmaId), atrasos=atrasosDoAluno(alunoId,turmaId), saidas=saidasCedoDoAluno(alunoId,turmaId);
   const mat=materialDoAluno(alunoId,turmaId), temas=temasNaoFeitosDoAluno(alunoId,turmaId);
@@ -1207,7 +1219,17 @@ body{font-family:'Urbanist',system-ui,sans-serif;color:var(--tinta);background:#
 .sk .skn{font-family:'Poppins',sans-serif;font-weight:600;flex:1;font-size:.95rem}
 .sk .skv{font-family:'Poppins',sans-serif;font-weight:700;font-size:1.25rem;min-width:34px;text-align:right}
 .chip{font-size:.66rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:4px 9px;border-radius:999px;white-space:nowrap}
+.sk.dist{background:#fffaf0;border-color:#E9D9A0}
+.seal{font-family:'Poppins',sans-serif;font-weight:700;color:#B8860B;background:#FBF3D6;border:1px solid #E9D9A0;padding:5px 12px;border-radius:999px;font-size:.78rem;white-space:nowrap}
+.geral.dist{background:#fffaf0;border-color:#E9D9A0}
+.seal.big{font-size:1.15rem;padding:10px 20px}
 .leg{margin-top:10px;font-size:.72rem;color:#8595a6}
+.conceitos{display:grid;gap:9px}
+.ci{display:flex;align-items:flex-start;gap:9px;font-size:.88rem;line-height:1.45}
+.ci .dot{width:13px;height:13px;border-radius:4px;flex:none;margin-top:3px}
+.ci b{font-family:'Poppins',sans-serif;font-weight:600}
+.ci small{color:#8595a6;font-weight:600}
+.ci .ds{color:#42525f}
 .parecer{background:#fffaf0;border-left:5px solid var(--amarelo);border-radius:0 14px 14px 0;padding:20px 22px;font-size:1.02rem;line-height:1.65;white-space:pre-wrap;min-height:200px}
 .parecer.vazio{color:#9aa6b6;font-style:italic}
 .stats{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
@@ -1227,18 +1249,25 @@ body{font-family:'Urbanist',system-ui,sans-serif;color:var(--tinta);background:#
   <div class="who"><div class="al">${esc(aluno.nome)}</div>
     <div class="meta">${esc(turma.nome)}${turma.cefr?' · Nível '+esc(turma.cefr):''}${turma.professor?' · Prof. '+esc(turma.professor):''} · Emitido em ${brDate(hoje())}</div></div>
   <div class="sec"><h2>Conceito final geral</h2>
-    <div class="geral"><div class="num" style="color:${bg.cor}">${geral===''||geral==null?'—':geral}</div>
-      <div><div class="lab" style="color:${bg.cor}">${bg.label}</div><div class="cap">Resultado do aluno no nível ${esc(turma.cefr||turma.nome)}</div></div></div></div>
-  <div class="sec"><h2>Desempenho por habilidade</h2><div class="skills">${skillsHTML}</div>
-    <div class="leg">0–59 in need of improvement · 60–89 pass · 90–99 merit · 100 distinction</div></div>
+    ${distGeral
+      ? `<div class="geral dist"><div class="seal big">★ Distinction</div><div><div class="cap">Desempenho acima do esperado para o nível ${esc(turma.cefr||turma.nome)}</div></div></div>`
+      : `<div class="geral"><div class="num" style="color:${bg.cor}">${geral===''||geral==null?'—':geral}</div>
+      <div><div class="lab" style="color:${bg.cor}">${bg.label}</div><div class="cap">Resultado do aluno no nível ${esc(turma.cefr||turma.nome)}</div></div></div>`}</div>
+  <div class="sec"><h2>Desempenho por habilidade</h2><div class="skills">${skillsHTML}</div></div>
+  <div class="sec"><h2>O que significam os conceitos</h2><div class="conceitos">
+    <div class="ci"><span class="dot" style="background:var(--vermelho)"></span><div><b style="color:var(--vermelho)">In need of improvement</b> <small>(0–59)</small> — <span class="ds">ainda não demonstrou domínio suficiente desta habilidade.</span></div></div>
+    <div class="ci"><span class="dot" style="background:var(--ok)"></span><div><b style="color:var(--ok)">Pass</b> <small>(60–89)</small> — <span class="ds">demonstrou competência satisfatória no nível.</span></div></div>
+    <div class="ci"><span class="dot" style="background:var(--azul)"></span><div><b style="color:var(--azul)">Merit</b> <small>(90–100)</small> — <span class="ds">demonstrou competência forte, acima do nível de aprovação.</span></div></div>
+    <div class="ci"><span class="dot" style="background:#B8860B"></span><div><b style="color:#B8860B">★ Distinction</b> — <span class="ds">superou o esperado para o nível; desempenho excepcional (concedido sem nota numérica).</span></div></div>
+  </div></div>
   <div class="sec"><h2>Parecer descritivo do professor</h2><div class="parecer${(b.parecer||'').trim()?'':' vazio'}">${esc((b.parecer||'').trim())||'Sem parecer registrado.'}</div></div>
   <div class="sec"><h2>Acompanhamento no ano</h2>${repHTML}</div>
   <div class="ft"><div>${esc(assinatura).replace(/\n/g,'<br>')}<br><small>Emitido por ${esc(S.usuario)} em ${brDate(hoje())}</small></div><div class="tag">Togethere</div></div>
 </div></body></html>`;
   // versão texto (para copiar / WhatsApp)
   let txt=`BOLETIM ${ano}\n${aluno.nome}\nTurma: ${turma.nome}${turma.cefr?' · Nível '+turma.cefr:''}${turma.professor?' · Prof. '+turma.professor:''}\nGerado em ${brDate(hoje())} por ${S.usuario}\n`;
-  txt+=`\n🎯 CONCEITOS FINAIS POR HABILIDADE\n`+concs.map(c=>`• ${c.s}: ${c.v===''?'—':c.v}  (${c.bd.label})`).join('\n')+`\n`;
-  txt+=`\n🏅 CONCEITO FINAL GERAL: ${geral===''||geral==null?'—':geral}  (${bg.label})\n`;
+  txt+=`\n🎯 CONCEITOS FINAIS POR HABILIDADE\n`+concs.map(c=>`• ${c.s}: ${c.dist?'★ Distinction':(c.v===''?'—':c.v+'  ('+c.bd.label+')')}`).join('\n')+`\n`;
+  txt+=`\n🏅 CONCEITO FINAL GERAL: ${distGeral?'★ Distinction':(geral===''||geral==null?'—':geral+'  ('+bg.label+')')}\n`;
   txt+=`\n📝 PARECER DESCRITIVO\n${(b.parecer||'').trim()||'(sem parecer)'}\n`;
   txt+=`\n📊 ACOMPANHAMENTO NO ANO\nFaltas: ${faltas.length} · Atrasos: ${atrasos.length} · Saídas antecipadas: ${saidas.length} · Aulas sem material: ${mat.length} · Temas pendentes: ${temas.length}\n`;
   txt+=`\n—\nTogethere · inglês para chegar lá`;
