@@ -396,7 +396,7 @@ function migrar(s){
 const CLOUD_URL    = 'https://script.google.com/macros/s/AKfycbylxwXqDh5ohAL4qLTn7WBQAu4juwt2bwgdiuGHDl1Ll3d1ViK-mdbeMghnG4UH3GNH/exec';
 const TKEY='togethere_token', UKEY='togethere_user', PKEY='togethere_perfil';
 let CLOUD_TOKEN = (function(){ try{ return localStorage.getItem(TKEY)||null; }catch(e){ return null; } })();
-const APP_VERSAO = '2026.06.19 · b24';   // aparece no rodapé; mude a cada publicação no GitHub
+const APP_VERSAO = '2026.06.19 · b26';   // aparece no rodapé; mude a cada publicação no GitHub
 const LOGO_B64 = 'data:image/png;base64,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';
 /* ============================================================================ */
 let _syncTimer=null;
@@ -511,6 +511,7 @@ function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2
 function hoje(){return new Date().toISOString().slice(0,10);}
 function diasAtras(n){const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().slice(0,10);}
 function pesoFalta(turmaId){const t=S.turmas.find(x=>x.id===turmaId);const n=(t&&t.dias&&t.dias.length)?t.dias.length:(t&&t.vezesSemana);return n===1?2:1;}
+function temAula2(turmaId){const t=S.turmas.find(x=>x.id===turmaId);const n=(t&&t.dias&&t.dias.length)?t.dias.length:(t&&t.vezesSemana);return n===1;}
 const DIAS_SEMANA=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
 function ymd(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function weekdayOf(s){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d).getDay();}
@@ -563,17 +564,19 @@ function seed(){
 function alertasFaltas(){
   const out=[];
   S.alunos.forEach(a=>{
-    const sess=S.presencas.filter(p=>p.turmaId===a.turmaId && a.id in p.registros)
+    const dois=temAula2(a.turmaId);
+    const sess=S.presencas.filter(p=>p.turmaId===a.turmaId && p.registros && a.id in p.registros)
                           .sort((x,y)=>x.data.localeCompare(y.data));
+    const seq=[];
+    sess.forEach(p=>{
+      const s1=p.registros[a.id];
+      if(p.registros2){ seq.push(s1); seq.push(p.registros2[a.id]||'presente'); }
+      else if(dois){ seq.push(s1); seq.push(s1); }   // legado conta por 2 aulas
+      else { seq.push(s1); }
+    });
     let streak=0;
-    for(let i=sess.length-1;i>=0;i--){ if(sess[i].registros[a.id]==='falta')streak++; else break; }
-    const peso=pesoFalta(a.turmaId), equiv=streak*peso;
-    if(equiv>=3){
-      const motivo = peso===2
-        ? `${streak} aula(s) seguida(s) sem vir (${equiv} faltas)`
-        : `${streak} faltas consecutivas`;
-      out.push({alunoId:a.id, tipo:'falta', n:equiv, motivo});
-    }
+    for(let i=seq.length-1;i>=0;i--){ if(seq[i]==='falta')streak++; else break; }
+    if(streak>=3) out.push({alunoId:a.id, tipo:'falta', n:streak, motivo:`${streak} faltas consecutivas`});
   });
   return out.filter(o=>!jaContatado(o.alunoId,'falta'));
 }
@@ -596,8 +599,14 @@ function totalAlertas(){return alertasFaltas().length+alertasMaterial().length;}
 
 /* ---- incidentes detalhados (para registro da direção e relatórios) ---- */
 function faltasDoAluno(alunoId,turmaId){
-  return S.presencas.filter(p=>p.turmaId===turmaId && p.registros[alunoId]==='falta')
-    .map(p=>p.data).sort();
+  const dois=temAula2(turmaId), out=[];
+  S.presencas.filter(p=>p.turmaId===turmaId).forEach(p=>{
+    const f1 = p.registros && p.registros[alunoId]==='falta';
+    if(p.registros2){ if(f1)out.push(p.data); if(p.registros2[alunoId]==='falta')out.push(p.data); }
+    else if(dois){ if(f1){out.push(p.data);out.push(p.data);} }   // legado 1x/semana: vale por 2 aulas
+    else { if(f1)out.push(p.data); }
+  });
+  return out.sort();
 }
 function materialDoAluno(alunoId,turmaId){
   return S.material.filter(m=>m.turmaId===turmaId && (m.faltantes||[]).includes(alunoId))
@@ -607,7 +616,7 @@ function atrasosDoAluno(alunoId,turmaId){
 function saidasCedoDoAluno(alunoId,turmaId){
   return S.presencas.filter(p=>p.turmaId===turmaId && (p.saiuCedo||[]).includes(alunoId)).map(p=>p.data).sort();}
 function temasNaoFeitosDoAluno(alunoId,turmaId){
-  return S.temas.filter(t=>t.turmaId===turmaId && (t.entregas[alunoId]===false || t.entregas[alunoId]==='parcial'))
+  return S.temas.filter(t=>t.turmaId===turmaId && t.entregas && (t.entregas[alunoId]===false || t.entregas[alunoId]==='parcial'))
     .map(t=>({data:t.data,descricao:t.descricao,origem:t.origem||'extra',status:t.entregas[alunoId]==='parcial'?'parcial':'naofeito'})).sort((a,b)=>a.data.localeCompare(b.data));
 }
 function comentariosDoAluno(alunoId){
@@ -852,7 +861,15 @@ VIEWS.presenca=()=>{
 };
 function presRec(criar){
   let rec=S.presencas.find(p=>p.turmaId===presTurma&&p.data===presData);
-  if(!rec && criar){ rec={id:uid(),turmaId:presTurma,data:presData,registros:{},atrasados:[],saiuCedo:[]}; alunosDa(presTurma).forEach(a=>rec.registros[a.id]='presente'); S.presencas.push(rec); }
+  if(!rec && criar){
+    rec={id:uid(),turmaId:presTurma,data:presData,registros:{},atrasados:[],saiuCedo:[]};
+    alunosDa(presTurma).forEach(a=>rec.registros[a.id]='presente');
+    if(temAula2(presTurma)){ rec.registros2={}; alunosDa(presTurma).forEach(a=>rec.registros2[a.id]='presente'); }
+    S.presencas.push(rec);
+  } else if(rec && criar && temAula2(presTurma) && !rec.registros2){
+    // turma 1x/semana sem aula 2 ainda: cria espelhando a aula 1 (mantém a contagem)
+    rec.registros2={}; alunosDa(presTurma).forEach(a=>rec.registros2[a.id]=rec.registros[a.id]||'presente');
+  }
   return rec;
 }
 function renderPres(){
@@ -860,31 +877,38 @@ function renderPres(){
   const als=alunosDa(presTurma);
   if(!als.length){box.innerHTML='<div class="empty"><div class="big">👥</div>Nenhum aluno nesta turma ainda.</div>';return;}
   const rec=S.presencas.find(p=>p.turmaId===presTurma&&p.data===presData)||{registros:{},atrasados:[],saiuCedo:[]};
+  const dois=temAula2(presTurma);
   const reg=rec.registros||{}, atr=rec.atrasados||[], cedo=rec.saiuCedo||[];
+  // aula 2: se a turma é 1x/semana mas o registro ainda não tem aula 2, espelha a aula 1 (exibição)
+  const reg2src = rec.registros2 || null;
+  const st2De=(id)=> reg2src ? (reg2src[id]||'presente') : (reg[id]||'presente');
   const matRec=S.material.find(m=>m.turmaId===presTurma&&m.data===presData);
   const matFalt=matRec?matRec.faltantes:[];
   const temasHoje=S.temas.filter(t=>t.turmaId===presTurma && t.dataEntrega===presData);
   const travada = rec.fechada && !presEditando;
+  const faltaTag='<span style="color:var(--vermelho);font-weight:600">Falta</span>';
+  const presTag='<span style="color:var(--ok);font-weight:600">Presente</span>';
 
-  // ----- MODO TRAVADO: chamada já salva (só leitura) -----
+  // ----- MODO TRAVADO -----
   if(travada){
     const linhas=als.map(a=>{
-      const st=reg[a.id]||'presente';
-      let tags;
-      if(st==='falta'){ tags='<span style="color:var(--vermelho);font-weight:600">Falta</span>'; }
-      else{
-        const extra=[];
-        if(atr.includes(a.id))extra.push('chegou atrasado');
-        if(cedo.includes(a.id))extra.push('saiu mais cedo');
-        if(matFalt.includes(a.id))extra.push('🎒 sem material');
-        tags='<span style="color:var(--ok);font-weight:600">Presente</span>'+(extra.length?' · '+extra.join(' · '):'');
-      }
+      const s1=reg[a.id]||'presente', s2=st2De(a.id);
       const tmt=temasHoje.filter(t=>a.id in (t.entregas||{})).map(t=>{const s=t.entregas[a.id];return '📚 '+(s===true?'tema feito':s==='parcial'?'tema parcial':'tema não feito');});
-      return `<div style="padding:8px 0;border-bottom:1px dashed var(--linha)"><b>${a.nome}</b> — ${tags}${tmt.length?`<div class="hint" style="margin-top:2px">${tmt.join(' · ')}</div>`:''}</div>`;
+      const extra=[];
+      if(atr.includes(a.id))extra.push('chegou atrasado');
+      if(cedo.includes(a.id))extra.push('saiu mais cedo');
+      if(matFalt.includes(a.id))extra.push('🎒 sem material');
+      let status;
+      if(dois){ status=`Aula 1: ${s1==='falta'?faltaTag:presTag} · Aula 2: ${s2==='falta'?faltaTag:presTag}`+(extra.length?' · '+extra.join(' · '):''); }
+      else if(s1==='falta'){ status=faltaTag; }
+      else { status=presTag+(extra.length?' · '+extra.join(' · '):''); }
+      return `<div style="padding:8px 0;border-bottom:1px dashed var(--linha)"><b>${a.nome}</b> — ${status}${tmt.length?`<div class="hint" style="margin-top:2px">${tmt.join(' · ')}</div>`:''}</div>`;
     }).join('');
-    const nf=als.filter(a=>(reg[a.id]||'presente')==='falta').length;
+    const nf= dois
+      ? als.reduce((n,a)=>n+((reg[a.id]||'presente')==='falta'?1:0)+(st2De(a.id)==='falta'?1:0),0)
+      : als.filter(a=>(reg[a.id]||'presente')==='falta').length;
     box.innerHTML=`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <div style="flex:1;min-width:150px"><h3 style="margin:0;color:var(--ok)">✅ Chamada salva</h3><p class="hint" style="margin:2px 0 0">${brDate(presData)} · ${als.length} aluno(s) · ${nf} falta(s)</p></div>
+        <div style="flex:1;min-width:150px"><h3 style="margin:0;color:var(--ok)">✅ Chamada salva</h3><p class="hint" style="margin:2px 0 0">${brDate(presData)} · ${als.length} aluno(s) · ${nf} falta(s)${dois?' (2 aulas no dia)':''}</p></div>
         <button class="btn" onclick="editarChamada()">✏️ Editar chamada</button>
       </div>
       <div style="margin-top:12px">${linhas}</div>`;
@@ -900,16 +924,24 @@ function renderPres(){
       <button class="${st==='parcial'?'on-mid':''}" onclick="setTemaChamada('${t.id}','${a.id}','parcial')">parcial</button>
       <button class="${st===false?'on-no':''}" onclick="setTemaChamada('${t.id}','${a.id}',false)">não feito</button></div>
     </div>`;}).join('');
-  box.innerHTML=`<h3>${als.length} alunos · ${brDate(presData)}</h3><p class="hint">Toque para alternar presença. Marque atraso, saída antecipada, <b>sem material</b> e a entrega do <b>tema</b> em cada aluno. Ao terminar, clique em <b>Salvar</b>.</p>
+  const segAula=(a,aula)=>{ const cur= aula===2 ? st2De(a.id) : (reg[a.id]||'presente'); const fn= aula===2?'setPres2':'setPres';
+    return `<div class="seg"><button class="${cur==='presente'?'on-p':''}" onclick="${fn}('${a.id}','presente')">Presente</button><button class="${cur==='falta'?'on-f':''}" onclick="${fn}('${a.id}','falta')">Falta</button></div>`; };
+  box.innerHTML=`<h3>${als.length} alunos · ${brDate(presData)}</h3><p class="hint">Toque para alternar presença. ${dois?'Esta turma tem <b>2 aulas no mesmo dia</b> — marque Aula 1 e Aula 2 separadamente. ':''}Marque atraso, saída antecipada, <b>sem material</b> e a entrega do <b>tema</b> em cada aluno. Ao terminar, clique em <b>Salvar</b>.</p>
     ${als.map(a=>{
-      const st=reg[a.id]||'presente';
+      const st=reg[a.id]||'presente', st2=st2De(a.id);
+      const presenteAlgum = dois ? (st==='presente'||st2==='presente') : (st==='presente');
+      const controles = dois
+        ? `<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">
+             <div style="display:flex;align-items:center;gap:8px"><span class="hint" style="min-width:44px">Aula 1</span>${segAula(a,1)}</div>
+             <div style="display:flex;align-items:center;gap:8px"><span class="hint" style="min-width:44px">Aula 2</span>${segAula(a,2)}</div>
+           </div>`
+        : segAula(a,1);
       return `<div style="padding:10px 0;border-bottom:1px dashed var(--linha)">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
           <b style="flex:1;min-width:130px">${a.nome}</b>
-          <div class="seg"><button class="${st==='presente'?'on-p':''}" onclick="setPres('${a.id}','presente')">Presente</button>
-          <button class="${st==='falta'?'on-f':''}" onclick="setPres('${a.id}','falta')">Falta</button></div>
+          ${controles}
         </div>
-        ${st==='presente'?`<div style="display:flex;gap:18px;margin-top:8px;flex-wrap:wrap">
+        ${presenteAlgum?`<div style="display:flex;gap:18px;margin-top:8px;flex-wrap:wrap">
           <label style="display:flex;align-items:center;gap:6px;font-size:.84rem;cursor:pointer"><input type="checkbox" ${atr.includes(a.id)?'checked':''} onchange="toggleAtraso('${a.id}')"> chegou atrasado</label>
           <label style="display:flex;align-items:center;gap:6px;font-size:.84rem;cursor:pointer"><input type="checkbox" ${cedo.includes(a.id)?'checked':''} onchange="toggleSaiuCedo('${a.id}')"> saiu mais cedo</label>
           <label style="display:flex;align-items:center;gap:6px;font-size:.84rem;cursor:pointer;color:var(--laranja)"><input type="checkbox" ${matFalt.includes(a.id)?'checked':''} onchange="toggleMatPres('${a.id}')"> 🎒 sem material</label>
@@ -930,10 +962,27 @@ function toggleMatPres(aid){
   if(i>=0)rec.faltantes.splice(i,1); else rec.faltantes.push(aid);
   renderPres();
 }
+function _limparExtrasSeAusente(rec,id){
+  const dois=temAula2(presTurma);
+  const f1=rec.registros[id]==='falta';
+  const f2=dois?((rec.registros2||{})[id]==='falta'):f1;
+  if(dois?(f1&&f2):f1){
+    rec.atrasados=(rec.atrasados||[]).filter(x=>x!==id);
+    rec.saiuCedo=(rec.saiuCedo||[]).filter(x=>x!==id);
+    const mr=S.material.find(m=>m.turmaId===presTurma&&m.data===presData); if(mr) mr.faltantes=mr.faltantes.filter(x=>x!==id);
+  }
+}
 function setPres(id,st){
   const rec=presRec(true);
   rec.registros[id]=st;
-  if(st==='falta'){ rec.atrasados=(rec.atrasados||[]).filter(x=>x!==id); rec.saiuCedo=(rec.saiuCedo||[]).filter(x=>x!==id); const mr=S.material.find(m=>m.turmaId===presTurma&&m.data===presData); if(mr) mr.faltantes=mr.faltantes.filter(x=>x!==id); }
+  _limparExtrasSeAusente(rec,id);
+  renderPres();
+}
+function setPres2(id,st){
+  const rec=presRec(true);
+  rec.registros2=rec.registros2||{};
+  rec.registros2[id]=st;
+  _limparExtrasSeAusente(rec,id);
   renderPres();
 }
 function toggleAtraso(id){const rec=presRec(true);rec.atrasados=rec.atrasados||[];const i=rec.atrasados.indexOf(id);if(i>=0)rec.atrasados.splice(i,1);else rec.atrasados.push(id);renderPres();}
@@ -1249,12 +1298,23 @@ function renderBoletimArea(){
   const sel=document.getElementById('boAluno'); if(sel) sel.onchange=e=>{ boletimAluno=e.target.value||null; renderBoletimArea(); };
 }
 let _boletimHTML='', _boletimTxt='';
+function _setDocIframe(fr, html){
+  if(!fr) return;
+  try{
+    if(fr._docUrl){ URL.revokeObjectURL(fr._docUrl); fr._docUrl=null; }
+    const blob=new Blob([html],{type:'text/html;charset=utf-8'});
+    fr._docUrl=URL.createObjectURL(blob);
+    fr.removeAttribute('srcdoc');
+    fr.src=fr._docUrl;
+  }catch(e){ try{ fr.srcdoc=html; }catch(_){ } }
+  fr.style.display='block';
+}
 function gerarBoletim(){
   if(!boletimAluno) return toast('Escolha o aluno');
   const r=montarBoletimHTML(testeTurma, boletimAluno);
   _boletimHTML=r.html; _boletimTxt=r.txt;
   const fr=document.getElementById('boFrame'), vz=document.getElementById('boVazio');
-  if(fr){ fr.srcdoc=r.html; fr.style.display='block'; }
+  _setDocIframe(fr, r.html);
   if(vz) vz.style.display='none';
 }
 const DOC_CSS=`
@@ -1891,7 +1951,7 @@ function corpoRelatorioAluno(alunoId,turmaId,de,ate){
   const atrasos=atrasosDoAluno(alunoId,turmaId).filter(inRange), saidas=saidasCedoDoAluno(alunoId,turmaId).filter(inRange);
   const peso=pesoFalta(turmaId);
   let txt=`RELATÓRIO DO ALUNO\n${aluno.nome}\nTurma: ${turma.nome}${turma.professor?' · Prof. '+turma.professor:''}\nPeríodo: ${de?brDate(de):'início'} a ${ate?brDate(ate):'hoje'}\nGerado em ${brDate(hoje())} por ${S.usuario}\n`;
-  txt+=`\n📋 FALTAS (${faltas.length}${peso===2?` aulas = ${faltas.length*2} faltas (turma 1x/semana)`:''})\n`;
+  txt+=`\n📋 FALTAS (${faltas.length}${peso===2?` — turma com 2 aulas por encontro`:''})\n`;
   if(faltas.length) faltas.forEach(d=>{ txt+=`• ${brDate(d)} — conteúdo da aula: ${resumoAulaDoDia(turmaId,d)}\n`; });
   else txt+=`• Nenhuma falta registrada.\n`;
   txt+=`\n⏰ CHEGOU ATRASADO (${atrasos.length})\n`;
@@ -1939,7 +1999,7 @@ function montarRelatorioHTML(alunoId, turmaId, de, ate){
     <div class="doc"><b>Relatório</b><span>do aluno</span></div></div>
   <div class="who"><div class="al">${esc(aluno.nome)}</div>
     <div class="meta">${esc(turma.nome)}${turma.cefr?' · Nível '+esc(turma.cefr):''}${turma.professor?' · Prof. '+esc(turma.professor):''}<br>Período: ${periodo} · Emitido em ${brDate(hoje())} por ${esc(S.usuario)}</div></div>
-  <div class="sec"><h2>Resumo do período</h2>${statsHTML}${peso===2?`<div class="leg">Turma de 1 encontro por semana: para fins de alerta, cada falta conta em dobro.</div>`:''}</div>
+  <div class="sec"><h2>Resumo do período</h2>${statsHTML}${peso===2?`<div class="leg">Turma de 1 encontro por semana, com 2 aulas no mesmo dia: cada aula conta como uma presença.</div>`:''}</div>
   <div class="sec"><h2>Resultados de testes</h2>${notasHTML}</div>
   <div class="sec"><h2>Faltas — com o conteúdo da aula (${faltas.length})</h2>${lista(faltas,d=>`<li><span class="d">${brDate(d)}</span><span>${esc(resumoAulaDoDia(turmaId,d))}</span></li>`)}</div>
   <div class="sec"><h2>Atrasos (${atrasos.length}) e saídas antecipadas (${saidas.length})</h2>
@@ -1959,7 +2019,7 @@ function gerarRelatorioAluno(){
   const r=montarRelatorioHTML(alunoId,turmaId,de,ate);
   _relatorioHTML=r.html; _relatorioTxt=r.txt;
   const fr=document.getElementById('relFrame'), vz=document.getElementById('relVazio');
-  if(fr){ fr.srcdoc=r.html; fr.style.display='block'; }
+  _setDocIframe(fr, r.html);
   if(vz) vz.style.display='none';
 }
 function addComentario(){
