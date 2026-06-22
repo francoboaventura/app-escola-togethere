@@ -352,7 +352,7 @@ function migrar(s){
     s.versao=3;
   }
   if(s.versao<4){ s.versao=4; }   // marca para os campos novos (nascimento/arquivado/saldo)
-  (s.alunos||[]).forEach(a=>{ if(typeof a.arquivado==='undefined') a.arquivado=false; if(typeof a.nascimento==='undefined') a.nascimento=''; });
+  (s.alunos||[]).forEach(a=>{ if(typeof a.arquivado==='undefined') a.arquivado=false; if(typeof a.nascimento==='undefined') a.nascimento=''; if(typeof a.faltasRetro==='undefined') a.faltasRetro=(a.saldo&&a.saldo.faltas)||0; });
   (s.turmas||[]).forEach(t=>{ if(typeof t.arquivada==='undefined') t.arquivada=false; });
   s.comentarios=s.comentarios||[]; // garante campos novos
   s.relatorios=s.relatorios||[];
@@ -397,7 +397,7 @@ function migrar(s){
 const CLOUD_URL    = 'https://script.google.com/macros/s/AKfycbylxwXqDh5ohAL4qLTn7WBQAu4juwt2bwgdiuGHDl1Ll3d1ViK-mdbeMghnG4UH3GNH/exec';
 const TKEY='togethere_token', UKEY='togethere_user', PKEY='togethere_perfil';
 let CLOUD_TOKEN = (function(){ try{ return localStorage.getItem(TKEY)||null; }catch(e){ return null; } })();
-const APP_VERSAO = '2026.06.19 · b29';   // aparece no rodapé; mude a cada publicação no GitHub
+const APP_VERSAO = '2026.06.19 · b31';   // aparece no rodapé; mude a cada publicação no GitHub
 const LOGO_B64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAAZUElEQVR4nO2de3xcxXXHf2dm9q5WWj0sy/iJnxiMn4ANBBpwKAESkkJ4JzQhbQh1m6Zp0ubVJgGS8IHQTz8hIa82oSEtpJCSByRNSRuDCSVg80hqY4wdv2Nbth62pJVW+7gzc/rHSELItixztXdX8nx9P0aydnUvu9+de2bmzBnCTT+Bx/NGEeW+AM/YxgvkiYQXyBMJL5AnEl4gTyS8QJ5IeIE8kfACeSLhBfJEwgvkiYQXyBMJL5AnEl4gTyS8QJ5IeIE8kfACeSLhBfJEwgvkiYQXyBMJL5AnEl4gTyS8QJ5IeIE8kfACeSLhBfJEwgvkiYQXyBMJL5AnEl4gTyS8QJ5IeIE8kfACeSLhBfJEwgvkiYQXyBMJL5AnEl4gTyS8QJ5IeIE8kfACeSLhBfJEwgvkiYQXyBMJL5AnEqrcFxATBIBA7r/0un/n/q8ZAA/88YyI8SkQEQgkCAAYsMxsGZqZGQwYBgDm1/QhQJBTDJIgiAQJ6jONAWZY9lIdgfEjEBHcW24Z1ljWxmoLBiRBiaqUmlATpJMqlRBTJ1QpIaoSIjRcUyWLoQ2NbckUQm1zoW3LFDJ5Xcxroy0M97klBRJCCiICM6y3qZ8xLxARJBEDRltT1DAWStY1JGdNrF48vXb+lNqzZtdPqktOq69qTAepQCTkcGGfsdzVG3b0hq2ZQktXYfP+7s37e3a2ZfcczO1syZq8+/0CgRKCBMH2N2onLDRGN5wjQAhiwIYWBQ1C3YTUijkN581vfPP8iUtn1k+pT4rBwc4gLB8hyhFER3k4AOSKZtO+7k3N3Wu3Hvq/PV0v7ugoFjSKFkkJSUoKC1h7Ioo09gRytypjGXkNoGli6vKlU962bPIfnDpx5sTU4Ecay+zC5/6oyH1zdE9ei6N5IEyiI7i19UDP9rbsw8/tffKVtpbuYjFTgBJISiXJ2hMrWhpLArlWx4QWBR2kEytmT/jwpfPeunjSpNqke4Bltn1By4AtowMzmJkBBpR47RdnC3pfR/6nv9n/H2v3vbCjA3mNQIqkFP36jnvGjEBSkLGM3nBSU/Wfrpz1gZWzTpta635kLKO/ZYrnYlzo465q4B+f397xyLp9j/6medveDAwjlVCKjOXx7dEYEEgIArPNhqpKffKPTv2ry+ZNqa9yPzKWh49dSo2Lpiy/1izlQrPmlbYfrNv3g7V7C5kCUgmZEAPCjT8qXSApyeQ0gFveOvfDl85benIdAG1ZxNjejBBr2Q66wT277dC3V+98/OWW1rYsAjVeNapcgYQgtszZcMXpTXdcv+iyJSehApqcY8L93TF3d2vrLtz9n1sfeHp366EcEkIFcpzd1CpUICnJ5LUkuvXahZ9456mphKjMVmcY3GCj06i9u/iPj2+9/8mdre05VCsphRkvff5KFEhJ0j3FmVNrv/3BswYansHh6hjCzYG4i9/Xkbv9x5v/Y+3eTGdepAOMi+mRihNICdJdhXecP+O+W5ZPqU9qy7Ky71kjYbBG63/fdesjm376/F5IKaukMWPboQoSyE06md5w1dvnf/39y5SgGBqekTcB0SVmhmF2Ufb3f73n9h9t2rYnI2oCYAw3RRUkkCLSveEd713ymStOc93jMRTxjBzniiDq6A0//dDGb6/eAaKx2xRVikBKkO4ufvTqBffcuCS225axnMlpouFmQwlghhRUlxrNieeBxvWx3+z/+AMbtu3NyHQwFvv5FSGQkqQzhQ9dcdo3bloWGlai5Pa49++lXZ2X3PW/kGIYg4iIi3r+yfXPfu5CKYiHnUo7LgYCo4PZ4oe/t/7hNTtRHQhJY2tStvzpHFKSzhTedcGsr71vqbFx2DOANtyRKUINJxCIUNCHsuGon90lohjLE2uCh/7y7LPmNNz2yKZcXsuUGkO3szLnRAtBJqcXzGu87+YzCUQ0CrHqyCECKRKK6OiHVESKErJUlyUFuQy1T1w+f/XfXzB3Str0hKpkpxt1yikQATA2kZAP/sWKienAchmiZuaRHqWDCEKQNnz+/MZnP/+WlUsn667CWHGonAIJSTanb71u4fLZDdqM1aHC0UJJMpYn1yUf/9QffOBtp+iuwph4QcomkCAyOb3ktIl/9475A4NsJzhSkGVOJcS/3HLWJ69faLKhqviRjLLewgj33LjEBQGV/jrFhSBihrF89w2LP33dQp0pVPhAfHkEUoJstvieC2ddvHCSHrPzXCXCZcZpw3ddt/Dum8/UuVCMxjh4iSiPQJYZSnxw5WyM3rDKeIIIUpKx/MnL53/xxiWmJ5SV+jqVQSAlyGbDGy6cddHpTWN3mr3UuMxubfizV572yesX6myxMvtlZRhItAAk3XzBzDhP6gKLgW9dVtfIk3IY0KZvCdgx30YhRidvybVD2vLd1y9q7y5+9+e/Uw0pbWz03zyKxC2QINiCmTOj/oLTmtjlO8cCEQZ/gt3XjelghE9XgpKJMrTWrh2ylr/+vqW7WrNP/vaATCcqapw6doEE2YK+9uxpVQmhLavSC+S6eM0d+e+s2TVwx7YMQdjXkcexLsBlp7ZkCrf9ZLOgY7RARMRFc8U508+cVe9OER1BsKBUIB/5yLnLP/vkrpYekVSVM18Wt0DGsKpJvPvc6Ygr/rLMkmh3e+/t/7YeQ8IIQahODD/KzMyQ1N6V/8KDG459MkHoLk5qTJ05q34UB9YFwVhurEn85GNvOv+2p4rGkqAKmbePVSAisOFUTcItIY1zfCOhSNUnSdLgl33kYRAJkvXJYz5MCjKSUoF8o5c53G/Whs+YWf/VPznjz77+vEoHujIMivW+LohQMCtPa5pYm7TMcY5tMEMbHnIcbxA9wqNE6YVKkrZ8y8pZ77l4ju4pysrolMUqEBFg7NlzJxBgK6szMTaQRMz8rZuWzZhWawumEuY54u1ZMCBp3qRqVPDQaiVDBMuor07ce9NS1rYSXsNYBTLMIlBzT6qJ86TjDClIW75q+bRrL5xlugtlv5HFJxABbJCsklMbquBboAi40YQvXbuwaWI1wjK3QzG2QARYW18dNNYkgNGtvjKCkxOUpCHHyGdRCEd4+tGOUocmgsgYnje55i/fforJFss7FxRfN55AzKhOymRCuu/jJNSsuwpHHAcaydPZsu4pHvNhWhC6i7mieWMXOXKEgGVe9ZbZ/7R6R2tnQSgq18hivAOJzFUqttmLPlx7MKup+vablh0+Ev2dNTuHH5QjIta2qaHqQ1efPsKR6PNOaRw4b4lwNdqmNlTddcPiD9y7TiSC0mbdHp24R6IHVZ2LCfc+TptQddvVC4b8aMuBnu88sWP4GQcC2NjJdcnPXzX06cNT6s+JIGLmd587/Qsz63ft7xGBKEsjFG83nigf2rIUphgykFgIrTZ8aAR3JYe2fU8JyzeQOAQiGEYqkH992TyEplxpi/EJxGAI6inobEG77+NkPAXRA7jLv/LMqaImYQyXxaCYWyAc1wSCZ3gEkWWe3VT9jjOmUF7HHV26a4jvVAwQZQu6K6cBvx3F6OCSVT508RwedoV/6YjzFgYhKOwNX23O4HjqqniGQRAxcO7cCdOmpm3RxN8GxTsbLwBtN+/vgRdolCCCtTyhJrhs8Ukox/Rq7JOpRJv2dcNPZYwervz5O8+YgtdnO8VDrAJZBhLy11sPFbV1pVI80XHlTFbMmVBVGxhjY/5gxioQM0OJXW3ZHW29fd96IuPGx2c0Vi2YWovQxjwgFK9ArhpQT/G5bQfZNUie0cCVz37zqRMR2rhnimI9Wz8/X99Cfk3qaLNoem38J41bIMuMpHzq1faWTEFWzNKCuGCAwQasDzsMYN/w8Lz7KJ46JU2xz4jFLRAzZEIebM3+75Z2AOaEMMhJYwC3LasEqcMOCQiXM9Xv03G8Mq73vmBabXU6aU2sKWblqZFIgr75xM6rlk+rhLTwUmLBDJKg/oU+pgW530H/HuFBWA30QiQgJkA1InkKgjkQ9aD+TzVrkBj5hzydVOkqmc0Wh6Y9lZIyCGQsU5Vas7F1U3P3khl11nJZJnFKDIMtSIIADpFdg87/QuYpFHej0Nk3dDOwYbT7WxESk5BegeQpaLgS6ZUgBQBsQDQSjYRAQgi43L24JjbK0wJJQbrXPPrS/iUz6iyXu9LnqMOmr9UpbkXbt9DxOLKbYfpdEQKumOjAp8ZttKkNwlZk/wsAmu9FeiEar8GE65FcDLjW6OhvFgFAKiEbahJ7W2Kdli9ffaBAfuuJnZlcKMR4mtZgwIIkzEHsuQUvL8Pue9C9GRBQClJAEGABAwyKoKEB4wpLQUkoBSZ0bcKOL2LjCuz/DMLd/fYceTUdualGokAJMOI0qFwCQSbl/ubM957ZI4jKHEqP4OQ8olFP18gIdPwbXlmGPfchzPV50xcaD9/PGtRHA0MKKIWwgB13YtOb0HIHoAEBHCXhmoGBPNoYX86y3T2sZUolvvDjV3e397oN2OM8u/uIKkkYyYyKoGzBFF1hnqM+2gAStgO7rsOW9yO7D0qCqN+b44ctWIOAhELvAez4HDZfgOKrgAQPdYgBECxzUZuYh9fKJhAzZEIcbMl+5Zc7BMW+qIAAoDqQUgrw8BuBM5Ro7cwf6Mobe7R0VQNI5F/Gqxei+YcgCUHH2xU/+hVoCIKQ6FiLV85H1yMgCdZDrpKA0HBP3sQ8TV3O+NVYlung/tU7XtnXrQTF2wgRgIbqRCqQ4OEMcjutFLuLP3xhvxREBGNZ28FJ0EZbqQt79OZ36I6NLBPAKKkz6CoAAymR78SW63Hon0BqqENAJhceyhYh4+uCobwCMQOKuroKn3h4I8ebIeSEmVATNKUDWB5+laNlppS648ebHl6711pIQUoMToKWSmxRe89Rdo+qA9Ho76rRBxtIASuw9S/Qesdgh5wxbZliT06TiDU3scybrRjDsjZ4fN2+f39uzx+fd3JsNTddlYKkErObqnftzVAgh3nRmQFJ3QXznq+su31W/dKT62c2pWqSShDAFiSQeQyd50GmYO2qxf89Jd3BdvhNpN4obEEESOz4HFQDGj/s7p5urdT2th6dC2V1Is6s8/Lv1sPMFIiPPrDh0sUnNdUmR6sy3DGxloWk5XMafvVS87HDBgZJIqm27OnasqPD7Rf/GmIx5DlgC6bLZ78wpa6DDVGp8p0YZMES2z6KhacjfTHYMAsA21t7Ee88Bsq+Ww/cItGEbG/v/bP7/49i3PzRvdBvXXQSqxFNQLrtvUSgZDpQdUlVP+hIF1XqkKruVNWdCVHydc1ghmAYgx3vhW4B9cn64s4OUNzz0+UXCC6argkeffr39/zPdiVIx9ICC0EMXHjqxBlTa3nE6eiW2djDFhNa0la6Y9gu3ejBFlKi5wD2fpQhpEBPXq9+pQ1JGfOASEUIBMBaljWJTz2w4bnth9x2u6U+IwHGcnVSrrpoNue1EJXyUowUNpASrQ9zz2qw2NuR7coWSYoTsQWCG4UlCi1fc8+6/Z15GUuvXhJZxkcumTd7doPOhWUv1nT8MAzZXR8CmR+90FLoysf/v1ApAsHV403K/W3Za766LpPTKH3OKxGYuS6lvv/nK5IJafJGjbGNFywLIXu2FjseefjFHiTKUHmyggRCXxXp4Ln1Lavu/62rPlHqZkgKMpbPn9/4s0+dP7kuqTN5Btyy+TGRqsTMpGjPhi+8uucAgiD+/ecrSyAA2ljVkHx4za6PPLjBvbvxOHTJopOev/MP/+SSeVWCdKZgekPWTDh82LD/EOaIR8wrjIksG0xP/u6Uhh0wSUFxN0HlHwc6HG1YpYOvPbq5Jqnuum6hKylU0ubAOTSzMXX/quV/d+VpP1q37783tm7c130wUzA53b9v6uueAdVwhF/EFNrRrzI+DARoK6pqzDXz1t7ZvEAEuZhnFSti3/gjogTpnuLtf7zktnctcMtWSn1PGdjI3X17sKe4s61376Hcga58V04XQsPor2ZgOtD6DZgjDPmsWlTKkegjYVjIwD7dvOgtP7ibRNHGXL+rYgWCc6ir8FdXLbj3fUuNZSKKIcS1zJZxrI0m12PjGdBHWppUPFrWV6lgEBFndGr+g99szTSRCjnGjLJKvIUNoC3L+uTXfrYFjHtvWgoghq3BRb+mrkFCf8ZpPwaQyLai262jGCqLFDbuMAjMlmqr8vMb9rd2TBGqGGdOUMUF0UMwllVN8LXHNt/4zRe689oVl4zn1ESQgoYG0e5rFBQZJWzZg2iHYUGSlzbthlUlm4M7MpUuEABtWdUnH3pi5yV3PbO3I+/2rSnb1bjPtqwFUdxl+oaHkFQlyyQ5OmNAILh+WX1y3eb2829bs+bVdiXJln6I6CgQAIhqCK4sgRgTk93xn3ZsCARAG5Y1iT3tubd96Zk7f7rFdcrimXY9AqIWlEDsJYuHJynC+C9nzAgEwBgWSVkEPvOv66/56rqWTEEJsqUfaXw9BADBXFSdjJKPTx0fPSYVf5s4lgSCW8tBUPXJHz/z+3M/++QPn98n+vOU47oEAiwoQGpB32KICsBF7i3Z+vhPPcYEQn/JcJkOdh/MXffl5/70n19s6ym6Qh8xzQS5ZTp1bwVQKQIRw2Jr5zQIE+cgEMaiQA5jWSSkqEp8b/XOcz775P2/2k0EQeR2dy8trvhB7WUIAtjS5x8eCwaE4Ew+tbVzKmQYU0ZbP2NVIPQNGbNMB7vaej/wjefffvevX9zZqWTfHa2UGgnAomoh0sth8VrljTLBTBBoy9fv72n0LdBx09cU1QS/eKl55R1P33zfb3a39w4s4CqVRu4u1nhtjGUwjoplgQRW71mmc7VKxj1ENuYFgmuKLMuaoDe03/3F9hWfefJj33+5rbswoNHoh9gkAUbTzag+Cda+VtGnHAiybOjBLSsR89pMd/a4T1gyjOug1QXt2fArj21Z9Ilf/vUDG1ozBTcd4TQavdeXwBaiHtM+hmPsIVZaDAuR4K0dU9fuXUhBznDcb+j4EQj9u7uTIlmTaOsJ7/3ZlsWfXv2+b7749OZ2p5Ebe7Sj0iCRACwmfRwNi6BN2SIhBiS+vP4KXUgJUYat1Cs6nSMKrlNmtEVvqNLBu98044Y3zfjDhZOqk33vtLYsCIQIaUaukFTPU9h0EVhGqZL5xrAsRMKub599xoP3kijPBOG4FcjhZtS1YfSGkDR3et2VZ0294dzp557SOPAYFyE54Y77BM6h/X+LnV+GSoBjnc7UVqhqe9EPv/jUthUy2Rv//QvjXiAH9S8jtAWDokGVWj6n4bpzpl919rQZE6qqk68lRWnLroA1jTQB0tVCZGy7HK2/jNOh0MhE2nx7w6Wrfv43Mpktiz04QQQaQBAJAW0ZeQNtgvqqyelg5elNN55/8qmT0/Mm1wx+sBvaHoiQidD/ZwgWIJhWbLmYO15BQtFhhVdGHW2lSpmX2ua+5aF/6NUJjn34Z4ATS6ABhCBB0JphLAoGgUgm1ZlzGlbMbjh73oRF0+oWTq9NBUeNiw+bNrEgSeFuseMKHNpghJJUQoe0lSowW7qnXfbIF3d3ThGJvC1T84MTViAH9Yc+lmEto2igDaRAQs6eXDNzYmrOpJoFU9MLptZOqU9OqktOqAnqU8OuPeRObH8XMr+yRUmwpUgO1EaqlGnOTbjwoS9tb58lq3pMvOtAhnBCCzQYAkiQIDDDWEZoYSwsgwFJSIggqepSalJtsjqQgRKTaoOkkqlAdOe1kqIQ2tCEzZ2A7v2bpV+6adEa5KGNVKNXrMOyALOo4XXN89//849vOXiyTPaW1x54gY6GS1hzTQ0DlpktwzIM9yXZ29dPYhAAgmRAgmtXLX/szgv/tbGqh3NkQTLaej9mMixUYCDxzxvf9vEnPthTrJZBztjyD+N5gUaKM2RIHD0kL9ot4iBYk6udf9LOj53z6J8vfpwYKEKzFGSPa5c9BlkmMKSySOK3rXNvfea9/7n5zQh6hTBljHsG4wUqCVIYU0zB0pnTt9563kNXzl1LAgjBmlxFRnJJPK+vCc4AQMxkmQgshUUASOzpbLrvlUv/4fmr87lameq2LMrV5zocL1CpEMQA22I1hDlj6rbr5j979bxnFzTuheyvVW/6aou7uofkavUSIAEJALlisHrvsl/sXv7vm1Z2ZpqQzEppKuG2NRgvUGkRZBnExSqYhEp1r5z58qkNzRdN3zi/vnle/YFqVZDC9q1PZBiIrnz19u4pr3bMfKb59NW7l+08NAM6gaBXqdBYEXOy2EjwAsWBi360UQirYCWEQZCfmj7UEGTTQb4myOeKQWhVzgQt2YZDuToUUwCgikIVBdnKVMdR0Uubxw2WhWUQsUhmidj1qvZ3TdrPk8ECTCAGGMQQBsLIVDeBLQvLZLnMHfXh8QLFBwOGxUC3jVTo1uAPDBbAecRUaYHOMHiBygaz69NX6L1phIwZ0z2ViRfIEwkvkCcSXiBPJLxAnkh4gTyR8AJ5IuEF8kTCC+SJhBfIEwkvkCcSXiBPJLxAnkh4gTyR8AJ5IuEF8kTCC+SJhBfIEwkvkCcSXiBPJLxAnkh4gTyR8AJ5IuEF8kTCC+SJhBfIEwkvkCcSXiBPJLxAnkh4gTyR8AJ5IuEF8kTCC+SJhBfIEwkvkCcSXiBPJLxAnkh4gTyR8AJ5IuEF8kTCC+SJhBfIE4n/B49hDPC7R1CFAAAAAElFTkSuQmCC';
 /* ============================================================================ */
 let _syncTimer=null;
@@ -694,11 +694,12 @@ const NAV=[
   {id:'alertas', label:'Avisos', em:'🔔', grp:'Acompanhamento', roles:['secretaria','direcao'], badge:true},
   {id:'atas', label:'Atas de reunião', em:'📝', grp:'Acompanhamento', roles:['direcao']},
   {id:'tarefas', label:'Tarefas internas', em:'🎯', grp:'Gestão', roles:['direcao']},
-  {id:'turmas', label:'Turmas e alunos', em:'👥', grp:'Gestão', roles:['professor','direcao']},
+  {id:'turmas', label:'Turmas e alunos', em:'👥', grp:'Gestão', roles:['professor','secretaria','direcao']},
   {id:'gturmas', label:'Trocar / criar turma', em:'🔄', grp:'Gestão', roles:['secretaria','direcao']},
   {id:'acessos', label:'Acessos', em:'🔑', grp:'Gestão', roles:['direcao']},
 ];
 function ehProfessor(){ return S.perfil==='professor'; }
+function soLeitura(){ return S.perfil==='secretaria'; }   // secretaria: acesso somente leitura às turmas
 const PERFIS={
   professor:{nome:'Professor(a)',cor:'var(--azul)',bg:'#eaf3ff'},
   secretaria:{nome:'Secretaria',cor:'var(--vermelho)',bg:'#fdeaea'},
@@ -930,7 +931,8 @@ function renderPres(){
   const matRec=S.material.find(m=>m.turmaId===presTurma&&m.data===presData);
   const matFalt=matRec?matRec.faltantes:[];
   const temasHoje=S.temas.filter(t=>t.turmaId===presTurma && t.dataEntrega===presData);
-  const travada = rec.fechada && !presEditando;
+  const entregasAula=temasEntregaDaAula(presTurma,presData);
+  const travada = (rec.fechada && !presEditando) || soLeitura();
   const faltaTag='<span style="color:var(--vermelho);font-weight:600">Falta</span>';
   const presTag='<span style="color:var(--ok);font-weight:600">Presente</span>';
 
@@ -938,7 +940,7 @@ function renderPres(){
   if(travada){
     const linhas=als.map(a=>{
       const s1=reg[a.id]||'presente', s2=st2De(a.id);
-      const tmt=temasHoje.filter(t=>a.id in (t.entregas||{})).map(t=>{const s=t.entregas[a.id];return '📚 '+(s===true?'tema feito':s==='parcial'?'tema parcial':'tema não feito');});
+      const tmt=entregasAula.filter(e=>e.aids.includes(a.id)).map(e=>{const s=e.tema.entregas[a.id];return s==='atrasado'?('⏰ tema atrasado (entrega '+brDate(e.entregaEra)+')'):'📚 '+(s===true?'tema feito':s==='parcial'?'tema parcial':'tema não feito');});
       const extra=[];
       if(atr.includes(a.id))extra.push('chegou atrasado');
       if(cedo.includes(a.id))extra.push('saiu mais cedo');
@@ -954,17 +956,18 @@ function renderPres(){
       : als.filter(a=>(reg[a.id]||'presente')==='falta').length;
     box.innerHTML=`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <div style="flex:1;min-width:150px"><h3 style="margin:0;color:var(--ok)">✅ Chamada salva</h3><p class="hint" style="margin:2px 0 0">${brDate(presData)} · ${als.length} aluno(s) · ${nf} falta(s)${dois?' (2 aulas no dia)':''}</p></div>
-        <button class="btn" onclick="editarChamada()">✏️ Editar chamada</button>
+        ${soLeitura()?'':`<button class="btn" onclick="editarChamada()">✏️ Editar chamada</button>`}
       </div>
       <div style="margin-top:12px">${linhas}</div>`;
     return;
   }
 
   // ----- MODO EDIÇÃO -----
-  const temaCtrl=(a)=> temasHoje.filter(t=>a.id in (t.entregas||{})).map(t=>{
-    const st=t.entregas[a.id];
-    return `<div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap">
-      <span style="font-size:.82rem;flex:1;min-width:120px;color:var(--rosa)">📚 ${escAttr(t.descricao)}</span>
+  const temaCtrl=(a)=> entregasAula.filter(e=>e.aids.includes(a.id)).map(e=>{
+    const t=e.tema, st=t.entregas[a.id], atras=st==='atrasado';
+    const tag=atras?`<span class="pill" style="background:#fff0e6;color:var(--laranja)">⏰ atrasado · entrega era ${brDate(e.entregaEra)}</span>`:(e.atrasada?`<span class="pill">entrega ${brDate(e.entregaEra)}</span>`:'');
+    return `<div style="display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap${atras?';background:#fff7f0;border:1px solid #ffd9b8;border-radius:10px;padding:8px':''}">
+      <span style="font-size:.82rem;flex:1;min-width:120px;color:${atras?'var(--laranja)':'var(--rosa)'}">📚 ${escAttr(t.descricao)} ${tag}</span>
       <div class="seg"><button class="${st===true?'on-ok':''}" onclick="setTemaChamada('${t.id}','${a.id}',true)">feito</button>
       <button class="${st==='parcial'?'on-mid':''}" onclick="setTemaChamada('${t.id}','${a.id}','parcial')">parcial</button>
       <button class="${st===false?'on-no':''}" onclick="setTemaChamada('${t.id}','${a.id}',false)">não feito</button></div>
@@ -1001,7 +1004,7 @@ function matRecPres(criar){
   if(!rec && criar){ rec={id:uid(),turmaId:presTurma,data:presData,faltantes:[]}; S.material.push(rec); }
   return rec;
 }
-function toggleMatPres(aid){
+function toggleMatPres(aid){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');
   const rec=matRecPres(true);
   const i=rec.faltantes.indexOf(aid);
   if(i>=0)rec.faltantes.splice(i,1); else rec.faltantes.push(aid);
@@ -1017,29 +1020,34 @@ function _limparExtrasSeAusente(rec,id){
     const mr=S.material.find(m=>m.turmaId===presTurma&&m.data===presData); if(mr) mr.faltantes=mr.faltantes.filter(x=>x!==id);
   }
 }
-function setPres(id,st){
+function setPres(id,st){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');
   const rec=presRec(true);
   rec.registros[id]=st;
   _limparExtrasSeAusente(rec,id);
   renderPres();
 }
-function setPres2(id,st){
+function setPres2(id,st){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');
   const rec=presRec(true);
   rec.registros2=rec.registros2||{};
   rec.registros2[id]=st;
   _limparExtrasSeAusente(rec,id);
   renderPres();
 }
-function toggleAtraso(id){const rec=presRec(true);rec.atrasados=rec.atrasados||[];const i=rec.atrasados.indexOf(id);if(i>=0)rec.atrasados.splice(i,1);else rec.atrasados.push(id);renderPres();}
-function toggleSaiuCedo(id){const rec=presRec(true);rec.saiuCedo=rec.saiuCedo||[];const i=rec.saiuCedo.indexOf(id);if(i>=0)rec.saiuCedo.splice(i,1);else rec.saiuCedo.push(id);renderPres();}
-function salvarPres(){
+function toggleAtraso(id){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');const rec=presRec(true);rec.atrasados=rec.atrasados||[];const i=rec.atrasados.indexOf(id);if(i>=0)rec.atrasados.splice(i,1);else rec.atrasados.push(id);renderPres();}
+function toggleSaiuCedo(id){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');const rec=presRec(true);rec.saiuCedo=rec.saiuCedo||[];const i=rec.saiuCedo.indexOf(id);if(i>=0)rec.saiuCedo.splice(i,1);else rec.saiuCedo.push(id);renderPres();}
+function salvarPres(){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');
   const rec=presRec(true);          // garante o registro (alunos sem marcação ficam 'presente')
   rec.fechada=true; presEditando=false;
+  // Tema atrasado: quem faltou no dia e tinha tema com entrega hoje passa a 'atrasado'
+  // (reaparece nas próximas aulas com destaque, até o professor marcar feito/parcial/não feito).
+  S.temas.filter(t=>t.turmaId===presTurma && (t.dataEntrega||t.data)===presData).forEach(t=>{
+    Object.keys(t.entregas||{}).forEach(aid=>{ if(t.entregas[aid]===true && faltouNoDia(rec,aid)) t.entregas[aid]='atrasado'; });
+  });
   save();montarNav();renderPres();renderTemaChamada();renderPresLista();
   toast('Chamada salva ✓');
   window.scrollTo({top:0,behavior:'smooth'});
 }
-function editarChamada(){ presEditando=true; renderPres(); renderTemaChamada(); toast('Chamada reaberta para edição'); }
+function editarChamada(){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas'); presEditando=true; renderPres(); renderTemaChamada(); toast('Chamada reaberta para edição'); }
 function renderTemaChamada(){
   const box=document.getElementById('pTema'); if(!box)return;
   const due=S.temas.filter(t=>t.turmaId===presTurma && t.dataEntrega===presData);
@@ -1055,8 +1063,8 @@ function renderTemaChamada(){
   }
   box.innerHTML=h;
 }
-function setTemaChamada(tid,aid,val){const t=S.temas.find(t=>t.id===tid);if(!t)return;t.entregas[aid]=val;save();renderPres();renderTemaChamada();}
-function temaDaChamada(){ _temaPlanoRef=null; modalTema(presTurma,'',presData,'extra'); }
+function setTemaChamada(tid,aid,val){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');const t=S.temas.find(t=>t.id===tid);if(!t)return;t.entregas[aid]=val;save();renderPres();renderTemaChamada();}
+function temaDaChamada(){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas'); _temaPlanoRef=null; modalTema(presTurma,'',presData,'extra'); }
 function carregaPres(data){presData=data;VIEWS.presenca();window.scrollTo({top:0,behavior:'smooth'});}
 function renderPresLista(){
   const box=document.getElementById('pLista'); if(!box)return;
@@ -1090,7 +1098,7 @@ VIEWS.temas=()=>{
   renderTemas();
 };
 function escAttr(s){return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-function modalTema(turmaId,descricao,data,origem){
+function modalTema(turmaId,descricao,data,origem){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');
   const als=alunosDa(turmaId);
   const orig=data||hoje();
   modal(`<h3>📩 Tema de casa <button class="close" onclick="fechar()">×</button></h3>
@@ -1132,8 +1140,8 @@ function criarTema(turmaId,origem){
   else if(rota==='presenca'){ renderTemaChamada(); }
 }
 let _temaPlanoRef=null;
-function temaDoPlano(pid,i){ const p=S.planos.find(p=>p.id===pid); if(!p)return; _temaPlanoRef={pid,i}; modalTema(p.turmaId,p.itens[i].txt,p.data,'plano'); }
-function desfazerTemaDoPlano(pid,i){
+function temaDoPlano(pid,i){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas'); const p=S.planos.find(p=>p.id===pid); if(!p)return; _temaPlanoRef={pid,i}; modalTema(p.turmaId,p.itens[i].txt,p.data,'plano'); }
+function desfazerTemaDoPlano(pid,i){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');
   const p=S.planos.find(p=>p.id===pid); if(!p||!p.itens[i])return;
   if(!confirm('Desfazer o tema deste item? O item volta a fazer parte do plano e o tema criado é apagado.'))return;
   const it=p.itens[i];
@@ -1141,7 +1149,7 @@ function desfazerTemaDoPlano(pid,i){
   it.virouTema=false; delete it.temaId;
   save(); renderPlanos(); toast('Tema desfeito — item voltou ao plano');
 }
-function temaExtraDoPlano(pid){ const p=S.planos.find(p=>p.id===pid); if(!p)return; _temaPlanoRef=null; modalTema(p.turmaId,'',p.data,'extra'); }
+function temaExtraDoPlano(pid){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas'); const p=S.planos.find(p=>p.id===pid); if(!p)return; _temaPlanoRef=null; modalTema(p.turmaId,'',p.data,'extra'); }
 function renderTemas(){
   const list=document.getElementById('tList');
   let ts=S.temas.filter(t=>t.turmaId===temaTurma);
@@ -1163,7 +1171,7 @@ function renderTemas(){
       <p class="hint" style="margin:8px 0 8px">Padrão: <b>feito</b>. Marque quem fez <b>parcialmente</b> ou <b>não fez</b>.</p>
       <button class="btn ghost sm" style="margin-bottom:6px" onclick="todosEntregaram('${t.id}')">✓ Todos feito</button>
       ${alvos.map(aid=>{const a=S.alunos.find(x=>x.id===aid);const st=t.entregas[aid];
-        return `<div class="check"><span style="flex:1">${a?a.nome:'—'}</span>
+        return `<div class="check"><span style="flex:1">${a?a.nome:'—'}${st==='atrasado'?' <span class="pill" style="background:#fff0e6;color:var(--laranja)">⏰ atrasado</span>':''}</span>
           <div class="seg"><button class="${st===true?'on-ok':''}" onclick="setTema('${t.id}','${aid}',true)">feito</button>
           <button class="${st==='parcial'?'on-mid':''}" onclick="setTema('${t.id}','${aid}','parcial')">parcial</button>
           <button class="${st===false?'on-no':''}" onclick="setTema('${t.id}','${aid}',false)">não feito</button></div></div>`;}).join('')}
@@ -1171,10 +1179,28 @@ function renderTemas(){
   }).join('');
 }
 function refreshTemaCtx(){ if(document.getElementById('tList')) renderTemas(); else if(document.getElementById('pTema')) renderTemaChamada(); else if(document.getElementById('plList')) renderPlanos(); }
-function setTema(tid,aid,val){const t=S.temas.find(t=>t.id===tid);t.entregas[aid]=val;save();refreshTemaCtx();}
-function todosEntregaram(tid){const t=S.temas.find(t=>t.id===tid);if(!t)return;Object.keys(t.entregas).forEach(k=>t.entregas[k]=true);save();refreshTemaCtx();toast('Todos marcados como feito');}
-function delTema(id){if(ehProfessor())return toast('Sem permissão');if(confirm('Excluir este tema de casa?')){S.temas=S.temas.filter(t=>t.id!==id);marcarExcluido('temas',id);save();refreshTemaCtx();toast('Tema excluído');}}
-function editarTema(id){
+function faltouNoDia(rec, aid){
+  if(!rec) return false;
+  const s1=(rec.registros||{})[aid]||'presente';
+  if(rec.registros2){ const s2=rec.registros2[aid]||'presente'; return s1==='falta' && s2==='falta'; }
+  return s1==='falta';
+}
+// Entregas de tema que devem aparecer numa aula com data `dataAula`:
+//  - temas com entrega NESTE dia (todos os alunos do tema)
+//  - temas de entrega passada com alunos marcados 'atrasado' (só esses, como pendência que segue até resolver)
+function temasEntregaDaAula(turmaId, dataAula){
+  const res=[];
+  S.temas.filter(t=>t.turmaId===turmaId).forEach(t=>{
+    const ent=t.dataEntrega||t.data;
+    if(ent===dataAula){ const aids=Object.keys(t.entregas||{}); if(aids.length) res.push({tema:t,aids,entregaEra:ent,atrasada:false}); }
+    else if(ent<dataAula){ const aids=Object.keys(t.entregas||{}).filter(aid=>t.entregas[aid]==='atrasado'); if(aids.length) res.push({tema:t,aids,entregaEra:ent,atrasada:true}); }
+  });
+  return res;
+}
+function setTema(tid,aid,val){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');const t=S.temas.find(t=>t.id===tid);t.entregas[aid]=val;save();refreshTemaCtx();}
+function todosEntregaram(tid){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');const t=S.temas.find(t=>t.id===tid);if(!t)return;Object.keys(t.entregas).forEach(k=>t.entregas[k]=true);save();refreshTemaCtx();toast('Todos marcados como feito');}
+function delTema(id){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');if(ehProfessor())return toast('Sem permissão');if(confirm('Excluir este tema de casa?')){S.temas=S.temas.filter(t=>t.id!==id);marcarExcluido('temas',id);save();refreshTemaCtx();toast('Tema excluído');}}
+function editarTema(id){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');
   const t=S.temas.find(x=>x.id===id); if(!t)return;
   modal(`<h3>✏️ Editar tema <button class="close" onclick="fechar()">×</button></h3>
     <div class="field"><label class="lbl">Descrição</label><input type="text" id="etDesc" value="${escAttr(t.descricao)}"></div>
@@ -1183,21 +1209,21 @@ function editarTema(id){
     <button class="btn block" onclick="salvarEdicaoTema('${id}')">Salvar alterações</button>`);
   setTimeout(()=>{const i=document.getElementById('etDesc'); if(i)i.focus();},60);
 }
-function salvarEdicaoTema(id){
+function salvarEdicaoTema(id){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');
   const t=S.temas.find(x=>x.id===id); if(!t)return;
   const d=document.getElementById('etDesc').value.trim(); if(!d)return toast('Descreva o tema');
   t.descricao=d; t.data=document.getElementById('etData').value;
   const en=(document.getElementById('etEntrega')||{}).value; if(en) t.dataEntrega=en;
   save(); fechar(); refreshTemaCtx(); toast('Tema atualizado');
 }
-function trocarEntregaTema(id){
+function trocarEntregaTema(id){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');
   const t=S.temas.find(x=>x.id===id); if(!t)return;
   modal(`<h3>📅 Trocar data de entrega <button class="close" onclick="fechar()">×</button></h3>
     <p class="hint" style="margin:-4px 0 10px">Tema: <b>${escAttr(t.descricao)}</b><br>Entrega atual: ${brDate(t.dataEntrega||t.data)}</p>
     <div class="field"><label class="lbl">Nova data de entrega</label>${selectDataAula('teEntrega',t.turmaId,t.dataEntrega||t.data)}</div>
     <button class="btn block" onclick="salvarEntregaTema('${id}')">Salvar</button>`);
 }
-function salvarEntregaTema(id){
+function salvarEntregaTema(id){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');
   const t=S.temas.find(x=>x.id===id); if(!t)return;
   const en=(document.getElementById('teEntrega')||{}).value; if(!en)return toast('Selecione a data de entrega');
   t.dataEntrega=en; save(); fechar(); refreshTemaCtx(); toast('Data de entrega atualizada');
@@ -1272,8 +1298,8 @@ VIEWS.testes=()=>{
   document.getElementById('teT').onchange=e=>{testeTurma=e.target.value;boletimAluno=null;VIEWS.testes();};
   renderTestesArea(); renderBoletimArea();
 };
-function setTesteData(num,val){ const t=testeDaTurma(testeTurma,num,true); t.data=val; save(); }
-function setTesteNota(num,aid,skill,el){
+function setTesteData(num,val){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas'); const t=testeDaTurma(testeTurma,num,true); t.data=val; save(); }
+function setTesteNota(num,aid,skill,el){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');
   const t=testeDaTurma(testeTurma,num,true);
   let val=el.value===''?'':Math.max(0,Math.min(100,Math.round(+el.value)));
   if(el.value!==''&&val!==+el.value) el.value=val;
@@ -1308,7 +1334,7 @@ function renderTestesArea(){
       const m=mediaTesteAluno(t,a.id), mb=bandaConceito(m==null?'':Math.round(m));
       return `<tr><td style="text-align:left;position:sticky;left:0;background:#fff;white-space:nowrap;padding:4px 8px;font-size:.84rem">${a.nome}</td>
         ${SKILLS.map(s=>{ const val=notaSkill(t,a.id,s), b=bandaConceito(val);
-          return `<td style="padding:2px 3px"><input type="number" min="0" max="100" value="${val}" onchange="setTesteNota(${num},'${a.id}','${s}',this)" style="width:48px;text-align:center;background:${b.bg};color:${b.cor};font-weight:600;border-radius:8px;padding:6px 2px"></td>`; }).join('')}
+          return `<td style="padding:2px 3px"><input type="number" min="0" max="100" value="${val}" ${soLeitura()?'disabled':''} onchange="setTesteNota(${num},'${a.id}','${s}',this)" style="width:48px;text-align:center;background:${b.bg};color:${b.cor};font-weight:600;border-radius:8px;padding:6px 2px"></td>`; }).join('')}
         <td id="tm_${num}_${a.id}" style="text-align:center;font-weight:700;color:${mb.cor}">${m==null?'—':Math.round(m)}</td></tr>`;
     }).join('');
     h+=`</tbody></table></div></div>`;
@@ -1582,7 +1608,7 @@ VIEWS.planos=()=>{
   const v=document.getElementById('view');
   v.innerHTML=`${btnVoltaPainel()}<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Planos de aula</h2></div>
     <p class="sub">Lista dos planos por data. <b>Clique para abrir</b> e ler os itens, o tema e as anotações. Use a busca para ver os já realizados.</p>
-    <button class="btn" style="margin-bottom:14px" onclick="novoPlano(painelTurma||'')">+ Novo plano de aula</button>
+    ${soLeitura()?'':`<button class="btn" style="margin-bottom:14px" onclick="novoPlano(painelTurma||'')">+ Novo plano de aula</button>`}
     <div class="card" style="padding:14px 18px"><input type="text" id="buscaPlano" placeholder="🔎 Buscar plano (título, conteúdo, turma ou data)" value="${escAttr(_buscaPlano)}" oninput="_buscaPlano=this.value;renderPlanos()"></div>
     <div id="plList"></div>`;
   renderPlanos();
@@ -1595,7 +1621,7 @@ function itensPendentesAnteriores(turmaId){
   return (ult.itens||[]).filter(i=>!i.done && !i.virouTema).map(i=>i.txt);
 }
 function atalhoNovoPlano(){ ir('planos'); setTimeout(()=>novoPlano(painelTurma||''),120); }
-function novoPlano(turmaPreset){
+function novoPlano(turmaPreset){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');
   const tp=turmaPreset||primeiraTurma();
   const sug=itensPendentesAnteriores(tp);
   modal(`<h3>🗒️ Novo plano de aula <button class="close" onclick="fechar()">×</button></h3>
@@ -1629,38 +1655,41 @@ function planoCard(p){
   const naofeitos=p.itens.length-feitos;
   const temasEntrega=S.temas.filter(t=>t.turmaId===p.turmaId && (t.dataEntrega||t.data)===p.data);
   const temasPassados=S.temas.filter(t=>t.turmaId===p.turmaId && t.data===p.data);
+  const entregasAula=temasEntregaDaAula(p.turmaId,p.data);
+  const atrasPend=entregasAula.filter(e=>e.atrasada).length;
   const aberto=_planoAberto===p.id;
+  const ro=soLeitura();
   const statusPill=p.realizado?`<span class="pill" style="background:#e7f6ef;color:var(--ok)">✓ realizado</span>`:`<span class="pill" style="background:#fff7e6;color:var(--laranja)">pendente</span>`;
   return `<div class="card" style="padding:0;overflow:hidden">
     <div style="display:flex;align-items:center;gap:8px;padding:14px 16px;cursor:pointer" onclick="togglePlanoAberto('${p.id}')">
-      <div style="flex:1;min-width:140px"><b>${brDate(p.data)}</b> · ${p.titulo}<div class="hint" style="margin-top:2px">${turmaNome(p.turmaId)} · ${feitos}/${p.itens.length} itens · ${statusPill}${temasEntrega.length?` · 📚 ${temasEntrega.length} p/ entregar`:''}${temasPassados.length?` · 📩 ${temasPassados.length} passado(s)`:''}</div></div>
-      <button class="btn ghost sm" onclick="event.stopPropagation();editarPlano('${p.id}')">✏️ editar</button>
+      <div style="flex:1;min-width:140px"><b>${brDate(p.data)}</b> · ${p.titulo}<div class="hint" style="margin-top:2px">${turmaNome(p.turmaId)} · ${feitos}/${p.itens.length} itens · ${statusPill}${temasEntrega.length?` · 📚 ${temasEntrega.length} p/ entregar`:''}${atrasPend?` · ⏰ ${atrasPend} atrasado(s)`:''}${temasPassados.length?` · 📩 ${temasPassados.length} passado(s)`:''}</div></div>
+      ${ro?'':`<button class="btn ghost sm" onclick="event.stopPropagation();editarPlano('${p.id}')">✏️ editar</button>`}
       <span style="opacity:.5;font-size:.8rem">${aberto?'▲':'▼'}</span>
     </div>
     ${aberto?`<div style="padding:0 16px 16px">
       <p class="hint" style="margin:0 0 6px">✅ ${feitos} feito(s) · ⭕ ${naofeitos} não feito(s)</p>
-      <div>${p.itens.map((it,i)=>`<div class="check ${it.done?'done':''}"><input type="checkbox" ${it.done?'checked':''} onchange="togglePlano('${p.id}',${i})"><span>${it.txt}${it.virouTema?' <span class="pill" style="background:#fff0f6;color:var(--rosa)">📩 virou tema</span>':''}</span>${it.virouTema?`<button class="btn ghost sm" style="margin-left:auto;color:var(--laranja)" title="Desfazer: volta a ser item do plano e apaga o tema criado" onclick="desfazerTemaDoPlano('${p.id}',${i})">↩︎ desfazer tema</button>`:`<button class="btn ghost sm" style="margin-left:auto" title="Transformar em tema de casa" onclick="temaDoPlano('${p.id}',${i})">📩 tema</button>`}</div>`).join('')||'<p class="hint">Plano sem itens.</p>'}</div>
+      <div>${p.itens.map((it,i)=>`<div class="check ${it.done?'done':''}"><input type="checkbox" ${it.done?'checked':''} ${ro?'disabled':''} onchange="togglePlano('${p.id}',${i})"><span>${it.txt}${it.virouTema?' <span class="pill" style="background:#fff0f6;color:var(--rosa)">📩 virou tema</span>':''}</span>${ro?'':it.virouTema?`<button class="btn ghost sm" style="margin-left:auto;color:var(--laranja)" title="Desfazer: volta a ser item do plano e apaga o tema criado" onclick="desfazerTemaDoPlano('${p.id}',${i})">↩︎ desfazer tema</button>`:`<button class="btn ghost sm" style="margin-left:auto" title="Transformar em tema de casa" onclick="temaDoPlano('${p.id}',${i})">📩 tema</button>`}</div>`).join('')||'<p class="hint">Plano sem itens.</p>'}</div>
       <div class="card" style="background:#fff0f6;margin-top:12px;border:1px solid #ffd9ea"><h4 style="margin:0 0 8px">📚 Temas para entregar nesta aula</h4>
-        ${temasEntrega.length?temasEntrega.map(t=>`<div style="border-bottom:1px solid #ffd9ea;padding-bottom:10px;margin-bottom:10px">
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px"><b style="flex:1">${escAttr(t.descricao)}</b><span class="pill">passado ${brDate(t.data)}</span></div>
-          ${Object.keys(t.entregas).map(aid=>{const a=S.alunos.find(x=>x.id===aid);const st=t.entregas[aid];
-            return `<div class="check"><span style="flex:1">${a?a.nome:'—'}</span>
+        ${entregasAula.length?entregasAula.map(e=>{const t=e.tema;return `<div style="border-bottom:1px solid #ffd9ea;padding-bottom:10px;margin-bottom:10px">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px"><b style="flex:1">${escAttr(t.descricao)}</b>${e.atrasada?`<span class="pill" style="background:#fff0e6;color:var(--laranja)">⏰ atrasado · entrega era ${brDate(e.entregaEra)}</span>`:`<span class="pill">passado ${brDate(t.data)}</span>`}</div>
+          ${e.aids.map(aid=>{const a=S.alunos.find(x=>x.id===aid);const st=t.entregas[aid];const atras=st==='atrasado';
+            return `<div class="check" style="${atras?'background:#fff7f0;border:1px solid #ffd9b8;border-radius:10px;padding:6px 8px':''}"><span style="flex:1">${a?a.nome:'—'}${atras?' <span class="pill" style="background:#fff0e6;color:var(--laranja)">⏰ atrasado</span>':''}</span>
               <div class="seg"><button class="${st===true?'on-ok':''}" onclick="setTema('${t.id}','${aid}',true)">feito</button>
               <button class="${st==='parcial'?'on-mid':''}" onclick="setTema('${t.id}','${aid}','parcial')">parcial</button>
               <button class="${st===false?'on-no':''}" onclick="setTema('${t.id}','${aid}',false)">não feito</button></div></div>`;}).join('')}
-        </div>`).join(''):'<p class="hint" style="margin:0">Nenhum tema com entrega nesta aula.</p>'}
+        </div>`;}).join(''):'<p class="hint" style="margin:0">Nenhum tema com entrega nesta aula.</p>'}
       </div>
       <div class="card" style="background:#f7f3ff;margin-top:10px;border:1px solid #e6d9ff"><h4 style="margin:0 0 8px">📩 Temas passados nesta aula</h4>
         ${temasPassados.length?temasPassados.map(t=>`<div class="check"><span style="flex:1">${escAttr(t.descricao)} <span class="pill">entrega ${brDate(t.dataEntrega||t.data)}</span></span>
-          <button class="btn ghost sm" title="Trocar data de entrega" onclick="trocarEntregaTema('${t.id}')">📅</button>
-          <button class="btn ghost sm" onclick="editarTema('${t.id}')">✏️</button>
-          ${ehProfessor()?'':`<button class="btn ghost sm" style="color:var(--vermelho)" onclick="delTema('${t.id}')">🗑</button>`}</div>`).join(''):'<p class="hint" style="margin:0 0 8px">Nenhum tema passado nesta aula.</p>'}
-        <button class="btn ghost sm" style="margin-top:8px;color:var(--rosa)" onclick="abrirTemasHub('${p.turmaId}','${p.data}')">📚 Temas</button></div>
-      <div class="field" style="margin-top:12px"><label class="lbl">Anotações</label><textarea onchange="setPlanoCampo('${p.id}','anotacoes',this.value)" placeholder="Observações sobre a aula...">${p.anotacoes||''}</textarea></div>
+          ${ro?'':`<button class="btn ghost sm" title="Trocar data de entrega" onclick="trocarEntregaTema('${t.id}')">📅</button>
+          <button class="btn ghost sm" onclick="editarTema('${t.id}')">✏️</button>`}
+          ${(ehProfessor()||ro)?'':`<button class="btn ghost sm" style="color:var(--vermelho)" onclick="delTema('${t.id}')">🗑</button>`}</div>`).join(''):'<p class="hint" style="margin:0 0 8px">Nenhum tema passado nesta aula.</p>'}
+        ${ro?'':`<button class="btn ghost sm" style="margin-top:8px;color:var(--rosa)" onclick="abrirTemasHub('${p.turmaId}','${p.data}')">📚 Temas</button>`}</div>
+      <div class="field" style="margin-top:12px"><label class="lbl">Anotações</label><textarea ${ro?'readonly':''} onchange="setPlanoCampo('${p.id}','anotacoes',this.value)" placeholder="Observações sobre a aula...">${p.anotacoes||''}</textarea></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center">
-        ${p.realizado?`<button class="btn ghost sm" onclick="reabrirPlano('${p.id}')">↩︎ reabrir</button>`:`<button class="btn sm" onclick="marcarPlanoFeito('${p.id}')">✓ marcar como feito</button>`}
+        ${ro?'':p.realizado?`<button class="btn ghost sm" onclick="reabrirPlano('${p.id}')">↩︎ reabrir</button>`:`<button class="btn sm" onclick="marcarPlanoFeito('${p.id}')">✓ marcar como feito</button>`}
         <button class="btn amarelo sm" onclick="gerarRelatorioDoPlano('${p.id}')">🧾 Gerar relatório</button>
-        ${ehProfessor()?'':`<button class="btn ghost sm" style="color:var(--vermelho);margin-left:auto" onclick="delPlano('${p.id}')">🗑 Excluir</button>`}
+        ${(ehProfessor()||ro)?'':`<button class="btn ghost sm" style="color:var(--vermelho);margin-left:auto" onclick="delPlano('${p.id}')">🗑 Excluir</button>`}
       </div>
     </div>`:''}
   </div>`;
@@ -1683,16 +1712,16 @@ function renderPlanos(){
   html += feitos.length ? feitos.map(planoCard).join('') : '<p class="hint" style="margin:0">Nenhum plano realizado ainda.</p>';
   list.innerHTML=html;
 }
-function marcarPlanoFeito(pid){const p=S.planos.find(p=>p.id===pid);if(!p)return;p.realizado=true;p.realizadoEm=hoje();save();renderPlanos();toast('Plano marcado como feito');}
+function marcarPlanoFeito(pid){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');const p=S.planos.find(p=>p.id===pid);if(!p)return;p.realizado=true;p.realizadoEm=hoje();save();renderPlanos();toast('Plano marcado como feito');}
 function gerarRelatorioDoPlano(pid){
   const p=S.planos.find(x=>x.id===pid); if(!p)return;
   upsertRelatorio(p.turmaId,p.data,corpoRelatorioDia(p.turmaId,p.data));
   save(); toast('Relatório gerado — veja em Avisos');
 }
-function reabrirPlano(pid){const p=S.planos.find(p=>p.id===pid);if(!p)return;p.realizado=false;p.realizadoEm=null;save();renderPlanos();toast('Plano reaberto');}
-function togglePlano(pid,i){const p=S.planos.find(p=>p.id===pid);p.itens[i].done=!p.itens[i].done;save();renderPlanos();}
-function setPlanoCampo(pid,campo,val){const p=S.planos.find(p=>p.id===pid);p[campo]=val;save();}
-function delPlano(pid){if(ehProfessor())return toast('Sem permissão');if(confirm('Excluir este plano?')){S.planos=S.planos.filter(p=>p.id!==pid);marcarExcluido('planos',pid);save();renderPlanos();toast('Plano excluído');}}
+function reabrirPlano(pid){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');const p=S.planos.find(p=>p.id===pid);if(!p)return;p.realizado=false;p.realizadoEm=null;save();renderPlanos();toast('Plano reaberto');}
+function togglePlano(pid,i){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');const p=S.planos.find(p=>p.id===pid);p.itens[i].done=!p.itens[i].done;save();renderPlanos();}
+function setPlanoCampo(pid,campo,val){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');const p=S.planos.find(p=>p.id===pid);p[campo]=val;save();}
+function delPlano(pid){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');if(ehProfessor())return toast('Sem permissão');if(confirm('Excluir este plano?')){S.planos=S.planos.filter(p=>p.id!==pid);marcarExcluido('planos',pid);save();renderPlanos();toast('Plano excluído');}}
 function editarPlano(id){
   const p=S.planos.find(x=>x.id===id); if(!p)return;
   modal(`<h3>✏️ Editar plano <button class="close" onclick="fechar()">×</button></h3>
@@ -1927,7 +1956,7 @@ function alunosSelect(id,turmaId,sel){
   if(!als.length)return `<select id="${id}"><option value="">(sem alunos)</option></select>`;
   return `<select id="${id}">${als.map(a=>`<option value="${a.id}" ${a.id===sel?'selected':''}>${a.nome}</option>`).join('')}</select>`;
 }
-function temaExtraTurma(turmaId){ _temaPlanoRef=null; modalTema(turmaId,'',hoje(),'extra'); }
+function temaExtraTurma(turmaId){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas'); _temaPlanoRef=null; modalTema(turmaId,'',hoje(),'extra'); }
 /* ===== AULAS VIP (aulas avulsas por aluno) ===== */
 let vipSel=null;
 function fmtDur(min){ min=+min||0; const h=Math.floor(min/60), m=min%60; if(!min)return '0min'; return (h?h+'h':'')+(m?(h?' ':'')+m+'min':''); }
@@ -2047,10 +2076,10 @@ function corpoRelatorioAluno(alunoId,turmaId,de,ate){
   const temas=temasNaoFeitosDoAluno(alunoId,turmaId).filter(t=>inRange(t.data)), coms=comentariosDoAluno(alunoId).filter(c=>inRange(c.data));
   const atrasos=atrasosDoAluno(alunoId,turmaId).filter(inRange), saidas=saidasCedoDoAluno(alunoId,turmaId).filter(inRange);
   const peso=pesoFalta(turmaId);
-  const baseF=(aluno.saldo&&aluno.saldo.faltas)||0, totalF=baseF+faltas.length;
+  const baseF=Number(aluno.faltasRetro)||0, totalF=baseF+faltas.length;
   let txt=`RELATÓRIO DO ALUNO\n${aluno.nome}\nTurma: ${turma.nome}${turma.professor?' · Prof. '+turma.professor:''}\nPeríodo: ${de?brDate(de):'início'} a ${ate?brDate(ate):'hoje'}\nGerado em ${brDate(hoje())} por ${S.usuario}\n`;
   txt+=`\n📋 FALTAS (${totalF}${peso===2?` — turma com 2 aulas por encontro`:''})\n`;
-  if(baseF) txt+=`• ${baseF} falta(s) no histórico importado do Sponte (até a importação)\n`;
+  if(baseF) txt+=`• ${baseF} falta(s) retroativas (registro manual)\n`;
   if(faltas.length) faltas.forEach(d=>{ txt+=`• ${brDate(d)} — conteúdo da aula: ${resumoAulaDoDia(turmaId,d)}\n`; });
   if(!totalF) txt+=`• Nenhuma falta registrada.\n`;
   txt+=`\n⏰ CHEGOU ATRASADO (${atrasos.length})\n`;
@@ -2078,7 +2107,7 @@ function montarRelatorioHTML(alunoId, turmaId, de, ate){
   const temas=temasNaoFeitosDoAluno(alunoId,turmaId).filter(t=>inRange(t.data));
   const coms=comentariosDoAluno(alunoId).filter(c=>inRange(c.data));
   const peso=pesoFalta(turmaId);
-  const baseF=(aluno.saldo&&aluno.saldo.faltas)||0;
+  const baseF=Number(aluno.faltasRetro)||0;
   const totalF=baseF+faltas.length;
   const testes=S.testes.filter(t=>t.turmaId===turmaId && t.notas && t.notas[alunoId] && SKILLS.some(s=>t.notas[alunoId][s]!==''&&t.notas[alunoId][s]!=null)).sort((a,b)=>(a.numero||0)-(b.numero||0));
   const tile=(v,k)=>`<div class="st"><div class="v">${v}</div><div class="k">${k}</div></div>`;
@@ -2102,7 +2131,7 @@ function montarRelatorioHTML(alunoId, turmaId, de, ate){
     <div class="meta">${esc(turma.nome)}${turma.cefr?' · Nível '+esc(turma.cefr):''}${turma.professor?' · Prof. '+esc(turma.professor):''}<br>Período: ${periodo} · Emitido em ${brDate(hoje())} por ${esc(S.usuario)}</div></div>
   <div class="sec"><h2>Resumo do período</h2>${statsHTML}${peso===2?`<div class="leg">Turma de 1 encontro por semana, com 2 aulas no mesmo dia: cada aula conta como uma presença.</div>`:''}</div>
   <div class="sec"><h2>Resultados de testes</h2>${notasHTML}</div>
-  <div class="sec"><h2>Faltas — com o conteúdo da aula (${totalF})</h2>${baseF?`<div class="leg" style="margin-bottom:8px">Inclui <b>${baseF} falta(s)</b> do histórico importado do Sponte (até a importação). As datas abaixo são as faltas registradas no app durante o período.</div>`:''}${lista(faltas,d=>`<li><span class="d">${brDate(d)}</span><span>${esc(resumoAulaDoDia(turmaId,d))}</span></li>`)}</div>
+  <div class="sec"><h2>Faltas — com o conteúdo da aula (${totalF})</h2>${baseF?`<div class="leg" style="margin-bottom:8px">Inclui <b>${baseF} falta(s) retroativas</b> (registro manual). As datas abaixo são as faltas registradas no app durante o período.</div>`:''}${lista(faltas,d=>`<li><span class="d">${brDate(d)}</span><span>${esc(resumoAulaDoDia(turmaId,d))}</span></li>`)}</div>
   <div class="sec"><h2>Atrasos (${atrasos.length}) e saídas antecipadas (${saidas.length})</h2>
     <div class="skills"><div><div class="leg" style="margin:0 0 6px">Atrasos</div>${lista(atrasos,d=>`<li><span class="d">${brDate(d)}</span></li>`)}</div><div><div class="leg" style="margin:0 0 6px">Saídas antecipadas</div>${lista(saidas,d=>`<li><span class="d">${brDate(d)}</span></li>`)}</div></div></div>
   <div class="sec"><h2>Material não trazido (${mat.length})</h2>${lista(mat,d=>`<li><span class="d">${brDate(d)}</span></li>`)}</div>
@@ -2271,9 +2300,9 @@ function confirmaMover(id,q){const t=S.tarefas.find(t=>t.id===id);t.quad=q;save(
 VIEWS.turmas=()=>{
   painelTurma=null;
   const v=document.getElementById('view');
-  const ehProf=ehProfessor();
+  const ehProf=ehProfessor()||soLeitura();
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Turmas e alunos</h2></div>
-    <p class="sub">${ehProf?'Suas turmas. Toque numa turma para abrir o painel (chamada, plano, material, temas, testes).':'Todas as turmas da escola. Toque numa turma para abrir o painel; ou cadastre uma nova.'}</p>
+    <p class="sub">${soLeitura()?'Todas as turmas da escola — <b>somente leitura</b>. Você pode consultar tudo e gerar relatórios, mas não editar.':ehProfessor()?'Suas turmas. Toque numa turma para abrir o painel (chamada, plano, material, temas, testes).':'Todas as turmas da escola. Toque numa turma para abrir o painel; ou cadastre uma nova.'}</p>
     ${ehProf?'':`<div class="card"><h3>Nova turma</h3><div class="row">
       <div style="flex:2"><label class="lbl">Nome da turma</label><input type="text" id="nT" placeholder="Ex: A2 ADULTS NOITE"></div>
       <div><label class="lbl">Categoria</label><select id="nN"><option value="kids">kids</option><option value="junior">junior</option><option value="teens" selected>teens</option><option value="adults">adults</option><option value="talking">talking</option></select></div>
@@ -2293,7 +2322,7 @@ VIEWS.turmas=()=>{
 };
 let _buscaAluno='';
 function filtrarAlunos(v){ _buscaAluno=v; renderTurmaList(); }
-function addTurma(){
+function addTurma(){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');
   if(ehProfessor())return toast('Sem permissão');
   const nome=document.getElementById('nT').value.trim();
   if(!nome)return toast('Dê um nome à turma');
@@ -2317,7 +2346,7 @@ function renderTurmaList(){
     list.innerHTML = res.length
       ? `<div class="card"><h3>${res.length} aluno(s) encontrado(s)</h3>`+
         res.map(r=>`<div class="check"><span>${r.a.nome} <span class="pill">${r.t.nome}</span></span>
-          ${ehProfessor()?'':`<button class="btn ghost sm" onclick="delAluno('${r.a.id}')">remover</button>`}</div>`).join('')+`</div>`
+          ${(ehProfessor()||soLeitura())?'':`<button class="btn ghost sm" onclick="delAluno('${r.a.id}')">remover</button>`}</div>`).join('')+`</div>`
       : `<div class="card empty"><div class="big">🔎</div>Nenhum aluno encontrado para “${_buscaAluno}”.</div>`;
     return;
   }
@@ -2358,7 +2387,7 @@ function renderPainelTurma(){
   const temasPend=S.temas.filter(x=>x.turmaId===id && Object.values(x.entregas).some(v=>v===false||v==='parcial')).length;
   const btn=(cor,acao,emoji,titulo,sub)=>`<button class="btn block" style="background:${cor};justify-content:flex-start;text-align:left;margin-bottom:10px;height:auto;padding:14px 16px" onclick="paAcao('${acao}')">${emoji} ${titulo}<span style="display:block;font-weight:400;font-size:.78rem;opacity:.85;margin-top:2px">${sub}</span></button>`;
   const v=document.getElementById('view');
-  const podeCadastrar=!ehProfessor();
+  const podeCadastrar=(S.perfil==='direcao');
   v.innerHTML=`<button class="btn ghost sm" onclick="voltarTurmas()">‹ Voltar para turmas</button>
     <div class="section-title" style="margin-top:10px"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">${t.nome}</h2></div>
     <p class="sub">${nivelTag(t.nivel)}${t.cefr?` <span class="tag teens">${t.cefr}</span>`:''} · ${als.length} aluno(s)${t.professor?' · Prof. '+t.professor:''}${diasTurmaLabel(t)?' · '+diasTurmaLabel(t):''}${t.horario?' · '+t.horario:''} · ${freq}</p>
@@ -2371,28 +2400,40 @@ function renderPainelTurma(){
       </div>
       <p class="hint" style="margin:2px 0 0">Última chamada: ${ultTxt}${prox?` · Próximo plano: <b>${prox.titulo}</b> (${brDate(prox.data)})`:''}</p>
     </div>
-    <div class="card"><h3>O que você quer fazer?</h3>
+    <div class="card"><h3>O que você quer fazer?</h3>${soLeitura()?'<p class="hint" style="margin:-2px 0 8px;color:var(--azul)">👁️ Acesso de leitura: você pode <b>consultar</b> a chamada, os planos e os testes, e <b>gerar relatórios</b> — mas alterações não são salvas.</p>':''}
       ${btn('var(--azul)','presenca','📋','Chamada do dia','presença, atraso, saída antecipada, material e tema de casa — tudo aqui')}
       ${btn('var(--azul)','planos','🗒️','Planos de aula','ver o plano pendente e marcar como feito; criar novos')}
       ${btn('var(--roxo)','testes','✏️','Testes','lançar as notas da turma')}
-      <button class="btn block" style="background:var(--rosa);justify-content:flex-start;text-align:left;margin-bottom:10px;height:auto;padding:14px 16px" onclick="temaExtraTurma('${id}')">📩 Tema extra<span style="display:block;font-weight:400;font-size:.78rem;opacity:.85;margin-top:2px">atribuir um tema de casa à turma toda ou a alunos específicos</span></button>
+      ${soLeitura()?'':`<button class="btn block" style="background:var(--rosa);justify-content:flex-start;text-align:left;margin-bottom:10px;height:auto;padding:14px 16px" onclick="temaExtraTurma('${id}')">📩 Tema extra<span style="display:block;font-weight:400;font-size:.78rem;opacity:.85;margin-top:2px">atribuir um tema de casa à turma toda ou a alunos específicos</span></button>`}
       ${btn('var(--vermelho)','relatorio','🧾','Relatório do dia','gerar o resumo da aula para enviar às famílias')}
     </div>
     <div class="card"><h3>Alunos (${als.length})</h3>
       ${podeCadastrar?'<p class="hint" style="margin:0 0 8px">E-mail do responsável (usado para enviar o relatório da aula).</p>':''}
       ${als.map(a=>`<div style="padding:8px 0;border-bottom:1px dashed var(--linha)"><div style="display:flex;align-items:center;gap:8px"><span style="flex:1">${a.nome}${idadeDe(a.nascimento)!=null?` <span class="pill">${idadeDe(a.nascimento)} anos</span>`:''}${a.arquivado?' <span class="pill" style="background:#eee;color:#888">arquivado</span>':''}</span>${podeCadastrar?`<button class="btn ghost sm" onclick="toggleArquivarAluno('${a.id}')">${a.arquivado?'reativar':'arquivar'}</button><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delAluno('${a.id}')">remover</button>`:''}</div>
         ${a.saldo?`<p class="hint" style="margin:4px 0 0">saldo inicial: ${a.saldo.dadas} aula(s) · ${a.saldo.presencas} presença(s) · ${a.saldo.faltas} falta(s)</p>`:''}
-        ${podeCadastrar?`<div class="row" style="margin-top:6px"><div style="flex:2"><input type="email" value="${escAttr(a.email||'')}" placeholder="email.responsavel@exemplo.com" style="font-size:.85rem" onchange="setAlunoEmail('${a.id}',this.value)"></div><div><input type="date" value="${escAttr(a.nascimento||'')}" title="Data de nascimento" style="font-size:.85rem" onchange="setAlunoNascimento('${a.id}',this.value)"></div></div>`:''}</div>`).join('')||'<p class="hint">Sem alunos ainda.</p>'}
+        ${podeCadastrar?`<div class="row" style="margin-top:6px"><div style="flex:2"><input type="email" value="${escAttr(a.email||'')}" placeholder="email.responsavel@exemplo.com" style="font-size:.85rem" onchange="setAlunoEmail('${a.id}',this.value)"></div><div><input type="date" value="${escAttr(a.nascimento||'')}" title="Data de nascimento" style="font-size:.85rem" onchange="setAlunoNascimento('${a.id}',this.value)"></div></div>`:''}${faltasRetroLinha(a)}</div>`).join('')||'<p class="hint">Sem alunos ainda.</p>'}
       ${podeCadastrar?`<div class="row" style="margin-top:12px"><div style="flex:3"><input type="text" id="al_${id}" placeholder="Nome do novo aluno" onkeydown="if(event.key==='Enter')addAluno('${id}')"></div>
       <button class="btn ghost" onclick="addAluno('${id}')">+ Aluno</button></div>`:''}</div>
     ${podeCadastrar?`<div style="display:flex;gap:8px;margin-top:6px"><button class="btn ghost sm" onclick="toggleArquivarTurma('${id}')">${t.arquivada?'Reativar turma':'Arquivar turma'}</button><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delTurma('${id}')">Excluir turma</button></div>`:''}`;
   window.scrollTo(0,0);
 }
 function _refreshTurmas(){ if(painelTurma) renderPainelTurma(); else renderTurmaList(); }
-function setAlunoEmail(id,val){const a=S.alunos.find(x=>x.id===id);if(!a)return;a.email=(val||'').trim();save();}
-function setAlunoNascimento(id,val){ if(ehProfessor())return; const a=S.alunos.find(x=>x.id===id); if(!a)return; a.nascimento=(val||'').trim(); save(); _refreshTurmas(); }
-function toggleArquivarAluno(id){ if(ehProfessor())return toast('Sem permissão'); const a=S.alunos.find(x=>x.id===id); if(!a)return; a.arquivado=!a.arquivado; save(); _refreshTurmas(); montarNav(); toast(a.arquivado?'Aluno arquivado':'Aluno reativado'); }
-function toggleArquivarTurma(id){ if(ehProfessor())return toast('Sem permissão'); const t=S.turmas.find(x=>x.id===id); if(!t)return; t.arquivada=!t.arquivada; if(t.arquivada && painelTurma===id) painelTurma=null; save(); VIEWS.turmas(); montarNav(); toast(t.arquivada?'Turma arquivada':'Turma reativada'); }
+function setAlunoEmail(id,val){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');const a=S.alunos.find(x=>x.id===id);if(!a)return;a.email=(val||'').trim();save();}
+function setAlunoNascimento(id,val){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas'); if(ehProfessor())return; const a=S.alunos.find(x=>x.id===id); if(!a)return; a.nascimento=(val||'').trim(); save(); _refreshTurmas(); }
+function setFaltasRetro(id,val){
+  if(S.perfil!=='direcao')return toast('Só a direção edita as faltas retroativas');
+  const a=S.alunos.find(x=>x.id===id); if(!a)return;
+  a.faltasRetro=Math.max(0,Math.round(+val||0)); save(); _refreshTurmas();
+}
+function faltasRetroLinha(a){
+  const val=(a.faltasRetro!=null?a.faltasRetro:0);
+  const ctrl=(S.perfil==='direcao')
+    ? '<input type="number" min="0" value="'+val+'" style="width:70px;text-align:center;font-size:.9rem" onchange="setFaltasRetro(\''+a.id+'\',this.value)">'
+    : '<b>'+val+'</b>';
+  return '<div style="margin-top:6px;display:flex;align-items:center;gap:8px;background:#fff8e6;border:1px dashed #e0b400;border-radius:8px;padding:6px 8px"><span style="flex:1;font-size:.82rem">⏪ <b>Faltas retroativas</b> <span class="hint">(manual · substitui o histórico do Sponte · removível depois)</span></span>'+ctrl+'</div>';
+}
+function toggleArquivarAluno(id){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas'); if(ehProfessor())return toast('Sem permissão'); const a=S.alunos.find(x=>x.id===id); if(!a)return; a.arquivado=!a.arquivado; save(); _refreshTurmas(); montarNav(); toast(a.arquivado?'Aluno arquivado':'Aluno reativado'); }
+function toggleArquivarTurma(id){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas'); if(ehProfessor())return toast('Sem permissão'); const t=S.turmas.find(x=>x.id===id); if(!t)return; t.arquivada=!t.arquivada; if(t.arquivada && painelTurma===id) painelTurma=null; save(); VIEWS.turmas(); montarNav(); toast(t.arquivada?'Turma arquivada':'Turma reativada'); }
 function toggleVerArquivadas(){ _verArquivadas=!_verArquivadas; if(painelTurma) renderPainelTurma(); else VIEWS.turmas(); }
 /* ---- Importação do Sponte (aditiva, com preview e trava anti-sobrescrita) ---- */
 function _matchTurma(nome){ const n=_normTxt(nome).trim(); return S.turmas.find(t=>_normTxt(t.nome).trim()===n); }
@@ -2433,14 +2474,14 @@ function aplicarImportSponte(){
   save(); fechar(); VIEWS.turmas(); montarNav();
   toast(`Importado: ${nt} turma(s), ${na} aluno(s)`);
 }
-function addAluno(turmaId){
+function addAluno(turmaId){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');
   if(ehProfessor())return toast('Sem permissão');
   const inp=document.getElementById('al_'+turmaId);
   const nome=inp.value.trim();if(!nome)return toast('Digite o nome');
   S.alunos.push({id:uid(),nome,turmaId});save();_refreshTurmas();montarNav();toast('Aluno adicionado');
 }
-function delAluno(id){if(ehProfessor())return toast('Sem permissão');if(confirm('Remover este aluno?')){S.alunos=S.alunos.filter(a=>a.id!==id);marcarExcluido('alunos',id);save();_refreshTurmas();montarNav();}}
-function delTurma(id){if(ehProfessor())return toast('Sem permissão');if(confirm('Excluir turma e seus alunos?')){S.alunos.filter(a=>a.turmaId===id).forEach(a=>marcarExcluido('alunos',a.id));marcarExcluido('turmas',id);S.turmas=S.turmas.filter(t=>t.id!==id);S.alunos=S.alunos.filter(a=>a.turmaId!==id);painelTurma=null;save();VIEWS.turmas();montarNav();toast('Turma excluída');}}
+function delAluno(id){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');if(ehProfessor())return toast('Sem permissão');if(confirm('Remover este aluno?')){S.alunos=S.alunos.filter(a=>a.id!==id);marcarExcluido('alunos',id);save();_refreshTurmas();montarNav();}}
+function delTurma(id){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');if(ehProfessor())return toast('Sem permissão');if(confirm('Excluir turma e seus alunos?')){S.alunos.filter(a=>a.turmaId===id).forEach(a=>marcarExcluido('alunos',a.id));marcarExcluido('turmas',id);S.turmas=S.turmas.filter(t=>t.id!==id);S.alunos=S.alunos.filter(a=>a.turmaId!==id);painelTurma=null;save();VIEWS.turmas();montarNav();toast('Turma excluída');}}
 function resetarSeguro(){
   modal(`<h3>⚠️ Restaurar dados originais <button class="close" onclick="fechar()">×</button></h3>
     <p class="hint" style="margin-bottom:12px">Isto <b>apaga todos os dados atuais</b> (chamadas, temas, planos, testes, comentários…) e volta à base inicial de turmas. Um <b>backup será baixado automaticamente</b> antes de apagar.</p>
