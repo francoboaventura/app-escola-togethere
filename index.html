@@ -356,6 +356,7 @@ function migrar(s){
   (s.turmas||[]).forEach(t=>{ if(typeof t.arquivada==='undefined') t.arquivada=false; });
   s.comentarios=s.comentarios||[]; // garante campos novos
   s.relatorios=s.relatorios||[];
+  s.exclusoes=s.exclusoes||[];     // marcas de exclusão (para sincronização entre aparelhos)
   s.boletins=s.boletins||[];
   s.aulasVip=s.aulasVip||[];
   s.vipAlunos=s.vipAlunos||[];
@@ -396,7 +397,7 @@ function migrar(s){
 const CLOUD_URL    = 'https://script.google.com/macros/s/AKfycbylxwXqDh5ohAL4qLTn7WBQAu4juwt2bwgdiuGHDl1Ll3d1ViK-mdbeMghnG4UH3GNH/exec';
 const TKEY='togethere_token', UKEY='togethere_user', PKEY='togethere_perfil';
 let CLOUD_TOKEN = (function(){ try{ return localStorage.getItem(TKEY)||null; }catch(e){ return null; } })();
-const APP_VERSAO = '2026.06.19 · b28';   // aparece no rodapé; mude a cada publicação no GitHub
+const APP_VERSAO = '2026.06.19 · b29';   // aparece no rodapé; mude a cada publicação no GitHub
 const LOGO_B64 = 'data:image/png;base64,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';
 /* ============================================================================ */
 let _syncTimer=null;
@@ -422,10 +423,52 @@ function temAtividade(s){
   return ['presencas','material','temas','testes','contatos','planos','comentarios','atas','tarefas','relatorios','vipAlunos','aulasVip','boletins']
     .some(k=>Array.isArray(s[k]) && s[k].length);
 }
-function cloudPut(force){
-  if(!cloudOn()) return Promise.resolve();
-  if(!CLOUD_TOKEN) return Promise.resolve();                      // só sincroniza quem está logado
+const MERGE_COLS=['usuarios','turmas','alunos','presencas','material','temas','testes','contatos','planos','comentarios','atas','tarefas','relatorios','vipAlunos','aulasVip','boletins'];
+function marcarExcluido(col,id){
+  if(id==null) return;
+  S.exclusoes=S.exclusoes||[];
+  S.exclusoes.push({col,id,ts:Date.now()});
+  if(S.exclusoes.length>3000) S.exclusoes=S.exclusoes.slice(-3000);
+}
+function _keyItem(col,it){
+  if(col==='usuarios') return 'u:'+((it&&it.nome)||'');
+  if(it && it.id!=null) return 'i:'+it.id;
+  return 'j:'+JSON.stringify(it);
+}
+// Junta o estado da nuvem com o local SEM perder dados de outros aparelhos:
+// união por id (o local vence em caso de mesmo id), e respeita as marcas de exclusão.
+function mergeEstados(cloud, local){
+  const out=Object.assign({}, cloud, local);   // campos simples: local vence
+  const tomb={};
+  [].concat(cloud.exclusoes||[], local.exclusoes||[]).forEach(t=>{ (tomb[t.col]=tomb[t.col]||new Set()).add(t.id); });
+  MERGE_COLS.forEach(col=>{
+    const map=new Map();
+    (Array.isArray(cloud[col])?cloud[col]:[]).forEach(it=>map.set(_keyItem(col,it),it));
+    (Array.isArray(local[col])?local[col]:[]).forEach(it=>map.set(_keyItem(col,it),it)); // local vence
+    let arr=[...map.values()];
+    if(tomb[col]) arr=arr.filter(it=>!(it && it.id!=null && tomb[col].has(it.id)));
+    out[col]=arr;
+  });
+  const seen=new Set(), mt=[];
+  [].concat(cloud.exclusoes||[], local.exclusoes||[]).forEach(t=>{ const k=t.col+'|'+t.id; if(!seen.has(k)){ seen.add(k); mt.push(t); } });
+  out.exclusoes=mt.slice(-3000);
+  return out;
+}
+async function cloudPut(force){
+  if(!cloudOn()) return;
+  if(!CLOUD_TOKEN) return;                      // só sincroniza quem está logado
   marcarSync('...');
+  if(!force){
+    try{
+      const cur=await cloudGet(7000);
+      if(cur.ok && cur.state && Array.isArray(cur.state.usuarios) && cur.state.usuarios.length){
+        const u=S.usuario, p=S.perfil;
+        S=mergeEstados(cur.state, S); S.usuario=u; S.perfil=p;
+        localStorage.setItem(KEY,JSON.stringify(S));
+      } else if(cur.auth){ marcarSync('off'); toast('Sessão expirada. Saia e entre novamente.'); return {ok:false,erro:'auth'}; }
+      // nuvem vazia ou offline → segue e envia o local (melhor esforço)
+    }catch(e){}
+  }
   const limpo=Object.assign({},S,{usuario:null,perfil:null});   // sessão não vai para a nuvem
   const url=CLOUD_URL+'?action=put&token='+encodeURIComponent(CLOUD_TOKEN)+(force?'&force=1':'');
   return fetch(url,{
@@ -551,6 +594,7 @@ function seed(){
     atas:[],
     tarefas:[],
     relatorios:[],
+    exclusoes:[],
     vipAlunos:[],
     aulasVip:[],
     boletins:[],
@@ -1089,6 +1133,14 @@ function criarTema(turmaId,origem){
 }
 let _temaPlanoRef=null;
 function temaDoPlano(pid,i){ const p=S.planos.find(p=>p.id===pid); if(!p)return; _temaPlanoRef={pid,i}; modalTema(p.turmaId,p.itens[i].txt,p.data,'plano'); }
+function desfazerTemaDoPlano(pid,i){
+  const p=S.planos.find(p=>p.id===pid); if(!p||!p.itens[i])return;
+  if(!confirm('Desfazer o tema deste item? O item volta a fazer parte do plano e o tema criado é apagado.'))return;
+  const it=p.itens[i];
+  if(it.temaId){ S.temas=S.temas.filter(t=>t.id!==it.temaId); marcarExcluido('temas',it.temaId); }
+  it.virouTema=false; delete it.temaId;
+  save(); renderPlanos(); toast('Tema desfeito — item voltou ao plano');
+}
 function temaExtraDoPlano(pid){ const p=S.planos.find(p=>p.id===pid); if(!p)return; _temaPlanoRef=null; modalTema(p.turmaId,'',p.data,'extra'); }
 function renderTemas(){
   const list=document.getElementById('tList');
@@ -1121,7 +1173,7 @@ function renderTemas(){
 function refreshTemaCtx(){ if(document.getElementById('tList')) renderTemas(); else if(document.getElementById('pTema')) renderTemaChamada(); else if(document.getElementById('plList')) renderPlanos(); }
 function setTema(tid,aid,val){const t=S.temas.find(t=>t.id===tid);t.entregas[aid]=val;save();refreshTemaCtx();}
 function todosEntregaram(tid){const t=S.temas.find(t=>t.id===tid);if(!t)return;Object.keys(t.entregas).forEach(k=>t.entregas[k]=true);save();refreshTemaCtx();toast('Todos marcados como feito');}
-function delTema(id){if(ehProfessor())return toast('Sem permissão');if(confirm('Excluir este tema de casa?')){S.temas=S.temas.filter(t=>t.id!==id);save();refreshTemaCtx();toast('Tema excluído');}}
+function delTema(id){if(ehProfessor())return toast('Sem permissão');if(confirm('Excluir este tema de casa?')){S.temas=S.temas.filter(t=>t.id!==id);marcarExcluido('temas',id);save();refreshTemaCtx();toast('Tema excluído');}}
 function editarTema(id){
   const t=S.temas.find(x=>x.id===id); if(!t)return;
   modal(`<h3>✏️ Editar tema <button class="close" onclick="fechar()">×</button></h3>
@@ -1587,7 +1639,7 @@ function planoCard(p){
     </div>
     ${aberto?`<div style="padding:0 16px 16px">
       <p class="hint" style="margin:0 0 6px">✅ ${feitos} feito(s) · ⭕ ${naofeitos} não feito(s)</p>
-      <div>${p.itens.map((it,i)=>`<div class="check ${it.done?'done':''}"><input type="checkbox" ${it.done?'checked':''} onchange="togglePlano('${p.id}',${i})"><span>${it.txt}${it.virouTema?' <span class="pill" style="background:#fff0f6;color:var(--rosa)">📩 virou tema</span>':''}</span><button class="btn ghost sm" style="margin-left:auto" title="Transformar em tema de casa" onclick="temaDoPlano('${p.id}',${i})">📩 tema</button></div>`).join('')||'<p class="hint">Plano sem itens.</p>'}</div>
+      <div>${p.itens.map((it,i)=>`<div class="check ${it.done?'done':''}"><input type="checkbox" ${it.done?'checked':''} onchange="togglePlano('${p.id}',${i})"><span>${it.txt}${it.virouTema?' <span class="pill" style="background:#fff0f6;color:var(--rosa)">📩 virou tema</span>':''}</span>${it.virouTema?`<button class="btn ghost sm" style="margin-left:auto;color:var(--laranja)" title="Desfazer: volta a ser item do plano e apaga o tema criado" onclick="desfazerTemaDoPlano('${p.id}',${i})">↩︎ desfazer tema</button>`:`<button class="btn ghost sm" style="margin-left:auto" title="Transformar em tema de casa" onclick="temaDoPlano('${p.id}',${i})">📩 tema</button>`}</div>`).join('')||'<p class="hint">Plano sem itens.</p>'}</div>
       <div class="card" style="background:#fff0f6;margin-top:12px;border:1px solid #ffd9ea"><h4 style="margin:0 0 8px">📚 Temas para entregar nesta aula</h4>
         ${temasEntrega.length?temasEntrega.map(t=>`<div style="border-bottom:1px solid #ffd9ea;padding-bottom:10px;margin-bottom:10px">
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:6px"><b style="flex:1">${escAttr(t.descricao)}</b><span class="pill">passado ${brDate(t.data)}</span></div>
@@ -1640,7 +1692,7 @@ function gerarRelatorioDoPlano(pid){
 function reabrirPlano(pid){const p=S.planos.find(p=>p.id===pid);if(!p)return;p.realizado=false;p.realizadoEm=null;save();renderPlanos();toast('Plano reaberto');}
 function togglePlano(pid,i){const p=S.planos.find(p=>p.id===pid);p.itens[i].done=!p.itens[i].done;save();renderPlanos();}
 function setPlanoCampo(pid,campo,val){const p=S.planos.find(p=>p.id===pid);p[campo]=val;save();}
-function delPlano(pid){if(ehProfessor())return toast('Sem permissão');if(confirm('Excluir este plano?')){S.planos=S.planos.filter(p=>p.id!==pid);save();renderPlanos();toast('Plano excluído');}}
+function delPlano(pid){if(ehProfessor())return toast('Sem permissão');if(confirm('Excluir este plano?')){S.planos=S.planos.filter(p=>p.id!==pid);marcarExcluido('planos',pid);save();renderPlanos();toast('Plano excluído');}}
 function editarPlano(id){
   const p=S.planos.find(x=>x.id===id); if(!p)return;
   modal(`<h3>✏️ Editar plano <button class="close" onclick="fechar()">×</button></h3>
@@ -1736,7 +1788,15 @@ function renderRelHist(){
   if(!rs.length){ box.innerHTML='<p class="hint">'+(q?'Nenhum relatório encontrado.':'Nenhum relatório anterior.')+'</p>'; return; }
   box.innerHTML=rs.map(r=>`<div class="check"><span>${brDate(r.data)}${r.enviado?' <span class="pill" style="background:#e7f6ef;color:var(--ok)">enviado</span>':''}</span><button class="btn ghost sm" style="margin-left:auto" onclick="verRelatorio('${r.id}')">ver</button></div>`).join('');
 }
-function verRelatorio(id){const r=S.relatorios.find(x=>x.id===id);if(!r)return;modal(`<h3>Relatório · ${brDate(r.data)} <button class="close" onclick="fechar()">×</button></h3><div class="gen-box">${escAttr(r.corpo)}</div><div style="margin-top:10px"><button class="btn amarelo" onclick="copiarRelatorioFamilia('${r.id}')">📋 Copiar</button></div>`);}
+function verRelatorio(id){const r=S.relatorios.find(x=>x.id===id);if(!r)return;modal(`<h3>Relatório · ${brDate(r.data)} <button class="close" onclick="fechar()">×</button></h3><div class="gen-box">${escAttr(r.corpo)}</div><div class="row" style="margin-top:10px;gap:8px"><button class="btn amarelo" onclick="copiarRelatorioFamilia('${r.id}')">📋 Copiar</button><button class="btn ghost" style="color:var(--vermelho)" onclick="delRelatorio('${r.id}')">🗑 Apagar relatório</button></div>`);}
+function delRelatorio(id){
+  if(!confirm('Apagar este relatório? Ele será removido de TODOS os lugares (Avisos e histórico) e não dá para desfazer.'))return;
+  S.relatorios=S.relatorios.filter(r=>r.id!==id);
+  marcarExcluido('relatorios',id);
+  save(); try{fechar();}catch(e){}
+  if(typeof rota!=='undefined' && VIEWS[rota]) VIEWS[rota]();
+  toast('Relatório apagado');
+}
 function upsertRelatorio(turmaId,data,corpo){
   let r=S.relatorios.find(x=>x.turmaId===turmaId && x.data===data);
   if(r){ r.corpo=corpo; r.criadoEm=hoje(); r.criadoPor=S.usuario; }   // mesma aula: atualiza, mantém status de enviado
@@ -1806,6 +1866,7 @@ function renderAvisoRelatorios(v){
         <button class="btn" onclick="enviarRelatorioFamilia('${r.id}')">✉️ Enviar por e-mail</button>
         <button class="btn amarelo" onclick="copiarRelatorioFamilia('${r.id}')">📋 Copiar (WhatsApp)</button>
         <button class="btn ghost" onclick="marcarRelatorioEnviado('${r.id}')">✓ Marcar como enviado</button>
+        <button class="btn ghost" style="color:var(--vermelho)" onclick="delRelatorio('${r.id}')">🗑 Apagar</button>
         <span class="hint">✉️ ${nEmail}/${nAl} com e-mail</span>
       </div></div>`;
   }).join('');
@@ -1853,12 +1914,14 @@ function renderRelTurmaHist(){
   box.innerHTML=rs.map(r=>{const t=S.turmas.find(x=>x.id===r.turmaId)||{};
     return `<div class="check"><span style="flex:1">${brDate(r.data)} · ${t.nome||'—'} ${r.enviado?'<span class="pill" style="background:#e7f6ef;color:var(--ok)">enviado</span>':'<span class="pill" style="background:#fff7e6;color:var(--laranja)">pendente</span>'}</span>
       <button class="btn ghost sm" onclick="verRelTurma('${r.id}')">ver</button>
-      <button class="btn ghost sm" onclick="copiarRelatorioFamilia('${r.id}')">📋 copiar</button></div>`;}).join('');
+      <button class="btn ghost sm" onclick="copiarRelatorioFamilia('${r.id}')">📋 copiar</button>
+      <button class="btn ghost sm" style="color:var(--vermelho)" onclick="delRelatorio('${r.id}')">🗑</button></div>`;}).join('');
 }
 function verRelTurma(id){const r=S.relatorios.find(x=>x.id===id);if(!r)return;const t=S.turmas.find(x=>x.id===r.turmaId)||{};
   modal(`<h3>${t.nome||'—'} · ${brDate(r.data)} <button class="close" onclick="fechar()">×</button></h3><div class="gen-box">${escAttr(r.corpo)}</div>
     <div class="row" style="margin-top:10px;gap:8px"><button class="btn amarelo" onclick="copiarRelatorioFamilia('${id}')">📋 Copiar</button>
-    ${r.enviado?`<button class="btn ghost" onclick="reabrirRelatorio('${id}');fechar()">marcar como não enviado</button>`:`<button class="btn ghost" onclick="marcarRelatorioEnviado('${id}');fechar()">✓ marcar como enviado</button>`}</div>`);}
+    ${r.enviado?`<button class="btn ghost" onclick="reabrirRelatorio('${id}');fechar()">marcar como não enviado</button>`:`<button class="btn ghost" onclick="marcarRelatorioEnviado('${id}');fechar()">✓ marcar como enviado</button>`}
+    <button class="btn ghost" style="color:var(--vermelho)" onclick="delRelatorio('${id}')">🗑 Apagar</button></div>`);}
 function alunosSelect(id,turmaId,sel){
   const als=alunosDa(turmaId);
   if(!als.length)return `<select id="${id}"><option value="">(sem alunos)</option></select>`;
@@ -1898,6 +1961,7 @@ function addVipAluno(){
 }
 function delVipAluno(id){
   if(!confirm('Excluir este aluno VIP e todas as suas aulas?'))return;
+  S.aulasVip.filter(x=>x.vipId===id).forEach(x=>marcarExcluido('aulasVip',x.id)); marcarExcluido('vipAlunos',id);
   S.vipAlunos=S.vipAlunos.filter(a=>a.id!==id); S.aulasVip=S.aulasVip.filter(x=>x.vipId!==id);
   if(vipSel===id)vipSel=null; save(); VIEWS.vip(); toast('Aluno VIP excluído');
 }
@@ -1915,7 +1979,7 @@ function addAulaVip(){
   const f=document.getElementById('vipFaltou'); if(f)f.checked=false;
   toast(faltou?'Aula lançada (não compareceu)':'Aula lançada');
 }
-function delAulaVip(id){ if(!confirm('Excluir esta aula VIP?'))return; S.aulasVip=S.aulasVip.filter(x=>x.id!==id); save(); renderVipLista(); }
+function delAulaVip(id){ if(!confirm('Excluir esta aula VIP?'))return; S.aulasVip=S.aulasVip.filter(x=>x.id!==id); marcarExcluido('aulasVip',id); save(); renderVipLista(); }
 function renderVipLista(){
   const box=document.getElementById('vipBox'); if(!box)return;
   const vid=vipSel, al=S.vipAlunos.find(a=>a.id===vid);
@@ -2154,7 +2218,7 @@ function renderAtas(){
     <p style="white-space:pre-wrap;line-height:1.6;font-size:.93rem">${a.texto||'<i style="color:var(--tinta-suave)">Sem detalhes.</i>'}</p>
     <button class="btn ghost sm" style="margin-top:12px" onclick="delAta('${a.id}')">Excluir</button></div>`).join('');
 }
-function delAta(id){if(confirm('Excluir esta ata?')){S.atas=S.atas.filter(a=>a.id!==id);save();renderAtas();toast('Ata excluída');}}
+function delAta(id){if(confirm('Excluir esta ata?')){S.atas=S.atas.filter(a=>a.id!==id);marcarExcluido('atas',id);save();renderAtas();toast('Ata excluída');}}
 
 /* ---- TAREFAS (EISENHOWER) ---- */
 const QUADS={
@@ -2194,7 +2258,7 @@ function renderTarefas(){
   }).join('');
 }
 function toggleTarefa(id){const t=S.tarefas.find(t=>t.id===id);t.feito=!t.feito;save();renderTarefas();}
-function delTarefa(id){S.tarefas=S.tarefas.filter(t=>t.id!==id);save();renderTarefas();}
+function delTarefa(id){S.tarefas=S.tarefas.filter(t=>t.id!==id);marcarExcluido('tarefas',id);save();renderTarefas();}
 function moverTarefa(id){
   const t=S.tarefas.find(t=>t.id===id);
   modal(`<h3>Mover tarefa <button class="close" onclick="fechar()">×</button></h3>
@@ -2375,8 +2439,8 @@ function addAluno(turmaId){
   const nome=inp.value.trim();if(!nome)return toast('Digite o nome');
   S.alunos.push({id:uid(),nome,turmaId});save();_refreshTurmas();montarNav();toast('Aluno adicionado');
 }
-function delAluno(id){if(ehProfessor())return toast('Sem permissão');if(confirm('Remover este aluno?')){S.alunos=S.alunos.filter(a=>a.id!==id);save();_refreshTurmas();montarNav();}}
-function delTurma(id){if(ehProfessor())return toast('Sem permissão');if(confirm('Excluir turma e seus alunos?')){S.turmas=S.turmas.filter(t=>t.id!==id);S.alunos=S.alunos.filter(a=>a.turmaId!==id);painelTurma=null;save();VIEWS.turmas();montarNav();toast('Turma excluída');}}
+function delAluno(id){if(ehProfessor())return toast('Sem permissão');if(confirm('Remover este aluno?')){S.alunos=S.alunos.filter(a=>a.id!==id);marcarExcluido('alunos',id);save();_refreshTurmas();montarNav();}}
+function delTurma(id){if(ehProfessor())return toast('Sem permissão');if(confirm('Excluir turma e seus alunos?')){S.alunos.filter(a=>a.turmaId===id).forEach(a=>marcarExcluido('alunos',a.id));marcarExcluido('turmas',id);S.turmas=S.turmas.filter(t=>t.id!==id);S.alunos=S.alunos.filter(a=>a.turmaId!==id);painelTurma=null;save();VIEWS.turmas();montarNav();toast('Turma excluída');}}
 function resetarSeguro(){
   modal(`<h3>⚠️ Restaurar dados originais <button class="close" onclick="fechar()">×</button></h3>
     <p class="hint" style="margin-bottom:12px">Isto <b>apaga todos os dados atuais</b> (chamadas, temas, planos, testes, comentários…) e volta à base inicial de turmas. Um <b>backup será baixado automaticamente</b> antes de apagar.</p>
