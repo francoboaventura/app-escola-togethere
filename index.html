@@ -520,9 +520,11 @@ function _iniciarFilaSync(){
   if(_filaSyncOn) return; _filaSyncOn=true;
   try{ if(localStorage.getItem(PEND_KEY)) _pendenteSync=true; }catch(e){}
   window.addEventListener('online', function(){ flushSync(); });
-  document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') flushSync(); });
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible'){ flushSync(); _refreshAvisosNuvem(); } });
   const _hb=setInterval(function(){ if(!('onLine' in navigator) || navigator.onLine!==false) flushSync(); }, 25000);
   if(_hb && _hb.unref) _hb.unref();
+  const _av=setInterval(_refreshAvisosNuvem, 20000);   // Avisos se atualizam sozinhos a cada 20s
+  if(_av && _av.unref) _av.unref();
 }
 function save(){
   localStorage.setItem(KEY,JSON.stringify(S));
@@ -544,6 +546,34 @@ async function puxarDaNuvem(){
   } else {
     marcarSync('off'); toast('Sem conexão com a nuvem agora');
   }
+}
+// ---- Auto-refresh dos Avisos: puxa em silêncio e só redesenha se algo mudou ----
+// Assinatura do que a tela de Avisos mostra (relatórios pendentes + faltas/material/contatos).
+function _sigAvisos(){
+  try{ return JSON.stringify({
+    r:(S.relatorios||[]).filter(x=>!x.enviado).map(x=>x.id).sort(),
+    p:S.presencas||[], m:S.material||[], c:S.contatos||[]
+  }); }catch(e){ return ''; }
+}
+let _avisosBusy=false;
+async function _refreshAvisosNuvem(){
+  if(rota!=='alertas') return;                                            // só quando está nos Avisos
+  if(document.visibilityState && document.visibilityState!=='visible') return;
+  if(!cloudOn()||!CLOUD_TOKEN) return;
+  if(('onLine' in navigator) && navigator.onLine===false) return;
+  if(_avisosBusy || _sincronizando || _pendenteSync) return;              // não concorre com o envio (push)
+  _avisosBusy=true;
+  try{
+    const res=await cloudGet(7000);
+    if(res.ok && res.state && res.state.usuarios && res.state.usuarios.length){
+      const antes=_sigAvisos();
+      const u=S.usuario, p=S.perfil;
+      S=mergeEstados(migrar(res.state), S); S.usuario=u; S.perfil=p;      // mescla (não perde edição local)
+      localStorage.setItem(KEY,JSON.stringify(S));
+      if(_sigAvisos()!==antes && rota==='alertas' && !modalTemConteudo()){ VIEWS.alertas(); montarNav(); }  // redesenha só se mudou e sem modal aberto
+    }
+  }catch(e){}
+  finally{ _avisosBusy=false; }
 }
 async function cloudEmail(to, subject, body){
   if(!cloudOn()) return {ok:false, erro:'nuvem não configurada'};
@@ -849,6 +879,7 @@ function ir(id){
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.id===id));
   document.getElementById('side').classList.remove('open');
   VIEWS[id]();
+  if(id==='alertas') _refreshAvisosNuvem();   // ao abrir Avisos, já puxa o que houver de novo
   window.scrollTo(0,0);
 }
 
