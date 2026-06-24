@@ -415,7 +415,7 @@ function migrar(s){
 const CLOUD_URL    = 'https://script.google.com/macros/s/AKfycbylxwXqDh5ohAL4qLTn7WBQAu4juwt2bwgdiuGHDl1Ll3d1ViK-mdbeMghnG4UH3GNH/exec';
 const TKEY='togethere_token', UKEY='togethere_user', PKEY='togethere_perfil';
 let CLOUD_TOKEN = (function(){ try{ return localStorage.getItem(TKEY)||null; }catch(e){ return null; } })();
-const APP_VERSAO = '2026.06.23 · b38';   // aparece no rodapé; mude a cada publicação no GitHub
+const APP_VERSAO = '2026.06.23 · b39';   // aparece no rodapé; mude a cada publicação no GitHub
 const LOGO_B64 = 'data:image/png;base64,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';
 /* ============================================================================ */
 let _syncTimer=null;
@@ -869,7 +869,7 @@ function aplicarLogin(u){
   document.getElementById('meDot').textContent=u.nome[0];
   document.getElementById('perfilLabel').innerHTML='Conectado como <b style="color:#fff">'+u.nome+'</b> · '+meta.nome;
   montarNav(); ir(NAV.find(n=>n.roles.includes(u.perfil)).id);
-  setTimeout(function(){ if(!mostrarAgendaDoDia()) mostrarAniversariantes(); }, 600);
+  setTimeout(async function(){ await carregarAgendaHoje(); if(!mostrarAgendaDoDia()) mostrarAniversariantes(); }, 600);
 }
 function logout(){
   try{ cloudLogout(); }catch(e){}
@@ -2549,7 +2549,44 @@ let _calVerTodos=false, _calModo='semana', _calRef=hoje();
 function podeVerTodos(){ return S.perfil==='direcao'||S.perfil==='secretaria'; }
 function podeEditarAgenda(){ return S.perfil==='direcao'||S.perfil==='secretaria'; }
 function eventoVisivel(ev){ if(_calVerTodos&&podeVerTodos()) return true; return _euSouDono(corEvento(ev).donos); }
-function eventosVisiveis(){ return (S.eventos||[]).filter(eventoVisivel); }
+// ---- Agenda lida do Google Calendar (via Apps Script) ----
+const CORID_TO_COR={'11':'tomate','4':'flamingo','9':'mirtilo','5':'banana','3':'uva','2':'salvia','6':'tangerina','8':'grafite'};
+let _agEvents=[], _agHoje=[], _agCarregando=false, _agErro='';
+let _agDismiss=(function(){ try{ const o=JSON.parse(localStorage.getItem(KEY+'_agDismiss')||'{}'); return (o&&o.dia===hoje())? o : {dia:hoje(), ids:[]}; }catch(e){ return {dia:hoje(), ids:[]}; } })();
+function _salvaDismiss(){ try{ localStorage.setItem(KEY+'_agDismiss', JSON.stringify(_agDismiss)); }catch(e){} }
+function eventoConcluidoHoje(id){ return _agDismiss.dia===hoje() && (_agDismiss.ids||[]).includes(id); }
+function _normEvento(e){ return { id:e.id, titulo:e.titulo||'(sem título)', data:e.data, inicio:e.inicio||'', fim:e.fim||'', diaInteiro:!!e.diaInteiro, descricao:e.descricao||'', local:e.local||'', cor:CORID_TO_COR[String(e.colorId||'')]||'grafite', alerta:true }; }
+async function cloudAgenda(de, ate){
+  if(!cloudOn()||!CLOUD_TOKEN) return {ok:false, erro:'sessao'};
+  try{
+    const r=await fetch(CLOUD_URL+'?action=agenda&token='+encodeURIComponent(CLOUD_TOKEN),{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({de,ate})});
+    const j=await r.json();
+    if(!j.ok) return j;
+    return {ok:true, eventos:(j.eventos||[]).map(_normEvento)};
+  }catch(e){ return {ok:false, erro:String(e)}; }
+}
+function _rangeAgenda(){
+  if(_calModo==='semana'){ const d=_semanaDe(_calRef); return [d[0], d[6]]; }
+  const a=_calRef.split('-').map(Number); const ini=a[0]+'-'+String(a[1]).padStart(2,'0')+'-01'; return [ini, ymd(new Date(a[0],a[1],0))];
+}
+async function agendaRefresh(){
+  const r=_rangeAgenda(); _agCarregando=true; _agErro='';
+  if(rota==='agenda'){ (_calModo==='semana'?renderSemana:renderMes)(); }
+  const res=await cloudAgenda(r[0], r[1]); _agCarregando=false;
+  if(res.ok){ _agEvents=res.eventos; } else { _agEvents=[]; _agErro = res.auth?'Sessão expirada — saia e entre novamente.':'Não foi possível ler a agenda do Google.'; }
+  if(rota==='agenda'){ (_calModo==='semana'?renderSemana:renderMes)(); }
+}
+async function carregarAgendaHoje(){ const h=hoje(); const r=await cloudAgenda(h,h); if(r.ok){ _agHoje=r.eventos; if(rota==='tarefas') renderTarefas(); } }
+function eventosVisiveis(){ return (_agEvents||[]).filter(eventoVisivel); }
+function verEventoGoogle(id){
+  const e=(_agEvents.concat(_agHoje)).find(x=>x.id===id); if(!e) return;
+  modal(`<h3>${quadradinho(corEvento(e).hex)}${esc(e.titulo)} <button class="close" onclick="fechar()">×</button></h3>
+    <p class="hint">${brDate(e.data)} · ${(e.diaInteiro||!e.inicio)?'dia todo':esc(e.inicio)+(e.fim?'–'+esc(e.fim):'')} · ${donoLabel(corEvento(e))}</p>
+    ${e.local?`<p><b>Local:</b> ${esc(e.local)}</p>`:''}
+    ${e.descricao?`<p style="white-space:pre-wrap">${esc(e.descricao)}</p>`:''}
+    <p class="hint" style="margin-top:10px">Eventos são gerenciados no Google Calendar.</p>
+    <a class="btn block" href="https://calendar.google.com/calendar/u/0/r/day/${e.data.replace(/-/g,'/')}" target="_blank" rel="noopener">Abrir no Google Agenda</a>`);
+}
 function _minHHMM(s){ const m=String(s||'').match(/(\d{1,2}):(\d{2})/); return m? (+m[1]*60 + +m[2]) : null; }
 function _horaIniTurma(t){ const m=String((t&&t.horario)||'').match(/(\d{1,2}):(\d{2})/g); if(m&&m.length){ const p=m[0].split(':'); return +p[0]*60 + +p[1]; } return null; }
 function _horaFimTurmaMin(t){ const m=String((t&&t.horario)||'').match(/(\d{1,2}):(\d{2})/g); if(m&&m.length){ const p=m[m.length-1].split(':'); return +p[0]*60 + +p[1]; } return null; }
@@ -2610,11 +2647,12 @@ VIEWS.agenda=()=>{
       <button class="btn ghost sm" onclick="calNav(1)">›</button>
       <span id="calTit" style="font-weight:700;flex:1;min-width:120px"></span>
       ${podeVerTodos()?`<label class="check" style="margin:0"><input type="checkbox" ${_calVerTodos?'checked':''} onchange="_calVerTodos=this.checked;VIEWS.agenda()"> ver todos</label>`:''}
-      ${podeEditarAgenda()?`<button class="btn sm" onclick="novoEvento()">+ Evento</button>`:''}
+      <button class="btn ghost sm" onclick="agendaRefresh()" title="Atualizar do Google Calendar">↻</button>
     </div>
     <div id="calBox"></div>
     <p class="hint" style="margin-top:8px;line-height:1.9">Legenda: ${Object.values(CORES_EVENTO).map(c=>`${quadradinho(c.hex)}${donoLabel(c)}`).join(' &nbsp;&nbsp; ')}</p>`;
   if(_calModo==='semana') renderSemana(); else renderMes();
+  agendaRefresh();
 };
 function calNav(dir){ const a=_calRef.split('-').map(Number); const dt=new Date(a[0],a[1]-1,a[2]); if(_calModo==='semana') dt.setDate(dt.getDate()+7*dir); else dt.setMonth(dt.getMonth()+dir); _calRef=ymd(dt); VIEWS.agenda(); }
 function renderSemana(){
@@ -2623,7 +2661,7 @@ function renderSemana(){
   const px=44, H=(CAL_HORA_FIM-CAL_HORA_INI)*px, turmas=turmasNaAgenda(), evs=eventosVisiveis();
   const head='<div class="calhead"><div class="calhcell"></div>'+dias.map(d=>`<div class="calhcell ${d===hoje()?'hoje':''}">${DIAS_SEMANA[weekdayOf(d)]}<br><b>${d.split('-')[2]}</b></div>`).join('')+'</div>';
   const alldayRow='<div class="calrow"><div class="calhcell" style="font-size:.66rem;color:var(--tinta-suave);align-self:center">dia todo</div>'+
-    dias.map(d=>`<div class="calday allday">${evs.filter(e=>e.data===d&&(e.diaInteiro||!e.inicio)).map(e=>`<div class="evchip" style="background:${corEvento(e).hex}" onclick="editarEvento('${e.id}')">${esc(e.titulo)}</div>`).join('')}</div>`).join('')+'</div>';
+    dias.map(d=>`<div class="calday allday">${evs.filter(e=>e.data===d&&(e.diaInteiro||!e.inicio)).map(e=>`<div class="evchip" style="background:${corEvento(e).hex}" onclick="verEventoGoogle('${e.id}')">${esc(e.titulo)}</div>`).join('')}</div>`).join('')+'</div>';
   let horas=''; for(let h=CAL_HORA_INI;h<CAL_HORA_FIM;h++) horas+=`<div class="calhour" style="height:${px}px">${String(h).padStart(2,'0')}h</div>`;
   const grad=`background-image:repeating-linear-gradient(to bottom,transparent,transparent ${px-1}px,#eef0f3 ${px-1}px,#eef0f3 ${px}px)`;
   const cols=dias.map(d=>{
@@ -2633,24 +2671,24 @@ function renderSemana(){
       blk+=`<div class="calblk turma" style="top:${top}px;height:${hg}px" onclick="abrirTurma('${t.id}')"><b>${esc(t.nome)}</b></div>`; });
     evs.filter(e=>e.data===d&&!e.diaInteiro&&e.inicio).forEach(e=>{ const s=_minHHMM(e.inicio), e2=_minHHMM(e.fim)||s+60;
       const top=Math.max(0,(s-CAL_HORA_INI*60)/60*px), hg=Math.max(16,(e2-s)/60*px);
-      blk+=`<div class="calblk" style="top:${top}px;height:${hg}px;background:${corEvento(e).hex}" onclick="editarEvento('${e.id}')"><b>${esc(e.titulo)}</b><br>${e.inicio}${e.fim?'–'+e.fim:''}</div>`; });
-    return `<div class="calday" style="height:${H}px;${grad}" ${podeEditarAgenda()?`ondblclick="novoEvento('${d}')"`:''}>${blk}</div>`;
+      blk+=`<div class="calblk" style="top:${top}px;height:${hg}px;background:${corEvento(e).hex}" onclick="verEventoGoogle('${e.id}')"><b>${esc(e.titulo)}</b><br>${e.inicio}${e.fim?'–'+e.fim:''}</div>`; });
+    return `<div class="calday" style="height:${H}px;${grad}">${blk}</div>`;
   }).join('');
   box.innerHTML=`<div class="calwrap">${head}${alldayRow}<div class="calgrid"><div class="calhours">${horas}</div>${cols}</div></div>
-    ${podeEditarAgenda()?'<p class="hint" style="margin-top:6px">Dica: toque 2x num dia para criar um evento naquele dia.</p>':''}`;
+    <p class="hint" style="margin-top:6px">${_agCarregando?'⏳ Atualizando agenda do Google…':(_agErro?('⚠️ '+_agErro):'Eventos vêm do Google Calendar. Toque num evento para ver detalhes.')}</p>`;
 }
 function renderMes(){
   const box=document.getElementById('calBox'); if(!box)return;
   const a=_calRef.split('-').map(Number), y=a[0], m=a[1]; const tit=document.getElementById('calTit'); if(tit) tit.textContent=MESES_PT[m-1]+' de '+y;
   const pref=`${y}-${String(m).padStart(2,'0')}-`;
   const evs=eventosVisiveis().filter(e=>(e.data||'').startsWith(pref)).sort((x,z)=>(x.data+(x.inicio||'')).localeCompare(z.data+(z.inicio||'')));
-  if(!evs.length){ box.innerHTML=`<div class="card"><p class="hint">Nenhum evento neste mês.${podeEditarAgenda()?' Toque em “+ Evento” para adicionar.':''}</p></div>`; return; }
+  if(!evs.length){ box.innerHTML=`<div class="card"><p class="hint">${_agCarregando?'⏳ Atualizando agenda do Google…':(_agErro?('⚠️ '+_agErro):'Nenhum evento neste mês.')}</p></div>`; return; }
   const byDay={}; evs.forEach(e=>{(byDay[e.data]=byDay[e.data]||[]).push(e);});
   box.innerHTML='<div class="card">'+Object.keys(byDay).sort().map(d=>`
     <div style="margin:10px 0 4px;font-weight:700">${brDate(d)} · ${DIAS_SEMANA[weekdayOf(d)]}</div>
     ${byDay[d].map(e=>`<div class="check"><span class="dot" style="background:${corEvento(e).hex}"></span>
       <span style="flex:1">${(e.diaInteiro||!e.inicio)?'dia todo':e.inicio+(e.fim?'–'+e.fim:'')} · <b>${esc(e.titulo)}</b>${e.descricao?` <small class="hint">${esc(e.descricao)}</small>`:''}</span>
-      ${podeEditarAgenda()?`<button class="btn ghost sm" onclick="editarEvento('${e.id}')">editar</button>`:''}</div>`).join('')}
+      <button class="btn ghost sm" onclick="verEventoGoogle('${e.id}')">ver</button></div>`).join('')}
   `).join('')+'</div>';
 }
 
@@ -2674,17 +2712,17 @@ function addTarefa(){
 let _dragTarefa=null;
 function compromissosHoje(){
   const h=hoje();
-  const eventos=eventosVisiveis().filter(e=>e.data===h && e.alerta!==false && !e.feito);
+  const eventos=(_agHoje||[]).filter(e=>e.data===h && eventoVisivel(e) && !eventoConcluidoHoje(e.id));
   const rels=(typeof todasMinhasPendencias==='function'? todasMinhasPendencias():[]).filter(p=>p.tipo==='relatorio');
   return {eventos, rels};
 }
-function concluirEvento(id){ const e=(S.eventos||[]).find(x=>x.id===id); if(!e)return; e.feito=true; e.atualizadoEm=Date.now(); save(); if(typeof renderTarefas==='function')renderTarefas(); toast('Evento concluído'); }
+function concluirEvento(id){ if(_agDismiss.dia!==hoje()) _agDismiss={dia:hoje(),ids:[]}; if(!_agDismiss.ids.includes(id)) _agDismiss.ids.push(id); _salvaDismiss(); if(typeof renderTarefas==='function')renderTarefas(); toast('Marcado como resolvido por hoje'); }
 function soltarTarefa(ev,q){ if(ev&&ev.preventDefault)ev.preventDefault(); if(_dragTarefa){ const t=S.tarefas.find(x=>x.id===_dragTarefa); if(t){ t.quad=q; save(); } _dragTarefa=null; renderTarefas(); } }
 function mostrarAgendaDoDia(){
   try{
     const chave=KEY+'_agendaPopup', h=hoje();
     if(localStorage.getItem(chave)===h) return;            // só uma vez por dia
-    const evs=eventosVisiveis().filter(e=>e.data===h && e.alerta!==false && !e.feito);
+    const evs=(_agHoje||[]).filter(e=>e.data===h && eventoVisivel(e) && !eventoConcluidoHoje(e.id));
     localStorage.setItem(chave,h);
     if(!evs.length) return false;
     const lista=evs.sort((a,b)=>(a.inicio||'').localeCompare(b.inicio||'')).map(e=>`<div class="check"><span class="dot" style="background:${corEvento(e).hex}"></span>
