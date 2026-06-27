@@ -417,7 +417,7 @@ function migrar(s){
 const CLOUD_URL    = 'https://script.google.com/macros/s/AKfycbylxwXqDh5ohAL4qLTn7WBQAu4juwt2bwgdiuGHDl1Ll3d1ViK-mdbeMghnG4UH3GNH/exec';
 const TKEY='togethere_token', UKEY='togethere_user', PKEY='togethere_perfil';
 let CLOUD_TOKEN = (function(){ try{ return localStorage.getItem(TKEY)||null; }catch(e){ return null; } })();
-const APP_VERSAO = '2026.06.26 · b48';   // aparece no rodapé; mude a cada publicação no GitHub
+const APP_VERSAO = '2026.06.26 · b50';   // aparece no rodapé; mude a cada publicação no GitHub
 const LOGO_B64 = 'data:image/png;base64,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';
 /* ============================================================================ */
 let _syncTimer=null;
@@ -794,6 +794,7 @@ const NAV=[
   {id:'testes', label:'Testes', em:'✏️', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
   {id:'planos', label:'Planos de aula', em:'🗒️', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
   {id:'relatorio', label:'Relatório do dia', em:'🧾', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
+  {id:'ficha', label:'Ficha do aluno', em:'📇', grp:'Acompanhamento', roles:['professor','secretaria','direcao'], menu:false},
   {id:'resumo', label:'Relatórios por aluno', em:'📄', grp:'Acompanhamento', roles:['secretaria','direcao']},
   {id:'relturma', label:'Relatórios por turma', em:'🏫', grp:'Acompanhamento', roles:['secretaria','direcao']},
   {id:'arquivo', label:'Arquivo de relatórios', em:'🗄️', grp:'Acompanhamento', roles:['secretaria','direcao']},
@@ -2568,6 +2569,8 @@ function desfazerContato(i){S.contatos.splice(i,1);save();montarNav();VIEWS.aler
 
 /* ---- TURMAS E ALUNOS ---- */
 /* ===== Comunicados por e-mail (b47) ===== */
+let _cmAberto=null;
+function toggleComunicado(id){ _cmAberto=(_cmAberto===id)?null:id; VIEWS.comunicados(); }
 function _cmAlvos(){
   const allEl=document.getElementById('cmAll');
   const all=!!(allEl&&allEl.checked);
@@ -2646,8 +2649,194 @@ VIEWS.comunicados=()=>{
       <div class="field"><label class="lbl">Mensagem</label><textarea id="cmCorpo" rows="7" placeholder="Escreva o comunicado…"></textarea></div>
       <button class="btn" id="cmEnviar" onclick="enviarComunicado()">✉️ Enviar comunicado</button>
     </div>
-    ${hist.length?`<h3 style="margin:18px 0 6px">Últimos enviados</h3>`+hist.map(c=>`<div class="card" style="padding:10px 12px"><div style="display:flex;gap:8px;flex-wrap:wrap"><b style="flex:1">${escAttr(c.assunto)}</b><span class="hint">${brDate(c.data)}</span></div><p class="hint" style="margin:4px 0 0">${c.escolaToda?'Escola toda':((c.turmas||[]).length+' turma(s)')} · ${c.enviados||0} e-mail(s) · por ${escAttr(c.por||'—')}</p></div>`).join(''):''}`;
+    ${hist.length?`<h3 style="margin:18px 0 6px">Últimos enviados</h3><p class="hint" style="margin:0 0 6px">Toque em um comunicado para ver o conteúdo e quem enviou.</p>`+hist.map(c=>{
+      const ab=_cmAberto===c.id;
+      const nomes=c.escolaToda?'Escola toda':((c.turmas||[]).map(id=>_turmaNomePorId(id)).filter(Boolean).join(', ')||((c.turmas||[]).length+' turma(s)'));
+      return `<div class="card" style="padding:10px 12px">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;cursor:pointer" onclick="toggleComunicado('${c.id}')">
+          <b style="flex:1">${escAttr(c.assunto)}</b><span class="hint">${brDate(c.data)}</span><span style="opacity:.5;font-size:.8rem">${ab?'▲':'▼'}</span></div>
+        <p class="hint" style="margin:4px 0 0">${c.escolaToda?'Escola toda':((c.turmas||[]).length+' turma(s)')} · ${c.enviados||0} e-mail(s) · por ${escAttr(c.por||'—')}</p>
+        ${ab?`<div style="margin-top:10px;border-top:1px solid var(--linha);padding-top:10px">
+          <p class="hint" style="margin:0 0 8px"><b>Enviado por:</b> ${escAttr(c.por||'—')} &nbsp;·&nbsp; <b>Para:</b> ${escAttr(nomes)} &nbsp;·&nbsp; <b>${c.enviados||0}</b> e-mail(s)</p>
+          <div style="white-space:pre-wrap;background:#f7f5f2;border-radius:10px;padding:10px 12px;line-height:1.5">${escAttr(c.corpo||'(sem conteúdo)')}</div>
+        </div>`:''}
+      </div>`;
+    }).join(''):''}`;
   renderCmResumo();
+};
+
+/* ===== Ficha do Aluno (b49) ===== */
+let _fichaAlunoId=null, _fichaDe='', _fichaAte='';
+function _fichaTurmasDoAluno(alunoId){
+  const ids={};
+  const a=(S.alunos||[]).find(x=>x.id===alunoId);
+  if(a && a.turmaId) ids[a.turmaId]=true;
+  (S.presencas||[]).forEach(p=>{ if(p.registros && (alunoId in p.registros)) ids[p.turmaId]=true; });
+  (S.turmas||[]).forEach(t=>{ if((t.alunosSnapshot||[]).some(s=>s.id===alunoId)) ids[t.id]=true; });
+  return Object.keys(ids).map(id=>(S.turmas||[]).find(t=>t.id===id)).filter(Boolean);
+}
+function testesDoAluno(alunoId){
+  return (S.testes||[]).filter(t=>t.notas && (alunoId in t.notas))
+    .map(t=>({data:t.data,turmaId:t.turmaId,numero:t.numero,nota:t.notas[alunoId]}))
+    .sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+}
+function _fichaAulas(alunoId, turmaIds, de, ate){
+  const inRange=d=>(!de||d>=de)&&(!ate||d<=ate);
+  const out=[];
+  (S.presencas||[]).forEach(p=>{
+    if(turmaIds.indexOf(p.turmaId)<0) return;
+    if(!p.registros || !(alunoId in p.registros)) return;
+    if(!inRange(p.data)) return;
+    const rel=(S.relatorios||[]).find(r=>r.turmaId===p.turmaId && r.data===p.data);
+    out.push({data:p.data, turmaId:p.turmaId, status:p.registros[alunoId],
+      cancelada:p.statusAula==='cancelada', transferida:p.statusAula==='transferida',
+      resumo:(rel&&rel.corpo)||resumoAulaDoDia(p.turmaId,p.data)});
+  });
+  return out.sort((a,b)=>b.data.localeCompare(a.data));
+}
+function _fichaStreakFaltas(alunoId,turmaId){
+  const dois=temAula2(turmaId);
+  const sess=(S.presencas||[]).filter(p=>p.turmaId===turmaId && _aulaConta(p) && p.registros && (alunoId in p.registros)).sort((x,y)=>x.data.localeCompare(y.data));
+  const seq=[]; sess.forEach(p=>{ const s1=p.registros[alunoId]; if(p.registros2){seq.push(s1);seq.push(p.registros2[alunoId]||'presente');} else if(dois){seq.push(s1);seq.push(s1);} else seq.push(s1); });
+  let streak=0; for(let i=seq.length-1;i>=0;i--){ if(seq[i]==='falta')streak++; else break; }
+  return streak;
+}
+function corpoFichaAluno(alunoId, de, ate){
+  const a=(S.alunos||[]).find(x=>x.id===alunoId); if(!a) return '';
+  const turmas=_fichaTurmasDoAluno(alunoId);
+  const inRange=d=>(!de||d>=de)&&(!ate||d<=ate);
+  const tatual=(S.turmas||[]).find(t=>t.id===a.turmaId);
+  let txt=`FICHA DO ALUNO\n${a.nome}\n`;
+  if(tatual) txt+=`Turma atual: ${tatual.nome}${tatual.professor?' · Prof. '+tatual.professor:''}\n`;
+  txt+=`Período: ${de?brDate(de):'início'} a ${ate?brDate(ate):'hoje'}\nGerado em ${brDate(hoje())} por ${S.usuario}\n`;
+  let totalF=Number(a.faltasRetro)||0;
+  turmas.forEach(t=>{ totalF+=faltasDoAluno(alunoId,t.id).filter(inRange).length; });
+  const aulas=_fichaAulas(alunoId, turmas.map(t=>t.id), de, ate);
+  const pres=aulas.filter(x=>x.status==='presente'&&!x.cancelada&&!x.transferida).length;
+  txt+=`\n📊 FREQUÊNCIA\n• Presenças: ${pres}\n• Faltas: ${totalF}${(Number(a.faltasRetro)||0)?` (inclui ${a.faltasRetro} retroativa(s))`:''}\n`;
+  txt+=`\n📅 AULAS (${aulas.length})\n`;
+  if(aulas.length) aulas.forEach(x=>{
+    const tag=x.cancelada?'aula cancelada':x.transferida?'aula transferida':(x.status==='falta'?'FALTOU':'presente');
+    txt+=`• ${brDate(x.data)} — ${tag}${(!x.cancelada&&!x.transferida)?` — ${x.resumo}`:''}\n`;
+  }); else txt+=`• Nenhuma aula no período.\n`;
+  let temas=[]; turmas.forEach(t=>{ temas=temas.concat(temasNaoFeitosDoAluno(alunoId,t.id).filter(z=>inRange(z.data))); });
+  txt+=`\n📚 TEMAS NÃO FEITOS / PARCIAIS (${temas.length})\n`;
+  if(temas.length) temas.forEach(z=>{ txt+=`• ${brDate(z.data)} — ${z.descricao} — ${z.status==='parcial'?'parcial':'não feito'}\n`; }); else txt+=`• Nenhum.\n`;
+  let mat=[]; turmas.forEach(t=>{ mat=mat.concat(materialDoAluno(alunoId,t.id).filter(inRange)); });
+  txt+=`\n🎒 MATERIAL NÃO TRAZIDO (${mat.length})\n`;
+  if(mat.length) mat.sort().forEach(d=>{ txt+=`• ${brDate(d)}\n`; }); else txt+=`• Nenhum.\n`;
+  const tst=testesDoAluno(alunoId).filter(z=>inRange(z.data));
+  txt+=`\n📝 TESTES (${tst.length})\n`;
+  if(tst.length) tst.forEach(z=>{ const tn=((S.turmas||[]).find(t=>t.id===z.turmaId)||{}).nome||''; txt+=`• ${brDate(z.data)}${z.numero?(' · teste '+z.numero):''} — nota ${z.nota}${tn?(' ('+tn+')'):''}\n`; }); else txt+=`• Nenhum registro.\n`;
+  const coms=comentariosDoAluno(alunoId).filter(c=>inRange(c.data));
+  txt+=`\n💬 COMENTÁRIOS (${coms.length})\n`;
+  if(coms.length) coms.forEach(c=>{ txt+=`• ${brDate(c.data)} (${c.autor}): ${c.texto}\n`; }); else txt+=`• Nenhum.\n`;
+  txt+=`\n—\nTogethere · inglês para chegar lá`;
+  return txt;
+}
+function abrirFicha(alunoId){
+  _fichaAlunoId=alunoId;
+  const y=new Date().getFullYear();
+  _fichaDe=y+'-01-01'; _fichaAte=hoje();
+  ir('ficha');
+}
+function setFichaPeriodo(modo){
+  const y=new Date().getFullYear();
+  if(modo==='ano'){ _fichaDe=y+'-01-01'; _fichaAte=hoje(); }
+  else if(modo==='tudo'){ _fichaDe=''; _fichaAte=''; }
+  VIEWS.ficha();
+}
+function fichaSetEmail(){
+  if(ehProfessor()) return;
+  const a=(S.alunos||[]).find(x=>x.id===_fichaAlunoId); if(!a) return;
+  a.email=(document.getElementById('fcEmail').value||'').trim();
+  save(); toast('E-mail do responsável atualizado');
+}
+function copiarFicha(){
+  const a=(S.alunos||[]).find(x=>x.id===_fichaAlunoId); if(!a) return;
+  copiarTexto(corpoFichaAluno(a.id,_fichaDe,_fichaAte),'Ficha copiada! Cole no WhatsApp');
+}
+function imprimirFicha(){
+  const a=(S.alunos||[]).find(x=>x.id===_fichaAlunoId); if(!a) return;
+  const txt=corpoFichaAluno(a.id,_fichaDe,_fichaAte);
+  const html=`<div style="font-family:Arial,sans-serif;max-width:760px;margin:0 auto;padding:20px"><pre style="white-space:pre-wrap;font-family:Arial,sans-serif;font-size:13px;line-height:1.5">${escAttr(txt)}</pre></div>`;
+  if(typeof imprimirDoc==='function') imprimirDoc(html); else toast('Impressão indisponível');
+}
+async function enviarFichaResponsavel(){
+  if(ehProfessor()) return toast('Sem permissão para enviar');
+  const a=(S.alunos||[]).find(x=>x.id===_fichaAlunoId); if(!a) return;
+  const email=(a.email||'').trim();
+  if(!email || email.indexOf('@')<1) return toast('Sem e-mail do responsável. Cadastre no topo da ficha ou use Copiar para WhatsApp.');
+  if(!confirm('Enviar a ficha de '+a.nome+' para '+email+'?')) return;
+  const btn=document.getElementById('fcEnviar'); if(btn){ btn.disabled=true; btn.textContent='Enviando…'; }
+  const res=await cloudEmail([email], 'Acompanhamento de '+a.nome+' — Togethere', corpoFichaAluno(a.id,_fichaDe,_fichaAte));
+  if(btn){ btn.disabled=false; btn.textContent='✉️ Enviar ao responsável'; }
+  if(res && res.ok){ a.fichaEnviadaEm=hoje(); a.fichaEnviadaPor=S.usuario; save(); VIEWS.ficha(); toast('Ficha enviada ao responsável'); }
+  else toast('Não foi possível enviar: '+((res&&res.erro)||'erro'));
+}
+VIEWS.ficha=()=>{
+  const v=document.getElementById('view');
+  const a=(S.alunos||[]).find(x=>x.id===_fichaAlunoId);
+  if(!a){ v.innerHTML='<p class="sub">Abra uma ficha pela busca em <b>Turmas e alunos</b>.</p>'; return; }
+  const turmas=_fichaTurmasDoAluno(a.id);
+  const tatual=(S.turmas||[]).find(t=>t.id===a.turmaId);
+  const inRange=d=>(!_fichaDe||d>=_fichaDe)&&(!_fichaAte||d<=_fichaAte);
+  const aulas=_fichaAulas(a.id, turmas.map(t=>t.id), _fichaDe, _fichaAte);
+  let totalF=Number(a.faltasRetro)||0; turmas.forEach(t=>{ totalF+=faltasDoAluno(a.id,t.id).filter(inRange).length; });
+  const pres=aulas.filter(x=>x.status==='presente'&&!x.cancelada&&!x.transferida).length;
+  const streak=tatual?_fichaStreakFaltas(a.id,tatual.id):0;
+  const idade=a.nascimento?(Math.floor((Date.now()-new Date(a.nascimento).getTime())/(365.25*864e5))):null;
+  let temas=[]; turmas.forEach(t=>{ temas=temas.concat(temasNaoFeitosDoAluno(a.id,t.id).filter(z=>inRange(z.data))); });
+  let mat=[]; turmas.forEach(t=>{ mat=mat.concat(materialDoAluno(a.id,t.id).filter(inRange)); });
+  const tst=testesDoAluno(a.id).filter(z=>inRange(z.data));
+  const coms=comentariosDoAluno(a.id).filter(c=>inRange(c.data));
+  const podeEnviar=!ehProfessor();
+  const periodoTxt=(_fichaDe||_fichaAte)?(brDate(_fichaDe||'')+' a '+(_fichaAte?brDate(_fichaAte):'hoje')):'todo o histórico';
+  let h=`<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Ficha do aluno</h2></div>
+  <div class="card">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><h3 style="margin:0;flex:1">${escAttr(a.nome)}</h3>${tatual?statusPill(tatual):''}</div>
+    <p class="hint" style="margin:4px 0 8px">${tatual?escAttr(tatual.nome):'sem turma atual'}${tatual&&tatual.professor?' · Prof. '+escAttr(tatual.professor):''}${idade!=null?(' · '+idade+' anos'):''}${turmas.length>1?(' · histórico em '+turmas.length+' turmas'):''}</p>
+    ${podeEnviar?`<div class="field"><label class="lbl">E-mail do responsável</label><input type="email" id="fcEmail" value="${escAttr(a.email||'')}" placeholder="email@exemplo.com" onchange="fichaSetEmail()"></div>`:(a.email?`<p class="hint">📧 ${escAttr(a.email)}</p>`:'')}
+    ${a.fichaEnviadaEm?`<p class="hint">✓ Ficha enviada em ${brDate(a.fichaEnviadaEm)}${a.fichaEnviadaPor?(' por '+escAttr(a.fichaEnviadaPor)):''}</p>`:''}
+  </div>
+  <div class="card" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <span class="pill" style="background:#eafaf0;color:#1a8a4a">✅ ${pres} presença(s)</span>
+    <span class="pill" style="background:${totalF?'#fdeaea':'#eafaf0'};color:${totalF?'var(--vermelho)':'#1a8a4a'}">📋 ${totalF} falta(s)</span>
+    ${streak>=3?`<span class="pill" style="background:#fdeaea;color:var(--vermelho)">🚨 ${streak} faltas seguidas</span>`:''}
+    ${temas.length?`<span class="pill" style="background:#fff7e6;color:var(--laranja)">📚 ${temas.length} tema(s) pendente(s)</span>`:''}
+  </div>
+  <div class="card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <span class="hint" style="flex:1">Período: <b>${periodoTxt}</b></span>
+    <button class="btn ghost sm" onclick="setFichaPeriodo('ano')">Este ano</button>
+    <button class="btn ghost sm" onclick="setFichaPeriodo('tudo')">Tudo</button>
+  </div>`;
+  // linha do tempo
+  h+=`<h3 style="margin:18px 0 6px">📅 Aulas (${aulas.length})</h3>`;
+  h+=aulas.length?aulas.map(x=>{
+    const cor=x.cancelada||x.transferida?'#888':(x.status==='falta'?'var(--vermelho)':'#1a8a4a');
+    const tag=x.cancelada?'aula cancelada':x.transferida?'↪ transferida':(x.status==='falta'?'❌ FALTOU':'✅ presente');
+    const tn=((S.turmas||[]).find(t=>t.id===x.turmaId)||{}).nome||'';
+    return `<div class="card" style="padding:10px 12px"><div style="display:flex;gap:8px;flex-wrap:wrap"><b style="flex:1">${brDate(x.data)}</b><span style="color:${cor};font-weight:600">${tag}</span></div>
+      <p class="hint" style="margin:4px 0 0">${turmas.length>1?(escAttr(tn)+' · '):''}${(!x.cancelada&&!x.transferida)?escAttr(x.resumo):''}</p></div>`;
+  }).join(''):'<p class="hint">Nenhuma aula no período.</p>';
+  // temas
+  h+=`<h3 style="margin:18px 0 6px">📚 Temas não feitos / parciais (${temas.length})</h3>`;
+  h+=temas.length?'<div class="card" style="padding:10px 12px">'+temas.sort((x,y)=>x.data.localeCompare(y.data)).map(z=>`<div class="hint" style="border-top:1px solid var(--linha);padding:6px 0">${brDate(z.data)} — ${escAttr(z.descricao)} — ${z.status==='parcial'?'parcial':'não feito'}</div>`).join('')+'</div>':'<p class="hint">Nenhum.</p>';
+  // testes
+  h+=`<h3 style="margin:18px 0 6px">📝 Testes (${tst.length})</h3>`;
+  h+=tst.length?'<div class="card" style="padding:10px 12px">'+tst.map(z=>{const tn=((S.turmas||[]).find(t=>t.id===z.turmaId)||{}).nome||'';return `<div class="hint" style="border-top:1px solid var(--linha);padding:6px 0">${brDate(z.data)}${z.numero?(' · teste '+z.numero):''} — <b>nota ${escAttr(String(z.nota))}</b>${tn?(' · '+escAttr(tn)):''}</div>`;}).join('')+'</div>':'<p class="hint">Nenhum registro.</p>';
+  // material + comentários
+  h+=`<h3 style="margin:18px 0 6px">🎒 Material não trazido (${mat.length})</h3>`;
+  h+=mat.length?'<div class="card" style="padding:10px 12px"><div class="hint">'+mat.sort().map(d=>brDate(d)).join(' · ')+'</div></div>':'<p class="hint">Nenhum.</p>';
+  h+=`<h3 style="margin:18px 0 6px">💬 Comentários (${coms.length})</h3>`;
+  h+=coms.length?'<div class="card" style="padding:10px 12px">'+coms.map(c=>`<div class="hint" style="border-top:1px solid var(--linha);padding:6px 0"><b>${brDate(c.data)}</b> (${escAttr(c.autor||'—')}): ${escAttr(c.texto||'')}</div>`).join('')+'</div>':'<p class="hint">Nenhum.</p>';
+  // ações
+  h+=`<div class="card" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+    ${podeEnviar?`<button class="btn" id="fcEnviar" onclick="enviarFichaResponsavel()">✉️ Enviar ao responsável</button>`:''}
+    <button class="btn ghost" onclick="copiarFicha()">📋 Copiar (WhatsApp)</button>
+    <button class="btn ghost" onclick="imprimirFicha()">🖨️ Imprimir / PDF</button>
+  </div>`;
+  v.innerHTML=h;
 };
 
 VIEWS.turmas=()=>{
@@ -2747,8 +2936,10 @@ function renderTurmaList(){
     ts.forEach(t=>alunosDa(t.id).forEach(a=>{ if(_normTxt(a.nome).includes(f)) res.push({a,t}); }));
     list.innerHTML = bar + (res.length
       ? `<div class="card"><h3>${res.length} aluno(s) encontrado(s)</h3>`+
-        res.map(r=>`<div class="check"><span>${r.a.nome} <span class="pill">${r.t.nome}</span></span>
-          ${(ehProfessor()||soLeitura())?'':`<button class="btn ghost sm" onclick="delAluno('${r.a.id}')">remover</button>`}</div>`).join('')+`</div>`
+        res.map(r=>`<div class="check"><span style="flex:1">${r.a.nome} <span class="pill">${r.t.nome}</span></span>
+          <button class="btn ghost sm" onclick="abrirTurma('${r.t.id}')">🏫 Turma</button>
+          <button class="btn ghost sm" onclick="abrirFicha('${r.a.id}')">📇 Ficha</button>
+          ${(ehProfessor()||soLeitura())?'':`<button class="btn ghost sm" style="color:var(--vermelho)" onclick="delAluno('${r.a.id}')">remover</button>`}</div>`).join('')+`</div>`
       : `<div class="card empty"><div class="big">🔎</div>Nenhum aluno encontrado para “${_buscaAluno}”${_filtroTurmaAtivo()?' com esses filtros':''}.</div>`);
     return;
   }
