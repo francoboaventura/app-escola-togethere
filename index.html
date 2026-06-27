@@ -371,6 +371,7 @@ function migrar(s){
   if(s.versao<4){ s.versao=4; }   // marca para os campos novos (nascimento/arquivado/saldo)
   (s.alunos||[]).forEach(a=>{ if(typeof a.arquivado==='undefined') a.arquivado=false; if(typeof a.nascimento==='undefined') a.nascimento=''; if(typeof a.faltasRetro==='undefined') a.faltasRetro=(a.saldo&&a.saldo.faltas)||0; });
   (s.turmas||[]).forEach(t=>{ if(typeof t.arquivada==='undefined') t.arquivada=false; });
+  (s.turmas||[]).forEach(t=>{ if(typeof t.status==='undefined') t.status = t.arquivada ? 'encerrada' : 'aberta'; if(t.status==='encerrada') t.arquivada=true; });
   s.comentarios=s.comentarios||[]; // garante campos novos
   s.relatorios=s.relatorios||[];
   s.exclusoes=s.exclusoes||[];     // marcas de exclusão (para sincronização entre aparelhos)
@@ -415,7 +416,7 @@ function migrar(s){
 const CLOUD_URL    = 'https://script.google.com/macros/s/AKfycbylxwXqDh5ohAL4qLTn7WBQAu4juwt2bwgdiuGHDl1Ll3d1ViK-mdbeMghnG4UH3GNH/exec';
 const TKEY='togethere_token', UKEY='togethere_user', PKEY='togethere_perfil';
 let CLOUD_TOKEN = (function(){ try{ return localStorage.getItem(TKEY)||null; }catch(e){ return null; } })();
-const APP_VERSAO = '2026.06.26 · b44';   // aparece no rodapé; mude a cada publicação no GitHub
+const APP_VERSAO = '2026.06.26 · b45';   // aparece no rodapé; mude a cada publicação no GitHub
 const LOGO_B64 = 'data:image/png;base64,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';
 /* ============================================================================ */
 let _syncTimer=null;
@@ -2996,8 +2997,7 @@ function renderPainelTurma(){
       ${als.map(a=>`<div style="padding:8px 0;border-bottom:1px dashed var(--linha)"><div style="display:flex;align-items:center;gap:8px"><span style="flex:1">${a.nome}${idadeDe(a.nascimento)!=null?` <span class="pill">${idadeDe(a.nascimento)} anos</span>`:''}${a.arquivado?' <span class="pill" style="background:#eee;color:#888">arquivado</span>':''}</span>${podeCadastrar?`<button class="btn ghost sm" onclick="toggleArquivarAluno('${a.id}')">${a.arquivado?'reativar':'arquivar'}</button><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delAluno('${a.id}')">remover</button>`:''}</div>
         ${a.saldo?`<p class="hint" style="margin:4px 0 0">saldo inicial: ${a.saldo.dadas} aula(s) · ${a.saldo.presencas} presença(s) · ${a.saldo.faltas} falta(s)</p>`:''}
         ${podeCadastrar?`<div class="row" style="margin-top:6px"><div style="flex:2"><input type="email" value="${escAttr(a.email||'')}" placeholder="email.responsavel@exemplo.com" style="font-size:.85rem" onchange="setAlunoEmail('${a.id}',this.value)"></div><div><input type="date" value="${escAttr(a.nascimento||'')}" title="Data de nascimento" style="font-size:.85rem" onchange="setAlunoNascimento('${a.id}',this.value)"></div></div>`:''}${faltasRetroLinha(a)}</div>`).join('')||'<p class="hint">Sem alunos ainda.</p>'}
-      ${podeCadastrar?`<div class="row" style="margin-top:12px"><div style="flex:3"><input type="text" id="al_${id}" placeholder="Nome do novo aluno" onkeydown="if(event.key==='Enter')addAluno('${id}')"></div>
-      <button class="btn ghost" onclick="addAluno('${id}')">+ Aluno</button></div>`:''}</div>
+      ${podeCadastrar?`<button class="btn ghost" style="margin-top:12px" onclick="abrirAddAluno('${id}')">+ Aluno</button>`:''}</div>
     ${podeCadastrar?`<div style="display:flex;gap:8px;margin-top:6px"><button class="btn ghost sm" onclick="toggleArquivarTurma('${id}')">${t.arquivada?'Reativar turma':'Arquivar turma'}</button><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delTurma('${id}')">Excluir turma</button></div>`:''}`;
   window.scrollTo(0,0);
 }
@@ -3298,22 +3298,129 @@ VIEWS.dupes=()=>{
   v.innerHTML=h;
 };
 
+/* ===== Ciclo de vida da turma (b45) ===== */
+const TSTATUS={aberta:{lbl:'ABERTA',cor:'#1a8a4a',bg:'#eafaf0'},formacao:{lbl:'EM FORMAÇÃO',cor:'#b88600',bg:'#fff8e0'},encerrada:{lbl:'ENCERRADA',cor:'#888',bg:'#eeeeee'}};
+let _amBusca='';
+function turmaStatus(t){ if(!t) return 'aberta'; return t.status || (t.arquivada?'encerrada':'aberta'); }
+function turmaTrancada(tid){ const t=(S.turmas||[]).find(x=>x.id===tid); return turmaStatus(t)==='encerrada'; }
+function statusPill(t){ const s=TSTATUS[turmaStatus(t)]||TSTATUS.aberta; return `<span class="pill" style="background:${s.bg};color:${s.cor}">${s.lbl}</span>`; }
+function encerrarTurma(id){
+  if(ehProfessor()) return toast('Sem permissão');
+  const t=(S.turmas||[]).find(x=>x.id===id); if(!t) return;
+  if(turmaStatus(t)==='encerrada') return toast('Esta turma já está encerrada');
+  const als=(S.alunos||[]).filter(a=>a.turmaId===id && !a.arquivado);
+  if(!confirm('Encerrar a turma "'+t.nome+'"?\n\nEla vai para o ARQUIVO MORTO guardando os '+als.length+' aluno(s) atuais. Depois de encerrada, NADA nela poderá ser editado.\n\nOs alunos continuam no app e podem ser rematriculados em outra turma pelo "+ Aluno".')) return;
+  t.alunosSnapshot=als.map(a=>({id:a.id,nome:a.nome}));
+  t.status='encerrada'; t.arquivada=true; t.encerradaEm=hoje();
+  if(painelTurma===id) painelTurma=null;
+  save(); montarNav(); if(rota==='gturmas') VIEWS.gturmas(); toast('Turma encerrada e arquivada');
+}
+function iniciarTurma(id){
+  if(ehProfessor()) return toast('Sem permissão');
+  const t=(S.turmas||[]).find(x=>x.id===id); if(!t) return;
+  t.status='aberta'; t.arquivada=false;
+  save(); montarNav(); if(rota==='gturmas') VIEWS.gturmas(); toast('Turma aberta');
+}
+/* ---- + Aluno: buscar existente (unicidade) ou criar novo ---- */
+function abrirAddAluno(turmaId){
+  if(soLeitura()) return toast('Somente leitura — a secretaria não edita turmas');
+  if(ehProfessor()) return toast('Sem permissão');
+  if(turmaTrancada(turmaId)) return toast('Turma encerrada — não dá para adicionar alunos');
+  modal(`<h3>+ Aluno <button class="close" onclick="fechar()">×</button></h3>
+    <p class="hint" style="margin-bottom:10px">Procure pelo nome. Se o aluno já existe no app, reaproveite (mantém a ficha e o histórico). Se for novo na escola, crie um novo.</p>
+    <div class="field"><input type="text" id="aaBusca" placeholder="Digite o nome do aluno" oninput="renderAddAlunoBusca('${turmaId}')" autocomplete="off"></div>
+    <div id="aaResult"><p class="hint">Comece a digitar…</p></div>`);
+  setTimeout(()=>{const i=document.getElementById('aaBusca');if(i)i.focus();},60);
+}
+function renderAddAlunoBusca(turmaId){
+  const inp=document.getElementById('aaBusca'); const box=document.getElementById('aaResult'); if(!inp||!box) return;
+  const txt=(inp.value||'').trim(); const q=_normTxt(txt);
+  if(!q){ box.innerHTML='<p class="hint">Comece a digitar…</p>'; return; }
+  const achados=(S.alunos||[]).filter(a=>_normTxt(a.nome).includes(q)).slice(0,8);
+  let h='';
+  if(achados.length){
+    h+='<p class="hint" style="margin:6px 0 4px"><b>Já no app</b> — toque em Adicionar para reaproveitar:</p>';
+    achados.forEach(a=>{
+      const mesma=a.turmaId===turmaId;
+      h+=`<div style="display:flex;align-items:center;gap:8px;border-top:1px solid var(--linha);padding:7px 0"><span style="flex:1">${escAttr(a.nome)}<br><span class="hint">${a.turmaId?('atual: '+escAttr(_turmaNomePorId(a.turmaId))):'sem turma'}${a.arquivado?' · arquivado':''}</span></span>${mesma?'<span class="pill">já nesta turma</span>':`<button class="btn ghost sm" onclick="reusarAluno('${a.id}','${turmaId}')">Adicionar</button>`}</div>`;
+    });
+  } else { h+='<p class="hint" style="margin:6px 0">Nenhum aluno com esse nome no app.</p>'; }
+  h+=`<button class="btn block" style="margin-top:10px" onclick="criarAlunoNovo('${turmaId}')">➕ Criar aluno novo: "${escAttr(txt)}"</button>`;
+  box.innerHTML=h;
+}
+function reusarAluno(aid,turmaId){
+  if(ehProfessor()) return toast('Sem permissão');
+  if(turmaTrancada(turmaId)) return toast('Turma encerrada');
+  const a=(S.alunos||[]).find(x=>x.id===aid); if(!a) return;
+  const antiga=a.turmaId;
+  if(antiga===turmaId){ fechar(); return toast('Este aluno já está nesta turma'); }
+  if(antiga && !turmaTrancada(antiga)){
+    if(!confirm(a.nome+' está na turma "'+_turmaNomePorId(antiga)+'". Mover para esta turma?')) return;
+  }
+  a.turmaId=turmaId; if(a.arquivado) a.arquivado=false;
+  save(); fechar(); _refreshTurmas(); montarNav(); toast(a.nome+' adicionado(a)');
+}
+function criarAlunoNovo(turmaId){
+  if(ehProfessor()) return toast('Sem permissão');
+  if(turmaTrancada(turmaId)) return toast('Turma encerrada');
+  const inp=document.getElementById('aaBusca'); const txt=((inp&&inp.value)||'').trim();
+  if(!txt) return toast('Digite o nome');
+  const exato=(S.alunos||[]).find(a=>_normTxt(a.nome)===_normTxt(txt));
+  if(exato){ if(!confirm('Já existe "'+exato.nome+'" no app (turma: '+_turmaNomePorId(exato.turmaId)+').\n\nCriar mesmo assim um aluno novo? Isso pode gerar duplicidade.')) return; }
+  S.alunos.push({id:uid(),nome:txt,turmaId});
+  save(); fechar(); _refreshTurmas(); montarNav(); toast('Aluno criado');
+}
+function renderArquivoMorto(){
+  const box=document.getElementById('gtArquivo'); if(!box) return;
+  const q=_normTxt(_amBusca);
+  let encs=(S.turmas||[]).filter(t=>turmaStatus(t)==='encerrada');
+  if(q) encs=encs.filter(t=>_normTxt(t.nome).includes(q) || (t.alunosSnapshot||[]).some(a=>_normTxt(a.nome).includes(q)));
+  if(!encs.length){ box.innerHTML='<p class="hint" style="margin:8px 0 0">'+( _amBusca?'Nada encontrado no arquivo.':'Nenhuma turma encerrada ainda.')+'</p>'; return; }
+  box.innerHTML=encs.sort((a,b)=>(b.encerradaEm||'').localeCompare(a.encerradaEm||'')).map(t=>{
+    const snap=t.alunosSnapshot||[];
+    return `<div class="card" style="padding:12px 14px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><b style="flex:1">${escAttr(t.nome)}</b>${statusPill(t)}</div>
+      <p class="hint" style="margin:4px 0 6px">${escAttr(t.horario||'')}${t.encerradaEm?(' · encerrada em '+brDate(t.encerradaEm)):''} · ${snap.length} aluno(s)</p>
+      ${snap.length?('<div class="hint" style="line-height:1.6">'+snap.map(a=>escAttr(a.nome)).join(' · ')+'</div>'):'<p class="hint">(sem alunos registrados)</p>'}
+      <p class="hint" style="margin:8px 0 0;color:#aaa">🔒 Arquivo morto — somente leitura.</p></div>`;
+  }).join('');
+}
+function setAmBusca(v){ _amBusca=v; renderArquivoMorto(); }
+
 VIEWS.gturmas=()=>{
   const v=document.getElementById('view');
   if(ehProfessor()){ v.innerHTML='<p class="sub">Sem permissão.</p>'; return; }
+  const ativas=(S.turmas||[]).filter(t=>turmaStatus(t)!=='encerrada').sort((a,b)=>a.nome.localeCompare(b.nome));
+  const linhasAtivas=ativas.map(t=>{
+    const st=turmaStatus(t), n=(S.alunos||[]).filter(a=>a.turmaId===t.id && !a.arquivado).length;
+    return `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid var(--linha);padding:8px 0">
+      <div style="flex:1;min-width:150px"><b>${escAttr(t.nome)}</b> ${statusPill(t)}<br><span class="hint">${escAttr(t.horario||'')} · ${n} aluno(s)</span></div>
+      ${st==='formacao'?`<button class="btn ghost sm" style="color:var(--azul)" onclick="iniciarTurma('${t.id}')">Abrir turma</button>`:''}
+      <button class="btn ghost sm" style="color:var(--vermelho)" onclick="encerrarTurma('${t.id}')">Encerrar</button>
+    </div>`;
+  }).join('')||'<p class="hint">Nenhuma turma ativa.</p>';
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Trocar / criar turma</h2></div>
-    <p class="sub">Mova um aluno de uma turma para outra, ou crie a próxima turma quando uma terminar.</p>
+    <p class="sub">Gerencie o ciclo de vida das turmas: criar a próxima, encerrar as que terminaram (vão para o arquivo morto) e mover alunos.</p>
+    <div class="card"><h3>➕ Criar próxima turma</h3>
+      <p class="hint">A nova turma nasce <b>vazia</b> e <b>EM FORMAÇÃO</b>. Os alunos são adicionados conforme se matriculam, pelo "+ Aluno" da turma.</p>
+      <button class="btn" onclick="abrirCriarProxima()">Criar próxima turma</button>
+    </div>
+    <div class="card"><h3>🏫 Turmas ativas</h3>
+      <p class="hint" style="margin:0 0 4px">EM FORMAÇÃO vira ABERTA quando você inicia. Encerrar manda para o arquivo morto (travada).</p>
+      ${linhasAtivas}
+    </div>
     <div class="card"><h3>🔄 Trocar aluno de turma</h3>
       <div class="field"><label class="lbl">Turma de origem</label><select id="gtOrigem" onchange="preencherGtAlunos()">${_selTurmasOpts()}</select></div>
       <div class="field"><label class="lbl">Aluno</label><select id="gtAluno"></select></div>
       <div class="field"><label class="lbl">Turma de destino</label><select id="gtDestino">${_selTurmasOpts()}</select></div>
       <button class="btn" onclick="moverAluno()">Mover aluno</button>
     </div>
-    <div class="card"><h3>➕ Criar próxima turma</h3>
-      <p class="hint">Cria uma turma do próximo nível e, se quiser, traz os alunos da turma que terminou.</p>
-      <button class="btn" onclick="abrirCriarProxima()">Criar próxima turma</button>
+    <div class="card"><h3>🗄️ Arquivo morto (turmas encerradas)</h3>
+      <p class="hint" style="margin:0 0 8px">Pesquisável por nome da turma ou do aluno. Somente leitura.</p>
+      <input type="text" id="gtArqBusca" placeholder="🔎 Buscar turma ou aluno encerrado" value="${escAttr(_amBusca)}" oninput="setAmBusca(this.value)">
+      <div id="gtArquivo" style="margin-top:8px"></div>
     </div>`;
   preencherGtAlunos();
+  renderArquivoMorto();
 };
 function preencherGtAlunos(){
   const o=document.getElementById('gtOrigem'); const sel=document.getElementById('gtAluno'); if(!o||!sel)return;
@@ -3341,7 +3448,6 @@ function abrirCriarProxima(){
     <div class="row"><div style="flex:2"><label class="lbl">Professor (opcional)</label><input type="text" id="cpProf" placeholder="Nome do professor"></div>
       <div style="flex:1"><label class="lbl">Horário</label><input type="text" id="cpHor" placeholder="18:15–19:30"></div></div>
     <div class="field" style="margin-top:8px"><label class="lbl">Dias de aula</label><div style="display:flex;flex-wrap:wrap;gap:6px">${[1,2,3,4,5,6].map(d=>`<label style="display:flex;align-items:center;gap:5px;font-size:.88rem;border:1px solid var(--linha);border-radius:9px;padding:6px 10px;cursor:pointer"><input type="checkbox" class="cpDia" value="${d}"> ${DIAS_SEMANA[d]}</label>`).join('')}</div></div>
-    <div class="field" style="margin-top:8px"><label class="lbl">Trazer alunos de (opcional)</label><select id="cpOrigem"><option value="">— não trazer —</option>${ts.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('')}</select><p class="hint" style="margin:4px 0 0">Move os alunos ativos da turma escolhida para a nova.</p></div>
     <button class="btn block" onclick="criarProximaTurma()" style="margin-top:12px">Criar turma</button>`);
   _cpNiveis();
 }
@@ -3357,14 +3463,12 @@ function criarProximaTurma(){
   const prof=(document.getElementById('cpProf').value||'').trim();
   const hor=(document.getElementById('cpHor').value||'').trim();
   const nivel = trilha==='avancado' ? 'adults' : trilha;
-  const t={id:uid(),nome,nivel,cefr,horario:hor,dias,vezesSemana:dias.length,arquivada:false};
+  const t={id:uid(),nome,nivel,cefr,horario:hor,dias,vezesSemana:dias.length,arquivada:false,status:'formacao'};
   if(prof) t.professor=prof;
   S.turmas.push(t);
-  let movidos=0; const origem=document.getElementById('cpOrigem').value;
-  if(origem){ S.alunos.forEach(a=>{ if(a.turmaId===origem && !a.arquivado){ a.turmaId=t.id; movidos++; } }); }
   save(); fechar(); montarNav();
   if(rota==='gturmas') VIEWS.gturmas(); else ir('gturmas');
-  toast(`Turma criada${movidos?` · ${movidos} aluno(s) trazido(s)`:''}`);
+  toast('Turma criada (EM FORMAÇÃO). Adicione os alunos pelo "+ Aluno".');
 }
 /* ---- Aniversariantes da semana (pop-up) ---- */
 function aniversariantesSemana(){
