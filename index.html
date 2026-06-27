@@ -374,6 +374,7 @@ function migrar(s){
   (s.turmas||[]).forEach(t=>{ if(typeof t.status==='undefined') t.status = t.arquivada ? 'encerrada' : 'aberta'; if(t.status==='encerrada') t.arquivada=true; });
   s.comentarios=s.comentarios||[]; // garante campos novos
   s.relatorios=s.relatorios||[];
+  s.comunicados=s.comunicados||[];
   s.exclusoes=s.exclusoes||[];     // marcas de exclusão (para sincronização entre aparelhos)
   s.boletins=s.boletins||[];
   s.eventos=s.eventos||[];
@@ -416,7 +417,7 @@ function migrar(s){
 const CLOUD_URL    = 'https://script.google.com/macros/s/AKfycbylxwXqDh5ohAL4qLTn7WBQAu4juwt2bwgdiuGHDl1Ll3d1ViK-mdbeMghnG4UH3GNH/exec';
 const TKEY='togethere_token', UKEY='togethere_user', PKEY='togethere_perfil';
 let CLOUD_TOKEN = (function(){ try{ return localStorage.getItem(TKEY)||null; }catch(e){ return null; } })();
-const APP_VERSAO = '2026.06.26 · b46';   // aparece no rodapé; mude a cada publicação no GitHub
+const APP_VERSAO = '2026.06.26 · b48';   // aparece no rodapé; mude a cada publicação no GitHub
 const LOGO_B64 = 'data:image/png;base64,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';
 /* ============================================================================ */
 let _syncTimer=null;
@@ -442,7 +443,7 @@ function temAtividade(s){
   return ['presencas','material','temas','testes','contatos','planos','comentarios','atas','tarefas','relatorios','vipAlunos','aulasVip','boletins']
     .some(k=>Array.isArray(s[k]) && s[k].length);
 }
-const MERGE_COLS=['usuarios','turmas','alunos','presencas','material','temas','testes','contatos','planos','comentarios','atas','tarefas','relatorios','vipAlunos','aulasVip','boletins','eventos'];
+const MERGE_COLS=['usuarios','turmas','alunos','presencas','material','temas','testes','contatos','planos','comentarios','atas','tarefas','relatorios','vipAlunos','aulasVip','boletins','eventos','comunicados'];
 function marcarExcluido(col,id){
   if(id==null) return;
   S.exclusoes=S.exclusoes||[];
@@ -798,6 +799,7 @@ const NAV=[
   {id:'arquivo', label:'Arquivo de relatórios', em:'🗄️', grp:'Acompanhamento', roles:['secretaria','direcao']},
   {id:'vip', label:'Alunos VIP', em:'👑', grp:'Acompanhamento', roles:['professor','direcao']},
   {id:'alertas', label:'Avisos', em:'🔔', grp:'Acompanhamento', roles:['secretaria','direcao'], badge:true},
+  {id:'comunicados', label:'Comunicados', em:'📣', grp:'Acompanhamento', roles:['secretaria','direcao']},
   {id:'turmas', label:'Turmas e alunos', em:'👥', grp:'Gestão', roles:['professor','secretaria','direcao']},
   {id:'dupes', label:'Limpar duplicidades', em:'🧹', grp:'Gestão', roles:['secretaria','direcao']},
   {id:'gturmas', label:'Trocar / criar turma', em:'🔄', grp:'Gestão', roles:['secretaria','direcao']},
@@ -987,8 +989,9 @@ function pendenciasAulaTurma(turmaId){
     const nivel=_nivelPend(_fimAulaTs(turmaId,data));
     if(!nivel) return;
     const presOk = S.presencas.some(p=>p.turmaId===turmaId && p.data===data && p.fechada);
-    const planoOk= S.planos.some(p=>p.turmaId===turmaId && p.data===data && p.realizado);
-    const relOk  = S.relatorios.some(r=>r.turmaId===turmaId && r.data===data);
+    const _transf= !!(_rd && _rd.planoTransferido);   // plano transferido p/ próxima aula: não cobra plano/relatório nesta data
+    const planoOk= _transf || S.planos.some(p=>p.turmaId===turmaId && p.data===data && p.realizado);
+    const relOk  = _transf || S.relatorios.some(r=>r.turmaId===turmaId && r.data===data);
     if(!presOk)  out.push({turmaId,data,tipo:'chamada',  nivel,fimTs:_fimAulaTs(turmaId,data)});
     if(!planoOk) out.push({turmaId,data,tipo:'plano',    nivel,fimTs:_fimAulaTs(turmaId,data)});
     if(!relOk)   out.push({turmaId,data,tipo:'relatorio',nivel,fimTs:_fimAulaTs(turmaId,data)});
@@ -1947,7 +1950,7 @@ function planoCard(p){
   const statusPill=p.realizado?`<span class="pill" style="background:#e7f6ef;color:var(--ok)">✓ realizado</span>`:`<span class="pill" style="background:#fff7e6;color:var(--laranja)">pendente</span>`;
   return `<div class="card" style="padding:0;overflow:hidden">
     <div style="display:flex;align-items:center;gap:8px;padding:14px 16px;cursor:pointer" onclick="togglePlanoAberto('${p.id}')">
-      <div style="flex:1;min-width:140px"><b>${brDate(p.data)}</b> · ${p.titulo}<div class="hint" style="margin-top:2px">${turmaNome(p.turmaId)} · ${feitos}/${p.itens.length} itens · ${statusPill}${temasEntrega.length?` · 📚 ${temasEntrega.length} p/ entregar`:''}${atrasPend?` · ⏰ ${atrasPend} atrasado(s)`:''}${temasPassados.length?` · 📩 ${temasPassados.length} passado(s)`:''}</div></div>
+      <div style="flex:1;min-width:140px"><b>${brDate(p.data)}</b> · ${p.titulo}<div class="hint" style="margin-top:2px">${turmaNome(p.turmaId)} · ${feitos}/${p.itens.length} itens · ${statusPill}${p.transferidoDe?' · <span class="pill" style="background:#fff7e6;color:var(--laranja)">↪ transferido</span>':''}${temasEntrega.length?` · 📚 ${temasEntrega.length} p/ entregar`:''}${atrasPend?` · ⏰ ${atrasPend} atrasado(s)`:''}${temasPassados.length?` · 📩 ${temasPassados.length} passado(s)`:''}</div></div>
       ${ro?'':`<button class="btn ghost sm" onclick="event.stopPropagation();editarPlano('${p.id}')">✏️ editar</button>`}
       <span style="opacity:.5;font-size:.8rem">${aberto?'▲':'▼'}</span>
     </div>
@@ -1972,7 +1975,7 @@ function planoCard(p){
         ${ro?'':`<button class="btn ghost sm" style="margin-top:8px;color:var(--rosa)" onclick="abrirTemasHub('${p.turmaId}','${p.data}')">📚 Temas</button>`}</div>
       <div class="field" style="margin-top:12px"><label class="lbl">Anotações</label><textarea ${ro?'readonly':''} onchange="setPlanoCampo('${p.id}','anotacoes',this.value)" placeholder="Observações sobre a aula...">${p.anotacoes||''}</textarea></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center">
-        ${ro?'':p.realizado?`<button class="btn ghost sm" onclick="reabrirPlano('${p.id}')">↩︎ reabrir</button>`:`<button class="btn sm" onclick="marcarPlanoFeito('${p.id}')">✓ marcar como feito</button>`}
+        ${ro?'':p.realizado?`<button class="btn ghost sm" onclick="reabrirPlano('${p.id}')">↩︎ reabrir</button>`:`<button class="btn sm" onclick="marcarPlanoFeito('${p.id}')">✓ marcar como feito</button> <button class="btn ghost sm" style="color:var(--laranja)" title="A aula conta e as faltas ficam, mas o plano vai para a próxima data — sem relatório nem alerta" onclick="transferirPlanoProximaAula('${p.id}')">↪️ Transferir p/ próxima aula</button>`}
         <button class="btn amarelo sm" onclick="gerarRelatorioDoPlano('${p.id}')">🧾 Gerar relatório</button>
         ${(ehProfessor()||ro)?'':`<button class="btn ghost sm" style="color:var(--vermelho);margin-left:auto" onclick="delPlano('${p.id}')">🗑 Excluir</button>`}
       </div>
@@ -2002,6 +2005,23 @@ function gerarRelatorioDoPlano(pid){
   const p=S.planos.find(x=>x.id===pid); if(!p)return;
   upsertRelatorio(p.turmaId,p.data,corpoRelatorioDia(p.turmaId,p.data));
   save(); toast('Relatório gerado — veja em Avisos');
+}
+function transferirPlanoProximaAula(pid){
+  if(soLeitura())return toast('Somente leitura — a secretaria não edita planos');
+  const p=S.planos.find(p=>p.id===pid); if(!p)return;
+  if(p.realizado)return toast('Este plano já foi marcado como realizado');
+  const t=S.turmas.find(x=>x.id===p.turmaId);
+  if(!t||!t.dias||!t.dias.length)return toast('Defina os dias de aula da turma para poder transferir');
+  const origem=p.data;
+  const prox=proximaEntrega(p.turmaId,origem);
+  if(!prox||prox<=origem)return toast('Não encontrei uma próxima data de aula para esta turma');
+  if(!confirm('Transferir este plano para a próxima aula?\n\nDe '+brDate(origem)+'  →  para '+brDate(prox)+'\n\nA aula de '+brDate(origem)+' continua valendo (as faltas ficam registradas), mas o plano passa para a próxima data — sem gerar relatório nem cobrança para aquele dia.'))return;
+  let rec=S.presencas.find(x=>x.turmaId===p.turmaId && x.data===origem);
+  if(!rec){ rec={id:uid(),turmaId:p.turmaId,data:origem,registros:{},fechada:false,atualizadoEm:Date.now()}; S.presencas.push(rec); }
+  rec.planoTransferido=true; rec.planoTransferidoPara=prox; rec.atualizadoEm=Date.now();
+  p.transferidoDe=origem; p.data=prox; p.atualizadoEm=Date.now();
+  save(); montarNav(); if(typeof renderPlanos==='function') renderPlanos();
+  toast('Plano transferido para '+brDate(prox));
 }
 function reabrirPlano(pid){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');const p=S.planos.find(p=>p.id===pid);if(!p)return;p.realizado=false;p.realizadoEm=null;p.atualizadoEm=Date.now();save();renderPlanos();toast('Plano reaberto');}
 function togglePlano(pid,i){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');const p=S.planos.find(p=>p.id===pid);p.itens[i].done=!p.itens[i].done;p.atualizadoEm=Date.now();save();renderPlanos();}
@@ -2547,6 +2567,89 @@ function marcarContato(alunoId,tipo){
 function desfazerContato(i){S.contatos.splice(i,1);save();montarNav();VIEWS.alertas();}
 
 /* ---- TURMAS E ALUNOS ---- */
+/* ===== Comunicados por e-mail (b47) ===== */
+function _cmAlvos(){
+  const allEl=document.getElementById('cmAll');
+  const all=!!(allEl&&allEl.checked);
+  const ativas=(S.turmas||[]).filter(t=>turmaStatus(t)!=='encerrada');
+  let sel;
+  if(all){ sel=ativas; }
+  else { sel=ativas.filter(t=>{ const c=document.getElementById('cm_t_'+t.id); return !!(c&&c.checked); }); }
+  const ids=sel.map(t=>t.id);
+  const alunos=(S.alunos||[]).filter(a=>!a.arquivado && ids.indexOf(a.turmaId)>=0);
+  const map={}; let comEmail=0;
+  alunos.forEach(a=>{ const raw=(a.email||'').trim(); if(raw){ comEmail++; map[raw.toLowerCase()]=raw; } });
+  return {turmas:sel, ids, alunos, emails:Object.values(map), comEmail, total:alunos.length, escolaToda:all};
+}
+function renderCmResumo(){
+  const box=document.getElementById('cmResumo'); if(!box) return;
+  const a=_cmAlvos();
+  if(!a.ids.length){ box.innerHTML='<p class="hint" style="margin:0">Escolha as turmas (ou a escola toda) acima.</p>'; return; }
+  let h=`<b>${a.emails.length}</b> e-mail(s) único(s) — de ${a.comEmail} aluno(s) com e-mail, num total de ${a.total} aluno(s) na seleção.`;
+  if(a.total>a.comEmail) h+=` <span class="hint">(${a.total-a.comEmail} sem e-mail cadastrado ficam de fora)</span>`;
+  let cor='#1a8a4a', bg='#eafaf0';
+  if(a.emails.length>90){ cor='var(--vermelho)'; bg='#fdeaea'; h+=`<br><b>⚠️ Atenção:</b> o Gmail comum entrega ~100 e-mails/dia. Acima disso o envio pode falhar — divida em partes ou aguarde o Workspace.`; }
+  box.innerHTML=`<div class="card" style="background:${bg};color:${cor};padding:10px 12px;margin:8px 0">${h}</div>`;
+}
+async function enviarComunicado(){
+  if(ehProfessor()) return toast('Sem permissão');
+  const assunto=(document.getElementById('cmAssunto').value||'').trim();
+  const corpo=(document.getElementById('cmCorpo').value||'').trim();
+  if(!assunto) return toast('Escreva o assunto');
+  if(!corpo) return toast('Escreva a mensagem');
+  const a=_cmAlvos();
+  if(!a.ids.length) return toast('Escolha ao menos uma turma (ou a escola toda)');
+  if(!a.emails.length) return toast('Nenhum responsável com e-mail cadastrado nessa seleção');
+  let aviso='';
+  if(a.emails.length>90) aviso='\n\nATENÇÃO: '+a.emails.length+' destinatários — acima do limite diário do Gmail comum (~100). Pode falhar.';
+  const ondePara=a.escolaToda?'a ESCOLA TODA':(a.turmas.length+' turma(s)');
+  if(!confirm('Enviar comunicado para '+ondePara+'?\n\nDestinatários: '+a.emails.length+' responsável(is) em cópia oculta.\nAssunto: '+assunto+aviso)) return;
+  const btn=document.getElementById('cmEnviar'); if(btn){ btn.disabled=true; btn.textContent='Enviando…'; }
+  const res=await cloudEmail(a.emails, assunto, corpo);
+  if(btn){ btn.disabled=false; btn.textContent='✉️ Enviar comunicado'; }
+  if(res && res.ok){
+    S.comunicados=S.comunicados||[];
+    S.comunicados.push({id:uid(),data:hoje(),ts:Date.now(),assunto,corpo,turmas:a.ids.slice(),escolaToda:a.escolaToda,enviados:res.enviados||a.emails.length,por:S.usuario});
+    save();
+    document.getElementById('cmAssunto').value='';
+    document.getElementById('cmCorpo').value='';
+    VIEWS.comunicados();
+    toast('Comunicado enviado para '+(res.enviados||a.emails.length)+' e-mail(s)');
+  } else {
+    toast('Não foi possível enviar: '+((res&&res.erro)||'erro'));
+  }
+}
+VIEWS.comunicados=()=>{
+  const v=document.getElementById('view');
+  if(ehProfessor()){ v.innerHTML='<p class="sub">Sem permissão.</p>'; return; }
+  const ativas=(S.turmas||[]).filter(t=>turmaStatus(t)!=='encerrada').sort((a,b)=>a.nome.localeCompare(b.nome));
+  const checks=ativas.map(t=>{
+    const n=(S.alunos||[]).filter(a=>a.turmaId===t.id && !a.arquivado);
+    const comE=n.filter(a=>(a.email||'').trim()).length;
+    return `<label style="display:flex;align-items:center;gap:8px;border-top:1px solid var(--linha);padding:7px 0;cursor:pointer">
+      <input type="checkbox" class="cmT" id="cm_t_${t.id}" onchange="renderCmResumo()">
+      <span style="flex:1">${escAttr(t.nome)} <span class="hint">(${comE}/${n.length} com e-mail)</span></span></label>`;
+  }).join('')||'<p class="hint">Nenhuma turma ativa.</p>';
+  const hist=(S.comunicados||[]).slice().sort((x,y)=>(y.ts||0)-(x.ts||0)).slice(0,8);
+  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Comunicados</h2></div>
+    <p class="sub">Envie um aviso por e-mail aos responsáveis — de turmas escolhidas ou da escola toda. Cada família recebe em <b>cópia oculta</b> (um não vê o e-mail do outro).</p>
+    <div class="card">
+      <label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-weight:600">
+        <input type="checkbox" id="cmAll" onchange="renderCmResumo()"> 📣 Escola toda
+      </label>
+      <p class="hint" style="margin:4px 0">…ou escolha turmas específicas:</p>
+      ${checks}
+    </div>
+    <div id="cmResumo"></div>
+    <div class="card">
+      <div class="field"><label class="lbl">Assunto</label><input type="text" id="cmAssunto" placeholder="Ex.: Não haverá aula na sexta-feira"></div>
+      <div class="field"><label class="lbl">Mensagem</label><textarea id="cmCorpo" rows="7" placeholder="Escreva o comunicado…"></textarea></div>
+      <button class="btn" id="cmEnviar" onclick="enviarComunicado()">✉️ Enviar comunicado</button>
+    </div>
+    ${hist.length?`<h3 style="margin:18px 0 6px">Últimos enviados</h3>`+hist.map(c=>`<div class="card" style="padding:10px 12px"><div style="display:flex;gap:8px;flex-wrap:wrap"><b style="flex:1">${escAttr(c.assunto)}</b><span class="hint">${brDate(c.data)}</span></div><p class="hint" style="margin:4px 0 0">${c.escolaToda?'Escola toda':((c.turmas||[]).length+' turma(s)')} · ${c.enviados||0} e-mail(s) · por ${escAttr(c.por||'—')}</p></div>`).join(''):''}`;
+  renderCmResumo();
+};
+
 VIEWS.turmas=()=>{
   painelTurma=null;
   const v=document.getElementById('view');
