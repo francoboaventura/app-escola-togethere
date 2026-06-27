@@ -416,7 +416,7 @@ function migrar(s){
 const CLOUD_URL    = 'https://script.google.com/macros/s/AKfycbylxwXqDh5ohAL4qLTn7WBQAu4juwt2bwgdiuGHDl1Ll3d1ViK-mdbeMghnG4UH3GNH/exec';
 const TKEY='togethere_token', UKEY='togethere_user', PKEY='togethere_perfil';
 let CLOUD_TOKEN = (function(){ try{ return localStorage.getItem(TKEY)||null; }catch(e){ return null; } })();
-const APP_VERSAO = '2026.06.26 · b45';   // aparece no rodapé; mude a cada publicação no GitHub
+const APP_VERSAO = '2026.06.26 · b46';   // aparece no rodapé; mude a cada publicação no GitHub
 const LOGO_B64 = 'data:image/png;base64,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';
 /* ============================================================================ */
 let _syncTimer=null;
@@ -796,11 +796,8 @@ const NAV=[
   {id:'resumo', label:'Relatórios por aluno', em:'📄', grp:'Acompanhamento', roles:['secretaria','direcao']},
   {id:'relturma', label:'Relatórios por turma', em:'🏫', grp:'Acompanhamento', roles:['secretaria','direcao']},
   {id:'arquivo', label:'Arquivo de relatórios', em:'🗄️', grp:'Acompanhamento', roles:['secretaria','direcao']},
-  {id:'agenda', label:'Agenda', em:'📅', grp:'Acompanhamento', roles:['professor','secretaria','direcao']},
   {id:'vip', label:'Alunos VIP', em:'👑', grp:'Acompanhamento', roles:['professor','direcao']},
   {id:'alertas', label:'Avisos', em:'🔔', grp:'Acompanhamento', roles:['secretaria','direcao'], badge:true},
-  {id:'atas', label:'Atas de reunião', em:'📝', grp:'Acompanhamento', roles:['direcao']},
-  {id:'tarefas', label:'Tarefas internas', em:'🎯', grp:'Gestão', roles:['direcao']},
   {id:'turmas', label:'Turmas e alunos', em:'👥', grp:'Gestão', roles:['professor','secretaria','direcao']},
   {id:'dupes', label:'Limpar duplicidades', em:'🧹', grp:'Gestão', roles:['secretaria','direcao']},
   {id:'gturmas', label:'Trocar / criar turma', em:'🔄', grp:'Gestão', roles:['secretaria','direcao']},
@@ -881,7 +878,7 @@ function aplicarLogin(u){
   document.getElementById('meDot').textContent=u.nome[0];
   document.getElementById('perfilLabel').innerHTML='Conectado como <b style="color:#fff">'+u.nome+'</b> · '+meta.nome;
   montarNav(); ir(NAV.find(n=>n.roles.includes(u.perfil)).id);
-  setTimeout(async function(){ await carregarAgendaHoje(); if(!mostrarAgendaDoDia()) mostrarAniversariantes(); }, 600);
+  setTimeout(function(){ mostrarAniversariantes(); }, 600);
 }
 function logout(){
   try{ cloudLogout(); }catch(e){}
@@ -2549,288 +2546,6 @@ function marcarContato(alunoId,tipo){
 }
 function desfazerContato(i){S.contatos.splice(i,1);save();montarNav();VIEWS.alertas();}
 
-/* ---- ATAS ---- */
-VIEWS.atas=()=>{
-  const v=document.getElementById('view');
-  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--amarelo)"></span><h2 class="display">Atas de reunião</h2></div>
-    <p class="sub">Registre decisões e participantes de cada reunião.</p>
-    <button class="btn" style="margin-bottom:16px" onclick="novaAta()">+ Nova ata</button>
-    <div id="aList"></div>`;
-  renderAtas();
-};
-function novaAta(){
-  modal(`<h3>📝 Nova ata <button class="close" onclick="fechar()">×</button></h3>
-    <div class="field"><label class="lbl">Título</label><input type="text" id="aT" placeholder="Ex: Reunião pedagógica de junho"></div>
-    <div class="row"><div class="field"><label class="lbl">Data</label><input type="date" id="aD" value="${hoje()}"></div>
-    <div class="field" style="flex:2"><label class="lbl">Participantes</label><input type="text" id="aP" placeholder="Quem participou"></div></div>
-    <div class="field"><label class="lbl">Pauta e decisões</label><textarea id="aTx" placeholder="O que foi discutido e decidido..."></textarea></div>
-    <button class="btn block" onclick="salvarAta()">Salvar ata</button>`);
-}
-function salvarAta(){
-  const t=document.getElementById('aT').value.trim();
-  if(!t)return toast('Dê um título');
-  S.atas.push({id:uid(),titulo:t,data:document.getElementById('aD').value,participantes:document.getElementById('aP').value,texto:document.getElementById('aTx').value});
-  save();fechar();renderAtas();toast('Ata salva');
-}
-function renderAtas(){
-  const list=document.getElementById('aList');
-  const as=[...S.atas].sort((a,b)=>b.data.localeCompare(a.data));
-  if(!as.length){list.innerHTML='<div class="card empty"><div class="big">📝</div>Nenhuma ata registrada.</div>';return;}
-  list.innerHTML=as.map(a=>`<div class="card"><h3>${a.titulo}</h3><p class="hint">${brDate(a.data)}${a.participantes?' · '+a.participantes:''}</p>
-    <p style="white-space:pre-wrap;line-height:1.6;font-size:.93rem">${a.texto||'<i style="color:var(--tinta-suave)">Sem detalhes.</i>'}</p>
-    <button class="btn ghost sm" style="margin-top:12px" onclick="delAta('${a.id}')">Excluir</button></div>`).join('');
-}
-function delAta(id){if(confirm('Excluir esta ata?')){S.atas=S.atas.filter(a=>a.id!==id);marcarExcluido('atas',id);save();renderAtas();toast('Ata excluída');}}
-
-/* ---- TAREFAS (EISENHOWER) ---- */
-const QUADS={
-  1:{nome:'Fazer agora',sub:'Urgente + importante',cor:'var(--vermelho)'},
-  2:{nome:'Agendar',sub:'Importante, não urgente',cor:'var(--azul)'},
-  3:{nome:'Standby',sub:'Urgente, não importante',cor:'#b88600'},
-  4:{nome:'Eliminar',sub:'Nem urgente nem importante',cor:'var(--tinta-suave)'}
-};
-// ===================== CALENDÁRIO / AGENDA =====================
-const CAL_HORA_INI=7, CAL_HORA_FIM=22;
-const MESES_PT=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-const CORES_EVENTO={
-  tomate:   {nome:'Tomate',    hex:'#d50000', donos:['Fernanda']},
-  flamingo: {nome:'Flamingo',  hex:'#e67c73', donos:['Fernanda','Franco']},
-  mirtilo:  {nome:'Mirtilo',   hex:'#3f51b5', donos:['Franco']},
-  banana:   {nome:'Banana',    hex:'#f6bf26', donos:['Mari']},
-  uva:      {nome:'Uva',       hex:'#8e24aa', donos:['Vlad']},
-  salvia:   {nome:'Sálvia',    hex:'#33b679', donos:['Camila']},
-  tangerina:{nome:'Tangerina', hex:'#f4511e', donos:['Leandro']},
-  grafite:  {nome:'Grafite',   hex:'#616161', donos:['Franco','Fernanda','Vlad','Mari','Leandro','Camila']},
-};
-function corEvento(ev){ return CORES_EVENTO[ev&&ev.cor]||CORES_EVENTO.grafite; }
-function donoLabel(c){ return (c.donos&&c.donos.length>3) ? 'Equipe toda' : (c.donos||[]).join(' e '); }
-function quadradinho(hex){ return `<span style="display:inline-block;width:13px;height:13px;border-radius:3px;background:${hex};vertical-align:middle;margin-right:5px;border:1px solid rgba(0,0,0,.15)"></span>`; }
-function _euSouDono(donos){ const u=_normTxt(S.usuario||''); return (donos||[]).some(d=>_normTxt(d)===u); }
-let _calVerTodos=false, _calModo='semana', _calRef=hoje();
-function podeVerTodos(){ return S.perfil==='direcao'||S.perfil==='secretaria'; }
-function podeEditarAgenda(){ return S.perfil==='direcao'||S.perfil==='secretaria'; }
-function eventoVisivel(ev){ if(_calVerTodos&&podeVerTodos()) return true; return _euSouDono(corEvento(ev).donos); }
-// ---- Agenda lida do Google Calendar (via Apps Script) ----
-const CORID_TO_COR={'11':'tomate','4':'flamingo','9':'mirtilo','5':'banana','3':'uva','2':'salvia','6':'tangerina','8':'grafite'};
-let _agEvents=[], _agHoje=[], _agCarregando=false, _agErro='';
-let _agDismiss=(function(){ try{ const o=JSON.parse(localStorage.getItem(KEY+'_agDismiss')||'{}'); return (o&&o.dia===hoje())? o : {dia:hoje(), ids:[]}; }catch(e){ return {dia:hoje(), ids:[]}; } })();
-function _salvaDismiss(){ try{ localStorage.setItem(KEY+'_agDismiss', JSON.stringify(_agDismiss)); }catch(e){} }
-function eventoConcluidoHoje(id){ return _agDismiss.dia===hoje() && (_agDismiss.ids||[]).includes(id); }
-function _normEvento(e){ return { id:e.id, titulo:e.titulo||'(sem título)', data:e.data, inicio:e.inicio||'', fim:e.fim||'', diaInteiro:!!e.diaInteiro, descricao:e.descricao||'', local:e.local||'', cor:CORID_TO_COR[String(e.colorId||'')]||'grafite', alerta:true }; }
-async function cloudAgenda(de, ate){
-  if(!cloudOn()||!CLOUD_TOKEN) return {ok:false, erro:'sessao'};
-  try{
-    const r=await fetch(CLOUD_URL+'?action=agenda&token='+encodeURIComponent(CLOUD_TOKEN),{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({de,ate})});
-    const j=await r.json();
-    if(!j.ok) return j;
-    return {ok:true, eventos:(j.eventos||[]).map(_normEvento)};
-  }catch(e){ return {ok:false, erro:String(e)}; }
-}
-function _rangeAgenda(){
-  if(_calModo==='semana'){ const d=_semanaDe(_calRef); return [d[0], d[6]]; }
-  const a=_calRef.split('-').map(Number); const ini=a[0]+'-'+String(a[1]).padStart(2,'0')+'-01'; return [ini, ymd(new Date(a[0],a[1],0))];
-}
-async function agendaRefresh(){
-  const r=_rangeAgenda(); _agCarregando=true; _agErro='';
-  if(rota==='agenda'){ (_calModo==='semana'?renderSemana:renderMes)(); }
-  const res=await cloudAgenda(r[0], r[1]); _agCarregando=false;
-  if(res.ok){ _agEvents=res.eventos; } else { _agEvents=[]; _agErro = res.auth?'Sessão expirada — saia e entre novamente.':'Não foi possível ler a agenda do Google.'; }
-  if(rota==='agenda'){ (_calModo==='semana'?renderSemana:renderMes)(); }
-}
-async function carregarAgendaHoje(){ const h=hoje(); const r=await cloudAgenda(h,h); if(r.ok){ _agHoje=r.eventos; if(rota==='tarefas') renderTarefas(); } }
-function eventosVisiveis(){ return (_agEvents||[]).filter(eventoVisivel); }
-function verEventoGoogle(id){
-  const e=(_agEvents.concat(_agHoje)).find(x=>x.id===id); if(!e) return;
-  modal(`<h3>${quadradinho(corEvento(e).hex)}${esc(e.titulo)} <button class="close" onclick="fechar()">×</button></h3>
-    <p class="hint">${brDate(e.data)} · ${(e.diaInteiro||!e.inicio)?'dia todo':esc(e.inicio)+(e.fim?'–'+esc(e.fim):'')} · ${donoLabel(corEvento(e))}</p>
-    ${e.local?`<p><b>Local:</b> ${esc(e.local)}</p>`:''}
-    ${e.descricao?`<p style="white-space:pre-wrap">${esc(e.descricao)}</p>`:''}
-    <p class="hint" style="margin-top:10px">Eventos são gerenciados no Google Calendar.</p>
-    <a class="btn block" href="https://calendar.google.com/calendar/u/0/r/day/${e.data.replace(/-/g,'/')}" target="_blank" rel="noopener">Abrir no Google Agenda</a>`);
-}
-function _minHHMM(s){ const m=String(s||'').match(/(\d{1,2}):(\d{2})/); return m? (+m[1]*60 + +m[2]) : null; }
-function _horaIniTurma(t){ const m=String((t&&t.horario)||'').match(/(\d{1,2}):(\d{2})/g); if(m&&m.length){ const p=m[0].split(':'); return +p[0]*60 + +p[1]; } return null; }
-function _horaFimTurmaMin(t){ const m=String((t&&t.horario)||'').match(/(\d{1,2}):(\d{2})/g); if(m&&m.length){ const p=m[m.length-1].split(':'); return +p[0]*60 + +p[1]; } return null; }
-function _semanaDe(ref){ const a=ref.split('-').map(Number); const base=new Date(a[0],a[1]-1,a[2]); const ini=new Date(base); ini.setDate(base.getDate()-base.getDay()); const out=[]; for(let i=0;i<7;i++){ const x=new Date(ini); x.setDate(ini.getDate()+i); out.push(ymd(x)); } return out; }
-function turmasNaAgenda(){
-  return S.turmas.filter(t=>!t.arquivada).filter(t=> (_calVerTodos&&podeVerTodos()) ? true : _normTxt(t.professor||'')===_normTxt(S.usuario||''));
-}
-// ---- CRUD ----
-function novoEvento(dataPre,iniPre){ if(!podeEditarAgenda()) return toast('Apenas direção e secretaria criam eventos'); modalEvento(null,dataPre,iniPre); }
-function editarEvento(id){ if(!podeEditarAgenda()) return toast('Apenas direção e secretaria editam eventos'); modalEvento((S.eventos||[]).find(e=>e.id===id)); }
-function modalEvento(ev,dataPre,iniPre){
-  ev=ev||{};
-  const cores=Object.entries(CORES_EVENTO).map(([k,c])=>`<option value="${k}" ${ev.cor===k?'selected':''}>${donoLabel(c)}</option>`).join('');
-  modal(`<h3>${ev.id?'Editar evento':'Novo evento'} <button class="close" onclick="fechar()">×</button></h3>
-    <div class="field"><label class="lbl">Título</label><input type="text" id="evTit" value="${escAttr(ev.titulo||'')}" placeholder="Ex.: Reunião pedagógica"></div>
-    <div class="row">
-      <div><label class="lbl">Data</label><input type="date" id="evData" value="${ev.data||dataPre||hoje()}"></div>
-      <div><label class="lbl">Responsável (cor)</label><select id="evCor">${cores}</select></div>
-    </div>
-    <div class="row">
-      <div><label class="lbl">Início</label><input type="time" id="evIni" value="${ev.inicio||iniPre||''}"></div>
-      <div><label class="lbl">Fim</label><input type="time" id="evFim" value="${ev.fim||''}"></div>
-    </div>
-    <label class="check" style="margin:6px 0"><input type="checkbox" id="evDia" ${ev.diaInteiro?'checked':''}> Dia inteiro</label>
-    <div class="field"><label class="lbl">Descrição / local (opcional)</label><input type="text" id="evDesc" value="${escAttr(ev.descricao||'')}"></div>
-    <label class="check" style="margin:6px 0"><input type="checkbox" id="evAlerta" ${ev.alerta!==false?'checked':''}> Avisar no dia (popup + matriz)</label>
-    <div class="row" style="margin-top:10px;gap:8px">
-      <button class="btn block" onclick="salvarEvento('${ev.id||''}')">Salvar</button>
-      ${ev.id?`<button class="btn ghost" style="color:var(--vermelho)" onclick="delEvento('${ev.id}')">🗑 Excluir</button>`:''}
-    </div>`);
-  setTimeout(()=>{const i=document.getElementById('evTit'); if(i&&!ev.id)i.focus();},60);
-}
-function salvarEvento(id){
-  if(!podeEditarAgenda()) return toast('Sem permissão');
-  const tit=(document.getElementById('evTit').value||'').trim(); if(!tit) return toast('Dê um título ao evento');
-  const diaInteiro=document.getElementById('evDia').checked;
-  const dados={ titulo:tit, data:document.getElementById('evData').value||hoje(), cor:document.getElementById('evCor').value||'grafite',
-    inicio: diaInteiro?'':(document.getElementById('evIni').value||''), fim: diaInteiro?'':(document.getElementById('evFim').value||''),
-    diaInteiro:diaInteiro, descricao:(document.getElementById('evDesc').value||'').trim(),
-    alerta:document.getElementById('evAlerta').checked, atualizadoEm:Date.now() };
-  const ex=(S.eventos||[]).find(e=>e.id===id);
-  if(ex){ Object.assign(ex,dados); } else { dados.id=uid(); dados.criadoEm=hoje(); dados.criadoPor=S.usuario; (S.eventos=S.eventos||[]).push(dados); }
-  save(); fechar(); VIEWS.agenda(); toast('Evento salvo');
-}
-function delEvento(id){ if(!podeEditarAgenda()) return toast('Sem permissão'); if(!confirm('Excluir este evento?')) return;
-  S.eventos=(S.eventos||[]).filter(e=>e.id!==id); marcarExcluido('eventos',id); save(); fechar(); VIEWS.agenda(); toast('Evento excluído'); }
-// ---- views ----
-VIEWS.agenda=()=>{
-  const v=document.getElementById('view');
-  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Agenda</h2></div>
-    <div class="row" style="align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px">
-      <div class="seg">
-        <button class="btn ${_calModo==='semana'?'':'ghost'} sm" onclick="_calModo='semana';VIEWS.agenda()">Semana</button>
-        <button class="btn ${_calModo==='mes'?'':'ghost'} sm" onclick="_calModo='mes';VIEWS.agenda()">Mês</button>
-      </div>
-      <button class="btn ghost sm" onclick="calNav(-1)">‹</button>
-      <button class="btn ghost sm" onclick="_calRef=hoje();VIEWS.agenda()">Hoje</button>
-      <button class="btn ghost sm" onclick="calNav(1)">›</button>
-      <span id="calTit" style="font-weight:700;flex:1;min-width:120px"></span>
-      ${podeVerTodos()?`<label class="check" style="margin:0"><input type="checkbox" ${_calVerTodos?'checked':''} onchange="_calVerTodos=this.checked;VIEWS.agenda()"> ver todos</label>`:''}
-      <button class="btn ghost sm" onclick="agendaRefresh()" title="Atualizar do Google Calendar">↻</button>
-    </div>
-    <div id="calBox"></div>
-    <p class="hint" style="margin-top:8px;line-height:1.9">Legenda: ${Object.values(CORES_EVENTO).map(c=>`${quadradinho(c.hex)}${donoLabel(c)}`).join(' &nbsp;&nbsp; ')}</p>`;
-  if(_calModo==='semana') renderSemana(); else renderMes();
-  agendaRefresh();
-};
-function calNav(dir){ const a=_calRef.split('-').map(Number); const dt=new Date(a[0],a[1]-1,a[2]); if(_calModo==='semana') dt.setDate(dt.getDate()+7*dir); else dt.setMonth(dt.getMonth()+dir); _calRef=ymd(dt); VIEWS.agenda(); }
-function renderSemana(){
-  const box=document.getElementById('calBox'); if(!box)return;
-  const dias=_semanaDe(_calRef); const tit=document.getElementById('calTit'); if(tit) tit.textContent=brDate(dias[0])+' – '+brDate(dias[6]);
-  const px=44, H=(CAL_HORA_FIM-CAL_HORA_INI)*px, turmas=turmasNaAgenda(), evs=eventosVisiveis();
-  const head='<div class="calhead"><div class="calhcell"></div>'+dias.map(d=>`<div class="calhcell ${d===hoje()?'hoje':''}">${DIAS_SEMANA[weekdayOf(d)]}<br><b>${d.split('-')[2]}</b></div>`).join('')+'</div>';
-  const alldayRow='<div class="calrow"><div class="calhcell" style="font-size:.66rem;color:var(--tinta-suave);align-self:center">dia todo</div>'+
-    dias.map(d=>`<div class="calday allday">${evs.filter(e=>e.data===d&&(e.diaInteiro||!e.inicio)).map(e=>`<div class="evchip" style="background:${corEvento(e).hex}" onclick="verEventoGoogle('${e.id}')">${esc(e.titulo)}</div>`).join('')}</div>`).join('')+'</div>';
-  let horas=''; for(let h=CAL_HORA_INI;h<CAL_HORA_FIM;h++) horas+=`<div class="calhour" style="height:${px}px">${String(h).padStart(2,'0')}h</div>`;
-  const grad=`background-image:repeating-linear-gradient(to bottom,transparent,transparent ${px-1}px,#eef0f3 ${px-1}px,#eef0f3 ${px}px)`;
-  const cols=dias.map(d=>{
-    const wd=weekdayOf(d); let blk='';
-    turmas.filter(t=>(t.dias||[]).includes(wd)).forEach(t=>{ const s=_horaIniTurma(t); if(s==null)return; const e=_horaFimTurmaMin(t)||s+60;
-      const top=Math.max(0,(s-CAL_HORA_INI*60)/60*px), hg=Math.max(16,(e-s)/60*px);
-      blk+=`<div class="calblk turma" style="top:${top}px;height:${hg}px" onclick="abrirTurma('${t.id}')"><b>${esc(t.nome)}</b></div>`; });
-    evs.filter(e=>e.data===d&&!e.diaInteiro&&e.inicio).forEach(e=>{ const s=_minHHMM(e.inicio), e2=_minHHMM(e.fim)||s+60;
-      const top=Math.max(0,(s-CAL_HORA_INI*60)/60*px), hg=Math.max(16,(e2-s)/60*px);
-      blk+=`<div class="calblk" style="top:${top}px;height:${hg}px;background:${corEvento(e).hex}" onclick="verEventoGoogle('${e.id}')"><b>${esc(e.titulo)}</b><br>${e.inicio}${e.fim?'–'+e.fim:''}</div>`; });
-    return `<div class="calday" style="height:${H}px;${grad}">${blk}</div>`;
-  }).join('');
-  box.innerHTML=`<div class="calwrap">${head}${alldayRow}<div class="calgrid"><div class="calhours">${horas}</div>${cols}</div></div>
-    <p class="hint" style="margin-top:6px">${_agCarregando?'⏳ Atualizando agenda do Google…':(_agErro?('⚠️ '+_agErro):'Eventos vêm do Google Calendar. Toque num evento para ver detalhes.')}</p>`;
-}
-function renderMes(){
-  const box=document.getElementById('calBox'); if(!box)return;
-  const a=_calRef.split('-').map(Number), y=a[0], m=a[1]; const tit=document.getElementById('calTit'); if(tit) tit.textContent=MESES_PT[m-1]+' de '+y;
-  const pref=`${y}-${String(m).padStart(2,'0')}-`;
-  const evs=eventosVisiveis().filter(e=>(e.data||'').startsWith(pref)).sort((x,z)=>(x.data+(x.inicio||'')).localeCompare(z.data+(z.inicio||'')));
-  if(!evs.length){ box.innerHTML=`<div class="card"><p class="hint">${_agCarregando?'⏳ Atualizando agenda do Google…':(_agErro?('⚠️ '+_agErro):'Nenhum evento neste mês.')}</p></div>`; return; }
-  const byDay={}; evs.forEach(e=>{(byDay[e.data]=byDay[e.data]||[]).push(e);});
-  box.innerHTML='<div class="card">'+Object.keys(byDay).sort().map(d=>`
-    <div style="margin:10px 0 4px;font-weight:700">${brDate(d)} · ${DIAS_SEMANA[weekdayOf(d)]}</div>
-    ${byDay[d].map(e=>`<div class="check"><span class="dot" style="background:${corEvento(e).hex}"></span>
-      <span style="flex:1">${(e.diaInteiro||!e.inicio)?'dia todo':e.inicio+(e.fim?'–'+e.fim:'')} · <b>${esc(e.titulo)}</b>${e.descricao?` <small class="hint">${esc(e.descricao)}</small>`:''}</span>
-      <button class="btn ghost sm" onclick="verEventoGoogle('${e.id}')">ver</button></div>`).join('')}
-  `).join('')+'</div>';
-}
-
-VIEWS.tarefas=()=>{
-  const v=document.getElementById('view');
-  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--marinho)"></span><h2 class="display">Tarefas internas</h2></div>
-    <p class="sub">Matriz de Eisenhower — priorize o que importa. (“Standby” no lugar de “Delegar”.)</p>
-    <div class="card"><div class="row">
-      <div style="flex:3"><label class="lbl">Nova tarefa</label><input type="text" id="tkTxt" placeholder="O que precisa ser feito?" onkeydown="if(event.key==='Enter')addTarefa()"></div>
-      <div><label class="lbl">Quadrante</label><select id="tkQ">${Object.entries(QUADS).map(([k,q])=>`<option value="${k}">${q.nome}</option>`).join('')}</select></div>
-    </div><div style="margin-top:12px"><button class="btn" onclick="addTarefa()">+ Adicionar</button></div></div>
-    <div class="emat" id="eMat"></div>`;
-  renderTarefas();
-};
-function addTarefa(){
-  const txt=document.getElementById('tkTxt').value.trim();
-  if(!txt)return toast('Escreva a tarefa');
-  S.tarefas.push({id:uid(),txt,quad:+document.getElementById('tkQ').value,feito:false});
-  document.getElementById('tkTxt').value='';save();renderTarefas();
-}
-let _dragTarefa=null;
-function compromissosHoje(){
-  const h=hoje();
-  const eventos=(_agHoje||[]).filter(e=>e.data===h && eventoVisivel(e) && !eventoConcluidoHoje(e.id));
-  const rels=(typeof todasMinhasPendencias==='function'? todasMinhasPendencias():[]).filter(p=>p.tipo==='relatorio');
-  return {eventos, rels};
-}
-function concluirEvento(id){ if(_agDismiss.dia!==hoje()) _agDismiss={dia:hoje(),ids:[]}; if(!_agDismiss.ids.includes(id)) _agDismiss.ids.push(id); _salvaDismiss(); if(typeof renderTarefas==='function')renderTarefas(); toast('Marcado como resolvido por hoje'); }
-function soltarTarefa(ev,q){ if(ev&&ev.preventDefault)ev.preventDefault(); if(_dragTarefa){ const t=S.tarefas.find(x=>x.id===_dragTarefa); if(t){ t.quad=q; save(); } _dragTarefa=null; renderTarefas(); } }
-function mostrarAgendaDoDia(){
-  try{
-    const chave=KEY+'_agendaPopup', h=hoje();
-    if(localStorage.getItem(chave)===h) return;            // só uma vez por dia
-    const evs=(_agHoje||[]).filter(e=>e.data===h && eventoVisivel(e) && !eventoConcluidoHoje(e.id));
-    localStorage.setItem(chave,h);
-    if(!evs.length) return false;
-    const lista=evs.sort((a,b)=>(a.inicio||'').localeCompare(b.inicio||'')).map(e=>`<div class="check"><span class="dot" style="background:${corEvento(e).hex}"></span>
-      <span style="flex:1">${(e.diaInteiro||!e.inicio)?'dia todo':esc(e.inicio)+(e.fim?'–'+esc(e.fim):'')} · <b>${esc(e.titulo)}</b>${e.descricao?` <small class="hint">${esc(e.descricao)}</small>`:''}</span></div>`).join('');
-    modal(`<h3>📅 Seus eventos de hoje <button class="close" onclick="fechar()">×</button></h3>
-      <p class="hint" style="margin-bottom:10px">${brDate(h)} — ${evs.length} evento(s). Eles também ficam no quadrante "Fazer agora" das Tarefas internas.</p>
-      ${lista}
-      <div class="row" style="margin-top:12px;gap:8px"><button class="btn" onclick="fechar();ir('agenda')">Abrir agenda</button><button class="btn ghost" onclick="fechar()">Fechar</button></div>`);
-    return true;
-  }catch(e){ return false; }
-}
-
-function renderTarefas(){
-  const mat=document.getElementById('eMat');
-  const comp=compromissosHoje();
-  mat.innerHTML=Object.entries(QUADS).map(([k,q])=>{
-    const ts=S.tarefas.filter(t=>t.quad==k);
-    let mirror='';
-    if(k==='1'){
-      const ev=comp.eventos.map(e=>`<div class="task agenda"><span class="dot" style="background:${corEvento(e).hex}"></span>
-        <span class="t-txt">📅 ${(e.diaInteiro||!e.inicio)?'':esc(e.inicio)+' '}${esc(e.titulo)}</span>
-        <button class="mv" onclick="concluirEvento('${e.id}')">✓ concluir</button></div>`).join('');
-      const rel=comp.rels.map(p=>`<div class="task agenda"><span class="dot" style="background:var(--vermelho)"></span>
-        <span class="t-txt">🧾 Relatório não gerado · ${esc(turmaNome(p.turmaId))} · ${brDate(p.data)}</span>
-        <button class="mv" onclick="irPendencia('${p.turmaId}','${p.data}','relatorio')">resolver ›</button></div>`).join('');
-      if(ev||rel) mirror=`<div class="agenda-wrap">${ev}${rel}</div>`;
-    }
-    return `<div class="quad q${k}" ondragover="event.preventDefault();this.classList.add('dragover')" ondragleave="this.classList.remove('dragover')" ondrop="this.classList.remove('dragover');soltarTarefa(event,${k})"><h4><span class="dot" style="background:${q.cor}"></span>${q.nome}</h4><div class="qsub">${q.sub}</div>
-      ${mirror}
-      ${ts.length?ts.map(t=>`<div class="task ${t.feito?'feito':''}" draggable="true" ondragstart="_dragTarefa='${t.id}'" ondragend="_dragTarefa=null">
-        <input type="checkbox" ${t.feito?'checked':''} onchange="toggleTarefa('${t.id}')" style="accent-color:${q.cor};width:18px;height:18px;flex:none;margin-top:1px;cursor:pointer">
-        <span class="t-txt">${t.txt}</span>
-        <button class="mv" onclick="moverTarefa('${t.id}')">mover</button>
-        <button class="del" onclick="delTarefa('${t.id}')">×</button></div>`).join(''):'<div style="font-size:.82rem;color:var(--tinta-suave);padding:8px 0">Vazio</div>'}
-    </div>`;
-  }).join('');
-}
-function toggleTarefa(id){const t=S.tarefas.find(t=>t.id===id);t.feito=!t.feito;save();renderTarefas();}
-function delTarefa(id){S.tarefas=S.tarefas.filter(t=>t.id!==id);marcarExcluido('tarefas',id);save();renderTarefas();}
-function moverTarefa(id){
-  const t=S.tarefas.find(t=>t.id===id);
-  modal(`<h3>Mover tarefa <button class="close" onclick="fechar()">×</button></h3>
-    <p class="hint" style="margin-bottom:14px">“${t.txt}”</p>
-    ${Object.entries(QUADS).map(([k,q])=>`<button class="btn ghost block" style="margin-bottom:8px;justify-content:flex-start" onclick="confirmaMover('${id}',${k})"><span class="dot" style="width:10px;height:10px;border-radius:50%;background:${q.cor};display:inline-block;margin-right:8px"></span><b>${q.nome}</b> — ${q.sub}</button>`).join('')}`);
-}
-function confirmaMover(id,q){const t=S.tarefas.find(t=>t.id===id);t.quad=q;save();fechar();renderTarefas();toast('Tarefa movida');}
-
 /* ---- TURMAS E ALUNOS ---- */
 VIEWS.turmas=()=>{
   painelTurma=null;
@@ -2873,6 +2588,9 @@ function addTurma(){if(soLeitura())return toast('Somente leitura — a secretari
 let _fSeg='', _fPer='', _fDia='', _fProf='', _filtroAberto=false;
 function toggleFiltroTurma(){ _filtroAberto=!_filtroAberto; renderTurmaList(); }
 const PERIODOS=[['manha','Manhã'],['tarde','Tarde'],['tardinha','Tardinha'],['noite','Noite']];
+function _minHHMM(s){ const m=String(s||'').match(/(\d{1,2}):(\d{2})/); return m? (+m[1]*60 + +m[2]) : null; }
+function _horaIniTurma(t){ const m=String((t&&t.horario)||'').match(/(\d{1,2}):(\d{2})/g); if(m&&m.length){ const p=m[0].split(':'); return +p[0]*60 + +p[1]; } return null; }
+function podeVerTodos(){ return S.perfil==='direcao'||S.perfil==='secretaria'; }
 function periodoTurma(t){ const s=_horaIniTurma(t); if(s==null)return ''; if(s<720)return 'manha'; if(s<1020)return 'tarde'; if(s<1140)return 'tardinha'; return 'noite'; }
 function turmaPassaFiltro(t){
   if(_fSeg && t.nivel!==_fSeg) return false;
