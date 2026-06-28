@@ -2,7 +2,7 @@
    Estratégia: network-first para arquivos do próprio site (sempre pega a versão
    nova quando há internet; usa o cache só quando estiver offline).
    Chamadas externas (planilha/Apps Script) e POSTs passam direto, sem cache. */
-const CACHE = 'togethere-2026-06-28c';
+const CACHE = 'togethere-2026-06-28d';
 const CORE = ['./', './index.html', './logo.png', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './manifest.json'];
 
 self.addEventListener('install', function(e){
