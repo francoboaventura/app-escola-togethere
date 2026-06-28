@@ -417,7 +417,7 @@ function migrar(s){
 const CLOUD_URL    = 'https://script.google.com/macros/s/AKfycbylxwXqDh5ohAL4qLTn7WBQAu4juwt2bwgdiuGHDl1Ll3d1ViK-mdbeMghnG4UH3GNH/exec';
 const TKEY='togethere_token', UKEY='togethere_user', PKEY='togethere_perfil';
 let CLOUD_TOKEN = (function(){ try{ return localStorage.getItem(TKEY)||null; }catch(e){ return null; } })();
-const APP_VERSAO = '2026.06.26 · b51';   // aparece no rodapé; mude a cada publicação no GitHub
+const APP_VERSAO = '2026.06.28 · b52';   // aparece no rodapé; mude a cada publicação no GitHub
 const LOGO_B64 = 'data:image/png;base64,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';
 /* ============================================================================ */
 let _syncTimer=null;
@@ -1388,6 +1388,7 @@ VIEWS.temas=()=>{
   renderTemas();
 };
 function escAttr(s){return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function esc(s){return (s==null?'':s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function modalTema(turmaId,descricao,data,origem){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');
   const als=alunosDa(turmaId);
   const orig=data||hoje();
@@ -2253,43 +2254,74 @@ function renderRelTurmaHist(){
       <button class="btn ghost sm" onclick="copiarRelatorioFamilia('${r.id}')">📋 copiar</button>
       <button class="btn ghost sm" style="color:var(--vermelho)" onclick="delRelatorio('${r.id}')">🗑</button></div>`;}).join('');
 }
-let _arqBusca='', _arqStatus='todos';
+let _arqBusca='';
+const ARQ_LIMITE=20;
 function _turmasComAluno(qn){ const ids=new Set(); S.alunos.forEach(a=>{ if(_normTxt(a.nome).includes(qn)) ids.add(a.turmaId); }); return ids; }
-function filtrarArquivo(busca, status){
+// Lista unificada de relatórios ENVIADOS (aula por turma + ficha por aluno), ordenada pela data de envio (mais recentes em cima).
+function _arquivoItens(){
+  const out=[];
+  (S.relatorios||[]).forEach(r=>{
+    if(!r.enviado) return;
+    out.push({ tipo:'aula', id:r.id, ts:(r.enviadoTs||_ymdToTs(r.enviadoEm||r.data)), em:(r.enviadoEm||r.data),
+      turmaId:r.turmaId, titulo:turmaNome(r.turmaId), dataAula:r.data, por:r.criadoPor||'' });
+  });
+  (S.alunos||[]).forEach(a=>{
+    (Array.isArray(a.relatoriosEnviados)?a.relatoriosEnviados:[]).forEach(e=>{
+      out.push({ tipo:'aluno', id:a.id+'@'+(e.ts||e.em), ts:(e.ts||_ymdToTs(e.em)), em:e.em,
+        turmaId:a.turmaId, alunoId:a.id, titulo:a.nome, via:(e.via||''), por:(e.por||'') });
+    });
+  });
+  out.sort((x,y)=>(y.ts||0)-(x.ts||0));
+  const seen=new Set(); const dedup=[];
+  out.forEach(it=>{ if(seen.has(it.id)) return; seen.add(it.id); dedup.push(it); });   // sem duplicidade
+  return dedup;
+}
+function filtrarArquivo(busca){
   const q=(busca||'').trim(), qn=_normTxt(q);
-  const turmasAluno = q ? _turmasComAluno(qn) : null;
-  let rs=S.relatorios.slice().sort((a,b)=>b.data.localeCompare(a.data)||(b.criadoEm||'').localeCompare(a.criadoEm||''));
-  if(status==='enviados') rs=rs.filter(r=>r.enviado);
-  else if(status==='nao') rs=rs.filter(r=>!r.enviado);
-  if(q) rs=rs.filter(r=> _normTxt(turmaNome(r.turmaId)).includes(qn) || (turmasAluno && turmasAluno.has(r.turmaId)) || (r.data||'').includes(q) || brDate(r.data).includes(q));
+  let rs=_arquivoItens();
+  if(q){
+    const turmasAluno=_turmasComAluno(qn);   // casa busca por nome de aluno nos relatórios de aula
+    rs=rs.filter(it=>{
+      const titulo=_normTxt(it.titulo);                       // turma (aula) ou nome (aluno)
+      const nomeTurma=_normTxt(turmaNome(it.turmaId));
+      const dataMatch=(it.em||'').includes(q) || brDate(it.em).includes(q)
+        || (it.dataAula && (it.dataAula.includes(q) || brDate(it.dataAula).includes(q)));
+      const alunoMatch=it.tipo==='aluno' ? titulo.includes(qn) : turmasAluno.has(it.turmaId);
+      return titulo.includes(qn) || nomeTurma.includes(qn) || alunoMatch || dataMatch;
+    });
+  }
   return rs;
 }
 function renderArquivo(){
   const box=document.getElementById('arqHist'); if(!box) return;
-  const rs=filtrarArquivo(_arqBusca,_arqStatus);
-  const cnt=document.getElementById('arqCount'); if(cnt) cnt.textContent=rs.length+' relatório(s)';
-  if(!rs.length){ box.innerHTML='<p class="hint">'+(((_arqBusca||'').trim()||_arqStatus!=='todos')?'Nenhum relatório encontrado.':'Nenhum relatório gerado ainda.')+'</p>'; return; }
-  box.innerHTML=rs.map(r=>{const t=S.turmas.find(x=>x.id===r.turmaId)||{};
-    const status=r.enviado
-      ? `<span class="pill" style="background:#e7f6ef;color:var(--ok)">✅ enviado${r.enviadoEm?' '+brDate(r.enviadoEm):''}${r.enviadoQtd?' · '+r.enviadoQtd+' e-mail(s)':''}</span>`
-      : `<span class="pill" style="background:#fff7e6;color:var(--laranja)">⏳ não enviado</span>`;
-    return `<div class="check"><span style="flex:1">${brDate(r.data)} · <b>${esc(t.nome||'—')}</b> ${status}${r.criadoPor?`<br><small class="hint">gerado por ${esc(r.criadoPor)}</small>`:''}</span>
-      <button class="btn ghost sm" onclick="verRelTurma('${r.id}')">ver</button>
-      <button class="btn ghost sm" onclick="copiarRelatorioFamilia('${r.id}')">📋</button></div>`;}).join('');
+  const todos=filtrarArquivo(_arqBusca);
+  const buscando=!!(_arqBusca||'').trim();
+  const rs=buscando ? todos : todos.slice(0,ARQ_LIMITE);
+  const cnt=document.getElementById('arqCount');
+  if(cnt) cnt.textContent = buscando
+    ? (todos.length+' resultado(s)')
+    : ('mostrando os '+rs.length+' mais recentes'+(todos.length>rs.length?(' · '+todos.length+' no total'):''));
+  if(!rs.length){ box.innerHTML='<p class="hint">'+(buscando?'Nenhum relatório enviado encontrado.':'Nenhum relatório enviado ainda.')+'</p>'; return; }
+  box.innerHTML=rs.map(it=>{
+    const t=S.turmas.find(x=>x.id===it.turmaId)||{};
+    if(it.tipo==='aluno'){
+      const viaTxt=it.via==='email'?'e-mail':it.via==='whatsapp'?'WhatsApp':it.via==='pdf'?'PDF':'';
+      const sub=[t.nome?esc(t.nome):'', viaTxt, it.por?esc(it.por):''].filter(Boolean).join(' · ');
+      return `<div class="check"><span style="flex:1">${brDate(it.em)} · 📄 <b>${esc(it.titulo)}</b> <span class="pill" style="background:#eef4ff;color:var(--azul)">aluno</span>${sub?`<br><small class="hint">${sub}</small>`:''}</span>
+        <button class="btn ghost sm" onclick="abrirFicha('${it.alunoId}')">📇 ficha</button></div>`;
+    }
+    return `<div class="check"><span style="flex:1">${brDate(it.em)} · 🧾 <b>${esc(t.nome||'—')}</b> <span class="pill" style="background:#e7f6ef;color:var(--ok)">turma</span><br><small class="hint">aula ${brDate(it.dataAula)}${it.por?' · gerado por '+esc(it.por):''}</small></span>
+      <button class="btn ghost sm" onclick="verRelTurma('${it.id}')">ver</button>
+      <button class="btn ghost sm" onclick="copiarRelatorioFamilia('${it.id}')">📋</button></div>`;
+  }).join('');
 }
 VIEWS.arquivo=()=>{
   const v=document.getElementById('view');
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Arquivo de relatórios</h2></div>
-    <p class="sub">Todos os relatórios de aula já gerados. Pesquise por <b>turma</b> ou <b>nome de aluno</b> e filtre por status de envio.</p>
+    <p class="sub">Relatórios já <b>enviados</b> às famílias — de aula (por turma) e por aluno (ficha). Ao abrir, mostra os 20 mais recentes. Pesquise por <b>turma</b>, <b>aluno</b> ou <b>data</b>.</p>
     <div class="card">
-      <input type="text" id="arqBusca" placeholder="🔎 Buscar por turma ou nome de aluno" value="${escAttr(_arqBusca)}" oninput="_arqBusca=this.value;renderArquivo()">
-      <div class="row" style="margin-top:10px;gap:8px;align-items:center">
-        <label class="lbl" style="margin:0">Status:</label>
-        <select id="arqStatus" onchange="_arqStatus=this.value;renderArquivo()">
-          <option value="todos" ${_arqStatus==='todos'?'selected':''}>Todos</option>
-          <option value="enviados" ${_arqStatus==='enviados'?'selected':''}>Enviados</option>
-          <option value="nao" ${_arqStatus==='nao'?'selected':''}>Não enviados</option>
-        </select>
+      <input type="text" id="arqBusca" placeholder="🔎 Buscar por turma, aluno ou data (ex.: A2, Maria, 10/06)" value="${escAttr(_arqBusca)}" oninput="_arqBusca=this.value;renderArquivo()">
+      <div class="row" style="margin-top:10px;align-items:center">
         <span id="arqCount" class="hint" style="margin-left:auto"></span>
       </div>
       <div id="arqHist" style="margin-top:12px"></div>
@@ -2753,15 +2785,30 @@ function fichaSetEmail(){
   a.email=(document.getElementById('fcEmail').value||'').trim();
   save(); toast('E-mail do responsável atualizado');
 }
+// Registra no histórico que um relatório por aluno (ficha) foi enviado.
+// Sem duplicidade: 1 registro por aluno por dia — se reenviar no mesmo dia, atualiza via/hora.
+// Só conta como "enviado à família" quando feito por secretaria/direção (não por professor).
+function _registrarEnvioFicha(a, via){
+  if(!a || ehProfessor()) return;
+  a.relatoriosEnviados = Array.isArray(a.relatoriosEnviados) ? a.relatoriosEnviados : [];
+  const em=hoje();
+  let reg=a.relatoriosEnviados.find(r=>r.em===em);
+  if(reg){ reg.ts=Date.now(); reg.via=via; reg.por=S.usuario; reg.de=_fichaDe||''; reg.ate=_fichaAte||''; }
+  else { a.relatoriosEnviados.push({ts:Date.now(), em, por:S.usuario, via, de:_fichaDe||'', ate:_fichaAte||''}); }
+  if(a.relatoriosEnviados.length>200) a.relatoriosEnviados=a.relatoriosEnviados.slice(-200);
+  a.atualizadoEm=Date.now();   // carimbo para a sincronização entre aparelhos
+}
 function copiarFicha(){
   const a=(S.alunos||[]).find(x=>x.id===_fichaAlunoId); if(!a) return;
   copiarTexto(corpoFichaAluno(a.id,_fichaDe,_fichaAte),'Ficha copiada! Cole no WhatsApp');
+  _registrarEnvioFicha(a,'whatsapp'); save();
 }
 function imprimirFicha(){
   const a=(S.alunos||[]).find(x=>x.id===_fichaAlunoId); if(!a) return;
   const txt=corpoFichaAluno(a.id,_fichaDe,_fichaAte);
   const html=`<div style="font-family:Arial,sans-serif;max-width:760px;margin:0 auto;padding:20px"><pre style="white-space:pre-wrap;font-family:Arial,sans-serif;font-size:13px;line-height:1.5">${escAttr(txt)}</pre></div>`;
   if(typeof imprimirDoc==='function') imprimirDoc(html); else toast('Impressão indisponível');
+  _registrarEnvioFicha(a,'pdf'); save();
 }
 async function enviarFichaResponsavel(){
   if(ehProfessor()) return toast('Sem permissão para enviar');
@@ -2772,7 +2819,7 @@ async function enviarFichaResponsavel(){
   const btn=document.getElementById('fcEnviar'); if(btn){ btn.disabled=true; btn.textContent='Enviando…'; }
   const res=await cloudEmail([email], 'Acompanhamento de '+a.nome+' — Togethere', corpoFichaAluno(a.id,_fichaDe,_fichaAte));
   if(btn){ btn.disabled=false; btn.textContent='✉️ Enviar ao responsável'; }
-  if(res && res.ok){ a.fichaEnviadaEm=hoje(); a.fichaEnviadaPor=S.usuario; save(); VIEWS.ficha(); toast('Ficha enviada ao responsável'); }
+  if(res && res.ok){ a.fichaEnviadaEm=hoje(); a.fichaEnviadaPor=S.usuario; _registrarEnvioFicha(a,'email'); save(); VIEWS.ficha(); toast('Ficha enviada ao responsável'); }
   else toast('Não foi possível enviar: '+((res&&res.erro)||'erro'));
 }
 VIEWS.ficha=()=>{
