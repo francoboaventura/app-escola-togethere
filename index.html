@@ -384,6 +384,7 @@ function migrar(s){
   s.aulasVip=s.aulasVip||[];
   s.vipAlunos=s.vipAlunos||[];
   s.planejamento=s.planejamento||[];
+  s.recessos=s.recessos||[];       // recessos/férias (pausam o ritmo previsto)
   (s.aulasVip||[]).forEach(a=>{
     if(!a.vipId && a.alunoId){
       const al=(s.alunos||[]).find(x=>x.id===a.alunoId);
@@ -421,7 +422,7 @@ function migrar(s){
 const CLOUD_URL    = 'https://script.google.com/macros/s/AKfycbylxwXqDh5ohAL4qLTn7WBQAu4juwt2bwgdiuGHDl1Ll3d1ViK-mdbeMghnG4UH3GNH/exec';
 const TKEY='togethere_token', UKEY='togethere_user', PKEY='togethere_perfil';
 let CLOUD_TOKEN = (function(){ try{ return localStorage.getItem(TKEY)||null; }catch(e){ return null; } })();
-const APP_VERSAO = '2026.07.02 · b69';   // aparece no rodapé; mude a cada publicação no GitHub
+const APP_VERSAO = '2026.07.05 · b71';   // aparece no rodapé; mude a cada publicação no GitHub
 const LOGO_B64 = 'data:image/png;base64,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';
 /* ============================================================================ */
 let _syncTimer=null;
@@ -447,7 +448,7 @@ function temAtividade(s){
   return ['presencas','material','temas','testes','contatos','planos','comentarios','atas','tarefas','relatorios','vipAlunos','aulasVip','boletins']
     .some(k=>Array.isArray(s[k]) && s[k].length);
 }
-const MERGE_COLS=['usuarios','turmas','alunos','presencas','material','temas','testes','contatos','planos','comentarios','atas','tarefas','relatorios','vipAlunos','aulasVip','boletins','eventos','comunicados','planejamento'];
+const MERGE_COLS=['usuarios','turmas','alunos','presencas','material','temas','testes','contatos','planos','comentarios','atas','tarefas','relatorios','vipAlunos','aulasVip','boletins','eventos','comunicados','planejamento','recessos'];
 function marcarExcluido(col,id){
   if(id==null) return;
   S.exclusoes=S.exclusoes||[];
@@ -716,6 +717,7 @@ function seed(){
     tarefas:[],
     relatorios:[],
     eventos:[],
+    recessos:[],
     exclusoes:[],
     vipAlunos:[],
     aulasVip:[],
@@ -3950,6 +3952,66 @@ function planColecaoDe(t){ if(!t) return null; const p=_planRec(t.id); if(p&&typ
 
 function _frontierIdx(les,dadas){ for(let i=0;i<les.length;i++){ if(!dadas[_lessonKey(les[i])]) return i; } return les.length; }
 function _parseDMY(s){ const m=String(s||'').match(/(\d{1,2})\/(\d{1,2})/); if(!m) return null; return new Date(2026,(+m[2])-1,+m[1]); }
+/* ---- data de início por turma (ancora a linha do tempo; guardada no registro do plano) ---- */
+function _fmtISO(d){ const z=n=>String(n).padStart(2,'0'); return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate()); }
+function _parseISO(s){ const m=String(s||'').match(/(\d{4})-(\d{1,2})-(\d{1,2})/); if(!m) return null; return new Date(+m[1],(+m[2])-1,+m[3]); }
+function _colInicio(les){ if(!les||!les.length) return new Date(2026,2,2); const a1=les.find(l=>l.a===1&&l.dt)||les.find(l=>l.dt); const d=a1?_parseDMY((a1.dt||'').split(' a ')[0]):null; return d||new Date(2026,2,2); }
+function _planInicio(id){ const rec=_planRec(id); const t=S.turmas.find(x=>x.id===id); const les=_plLessons(planColecaoDe(t)); const iso=(rec&&rec.inicio)?_parseISO(rec.inicio):null; return iso||_colInicio(les); }
+function _weekRangesShift(les,deltaDays){ const w={}; les.forEach(l=>{ if(l.a===1){ const p=(l.dt||'').split(' a '); const ini=_parseDMY(p[0]); const fim=_parseDMY(p[1]||p[0]); if(ini){ const i2=new Date(ini); i2.setDate(i2.getDate()+deltaDays); const f2=new Date(fim||ini); f2.setDate(f2.getDate()+deltaDays); w[l.s]={ini:i2,fim:f2}; } } }); return w; }
+function _diasRecesso(de,ate){ let n=0; (S.recessos||[]).forEach(r=>{ const rd=_parseISO(r.de), ra=_parseISO(r.ate); if(!rd||!ra||ra<rd) return; const a=new Date(Math.max(+de,+rd)), b=new Date(Math.min(+ate,+ra)); const d=Math.floor((b-a)/86400000)+1; if(d>0) n+=d; }); return n; }
+function semanaEsperada(id){
+  const t=S.turmas.find(x=>x.id===id); const les=_plLessons(planColecaoDe(t)); if(!les) return semanaEscola();
+  const base=_colInicio(les); const ini=_planInicio(id);
+  const weeks=_weekRangesShift(les,0); const ns=Object.keys(weeks).map(Number).sort((a,b)=>a-b); if(!ns.length) return semanaEscola();
+  const hoje=new Date(); hoje.setHours(0,0,0,0);
+  let elapsed=Math.round((hoje-ini)/86400000); if(elapsed<=0) return ns[0];   // ainda não começou → 1ª semana
+  elapsed-=_diasRecesso(ini,hoje); if(elapsed<0) elapsed=0;                    // dias de recesso/férias não avançam o ritmo
+  const probe=new Date(base); probe.setDate(probe.getDate()+elapsed); probe.setHours(0,0,0,0);
+  for(const w of ns){ const f=new Date(weeks[w].fim); f.setDate(f.getDate()+1); if(probe>=weeks[w].ini && probe<f) return w; }
+  if(probe<weeks[ns[0]].ini) return ns[0];
+  let last=ns[0]; for(const w of ns){ if(probe>=weeks[w].ini) last=w; } return last;
+}
+function definirInicioTurma(id){
+  const el=document.getElementById('inicioSel'); const d=_parseISO(el?el.value:''); if(!d){ toast('Data inválida'); return; }
+  const rec=_planUpsert(id); if(!rec.colecao){ const t=S.turmas.find(x=>x.id===id); rec.colecao=planColecaoDe(t)||''; }
+  rec.inicio=_fmtISO(d); _planCommit(rec); toast('Início do ano atualizado');
+  const _m=document.getElementById('modal'); if(_m){ _m.innerHTML=_timelineModalHTML(id); setTimeout(_scrollTlHere,50); }
+}
+/* ---- recessos / férias (calendário da escola; pausam o ritmo previsto) ---- */
+function _fmtBR(iso){ const d=_parseISO(iso); if(!d) return iso||''; const z=n=>String(n).padStart(2,'0'); return z(d.getDate())+'/'+z(d.getMonth()+1)+'/'+d.getFullYear(); }
+function abrirRecessos(){
+  const rs=(S.recessos||[]).slice().sort((a,b)=>String(a.de).localeCompare(String(b.de)));
+  const lista = rs.length ? rs.map(r=>'<div class="check"><span style="flex:1">'+(r.nome?('<b>'+esc(r.nome)+'</b> · '):'')+_fmtBR(r.de)+' → '+_fmtBR(r.ate)+'</span><button class="btn ghost sm" onclick="rmRecesso(\''+r.id+'\')">remover</button></div>').join('')
+    : '<p class="hint">Nenhum recesso cadastrado ainda.</p>';
+  modal('<h3>⚙️ Recessos e férias <button class="close" onclick="fechar()">×</button></h3>'+
+    '<p class="hint" style="margin:-4px 0 10px">Nesses períodos o <b>ritmo previsto</b> (🎯) pausa — a turma não fica "atrasada" durante as férias. Use para as <b>férias de verão</b> (fim de um semestre e início do outro) e feriados prolongados. O recesso de julho já vem embutido no plano.</p>'+
+    '<div style="margin-bottom:10px">'+lista+'</div>'+
+    '<div style="border-top:.5px solid #e7eef6;padding-top:10px">'+
+      '<label class="hint">Nome (opcional)</label><input id="recNome" placeholder="Ex.: Férias de verão 2026/27" style="margin:4px 0 8px">'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+        '<div style="flex:1;min-width:130px"><label class="hint">Início do recesso</label><input type="date" id="recDe" style="width:100%"></div>'+
+        '<div style="flex:1;min-width:130px"><label class="hint">Fim do recesso</label><input type="date" id="recAte" style="width:100%"></div>'+
+      '</div>'+
+      '<p class="hint" style="margin:6px 0 0">O <b>fim</b> é o último dia sem aula (a volta é no dia seguinte).</p>'+
+      '<button class="btn block" style="margin-top:10px" onclick="addRecesso()">Adicionar recesso</button>'+
+    '</div>');
+}
+function addRecesso(){
+  const de=(document.getElementById('recDe')||{}).value, ate=(document.getElementById('recAte')||{}).value;
+  const nome=((document.getElementById('recNome')||{}).value||'').trim();
+  const d1=_parseISO(de), d2=_parseISO(ate);
+  if(!d1||!d2){ toast('Preencha as duas datas'); return; }
+  if(d2<d1){ toast('O fim não pode ser antes do início'); return; }
+  S.recessos=S.recessos||[]; S.recessos.push({id:uid(),de:_fmtISO(d1),ate:_fmtISO(d2),nome:nome,atualizadoEm:Date.now()});
+  if(typeof save==='function') save(); toast('Recesso adicionado'); abrirRecessos();
+  if(typeof rota!=='undefined' && rota==='planejamento') renderPlanejamento();
+}
+function rmRecesso(id){
+  S.recessos=(S.recessos||[]).filter(r=>r.id!==id);
+  if(typeof marcarExcluido==='function') marcarExcluido('recessos',id);
+  if(typeof save==='function') save(); toast('Recesso removido'); abrirRecessos();
+  if(typeof rota!=='undefined' && rota==='planejamento') renderPlanejamento();
+}
 function semanaEscola(){
   const base=_plLessons('Own It 2')||_plLessons(TG_COLECOES_PUBLICADAS[0]); if(!base) return 1;
   const hoje=new Date(); hoje.setHours(0,0,0,0); const weeks={};
@@ -3963,7 +4025,7 @@ function semanaEscola(){
 /* ---- ações ---- */
 function planDefinirColecao(id,col){
   const rec=_planUpsert(id);
-  if(col!==rec.colecao){ rec.dadas={}; }
+  if(col!==rec.colecao){ rec.dadas={}; delete rec.inicio; }
   rec.colecao=col||''; _planCommit(rec);
   if(typeof rota!=='undefined' && rota==='planejamento') renderPlanejamento();
 }
@@ -4050,7 +4112,7 @@ function renderPlanejamento(){
     else {
       const fi=_frontierIdx(les,_dadasDe(t.id)); const at=(fi<les.length)?les[fi]:null;
       const posTxt=at?('Próxima aula: <b>Sem '+at.s+' · Aula '+at.a+'</b>'):'Plano concluído 🎉';
-      corpo='<p class="hint" style="margin:2px 0 8px">'+posTxt+' · escola na <b>Semana '+semanaEscola()+'</b></p>'+
+      corpo='<p class="hint" style="margin:2px 0 8px">'+posTxt+' · ritmo previsto: <b>Semana '+semanaEsperada(t.id)+'</b></p>'+
         '<button class="btn sm" onclick="abrirTimelineTurma(\''+t.id+'\')">📅 '+(temPos?'Abrir linha do tempo':'Definir posição e abrir')+'</button>';
     }
     return '<div class="card"><div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h3 style="margin:0">'+t.nome+'</h3></div>'+
@@ -4059,7 +4121,8 @@ function renderPlanejamento(){
       '<select onchange="planDefinirColecao(\''+t.id+'\',this.value)" style="margin:4px 0 6px">'+opts+'</select>'+corpo+'</div>';
   }).join('');
   v.innerHTML='<div class="section-title"><span class="feijao fj" style="background:var(--amarelo)"></span><h2 class="display">Planejamento</h2></div>'+
-    '<p class="sub">Controle interno do avanço de cada turma no plano-mestre. Marque as aulas dadas na linha do tempo; ao marcar um plano como feito, o app já pergunta o avanço. Sincroniza entre aparelhos.</p>'+
+    '<p class="sub">Controle interno do avanço de cada turma no plano-mestre. Cada turma tem sua própria <b>data de início</b> (defina na linha do tempo) — o ritmo previsto é calculado a partir dela, então turmas que começam em meses diferentes ficam certas. Marque as aulas dadas; ao marcar um plano como feito, o app já pergunta o avanço. Sincroniza entre aparelhos.</p>'+
+    (S.perfil==='direcao'?'<button class="btn ghost sm" style="margin-bottom:10px" onclick="abrirRecessos()">⚙️ Recessos e férias</button>':'')+
     (cards||'<p class="hint">Nenhuma turma visível.</p>');
   window.scrollTo(0,0);
 }
@@ -4076,13 +4139,18 @@ function _timelineModalHTML(id){
   const t=S.turmas.find(x=>x.id===id); const col=planColecaoDe(t);
   return '<h3>📅 '+t.nome+' — '+col+' <button class="close" onclick="fechar()">×</button></h3>'+
     _timelineBody(id)+
-    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><button class="btn ghost sm" onclick="pedirPosicao(\''+id+'\')">↺ Redefinir início</button></div>'+
-    '<p class="hint" style="margin-top:8px">Marque/desmarque as aulas dadas nas caixas. "Sua turma está aqui" é a primeira aula ainda não dada. Controle interno — não afeta o resumo dos pais.</p>';
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:12px;padding-top:10px;border-top:.5px solid #e7eef6">'+
+      '<label class="hint" style="width:100%;margin-bottom:-2px">📅 Data de início do ano desta turma</label>'+
+      '<input type="date" id="inicioSel" value="'+_fmtISO(_planInicio(id))+'" style="flex:1;min-width:150px">'+
+      '<button class="btn sm" onclick="definirInicioTurma(\''+id+'\')">Salvar início</button>'+
+    '</div>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"><button class="btn ghost sm" onclick="pedirPosicao(\''+id+'\')">↺ Redefinir posição</button></div>'+
+    '<p class="hint" style="margin-top:8px">O <b>ritmo previsto</b> (🎯) é calculado a partir da data de início — turmas que começam em meses diferentes têm cada uma sua própria referência. Marque/desmarque as aulas dadas nas caixas; "sua turma está aqui" é a primeira aula ainda não dada. Controle interno — não afeta o resumo dos pais.</p>';
 }
 function _timelineBody(id){
   const t=S.turmas.find(x=>x.id===id); const col=planColecaoDe(t); const les=_plLessons(col);
   const dadas=_dadasDe(id); const fi=_frontierIdx(les,dadas);
-  const escW=semanaEscola(); let escIdx=les.findIndex(l=>l.s===escW&&l.a===1); if(escIdx<0) escIdx=les.findIndex(l=>l.s===escW); if(escIdx<0) escIdx=les.length-1;
+  const escW=semanaEsperada(id); let escIdx=les.findIndex(l=>l.s===escW&&l.a===1); if(escIdx<0) escIdx=les.findIndex(l=>l.s===escW); if(escIdx<0) escIdx=les.length-1;
   const turmaW=(fi<les.length)?les[fi].s:les[les.length-1].s;
   const atras=Math.max(0,escIdx-fi);
   const byWeek={}; les.forEach(l=>{ if(byWeek[l.s]===undefined||l.a===1) byWeek[l.s]=l; });
@@ -4100,7 +4168,7 @@ function _timelineBody(id){
     const bg=here?'#eaf3ff':(recup?'#f7faff':'#fff');
     const out=here?'outline:2px solid #005EAF;outline-offset:-1px;':(target?'outline:1px dashed #90a4b8;outline-offset:-1px;':'');
     const flag=here?'<span style="background:#005EAF;color:#fff;font-size:.7rem;padding:2px 8px;border-radius:999px;white-space:nowrap">📍 sua turma está aqui</span>'
-      :(target?'<span style="background:#eef2f6;color:#4a5a68;font-size:.7rem;padding:2px 8px;border-radius:999px;white-space:nowrap">🏫 a escola está aqui</span>':'');
+      :(target?'<span style="background:#eef2f6;color:#4a5a68;font-size:.7rem;padding:2px 8px;border-radius:999px;white-space:nowrap">🎯 ritmo previsto</span>':'');
     const pg=(l.pg&&l.pg!=='—')?(' · pp '+l.pg):'';
     rows+='<label '+(here?'id="tlHere" ':'')+'style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:8px 10px;border:.5px solid #e7eef6;border-left:3px solid '+TG_COR[l.t]+';border-radius:8px;background:'+bg+';'+out+'margin-bottom:6px;cursor:pointer">'+
       '<input type="checkbox" '+(dada?'checked':'')+' onchange="_toggleDada(\''+id+'\',\''+key+'\')">'+
@@ -4108,10 +4176,10 @@ function _timelineBody(id){
       '<span style="display:inline-flex;align-items:center;gap:5px;min-width:70px;color:#5a6b78;font-size:.8rem"><span style="width:9px;height:9px;border-radius:50%;background:'+TG_COR[l.t]+'"></span>'+TG_TLABEL[l.t]+'</span>'+
       '<span style="flex:1;min-width:150px;font-size:.85rem'+(dada?';opacity:.6':'')+'"><span>'+esc(l.sec||l.u)+'</span><span style="color:#90a4b8;font-size:.76rem"> — '+esc(l.u)+pg+'</span></span>'+flag+'</label>';
   }
-  const _st=(atras>0?('Esta turma está <b>'+atras+' aula(s) atrás</b> da escola'):(fi>=les.length?'Plano <b>concluído</b> 🎉':'Esta turma está <b>em dia</b> com a escola'));
+  const _st=(atras>0?('Esta turma está <b>'+atras+' aula(s) atrás</b> do ritmo previsto'):(fi>=les.length?'Plano <b>concluído</b> 🎉':'Esta turma está <b>em dia</b> com o ritmo previsto'));
   return '<p class="hint" style="margin:0 0 10px">'+_st+' · <b>'+pctDone+'%</b> do plano dado ('+dadasCount+'/'+les.length+').</p>'+
     '<div style="position:relative;margin:2px 0 34px">'+
-      '<div style="position:absolute;top:0;left:'+Math.min(92,Math.max(8,pct(escW)))+'%;transform:translateX(-50%);text-align:center;font-size:.66rem;font-weight:600;color:#5a6b78;white-space:nowrap;line-height:1.12">🏫 Escola<br>Sem '+escW+'<div style="font-size:.75rem;color:#90a4b8;margin-top:-2px">▾</div></div>'+
+      '<div style="position:absolute;top:0;left:'+Math.min(92,Math.max(8,pct(escW)))+'%;transform:translateX(-50%);text-align:center;font-size:.66rem;font-weight:600;color:#5a6b78;white-space:nowrap;line-height:1.12">🎯 Ritmo<br>Sem '+escW+'<div style="font-size:.75rem;color:#90a4b8;margin-top:-2px">▾</div></div>'+
       '<div style="display:flex;gap:0;height:24px;margin-top:42px;border-radius:6px;overflow:hidden;border:.5px solid #cfd8e3">'+cells+'</div>'+
       '<div style="position:absolute;top:42px;height:24px;left:'+bandL+'%;width:'+bandW+'%;background:repeating-linear-gradient(45deg,rgba(0,94,175,.08),rgba(0,94,175,.08) 5px,rgba(0,94,175,.16) 5px,rgba(0,94,175,.16) 10px);outline:1.5px dashed rgba(0,94,175,.55);border-radius:3px"></div>'+
       '<div style="position:absolute;bottom:-8px;left:'+Math.min(92,Math.max(8,pct(turmaW)))+'%;transform:translateX(-50%);text-align:center;font-size:.66rem;font-weight:700;color:#005EAF;white-space:nowrap;line-height:1.12"><div style="font-size:.75rem;margin-bottom:-2px">▴</div>📍 Turma<br>Sem '+turmaW+'</div>'+
