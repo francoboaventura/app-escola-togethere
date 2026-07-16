@@ -164,7 +164,7 @@ a{color:inherit}
 
 label.lbl{display:block;font-family:'Poppins';font-weight:500;font-size:.85rem;margin:0 0 6px;color:var(--tinta)}
 .field{margin-bottom:14px}
-input[type=text],input[type=date],input[type=number],textarea,select{
+input[type=text],input[type=password],input[type=email],input[type=time],input[type=date],input[type=number],textarea,select{
   width:100%;border:1.5px solid var(--linha);border-radius:var(--r-sm);padding:11px 13px;
   font-size:.94rem;background:#fff;color:var(--tinta);transition:.13s;
 }
@@ -426,7 +426,7 @@ function migrar(s){
 const CLOUD_URL    = 'https://script.google.com/macros/s/AKfycbylxwXqDh5ohAL4qLTn7WBQAu4juwt2bwgdiuGHDl1Ll3d1ViK-mdbeMghnG4UH3GNH/exec';
 const TKEY='togethere_token', UKEY='togethere_user', PKEY='togethere_perfil';
 let CLOUD_TOKEN = (function(){ try{ return localStorage.getItem(TKEY)||null; }catch(e){ return null; } })();
-const APP_VERSAO = '2026.07.14 · b73';   // aparece no rodapé; mude a cada publicação no GitHub
+const APP_VERSAO = '2026.07.16 · b76';   // aparece no rodapé; mude a cada publicação no GitHub
 const LOGO_B64 = 'data:image/png;base64,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';
 /* ============================================================================ */
 let _syncTimer=null;
@@ -536,8 +536,15 @@ async function cloudPut(force){
         S=mergeEstados(cur.state, S); S.usuario=u; S.perfil=p;
         localStorage.setItem(KEY,JSON.stringify(S));
       } else if(cur.auth){ marcarSync('off'); toast('Sessão expirada. Saia e entre novamente.'); return {ok:false,erro:'auth'}; }
-      // nuvem vazia ou offline → segue e envia o local (melhor esforço)
-    }catch(e){}
+      else if(cur.ok && !cur.state){ /* nuvem REALMENTE vazia (primeira carga) → pode enviar o local */ }
+      else {
+        // Erro de rede ao LER a nuvem antes de gravar. NÃO enviar o estado local agora:
+        // ele pode estar desatualizado e sobrescreveria (apagaria) o que outro aparelho
+        // acabou de salvar — ex.: um relatório do professor que a secretaria ainda não viu.
+        // Fica pendente e reenvia sozinho quando a conexão voltar (online/visibility/heartbeat).
+        marcarSync('off'); return {ok:false, adiado:true};
+      }
+    }catch(e){ marcarSync('off'); return {ok:false, adiado:true}; }
   }
   const limpo=Object.assign({},S,{usuario:null,perfil:null});   // sessão não vai para a nuvem
   const url=CLOUD_URL+'?action=put&token='+encodeURIComponent(CLOUD_TOKEN)+(force?'&force=1':'');
@@ -625,6 +632,25 @@ async function _refreshAvisosNuvem(){
     }
   }catch(e){}
   finally{ _avisosBusy=false; }
+}
+// Puxa a nuvem em silêncio ao abrir telas de consulta (relatórios/painel/ficha/VIP),
+// para que a secretaria/direção vejam o que os professores acabaram de enviar sem
+// precisar tocar em "Atualizar". Mescla (não perde edição local) e, se pedido,
+// redesenha a tela atual — só quando não há modal aberto (não atrapalha digitação).
+async function _pullSilencioso(reRender){
+  if(!cloudOn()||!CLOUD_TOKEN) return;
+  if(('onLine' in navigator) && navigator.onLine===false) return;
+  if(_sincronizando || _pendenteSync || _avisosBusy) return;   // não concorre com envio/refresh de avisos
+  try{
+    const res=await cloudGet(7000);
+    if(res.ok && res.state && res.state.usuarios && res.state.usuarios.length){
+      const u=S.usuario, p=S.perfil;
+      S=mergeEstados(migrar(res.state), S); S.usuario=u; S.perfil=p;
+      localStorage.setItem(KEY,JSON.stringify(S));
+      marcarSync('ok');
+      if(reRender && typeof rota!=='undefined' && VIEWS[rota] && !modalTemConteudo()){ VIEWS[rota](); montarNav(); }
+    }
+  }catch(e){}
 }
 async function cloudEmail(to, subject, body){
   if(!cloudOn()) return {ok:false, erro:'nuvem não configurada'};
@@ -860,6 +886,7 @@ const NAV=[
   {id:'planos', label:'Planos de aula', em:'🗒️', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
   {id:'relatorio', label:'Relatório do dia', em:'🧾', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
   {id:'planejamento', label:'Planejamento', em:'📅', grp:'Sala de aula', roles:['professor','direcao']},
+  {id:'writings', label:'Correção de writings', em:'📝', grp:'Sala de aula', roles:['professor','direcao']},
   {id:'ficha', label:'Ficha do aluno', em:'📇', grp:'Acompanhamento', roles:['professor','secretaria','direcao'], menu:false},
   {id:'resumo', label:'Relatórios por aluno', em:'📄', grp:'Acompanhamento', roles:['secretaria','direcao']},
   {id:'relturma', label:'Relatórios por turma', em:'🏫', grp:'Acompanhamento', roles:['secretaria','direcao']},
@@ -902,11 +929,25 @@ function renderLogin(){
       <input type="text" id="loginUser" placeholder="Seu nome de acesso" autocomplete="off"
              onkeydown="if(event.key==='Enter'){var s=document.getElementById('loginSenha');s&&s.focus();}"></div>
     <div class="field"><label class="lbl">Senha</label>
-      <input type="password" id="loginSenha" placeholder="Sua senha" autocomplete="off"
-             onkeydown="if(event.key==='Enter')fazerLogin()"></div>
+      <div style="position:relative">
+        <input type="password" id="loginSenha" placeholder="Sua senha" autocomplete="off" style="padding-right:46px"
+               onkeydown="if(event.key==='Enter')fazerLogin()">
+        <button type="button" onclick="toggleSenhaLogin(this,'loginSenha')" aria-label="Mostrar senha" title="Mostrar senha"
+                style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:1.15rem;cursor:pointer;padding:6px;line-height:1">👁️</button>
+      </div></div>
     <button class="btn block" onclick="fazerLogin()">Entrar</button>
     <p class="hint" style="margin-top:16px;text-align:center">Esqueceu a senha? Fale com a direção.</p>`;
   setTimeout(function(){var i=document.getElementById('loginUser'); if(i) i.focus();},80);
+}
+/* Mostrar/ocultar a senha digitada (usado no login e na tela de writings) */
+function toggleSenhaLogin(btn, id){
+  const i=document.getElementById(id||'loginSenha'); if(!i) return;
+  const mostra = i.type==='password';
+  i.type = mostra ? 'text' : 'password';
+  btn.textContent = mostra ? '🙈' : '👁️';
+  btn.setAttribute('aria-label', mostra ? 'Ocultar senha' : 'Mostrar senha');
+  btn.setAttribute('title', mostra ? 'Ocultar senha' : 'Mostrar senha');
+  i.focus();
 }
 async function fazerLogin(){
   const nome=(document.getElementById('loginUser').value||'').trim();
@@ -985,6 +1026,8 @@ function ir(id){
   document.getElementById('side').classList.remove('open');
   VIEWS[id]();
   if(id==='alertas') _refreshAvisosNuvem();   // ao abrir Avisos, já puxa o que houver de novo
+  else if(id==='relturma'||id==='arquivo'||id==='painel') _pullSilencioso(true);   // listas: pode redesenhar
+  else if(id==='resumo'||id==='ficha'||id==='vip') _pullSilencioso(false);         // têm campos de digitação: só atualiza os dados
   window.scrollTo(0,0);
 }
 
@@ -2501,7 +2544,7 @@ VIEWS.vip=()=>{
     </div>
     ${vipSel&&!ehSec?`<div class="card"><h3>Lançar aula</h3>
       <div class="field"><label class="lbl">Tema</label><input type="text" id="vipTema" placeholder="Ex: Simple Past · entrevista de emprego"></div>
-      <div class="field"><label class="lbl">Descrição da aula</label><input type="text" id="vipDesc" placeholder="Ex: Conversação — entrevista de emprego"></div>
+      <div class="field"><label class="lbl">Descrição da aula</label><textarea id="vipDesc" style="min-height:130px" placeholder="Ex: Conversação — entrevista de emprego. Descreva com detalhes o que foi trabalhado na aula."></textarea></div>
       <div class="row">
         <div class="field"><label class="lbl">Data</label><input type="date" id="vipData" value="${hoje()}"></div>
         <div class="field"><label class="lbl">Duração (min)</label><input type="number" id="vipDur" value="60" min="5" step="5"></div>
@@ -2569,7 +2612,7 @@ function addAulaVip(){
   const data=document.getElementById('vipData').value; if(!data)return toast('Escolha a data');
   const dur=+document.getElementById('vipDur').value||0;
   const faltou=!!document.getElementById('vipFaltou').checked;
-  S.aulasVip.push({id:uid(),vipId:vid,data,tema,descricao:desc,duracaoMin:dur,faltou});
+  S.aulasVip.push({id:uid(),vipId:vid,data,tema,descricao:desc,duracaoMin:dur,faltou,atualizadoEm:Date.now()});
   save(); renderVipLista();
   const t=document.getElementById('vipTema'); if(t)t.value='';
   const d=document.getElementById('vipDesc'); if(d)d.value='';
@@ -2577,6 +2620,30 @@ function addAulaVip(){
   toast(faltou?'Aula lançada (não compareceu)':'Aula lançada');
 }
 function delAulaVip(id){ if(!confirm('Excluir esta aula VIP?'))return; S.aulasVip=S.aulasVip.filter(x=>x.id!==id); marcarExcluido('aulasVip',id); save(); renderVipLista(); }
+function editarAulaVip(id){
+  if(soLeitura())return toast('Somente leitura — a secretaria não edita aulas VIP');
+  const a=S.aulasVip.find(x=>x.id===id); if(!a)return;
+  modal(`<h3>✏️ Editar aula VIP <button class="close" onclick="fechar()">×</button></h3>
+    <div class="field"><label class="lbl">Tema</label><input type="text" id="evTema" value="${escAttr(a.tema||'')}" placeholder="Ex: Simple Past · entrevista de emprego"></div>
+    <div class="field"><label class="lbl">Descrição da aula</label><textarea id="evDesc" style="min-height:150px" placeholder="O que foi trabalhado na aula">${escAttr(a.descricao||'')}</textarea></div>
+    <div class="row"><div class="field"><label class="lbl">Data</label><input type="date" id="evData" value="${escAttr(a.data||'')}"></div>
+      <div class="field"><label class="lbl">Duração (min)</label><input type="number" id="evDur" value="${+a.duracaoMin||0}" min="5" step="5"></div></div>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:2px 0 12px"><input type="checkbox" id="evFaltou" ${a.faltou?'checked':''}> ❌ Aluno não compareceu</label>
+    <button class="btn block" onclick="salvarEdicaoAulaVip('${id}')">Salvar alterações</button>`);
+  setTimeout(()=>{const i=document.getElementById('evDesc'); if(i)i.focus();},60);
+}
+function salvarEdicaoAulaVip(id){
+  if(soLeitura())return toast('Somente leitura — a secretaria não edita aulas VIP');
+  const a=S.aulasVip.find(x=>x.id===id); if(!a)return;
+  const desc=(document.getElementById('evDesc').value||'').trim(); if(!desc)return toast('Descreva a aula');
+  a.tema=(document.getElementById('evTema').value||'').trim();
+  a.descricao=desc;
+  a.data=document.getElementById('evData').value||a.data;
+  a.duracaoMin=+document.getElementById('evDur').value||0;
+  a.faltou=!!document.getElementById('evFaltou').checked;
+  a.atualizadoEm=Date.now();                 // carimbo para a sincronização entre aparelhos
+  save(); fechar(); renderVipLista(); toast('Aula atualizada');
+}
 function renderVipLista(){
   const box=document.getElementById('vipBox'); if(!box)return;
   const vid=vipSel, al=S.vipAlunos.find(a=>a.id===vid);
@@ -2589,7 +2656,7 @@ function renderVipLista(){
     <button class="btn ghost sm" style="color:var(--vermelho)" onclick="delVipAluno('${vid}')">excluir aluno</button></div>`;
   if(!aulas.length){ box.innerHTML=h+'<p class="hint" style="margin:8px 0 0">Nenhuma aula lançada ainda.</p>'; return; }
   h+=`<p class="hint" style="margin:8px 0 10px"><b>${comp.length}</b> aula(s) com presença (${fmtDur(compMin)})${faltas?` · <b>${faltas}</b> falta(s)`:''}</p>`;
-  h+=aulas.map(a=>`<div class="check"><span style="flex:1">${brDate(a.data)} · ${a.tema?`<b>${a.tema}</b> — `:''}${a.descricao} <span class="pill">${fmtDur(a.duracaoMin)}</span>${a.faltou?' <span class="pill" style="background:#ffe9e9;color:var(--vermelho)">não compareceu</span>':''}</span><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delAulaVip('${a.id}')">excluir</button></div>`).join('');
+  h+=aulas.map(a=>`<div class="check"><span style="flex:1">${brDate(a.data)} · ${a.tema?`<b>${esc(a.tema)}</b> — `:''}<span style="white-space:pre-wrap">${esc(a.descricao)}</span> <span class="pill">${fmtDur(a.duracaoMin)}</span>${a.faltou?' <span class="pill" style="background:#ffe9e9;color:var(--vermelho)">não compareceu</span>':''}</span><button class="btn ghost sm" onclick="editarAulaVip('${a.id}')">✏️ editar</button><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delAulaVip('${a.id}')">excluir</button></div>`).join('');
   box.innerHTML=h;
 }
 function corpoRelatorioVip(vid){
@@ -4377,6 +4444,198 @@ function renderPlanejamento(){
   window.scrollTo(0,0);
 }
 VIEWS.planejamento=renderPlanejamento;
+/* =====================================================================
+   MÓDULO WRITINGS (b75) — Correção de redações (Cambridge Writing Scale)
+   Incorporado do app writing_assessment. Usa o mesmo Worker de OCR/avaliação.
+   Tudo isolado em WA (JS) e em .wa-root / classes .wa-* (CSS) para não colidir.
+   ===================================================================== */
+const WA = (function(){
+  const CFG = { apiUrl: 'https://togethere-writing.togethere-writing.workers.dev' };
+  const LEVELS = {"levels":[
+    {"id":"a1","label":"A1","enabled":false,"calibrated":false,"tasks":[]},
+    {"id":"a2","label":"A2 Key for Schools","enabled":true,"calibrated":true,"tasks":[{"id":"part6_email","label":"Part 6 — E-mail","min_words":25},{"id":"part7_story","label":"Part 7 — Story","min_words":35},{"id":"free_text","label":"Texto livre (fora do exame)","min_words":25,"free":true}]},
+    {"id":"b1","label":"B1 Preliminary for Schools","enabled":true,"calibrated":true,"tasks":[{"id":"part1_email","label":"Part 1 — E-mail (com as 4 notas)","min_words":100},{"id":"part2_article","label":"Part 2 — Article","min_words":100},{"id":"part2_story","label":"Part 2 — Story","min_words":100},{"id":"free_text","label":"Texto livre (fora do exame)","min_words":100,"free":true}]},
+    {"id":"b2","label":"B2 First for Schools","enabled":true,"calibrated":true,"tasks":[{"id":"part1_essay","label":"Part 1 — Essay (obrigatória)","min_words":140,"max_words":190},{"id":"part2_article","label":"Part 2 — Article","min_words":140,"max_words":190},{"id":"part2_email","label":"Part 2 — E-mail / Letter","min_words":140,"max_words":190},{"id":"part2_review","label":"Part 2 — Review","min_words":140,"max_words":190},{"id":"part2_story","label":"Part 2 — Story","min_words":140,"max_words":190},{"id":"free_text","label":"Texto livre (fora do exame)","min_words":140,"free":true}]},
+    {"id":"c1","label":"C1 Advanced","enabled":true,"calibrated":true,"tasks":[{"id":"part1_essay","label":"Part 1 — Essay (obrigatória)","min_words":220,"max_words":260},{"id":"part2_letter","label":"Part 2 — Letter / E-mail","min_words":220,"max_words":260},{"id":"part2_proposal","label":"Part 2 — Proposal","min_words":220,"max_words":260},{"id":"part2_report","label":"Part 2 — Report","min_words":220,"max_words":260},{"id":"part2_review","label":"Part 2 — Review","min_words":220,"max_words":260},{"id":"free_text","label":"Texto livre (fora do exame)","min_words":220,"free":true}]},
+    {"id":"c2","label":"C2 Proficiency","enabled":false,"calibrated":false,"tasks":[{"id":"part1_essay","label":"Part 1 — Essay (obrigatória)","min_words":240,"max_words":280},{"id":"free_text","label":"Texto livre (fora do exame)","min_words":240,"free":true}]}
+  ]};
+  const SAMPLE = {"student":"Aluno exemplo","level":"a2","task_part":"part6_email","subscales":["content","organisation","language"],"word_count":34,"min_words":25,"meets_word_minimum":true,"content":{"band":4,"justification":"Os três pontos do enunciado foram respondidos. O leitor fica no geral informado, mas 'many super since' deixa o segundo ponto obscuro — daí 4, e não 5."},"organisation":{"band":3,"justification":"As convenções de e-mail estão presentes ('Hello Chris!' … 'Goodbye!'). O texto se conecta com conectores básicos ('and'), sem outros recursos de coesão."},"language":{"band":3,"justification":"Vocabulário básico usado de forma razoavelmente apropriada. Formas simples com algum controle, mas erros por vezes impedem o sentido: 'we coming', 'Your must bring'."},"overall_band":3,"togethere_band":"PASS","cefr_result":"A2 achieved","errors":[{"excerpt":"we coming","type":"grammar","correction":"we are coming","explanation":"O present continuous precisa do verbo 'to be': we are coming."},{"excerpt":"Your must bring","type":"grammar","correction":"You must bring","explanation":"'Your' é possessivo. O sujeito da frase é 'You'."},{"excerpt":"bootle","type":"spelling","correction":"bottle","explanation":"Dois 't', um 'o': bottle."}],"strengths":["Abertura e fecho de e-mail corretos: 'Hello Chris!' e 'Goodbye!'.","Os três pontos do enunciado foram respondidos, na ordem pedida."],"next_steps":["Revise o present continuous: am/is/are + verbo com -ing.","Para planos futuros, use 'we will' ou 'we are going to'."],"summary_pt":"O texto cumpre a tarefa: o Chris fica sabendo como vocês vão, o que vai ver e o que precisa levar. O próximo passo é o verbo — 'we are coming' em vez de 'we coming' — e isso já deixa o texto bem mais claro.","confidence":"high","needs_teacher_review":true};
+  const CORES = { content:'var(--azul)', communicative_achievement:'var(--roxo)', organisation:'var(--amarelo)', language:'var(--rosa)' };
+  const NOMES = { content:"Content <span class='wa-pt'>· Conteúdo</span>", communicative_achievement:"Communicative Achievement <span class='wa-pt'>· Comunicação</span>", organisation:"Organisation <span class='wa-pt'>· Organização</span>", language:"Language <span class='wa-pt'>· Linguagem</span>" };
+  const CHIP = { DISTINCTION:'wa-chip-dist', MERIT:'wa-chip-merit', PASS:'wa-chip-pass', UNSATISFACTORY:'wa-chip-unsat' };
+  const MAX_LADO=2000, QUALIDADE=0.85;
+  let paginas=[], imgTarefa=null;
+  const q=id=>document.getElementById(id);
+  const contar=t=>t.trim()?t.trim().split(/\s+/).length:0;
+
+  const CSS = `
+.wa-root{--azul:#005EAF;--vermelho:#E52524;--amarelo:#FFC800;--rosa:#FF005F;--laranja:#FF2A00;--azul-escuro:#002B64;--roxo:#DF6DFF;--verde:#0A7A3D;--cinza-linha:#DCE4EC;--texto:#15233B;--texto-fraco:#5A6B86;--wa-titulo:'Zilla Slab',Georgia,serif;--wa-corpo:'Urbanist',system-ui,sans-serif;--wa-radius:14px;--wa-sombra:0 2px 16px rgba(0,43,100,.08);font-family:var(--wa-corpo);color:var(--texto);font-weight:400}
+.wa-root h2,.wa-root h3{font-family:var(--wa-titulo);font-weight:600;font-style:italic;margin:0}
+.wa-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+@media(max-width:900px){.wa-grid{grid-template-columns:1fr}}
+.wa-card{background:#fff;border:1px solid var(--cinza-linha);border-radius:var(--wa-radius);padding:22px;box-shadow:var(--wa-sombra)}
+.wa-card h2{font-size:17px;margin-bottom:14px}
+.wa-root label{display:block;font-size:12px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--texto-fraco);margin:14px 0 6px}
+.wa-root input,.wa-root select,.wa-root textarea{width:100%;padding:11px 13px;border:1px solid var(--cinza-linha);border-radius:10px;font-family:var(--wa-corpo);font-size:15px;background:#fff;color:var(--texto)}
+.wa-root textarea{min-height:120px;resize:vertical;line-height:1.6}
+.wa-root #wa-texto{min-height:360px;font-size:15.5px;line-height:1.75}
+.wa-root input:focus,.wa-root select:focus,.wa-root textarea:focus{outline:2px solid var(--azul);outline-offset:1px;border-color:var(--azul)}
+.wa-row{display:flex;gap:12px}.wa-row>*{flex:1}
+.wa-hint{font-size:12px;color:var(--texto-fraco);margin-top:6px}
+.wa-hint.warn{color:var(--laranja);font-weight:500}
+.wa-drop{border:2px dashed var(--cinza-linha);border-radius:12px;padding:20px;text-align:center;font-size:14px;color:var(--texto-fraco);cursor:pointer;transition:.15s;margin-top:6px}
+.wa-drop:hover,.wa-drop.over{border-color:var(--azul);background:#F0F6FC;color:var(--azul)}
+.wa-drop img{max-width:100%;border-radius:8px;margin-top:12px}
+.wa-drop-mini{padding:12px;font-size:13px}
+.wa-drop-mini img{max-height:130px;object-fit:contain}
+.wa-op{opacity:.7}
+.wa-btn-mini{padding:9px;font-size:13px;margin-top:8px}
+.wa-paginas{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.wa-pag{position:relative;width:64px;height:82px;border-radius:8px;overflow:hidden;border:1px solid var(--cinza-linha);background:#fff}
+.wa-pag img{width:100%;height:100%;object-fit:cover}
+.wa-num{position:absolute;left:0;bottom:0;background:var(--azul);color:#fff;font-size:11px;font-weight:700;padding:1px 6px;border-radius:0 8px 0 0}
+.wa-x{position:absolute;top:2px;right:2px;width:18px;height:18px;border:0;border-radius:50%;background:rgba(26,35,48,.75);color:#fff;font-size:13px;line-height:1;cursor:pointer;padding:0}
+.wa-x:hover{background:var(--vermelho)}
+.wa-pagmsg{align-self:center;font-size:12px;color:var(--texto-fraco)}
+.wa-btn{margin-top:14px;width:100%;padding:14px;border:0;border-radius:999px;background:var(--azul);color:#fff;font-family:var(--wa-corpo);font-weight:700;font-size:15px;cursor:pointer;transition:.15s}
+.wa-btn:hover{background:var(--azul-escuro)}
+.wa-btn:disabled{opacity:.5;cursor:not-allowed}
+.wa-btn-ghost{background:transparent;color:var(--azul);border:1.5px solid var(--azul)}
+.wa-btn-ghost:hover{background:#F0F6FC}
+.wa-btn-amarelo{background:var(--amarelo);color:var(--azul-escuro)}
+.wa-btn-amarelo:hover{background:#E6B400}
+.wa-empty{color:var(--texto-fraco);font-size:14px;text-align:center;padding:40px 10px}
+.wa-overall{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.wa-overall b{font-family:var(--wa-titulo);font-style:italic;font-size:40px;color:var(--azul);line-height:1}
+.wa-de{font-size:13px;color:var(--texto-fraco)}
+.wa-chip{display:inline-block;padding:4px 12px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:.4px}
+.wa-chip-dist{background:#E6F0F9;color:var(--azul-escuro)}
+.wa-chip-merit{background:#FFF6D6;color:#7A5B00}
+.wa-chip-pass{background:#E7F6ED;color:var(--verde)}
+.wa-chip-unsat{background:#FFEDED;color:var(--vermelho)}
+.wa-meta{font-size:13px;color:var(--texto-fraco)}
+.wa-bar{margin:16px 0}
+.wa-top{display:flex;justify-content:space-between;font-size:13px;font-weight:500;margin-bottom:5px;gap:10px}
+.wa-pt{color:var(--texto-fraco);font-weight:300}
+.wa-track{height:9px;border-radius:999px;background:var(--cinza-linha);overflow:hidden}
+.wa-fill{height:100%;border-radius:999px;transition:width .5s ease}
+.wa-why{font-size:12.5px;color:var(--texto-fraco);margin-top:6px}
+.wa-sec{margin-top:22px;padding-top:18px;border-top:1px solid var(--cinza-linha)}
+.wa-sec h3{font-size:14px;margin-bottom:10px}
+.wa-root ul{margin:0;padding-left:18px}
+.wa-root li{margin-bottom:8px;font-size:14.5px}
+.wa-err{background:#FFF3F3;border-left:3px solid var(--vermelho);padding:9px 12px;border-radius:0 8px 8px 0;margin-bottom:9px;font-size:14px}
+.wa-err s{color:var(--vermelho);text-decoration-thickness:1.5px}
+.wa-err b{color:var(--verde)}
+.wa-tag{display:inline-block;font-size:10.5px;text-transform:uppercase;letter-spacing:.6px;color:var(--texto-fraco);font-weight:700;margin-right:6px}
+.wa-resumo{background:#F0F6FC;border-radius:10px;padding:14px;font-size:14.5px}
+.wa-flag{margin-top:16px;font-size:12.5px;color:var(--texto-fraco);display:flex;gap:7px;align-items:baseline}
+.wa-dot{width:7px;height:7px;border-radius:50%;flex:0 0 7px}
+.wa-loading{text-align:center;padding:40px;color:var(--texto-fraco);font-size:14px}
+.wa-spin{width:26px;height:26px;border:3px solid var(--cinza-linha);border-top-color:var(--azul);border-radius:50%;margin:0 auto 12px;animation:wa-r .8s linear infinite}
+@keyframes wa-r{to{transform:rotate(360deg)}}
+`;
+
+  const HTML = `
+  <div class="wa-grid">
+    <section class="wa-card">
+      <h2>Enviar redação</h2>
+      <form id="wa-form">
+        <div class="wa-row">
+          <div><label for="wa-aluno">Aluno</label><input id="wa-aluno" placeholder="Nome do aluno"></div>
+          <div><label for="wa-nivel">Nível</label><select id="wa-nivel"></select></div>
+        </div>
+        <label for="wa-tarefa">Tipo de tarefa</label>
+        <select id="wa-tarefa"></select>
+        <div class="wa-hint" id="wa-aviso-nivel" hidden></div>
+        <label>Enunciado da tarefa</label>
+        <div class="wa-drop wa-drop-mini" id="wa-drop-tarefa">Foto ou print do enunciado <span class="wa-op">(opcional)</span><input type="file" id="wa-file-tarefa" accept="image/*,.heic,.heif" hidden></div>
+        <button class="wa-btn wa-btn-amarelo wa-btn-mini" type="button" id="wa-btn-ocr-tarefa" disabled>Transcrever o enunciado</button>
+        <textarea id="wa-enunciado" style="min-height:90px" placeholder="Digite o enunciado, cole o texto dele — ou envie a foto acima para transcrever."></textarea>
+        <div class="wa-hint" id="wa-aviso-ocr-tarefa" hidden>Transcrição do enunciado. <b>Confira</b> — é contra isso que o Content do aluno é medido.</div>
+        <label>Redação manuscrita (OCR)</label>
+        <div class="wa-drop" id="wa-drop">Clique ou arraste as fotos da redação<small style="display:block;margin-top:4px;opacity:.75">Várias páginas de uma vez, na ordem · JPEG, PNG, WEBP ou HEIC</small><input type="file" id="wa-file" accept="image/*,.heic,.heif" multiple hidden></div>
+        <div id="wa-paginas" class="wa-paginas"></div>
+        <button class="wa-btn wa-btn-amarelo" type="button" id="wa-btn-ocr" disabled>Transcrever a redação</button>
+        <label for="wa-texto">Texto do aluno</label>
+        <textarea id="wa-texto" placeholder="Veio digitado (e-mail, Docs)? Cole aqui e avalie — não precisa transcrever nada."></textarea>
+        <div class="wa-hint"><span id="wa-contador">0</span> palavras · mínimo <span id="wa-minimo">25</span></div>
+        <div class="wa-hint warn" id="wa-aviso-ocr" hidden>Transcrição do OCR. <b>Confira com o aluno antes de avaliar</b> — erro de leitura não pode virar erro de escrita na nota.</div>
+        <button class="wa-btn" type="submit" id="wa-enviar">Avaliar</button>
+        <button class="wa-btn wa-btn-ghost" type="button" id="wa-demo">Ver exemplo (modo demo)</button>
+      </form>
+    </section>
+    <section class="wa-card" id="wa-painel"><h2>Relatório</h2><div class="wa-empty" id="wa-vazio">O relatório aparece aqui depois da avaliação.</div></section>
+  </div>`;
+
+  function injetarCSS(){ if(document.getElementById('wa-style')) return; const s=document.createElement('style'); s.id='wa-style'; s.textContent=CSS; document.head.appendChild(s); }
+  function ajustarAltura(){ const t=q('wa-texto'); if(!t) return; t.style.height='auto'; const alvo=Math.max(360, Math.min(t.scrollHeight+6, Math.round(window.innerHeight*1.3))); t.style.height=alvo+'px'; }
+  function nivelAtual(){ return LEVELS.levels.find(l=>l.id===q('wa-nivel').value); }
+  function montarTarefas(){ const l=nivelAtual(); if(!l) return; q('wa-tarefa').innerHTML=l.tasks.map(t=>{ const faixa=t.max_words?`${t.min_words}–${t.max_words} palavras`:`mín. ${t.min_words} palavras`; return `<option value="${t.id}" data-min="${t.min_words}" data-free="${!!t.free}">${t.label} · ${faixa}</option>`; }).join(''); q('wa-tarefa').onchange=aoTrocarTarefa; aoTrocarTarefa(); }
+  function aoTrocarTarefa(){ const opt=q('wa-tarefa').selectedOptions[0]; const l=nivelAtual(); const aviso=q('wa-aviso-nivel'); if(opt) q('wa-minimo').textContent=opt.dataset.min; if(opt && opt.dataset.free==='true'){ aviso.hidden=false; aviso.className='wa-hint warn'; aviso.textContent='Texto livre: o motor aplica a régua de '+l.label+' a um texto fora do formato do exame. Descreva bem no enunciado o gênero e para quem o aluno escreveu — é isso que sustenta a nota de Communicative Achievement.'; } else if(l && l.calibrated===false){ aviso.hidden=false; aviso.className='wa-hint warn'; aviso.textContent='Motor não calibrado neste nível — revisão do professor é obrigatória.'; } else { aviso.hidden=true; } }
+  function ligarDrop(zona,input,multi){ zona.onclick=()=>input.click(); zona.ondragover=e=>{e.preventDefault();zona.classList.add('over');}; zona.ondragleave=()=>zona.classList.remove('over'); zona.ondrop=e=>{e.preventDefault();zona.classList.remove('over');receber([...e.dataTransfer.files],multi);}; input.onchange=()=>receber([...input.files],multi); }
+  async function receber(arquivos,multi){ if(!arquivos.length) return; const zona=multi?q('wa-drop'):q('wa-drop-tarefa'); const btn=multi?q('wa-btn-ocr'):q('wa-btn-ocr-tarefa'); const originais=zona.innerHTML; btn.disabled=true; zona.innerHTML=`<strong>Preparando ${arquivos.length} ${arquivos.length>1?'imagens':'imagem'}…</strong>`; try{ const prontas=[]; for(const f of arquivos) prontas.push({nome:f.name,url:await prepararImagem(f)}); if(multi){ paginas=paginas.concat(prontas); zona.innerHTML=originais; renderPaginas(); } else { imgTarefa=prontas[0].url; const kb=Math.round(imgTarefa.length*0.75/1024); zona.innerHTML=`<strong>${prontas[0].nome}</strong><br><small>pronta · ${kb} KB</small><img src="${imgTarefa}" alt="">`; } btn.disabled=false; }catch(e){ zona.innerHTML=`<strong>Não consegui ler a imagem</strong><br><small>${e.message}<br>Tente JPEG ou PNG.</small>`; } }
+  function renderPaginas(){ const alvo=q('wa-paginas'); if(!paginas.length){ alvo.innerHTML=''; q('wa-btn-ocr').disabled=true; return; } alvo.innerHTML=paginas.map((p,i)=>`<div class="wa-pag"><img src="${p.url}" alt=""><span class="wa-num">${i+1}</span><button type="button" class="wa-x" data-i="${i}" title="Remover">×</button></div>`).join('')+`<div class="wa-pagmsg">${paginas.length} página${paginas.length>1?'s':''}, nesta ordem</div>`; alvo.querySelectorAll('.wa-x').forEach(b=>b.onclick=()=>{ paginas.splice(+b.dataset.i,1); renderPaginas(); }); q('wa-btn-ocr').disabled=false; }
+  async function prepararImagem(f){ let blob=f; if(/heic|heif/i.test(f.type)||/\.hei[cf]$/i.test(f.name)) blob=await heicParaJpeg(f); return reduzirParaJpeg(blob); }
+  async function heicParaJpeg(f){ if(!window.heic2any){ await new Promise((ok,erro)=>{ const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/heic2any/0.0.4/heic2any.min.js'; s.onload=ok; s.onerror=()=>erro(new Error('Falha ao carregar o conversor de HEIC.')); document.head.appendChild(s); }); } return window.heic2any({blob:f,toType:'image/jpeg',quality:QUALIDADE}); }
+  function reduzirParaJpeg(blob){ return new Promise((ok,erro)=>{ const url=URL.createObjectURL(blob); const img=new Image(); img.onload=()=>{ URL.revokeObjectURL(url); const escala=Math.min(1,MAX_LADO/Math.max(img.width,img.height)); const c=document.createElement('canvas'); c.width=Math.round(img.width*escala); c.height=Math.round(img.height*escala); const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height); ok(c.toDataURL('image/jpeg',QUALIDADE)); }; img.onerror=()=>{ URL.revokeObjectURL(url); erro(new Error('Formato de imagem não suportado pelo navegador.')); }; img.src=url; }); }
+  async function transcrever({botao,rotulo,corpo,aoChegar}){ const b=q(botao); b.disabled=true; b.textContent='Transcrevendo…'; try{ const r=await fetch(CFG.apiUrl.replace(/\/$/,'')+'/transcribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(corpo())}); const d=await r.json(); if(!r.ok) throw new Error(d.error||'HTTP '+r.status); aoChegar(d.text); }catch(e){ toast('Falha na transcrição: '+e.message); } finally{ b.disabled=false; b.textContent=rotulo; } }
+  async function avaliar(e){ e.preventDefault(); const text=q('wa-texto').value.trim(); if(!text) return toast('Cole o texto do aluno, ou transcreva a foto primeiro.'); carregando('Avaliando contra a escala Cambridge…'); try{ const r=await fetch(CFG.apiUrl.replace(/\/$/,'')+'/assess',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student:q('wa-aluno').value, level:q('wa-nivel').value, task_part:q('wa-tarefa').value, task_prompt:q('wa-enunciado').value, text})}); const d=await r.json(); if(!r.ok) throw new Error(d.error||'HTTP '+r.status); render(d); }catch(err){ q('wa-painel').innerHTML=`<h2>Relatório</h2><div class="wa-empty">Falha ao avaliar: ${err.message}</div>`; } }
+  const carregando=msg=>{ q('wa-painel').innerHTML=`<h2>Relatório</h2><div class="wa-loading"><div class="wa-spin"></div>${msg}</div>`; };
+  function render(d){ const painel=q('wa-painel'); const subs=d.subscales??['content','organisation','language']; const barra=k=>`<div class="wa-bar"><div class="wa-top"><span>${NOMES[k]??k}</span><span><b>${d[k]?.band??'—'}</b> / 5</span></div><div class="wa-track"><div class="wa-fill" style="width:${(d[k]?.band??0)/5*100}%;background:${CORES[k]}"></div></div><div class="wa-why">${d[k]?.justification??''}</div></div>`; const erros=(d.errors??[]).map(e=>`<div class="wa-err"><span class="wa-tag">${e.type??''}</span><s>${e.excerpt}</s> → <b>${e.correction}</b>${e.explanation?`<div class="wa-why">${e.explanation}</div>`:''}</div>`).join(''); const li=xs=>(xs??[]).map(s=>`<li>${s}</li>`).join(''); const palavras=d.meets_word_minimum===false?`<span style="color:var(--laranja);font-weight:500">${d.word_count} palavras — abaixo do mínimo de ${d.min_words}</span>`:`${d.word_count} palavras`; const revisao=d.needs_teacher_review!==false; painel.innerHTML=`<h2>Relatório</h2><div class="wa-overall"><b>${d.overall_band??'—'}</b><span class="wa-de">/ 5</span><span class="wa-chip ${CHIP[d.togethere_band]??'wa-chip-pass'}">${d.togethere_band??''}</span><span class="wa-chip wa-chip-dist">${d.cefr_result??''}</span></div><div class="wa-meta">${d.student?d.student+' · ':''}${palavras}</div>${subs.map(barra).join('')}${d.summary_pt?`<div class="wa-sec"><h3>Para o aluno e a família</h3><div class="wa-resumo">${d.summary_pt}</div></div>`:''}${d.strengths?.length?`<div class="wa-sec"><h3>O que funcionou bem</h3><ul>${li(d.strengths)}</ul></div>`:''}${erros?`<div class="wa-sec"><h3>Correções</h3>${erros}</div>`:''}${d.next_steps?.length?`<div class="wa-sec"><h3>Próximos passos</h3><ul>${li(d.next_steps)}</ul></div>`:''}<div class="wa-flag"><span class="wa-dot" style="background:${revisao?'var(--laranja)':'var(--verde)'}"></span><span>${revisao?'Aguardando validação do professor':'Validado'}${d.confidence?` · confiança <b>${d.confidence}</b>`:''}</span></div><button class="wa-btn wa-btn-ghost" onclick="window.print()">Imprimir / salvar em PDF</button>`; }
+
+  function mount(){
+    injetarCSS();
+    paginas=[]; imgTarefa=null;
+    const nivel=q('wa-nivel');
+    nivel.innerHTML=LEVELS.levels.map(l=>`<option value="${l.id}"${l.enabled?'':' disabled'}>${l.label}${l.enabled?'':' (em breve)'}</option>`).join('');
+    nivel.value='a2';
+    nivel.onchange=montarTarefas;
+    montarTarefas();
+    q('wa-texto').addEventListener('input', ()=>{ q('wa-contador').textContent=contar(q('wa-texto').value); ajustarAltura(); });
+    ligarDrop(q('wa-drop'), q('wa-file'), true);
+    ligarDrop(q('wa-drop-tarefa'), q('wa-file-tarefa'), false);
+    q('wa-btn-ocr').onclick=()=>transcrever({ botao:'wa-btn-ocr', rotulo:'Transcrever a redação', corpo:()=>({images:paginas.map(p=>p.url), mode:'learner'}), aoChegar:texto=>{ q('wa-texto').value=texto; q('wa-contador').textContent=contar(texto); ajustarAltura(); q('wa-aviso-ocr').hidden=false; q('wa-texto').focus(); } });
+    q('wa-btn-ocr-tarefa').onclick=()=>transcrever({ botao:'wa-btn-ocr-tarefa', rotulo:'Transcrever o enunciado', corpo:()=>({images:[imgTarefa], mode:'task'}), aoChegar:texto=>{ q('wa-enunciado').value=texto; const a=q('wa-aviso-ocr-tarefa'); a.hidden=false; a.className='wa-hint warn'; q('wa-enunciado').focus(); } });
+    q('wa-form').onsubmit=avaliar;
+    q('wa-demo').onclick=()=>{ carregando('Carregando exemplo…'); setTimeout(()=>render(SAMPLE),150); };
+    ajustarAltura();
+  }
+  return { HTML, mount };
+})();
+let _writingsLiberado=false;   // beta: exige senha de diretor(a) por sessão para abrir a aba de writings
+async function liberarWritings(){
+  const senha=((document.getElementById('waSenhaDir')||{}).value)||'';
+  if(!senha) return toast('Digite a senha');
+  if(!cloudOn()) return toast('Sem conexão para validar a senha');
+  const diretores=(S.usuarios||[]).filter(u=>u.perfil==='direcao');
+  let ok=false;
+  for(const d of diretores){ const r=await cloudLogin(d.nome, senha); if(r && r.ok && r.perfil==='direcao'){ ok=true; break; } }
+  if(!ok) return toast('Senha de diretor(a) incorreta');
+  _writingsLiberado=true; ir('writings');
+}
+VIEWS.writings=function(){
+  const v=document.getElementById('view');
+  if(!_writingsLiberado){
+    v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--rosa)"></span><h2 class="display">📝 Correção de writings</h2></div>
+      <p class="sub">Área em versão <b>beta</b> — acesso restrito. Digite a senha de um(a) <b>diretor(a)</b> para entrar.</p>
+      <div class="card" style="max-width:420px">
+        <div class="field"><label class="lbl">Senha de diretor(a)</label>
+          <div style="position:relative">
+            <input type="password" id="waSenhaDir" placeholder="senha da direção" autocomplete="off" style="padding-right:46px" onkeydown="if(event.key==='Enter')liberarWritings()">
+            <button type="button" onclick="toggleSenhaLogin(this,'waSenhaDir')" aria-label="Mostrar senha" title="Mostrar senha" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:1.15rem;cursor:pointer;padding:6px;line-height:1">👁️</button>
+          </div>
+        </div>
+        <button class="btn block" onclick="liberarWritings()">Entrar</button>
+      </div>`;
+    setTimeout(()=>{const i=document.getElementById('waSenhaDir'); if(i)i.focus();},60);
+    return;
+  }
+  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--rosa)"></span><h2 class="display">📝 Correção de writings</h2></div>
+    <p class="sub">Avaliação de redações contra a escala oficial do Cambridge (Content · Organisation · Language). Transcreva a foto ou cole o texto — a nota final é sempre validada pelo professor.</p>
+    <div class="wa-root">${WA.HTML}</div>`;
+  WA.mount();
+};
 
 function abrirTimelineTurma(id){
   const t=S.turmas.find(x=>x.id===id); if(!t) return; const col=planColecaoDe(t); const les=_plLessons(col);
