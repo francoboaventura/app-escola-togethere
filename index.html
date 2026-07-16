@@ -427,7 +427,7 @@ function migrar(s){
 const CLOUD_URL    = 'https://script.google.com/macros/s/AKfycbylxwXqDh5ohAL4qLTn7WBQAu4juwt2bwgdiuGHDl1Ll3d1ViK-mdbeMghnG4UH3GNH/exec';
 const TKEY='togethere_token', UKEY='togethere_user', PKEY='togethere_perfil';
 let CLOUD_TOKEN = (function(){ try{ return localStorage.getItem(TKEY)||null; }catch(e){ return null; } })();
-const APP_VERSAO = '2026.07.16 · b78';   // aparece no rodapé; mude a cada publicação no GitHub
+const APP_VERSAO = '2026.07.16 · b79';   // aparece no rodapé; mude a cada publicação no GitHub
 const LOGO_B64 = 'data:image/png;base64,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';
 /* ============================================================================ */
 let _syncTimer=null;
@@ -2653,6 +2653,7 @@ function renderVipLista(){
   const comp=aulas.filter(a=>!a.faltou); const compMin=comp.reduce((s,a)=>s+(+a.duracaoMin||0),0);
   const faltas=aulas.length-comp.length;
   let h=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0;flex:1">Aulas de ${al.nome}</h3>
+    <button class="btn ghost sm" onclick="abrirFicha('${vid}')">📇 Ficha</button>
     <button class="btn amarelo sm" ${aulas.length?'':'disabled style="opacity:.5;cursor:not-allowed"'} onclick="copiarRelatorioVip()">📋 Copiar relatório</button>
     <button class="btn ghost sm" style="color:var(--vermelho)" onclick="delVipAluno('${vid}')">excluir aluno</button></div>`;
   if(!aulas.length){ box.innerHTML=h+'<p class="hint" style="margin:8px 0 0">Nenhuma aula lançada ainda.</p>'; return; }
@@ -3322,8 +3323,69 @@ function confirmarTrocarTurma(alunoId){
   a.turmaId=t.id; a.atualizadoEm=Date.now();
   save(); fechar(); VIEWS.ficha(); montarNav(); toast('Aluno movido para '+t.nome);
 }
+function corpoFichaVip(id){
+  const vip=(S.vipAlunos||[]).find(x=>x.id===id); if(!vip) return '';
+  const inRange=d=>(!_fichaDe||d>=_fichaDe)&&(!_fichaAte||d<=_fichaAte);
+  const aulas=(S.aulasVip||[]).filter(x=>x.vipId===id && inRange(x.data)).sort((a,b)=>a.data.localeCompare(b.data));
+  const comp=aulas.filter(a=>!a.faltou); const faltas=aulas.length-comp.length; const compMin=comp.reduce((s,a)=>s+(+a.duracaoMin||0),0);
+  const wrs=(S.writings||[]).filter(w=>w.alunoId===id && inRange(w.data)).sort((x,y)=>x.data.localeCompare(y.data));
+  const coms=comentariosDoAluno(id).filter(c=>inRange(c.data));
+  let txt=`FICHA DO ALUNO (VIP)\n${vip.nome}\n${vip.professor?('Prof. '+vip.professor+'\n'):''}Período: ${_fichaDe?brDate(_fichaDe):'início'} a ${_fichaAte?brDate(_fichaAte):'hoje'}\nGerado em ${brDate(hoje())} por ${S.usuario}\n`;
+  txt+=`\n👑 AULAS VIP (${aulas.length}) — ${comp.length} com presença (${fmtDur(compMin)})${faltas?(' · '+faltas+' falta(s)'):''}\n`;
+  if(aulas.length) aulas.forEach(a=>{ txt+=`• ${brDate(a.data)} — ${a.tema?a.tema+': ':''}${a.descricao} (${fmtDur(a.duracaoMin)})${a.faltou?' — NÃO COMPARECEU':''}\n`; }); else txt+=`• Nenhuma.\n`;
+  txt+=`\n📝 WRITINGS (${wrs.length})\n`;
+  if(wrs.length) wrs.forEach(w=>{ const bt=(w.subscales||Object.keys(w.bands||{})).map(k=>WR_LBL(k)+' '+(w.bands[k]!=null?w.bands[k]:'—')).join(', '); txt+=`• ${brDate(w.data)} — ${w.levelLabel||w.level||''}${w.taskLabel?(' · '+w.taskLabel):''} — Geral ${w.overall_band!=null?w.overall_band:'—'}/5 (${bt})${w.togethere_band?(' · '+w.togethere_band):''}\n`; }); else txt+=`• Nenhum.\n`;
+  txt+=`\n💬 COMENTÁRIOS (${coms.length})\n`;
+  if(coms.length) coms.forEach(c=>{ txt+=`• ${brDate(c.data)} (${c.autor}): ${c.texto}\n`; }); else txt+=`• Nenhum.\n`;
+  txt+=`\n—\nTogethere · inglês para chegar lá`;
+  return txt;
+}
+function copiarFichaVip(id){ const t=corpoFichaVip(id); if(!t) return; copiarTexto(t,'Ficha copiada! Cole no WhatsApp'); }
+function imprimirFichaVip(id){ const t=corpoFichaVip(id); if(!t) return; const html=`<div style="font-family:Arial,sans-serif;max-width:760px;margin:0 auto;padding:20px"><pre style="white-space:pre-wrap;font-family:Arial,sans-serif;font-size:13px;line-height:1.5">${escAttr(t)}</pre></div>`; if(typeof imprimirDoc==='function') imprimirDoc(html); else toast('Impressão indisponível'); }
+function renderFichaVip(v, vip){
+  const inRange=d=>(!_fichaDe||d>=_fichaDe)&&(!_fichaAte||d<=_fichaAte);
+  const aulas=(S.aulasVip||[]).filter(x=>x.vipId===vip.id && inRange(x.data)).sort((a,b)=>b.data.localeCompare(a.data));
+  const comp=aulas.filter(a=>!a.faltou); const faltas=aulas.length-comp.length; const compMin=comp.reduce((s,a)=>s+(+a.duracaoMin||0),0);
+  const wrs=(S.writings||[]).filter(w=>w.alunoId===vip.id && inRange(w.data)).sort((x,y)=>x.data.localeCompare(y.data));
+  const coms=comentariosDoAluno(vip.id).filter(c=>inRange(c.data));
+  const periodoTxt=(_fichaDe||_fichaAte)?(brDate(_fichaDe||'')+' a '+(_fichaAte?brDate(_fichaAte):'hoje')):'todo o histórico';
+  let h=`<div class="section-title"><span class="feijao fj" style="background:#C8A200"></span><h2 class="display">Ficha do aluno</h2></div>
+  <div class="card">
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><h3 style="margin:0;flex:1">${escAttr(vip.nome)}</h3><span class="pill" style="background:#fff8e0;color:#b88600">👑 Aluno VIP</span></div>
+    <p class="hint" style="margin:4px 0 8px">Aula particular${vip.professor?(' · Prof. '+escAttr(vip.professor)):''}</p>
+    <div style="margin-top:2px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn ghost sm" onclick="ir('vip')">👑 Abrir em Alunos VIP</button></div>
+  </div>
+  <div class="card" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <span class="pill" style="background:#eafaf0;color:#1a8a4a">✅ ${comp.length} aula(s) com presença (${fmtDur(compMin)})</span>
+    ${faltas?`<span class="pill" style="background:#fdeaea;color:var(--vermelho)">❌ ${faltas} falta(s)</span>`:''}
+    ${wrs.length?`<span class="pill" style="background:#f4ecff;color:#9333c7">📝 ${wrs.length} writing(s)</span>`:''}
+  </div>
+  <div class="card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <span class="hint" style="flex:1">Período: <b>${periodoTxt}</b></span>
+    <button class="btn ghost sm" onclick="setFichaPeriodo('ano')">Este ano</button>
+    <button class="btn ghost sm" onclick="setFichaPeriodo('tudo')">Tudo</button>
+  </div>`;
+  h+=`<h3 style="margin:18px 0 6px">👑 Aulas VIP (${aulas.length})</h3>`;
+  h+=aulas.length?aulas.map(a=>`<div class="card" style="padding:10px 12px"><div style="display:flex;gap:8px;flex-wrap:wrap"><b style="flex:1">${brDate(a.data)}</b><span style="color:${a.faltou?'var(--vermelho)':'#1a8a4a'};font-weight:600">${a.faltou?'❌ não compareceu':'✅ '+fmtDur(a.duracaoMin)}</span></div><p class="hint" style="margin:4px 0 0">${a.tema?('<b>'+escAttr(a.tema)+'</b> — '):''}${escAttr(a.descricao||'')}</p></div>`).join(''):'<p class="hint">Nenhuma aula no período.</p>';
+  h+=`<h3 style="margin:18px 0 6px">📝 Writings (${wrs.length})</h3>`;
+  h+=wrs.length?'<div class="card" style="padding:10px 12px">'+wrs.map(w=>{
+    const bt=(w.subscales||Object.keys(w.bands||{})).map(k=>`${WR_LBL(k)} <b>${w.bands[k]!=null?w.bands[k]:'—'}</b>`).join(' · ');
+    const ver = w.full ? `<button class="btn ghost sm" onclick="WA.verRelatorio('${w.id}')">ver relatório</button>` : '';
+    const del = soLeitura() ? '' : `<button class="btn ghost sm" style="color:var(--vermelho)" onclick="excluirWriting('${w.id}')">excluir</button>`;
+    return `<div style="border-top:1px solid var(--linha);padding:8px 0;display:flex;gap:8px;align-items:flex-start;flex-wrap:wrap"><span class="hint" style="flex:1;min-width:190px">${brDate(w.data)} · <b>${escAttr(w.levelLabel||w.level||'')}</b>${w.taskLabel?(' · '+escAttr(w.taskLabel)):''} — Geral <b>${w.overall_band!=null?w.overall_band:'—'}/5</b>${w.togethere_band?(' · '+escAttr(w.togethere_band)):''}${w.cefr_result?(' · '+escAttr(w.cefr_result)):''}<br>${bt}${w.word_count!=null?(' · '+w.word_count+' palavras'):''}</span>${ver}${del}</div>`;
+  }).join('')+'</div>':'<p class="hint">Nenhum.</p>';
+  h+=`<h3 style="margin:18px 0 6px">💬 Comentários (${coms.length})</h3>`;
+  h+=coms.length?'<div class="card" style="padding:10px 12px">'+coms.map(c=>`<div class="hint" style="border-top:1px solid var(--linha);padding:6px 0"><b>${brDate(c.data)}</b> (${escAttr(c.autor||'—')}): ${escAttr(c.texto||'')}</div>`).join('')+'</div>':'<p class="hint">Nenhum.</p>';
+  h+=`<div class="card" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+    <button class="btn ghost" onclick="copiarFichaVip('${vip.id}')">📋 Copiar (WhatsApp)</button>
+    <button class="btn ghost" onclick="imprimirFichaVip('${vip.id}')">🖨️ Imprimir / PDF</button>
+  </div>`;
+  v.innerHTML=h;
+}
 VIEWS.ficha=()=>{
   const v=document.getElementById('view');
+  const _vipF=(S.vipAlunos||[]).find(x=>x.id===_fichaAlunoId);
+  if(_vipF){ return renderFichaVip(v, _vipF); }
   const a=(S.alunos||[]).find(x=>x.id===_fichaAlunoId);
   if(!a){ v.innerHTML='<p class="sub">Abra uma ficha pela busca em <b>Turmas e alunos</b>.</p>'; return; }
   const turmas=_fichaTurmasDoAluno(a.id);
@@ -4604,8 +4666,14 @@ const WA = (function(){
   function reduzirParaJpeg(blob){ return new Promise((ok,erro)=>{ const url=URL.createObjectURL(blob); const img=new Image(); img.onload=()=>{ URL.revokeObjectURL(url); const escala=Math.min(1,MAX_LADO/Math.max(img.width,img.height)); const c=document.createElement('canvas'); c.width=Math.round(img.width*escala); c.height=Math.round(img.height*escala); const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height); ok(c.toDataURL('image/jpeg',QUALIDADE)); }; img.onerror=()=>{ URL.revokeObjectURL(url); erro(new Error('Formato de imagem não suportado pelo navegador.')); }; img.src=url; }); }
   async function transcrever({botao,rotulo,corpo,aoChegar}){ const b=q(botao); b.disabled=true; b.textContent='Transcrevendo…'; try{ const r=await fetch(CFG.apiUrl.replace(/\/$/,'')+'/transcribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(corpo())}); const d=await r.json(); if(!r.ok) throw new Error(d.error||'HTTP '+r.status); aoChegar(d.text); }catch(e){ toast('Falha na transcrição: '+e.message); } finally{ b.disabled=false; b.textContent=rotulo; } }
   function _turmasWA(){ try{ return (typeof turmasVisiveis==='function'?turmasVisiveis():(S.turmas||[])).filter(t=>!t.arquivada); }catch(e){ return (S.turmas||[]).filter(t=>!t.arquivada); } }
-  function montarTurmasAlunos(){ const tsel=q('wa-turma'); if(!tsel) return; const ts=_turmasWA(); tsel.innerHTML = ts.length? ts.map(t=>`<option value="${t.id}">${esc(t.nome)}</option>`).join('') : '<option value="">(sem turmas)</option>'; montarAlunos(); }
-  function montarAlunos(){ const tsel=q('wa-turma'), asel=q('wa-aluno-sel'); if(!asel) return; const tid=tsel?tsel.value:''; let als=[]; try{ als=(typeof alunosDa==='function'?alunosDa(tid):(S.alunos||[]).filter(a=>a.turmaId===tid&&!a.arquivado)); }catch(e){ als=(S.alunos||[]).filter(a=>a.turmaId===tid); } als=als.slice().sort((a,b)=>a.nome.localeCompare(b.nome)); asel.innerHTML = als.length? als.map(a=>`<option value="${a.id}">${esc(a.nome)}</option>`).join('') : '<option value="">(turma sem alunos)</option>'; }
+  function _vipWA(){ const gestor=(S.perfil==='direcao'||S.perfil==='secretaria'); const meu=(typeof _meuEnsina==='function')?_meuEnsina():''; return (S.vipAlunos||[]).filter(v=>!v.arquivado && (gestor || v.professor===meu)).sort((a,b)=>a.nome.localeCompare(b.nome)); }
+  function montarTurmasAlunos(){ const tsel=q('wa-turma'); if(!tsel) return; const ts=_turmasWA(); let html=ts.map(t=>`<option value="${t.id}">${esc(t.nome)}</option>`).join(''); if(_vipWA().length) html+=`<option value="__vip__">👑 Alunos VIP</option>`; tsel.innerHTML = html || '<option value="">(sem turmas)</option>'; montarAlunos(); }
+  function montarAlunos(){ const tsel=q('wa-turma'), asel=q('wa-aluno-sel'); if(!asel) return; const tid=tsel?tsel.value:'';
+    let als;
+    if(tid==='__vip__'){ als=_vipWA(); }
+    else { try{ als=(typeof alunosDa==='function'?alunosDa(tid):(S.alunos||[]).filter(a=>a.turmaId===tid&&!a.arquivado)); }catch(e){ als=(S.alunos||[]).filter(a=>a.turmaId===tid); } als=als.slice().sort((a,b)=>a.nome.localeCompare(b.nome)); }
+    asel.innerHTML = als.length? als.map(a=>`<option value="${a.id}">${esc(a.nome)}</option>`).join('') : '<option value="">(sem alunos)</option>';
+  }
   function renderHist(){
     const box=q('wa-hist'); if(!box) return;
     const alunoId=((q('wa-aluno-sel')||{}).value)||'';
@@ -4621,7 +4689,7 @@ const WA = (function(){
     if(!w) return toast('Registro não encontrado');
     if(!w.full) return toast('Este registro foi salvo antes desta atualização — só as notas estão disponíveis.');
     injetarCSS();
-    const aluno=(S.alunos||[]).find(a=>a.id===w.alunoId)||{};
+    const aluno=(S.alunos||[]).find(a=>a.id===w.alunoId) || (S.vipAlunos||[]).find(v=>v.id===w.alunoId) || {};
     modal(`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><h3 style="flex:1;margin:0">📝 Relatório de writing</h3><button class="close" onclick="fechar()">×</button></div>
       <p class="hint" style="margin:0 0 10px">${esc(aluno.nome||'')}${aluno.nome?' · ':''}${esc(w.levelLabel||w.level||'')}${w.taskLabel?(' · '+esc(w.taskLabel)):''} · ${brDate(w.data)}${w.criadoPor?(' · por '+esc(w.criadoPor)):''}</p>
       ${w.enunciado?`<div class="hint" style="margin:0 0 8px"><b>Enunciado:</b> ${esc(w.enunciado)}</div>`:''}
@@ -4636,8 +4704,10 @@ const WA = (function(){
     const taskLabel=((tarefaSel.selectedOptions[0]||{}).textContent||'').trim();
     const subs=d.subscales||['content','organisation','language'];
     const bands={}; subs.forEach(k=>{ bands[k]=(d[k]&&d[k].band!=null)?d[k].band:null; });
+    const ehVip = (turmaId==='__vip__') || !!((S.vipAlunos||[]).find(v=>v.id===alunoId));
+    const tId = ehVip ? '' : turmaId;
     S.writings=S.writings||[];
-    S.writings.push({ id:uid(), alunoId, turmaId, data:hoje(), level:d.level||nivelSel.value, levelLabel, task:tarefaSel.value||'', taskLabel, subscales:subs, bands, overall_band:(d.overall_band!=null?d.overall_band:null), togethere_band:d.togethere_band||'', cefr_result:d.cefr_result||'', word_count:(d.word_count!=null?d.word_count:null), full:d, texto:(texto||''), enunciado:(enunciado||''), criadoPor:S.usuario, atualizadoEm:Date.now() });
+    S.writings.push({ id:uid(), alunoId, turmaId:tId, vip:ehVip, data:hoje(), level:d.level||nivelSel.value, levelLabel, task:tarefaSel.value||'', taskLabel, subscales:subs, bands, overall_band:(d.overall_band!=null?d.overall_band:null), togethere_band:d.togethere_band||'', cefr_result:d.cefr_result||'', word_count:(d.word_count!=null?d.word_count:null), full:d, texto:(texto||''), enunciado:(enunciado||''), criadoPor:S.usuario, atualizadoEm:Date.now() });
     save();                              // grava e sincroniza: notas para a ficha + relatório completo para resgatar depois
     renderHist();
     toast('Avaliação salva ✓ — notas na ficha e relatório guardado');
@@ -4648,7 +4718,8 @@ const WA = (function(){
     if(!text) return toast('Cole o texto do aluno, ou transcreva a foto primeiro.');
     const alunoId=((q('wa-aluno-sel')||{}).value)||'';
     const turmaId=((q('wa-turma')||{}).value)||'';
-    const alunoNome= alunoId ? ((S.alunos.find(a=>a.id===alunoId)||{}).nome||'') : '';
+    const _pessoa= alunoId ? ((S.alunos||[]).find(a=>a.id===alunoId) || (S.vipAlunos||[]).find(v=>v.id===alunoId)) : null;
+    const alunoNome= _pessoa ? (_pessoa.nome||'') : '';
     carregando('Avaliando contra a escala Cambridge…');
     try{
       const r=await fetch(CFG.apiUrl.replace(/\/$/,'')+'/assess',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student:alunoNome, level:q('wa-nivel').value, task_part:q('wa-tarefa').value, task_prompt:q('wa-enunciado').value, text})});
