@@ -398,7 +398,8 @@ function migrar(s){
   s.formacao=s.formacao||[];         // biblioteca da metodologia (tópicos)
   s.formacaoReg=s.formacaoReg||[];   // quem leu/foi treinado em cada tópico
   s.formacaoSessoes=s.formacaoSessoes||[];   // sessões de formação registradas pela direção
-  if(s.versao<6){ _semearFormacao(s); s.versao=6; }   // b89: quadro do treinamento vira biblioteca inicial
+  if(s.versao<6){ _semearFormacao(s); s.versao=6; }
+  if(s.versao<7){ _semearFormacao(s); s.versao=7; }   // b90: tópicos do Pedagogical Guide   // b89: quadro do treinamento vira biblioteca inicial
   (s.aulasVip||[]).forEach(a=>{
     if(!a.vipId && a.alunoId){
       const al=(s.alunos||[]).find(x=>x.id===a.alunoId);
@@ -436,7 +437,7 @@ function migrar(s){
 const CLOUD_URL    = 'https://script.google.com/macros/s/AKfycbylxwXqDh5ohAL4qLTn7WBQAu4juwt2bwgdiuGHDl1Ll3d1ViK-mdbeMghnG4UH3GNH/exec';
 const TKEY='togethere_token', UKEY='togethere_user', PKEY='togethere_perfil';
 let CLOUD_TOKEN = (function(){ try{ return localStorage.getItem(TKEY)||null; }catch(e){ return null; } })();
-const APP_VERSAO = '2026.07.23 · b89';   // aparece no rodapé; mude a cada publicação no GitHub
+const APP_VERSAO = '2026.07.24 · b90';   // aparece no rodapé; mude a cada publicação no GitHub
 const LOGO_B64 = 'data:image/png;base64,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';
 /* ============================================================================ */
 let _syncTimer=null;
@@ -918,7 +919,7 @@ const NAV=[
   {id:'relatorio', label:'Relatório do dia', em:'🧾', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
   {id:'planejamento', label:'Planejamento', em:'📅', grp:'Sala de aula', roles:['professor','direcao']},
   {id:'writings', label:'Correção de writings', em:'📝', grp:'Sala de aula', roles:['professor','direcao']},
-  {id:'formacao', label:'Formação', em:'🎓', grp:'Sala de aula', roles:['professor','direcao'], badgeFormacao:true},
+  {id:'formacao', label:'Formação', em:'🎓', grp:'Sala de aula', roles:['professor','direcao']},
   {id:'ficha', label:'Ficha do aluno', em:'📇', grp:'Acompanhamento', roles:['professor','secretaria','direcao'], menu:false},
   {id:'resumo', label:'Relatórios por aluno', em:'📄', grp:'Acompanhamento', roles:['secretaria','direcao']},
   {id:'relturma', label:'Relatórios por turma', em:'🏫', grp:'Acompanhamento', roles:['secretaria','direcao']},
@@ -4732,8 +4733,9 @@ const WA = (function(){
   async function transcrever({botao,rotulo,corpo,aoChegar}){ const b=q(botao); b.disabled=true; b.textContent='Transcrevendo…'; try{ const r=await fetch(CFG.apiUrl.replace(/\/$/,'')+'/transcribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(corpo())}); const d=await r.json(); if(!r.ok) throw new Error(d.error||'HTTP '+r.status); aoChegar(d.text); }catch(e){ toast('Falha na transcrição: '+e.message); } finally{ b.disabled=false; b.textContent=rotulo; } }
   function _turmasWA(){ try{ return (typeof turmasVisiveis==='function'?turmasVisiveis():(S.turmas||[])).filter(t=>!t.arquivada); }catch(e){ return (S.turmas||[]).filter(t=>!t.arquivada); } }
   function _vipWA(){ const gestor=(S.perfil==='direcao'||S.perfil==='secretaria'); const meu=(typeof _meuEnsina==='function')?_meuEnsina():''; return (S.vipAlunos||[]).filter(v=>!v.arquivado && (gestor || v.professor===meu)).sort((a,b)=>a.nome.localeCompare(b.nome)); }
-  function montarTurmasAlunos(){ const tsel=q('wa-turma'); if(!tsel) return; const ts=_turmasWA(); let html=ts.map(t=>`<option value="${t.id}">${esc(t.nome)}</option>`).join(''); if(_vipWA().length) html+=`<option value="__vip__">👑 Alunos VIP</option>`; tsel.innerHTML = html || '<option value="">(sem turmas)</option>'; montarAlunos(); }
+  function montarTurmasAlunos(){ const tsel=q('wa-turma'); if(!tsel) return; const ts=_turmasWA(); let html=ts.map(t=>`<option value="${t.id}">${esc(t.nome)}</option>`).join(''); if(_vipWA().length) html+=`<option value="__vip__">👑 Alunos VIP</option>`; html+=`<option value="__avulso__">✏️ Correção avulsa (não salva)</option>`; tsel.innerHTML = html || '<option value="">(sem turmas)</option>'; montarAlunos(); }
   function montarAlunos(){ const tsel=q('wa-turma'), asel=q('wa-aluno-sel'); if(!asel) return; const tid=tsel?tsel.value:'';
+    if(tid==='__avulso__'){ asel.innerHTML='<option value="">— sem aluno · não fica registrada —</option>'; return; }
     let als;
     if(tid==='__vip__'){ als=_vipWA(); }
     else { try{ als=(typeof alunosDa==='function'?alunosDa(tid):(S.alunos||[]).filter(a=>a.turmaId===tid&&!a.arquivado)); }catch(e){ als=(S.alunos||[]).filter(a=>a.turmaId===tid); } als=als.slice().sort((a,b)=>a.nome.localeCompare(b.nome)); }
@@ -4791,6 +4793,7 @@ const WA = (function(){
       const d=await r.json(); if(!r.ok) throw new Error(d.error||'HTTP '+r.status);
       render(d);
       if(alunoId) salvarWriting(alunoId, turmaId, d, text, ((q('wa-enunciado')||{}).value)||'');
+      else if(turmaId==='__avulso__') toast('Correção avulsa — não fica registrada em nenhum aluno.');
       else toast('Avaliado. Selecione turma e aluno para salvar as notas e o relatório.');
     }catch(err){ q('wa-painel').innerHTML=`<h2>Relatório</h2><div class="wa-empty">Falha ao avaliar: ${err.message}</div>`; }
   }
@@ -5021,21 +5024,10 @@ function _fmFmt(txt){
 /* ---------------------------- TELA ---------------------------- */
 VIEWS.formacao=()=>{
   const v=document.getElementById('view');
-  const dir=(S.perfil==='direcao');
-  const abas=[['biblioteca','📚 Biblioteca']];
-  if(_fmEnsino()) abas.push(['percurso','🎯 Meu percurso']);
-  if(dir){ abas.push(['painel','👥 Painel']); abas.push(['sessoes','📌 Sessões']); }
-  if(!abas.some(a=>a[0]===_fmAba)) _fmAba=abas[0][0];
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--amarelo)"></span><h2 class="display">Formação</h2></div>
-    <p class="sub">A metodologia Togethere sempre à mão — e o registro de quem já passou por cada tópico.</p>
-    <div class="row" style="gap:8px;margin-bottom:18px">${abas.map(a=>
-      `<button class="btn ${_fmAba===a[0]?'':'ghost'} sm" style="flex:none" onclick="fmAba('${a[0]}')">${a[1]}</button>`).join('')}</div>
+    <p class="sub">A metodologia Togethere sempre à mão — biblioteca de consulta.</p>
     <div id="fmBox"></div>`;
-  const box=document.getElementById('fmBox');
-  if(_fmAba==='biblioteca') _fmRenderBiblioteca(box);
-  else if(_fmAba==='percurso') _fmRenderPercurso(box);
-  else if(_fmAba==='painel') _fmRenderPainel(box);
-  else _fmRenderSessoes(box);
+  _fmRenderBiblioteca(document.getElementById('fmBox'));
 };
 function fmAba(a){ _fmAba=a; VIEWS.formacao(); }
 
@@ -5044,13 +5036,12 @@ function _fmRenderBiblioteca(box){
   if(dir) box.appendChild(el(`<div style="margin-bottom:14px"><button class="btn" onclick="fmNovoTopico()">➕ Novo tópico</button></div>`));
   if(!tops.length){ box.appendChild(el('<div class="card empty"><div class="big">📚</div><b>Nenhum tópico ainda</b><br>A direção pode criar o primeiro pelo botão acima.</div>')); return; }
   tops.forEach(t=>{
-    const st=ensina?_fmStatus(t,S.usuario):null;
     box.appendChild(el(`<div class="card" style="cursor:pointer;padding:16px" onclick="fmAbrir('${t.id}')">
       <div style="display:flex;align-items:flex-start;gap:12px">
         <div style="font-size:1.7rem;line-height:1">${t.emoji||'📘'}</div>
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <b style="font-size:1.02rem">${esc(t.titulo)}</b>${st?_fmChip(st.k):''}
+            <b style="font-size:1.02rem">${esc(t.titulo)}</b>
           </div>
           <p class="hint" style="margin:4px 0 0">${esc(t.resumo||'')}</p>
         </div>
@@ -5121,15 +5112,13 @@ function _fmRenderSessoes(box){
 /* ---------------------------- TÓPICO ---------------------------- */
 function fmAbrir(id){
   const t=(S.formacao||[]).find(x=>x.id===id); if(!t) return;
-  const ensina=_fmEnsino(), dir=(S.perfil==='direcao');
-  const st=ensina?_fmStatus(t,S.usuario):null;
+  const dir=(S.perfil==='direcao');
   modal(`<h3 style="margin-bottom:4px">${t.emoji||'📘'} ${esc(t.titulo)} <button class="close" onclick="fechar()">×</button></h3>
-    <p class="hint" style="margin-bottom:14px">${esc(t.resumo||'')}${st?' · '+_FM_CHIP[st.k].t:''}</p>
+    <p class="hint" style="margin-bottom:14px">${esc(t.resumo||'')}</p>
     <div style="max-height:52vh;overflow:auto;padding-right:4px">${_fmFmt(t.conteudo)}</div>
     <div class="row" style="margin-top:16px;justify-content:flex-end;gap:8px">
       ${dir?`<button class="btn ghost sm" style="flex:none" onclick="fmEditarTopico('${t.id}')">✏️ Editar</button>`:''}
       ${dir?`<button class="btn ghost sm" style="flex:none" onclick="fmExcluirTopico('${t.id}')">🗑</button>`:''}
-      ${ensina?`<button class="btn" style="flex:none" onclick="fmMarcarLido('${t.id}')">✅ ${st&&st.ts?'Marcar como revisado':'Marcar como lido'}</button>`:''}
     </div>`);
 }
 function fmMarcarLido(id){
@@ -5336,6 +5325,345 @@ O que é revisitado em intervalos fica; o que aparece uma vez só, não. Planeje
 
 ## MIT — Most Important Thing
 Se o aluno sair da aula lembrando de uma coisa só, qual deve ser? Defina isso antes e garanta que ela apareça no warm-up e no wrap-up.`}
+  ,
+  {id:'fm-filosofia', emoji:'🎯', ordem:60, titulo:'Filosofia educacional e princípios basais',
+   resumo:'Quem somos, como ensinamos e o que não é negociável.',
+   conteudo:`A Togethere é mais do que uma escola de inglês: é um espaço de aprendizagem para pessoas de todas as idades com um objetivo em comum — dominar o inglês para estudo, trabalho, viagem ou realização pessoal. Nossa filosofia parte de uma ideia simples: o aprendizado acontece quando a base teórica encontra a aplicação prática, num ambiente engajador e acolhedor.
+
+## Nossa abordagem
+Comunicação é o coração do aprendizado. Combinamos abordagens tradicionais e modernas para criar um ambiente plural, o que nos permite:
+- criar aulas dinâmicas e focadas em comunicação com sentido
+- adaptar o método ao processo de cada aluno
+- desenvolver o crescimento individual e coletivo
+- aplicar práticas que fortalecem associação e memorização
+- manter espontaneidade e leveza no processo
+
+## Os cinco princípios basais
+1. Jornada personalizada — a metodologia é estruturada, mas cada aluno tem um caminho; ajustamos a abordagem ao perfil e às necessidades dele.
+2. Foco na comunicação — a língua cumpre seu papel quando é usada de verdade. A aula presencial existe para maximizar interação autêntica.
+3. Padrões e materiais modernos — currículo alinhado ao CEFR, com material atual e referência internacional.
+4. Acompanhamento colaborativo — aluno, professor e coordenação trabalham juntos: definir metas, criar estratégias, acompanhar por avaliação contínua e ajustar a rota.
+5. Metodologia flexível — ambiente leve e compreensivo, combinando conceitos tradicionais e modernos conforme a necessidade da turma.`},
+
+  {id:'fm-papel', emoji:'👩‍🏫', ordem:70, titulo:'O papel do professor Togethere',
+   resumo:'As quatro frentes de responsabilidade de quem dá aula aqui.',
+   conteudo:`## 1. Entrega do currículo
+- Planejar e conduzir aulas que atendam a estilos e necessidades diferentes, com objetivos, atividades e avaliação claros.
+- Desenvolver materiais interativos, adequados à idade e ao nível.
+- Garantir que toda atividade esteja alinhada aos objetivos do currículo, revisando a estratégia conforme o progresso da turma.
+
+## 2. Avaliação do aluno
+- Aplicar avaliações formativas e somativas com regularidade, formais e informais.
+- Usar instrumentos que meçam de fato as seis habilidades: speaking, writing, listening, reading, grammar e vocabulary.
+- Analisar os dados junto com a direção acadêmica e criar intervenções para quem precisa de apoio ou de desafio maior.
+
+## 3. Gestão da sala
+- Criar e manter um ambiente positivo e inclusivo, com rotinas e combinados claros desde o primeiro dia.
+- Aplicar manejo de comportamento justo e consistente, com reforço positivo e consequências claras.
+- Alinhar com os colegas para que o padrão de sala seja o mesmo em toda a escola.
+
+## 4. Desenvolvimento profissional
+- Participar das formações, oficinas e treinamentos da escola.
+- Manter-se atualizado em metodologia, tecnologia educacional e boas práticas de ESL/EFL.
+- Aprender junto: reuniões, observação entre pares e troca de materiais.`},
+
+  {id:'fm-4fs-praticas', emoji:'🛠️', ordem:80, titulo:'Os 4 Fs na prática — dicas por etapa',
+   resumo:'O que fazer em aula para cada um dos quatro Fs.',
+   conteudo:`Regra de planejamento: se a aula é divertida mas fraca em algum dos 4 Fs, o aprendizado fica raso. Uma boa aula Togethere constrói os quatro de propósito.
+
+## Focus — direcionar a atenção
+- Comece com o objetivo em uma frase ("ao final da aula, você consegue…") e retome no fechamento.
+- Modele primeiro e guie a percepção: peça que ouçam ou leiam procurando UM detalhe específico.
+- Instruções curtas e em etapas: dê um passo, cheque o entendimento, então libere a atividade.
+- Use "resets" de atenção quando a energia cair: uma pergunta-checkpoint, um reagrupamento rápido.
+- Reduza estímulos concorrentes: menos poluição no quadro e nos slides, principalmente nos níveis baixos.
+
+## Frequency — manter a exposição
+- Planeje o caminho de volta de cada conteúdo: ele reaparece na mesma aula, na próxima e mais adiante na unidade.
+- Comece a aula com uma retomada curta que reutilize a língua anterior.
+- Exija que o conteúdo antigo entre nas tarefas novas (ex.: usar 2 ou 3 estruturas da semana passada no speaking de hoje).
+- Revisão com propósito: ela apoia o objetivo de hoje, não é sorteio de curiosidades.
+- Fuja da armadilha do conteúdo novo toda aula.
+
+## Fixation — fixar pela recuperação
+- Inclua ao menos um momento de recuperação sem consulta em toda aula, nem que sejam 30 a 60 segundos.
+- Avance na progressão: controlado, semicontrolado, comunicativo.
+- Use micro-writing e micro-speaking: produção curta, com correção e nova tentativa.
+- Varie o contexto: mesma estrutura, outra situação, outra pessoa, outro tempo.
+- Prefira poucos ciclos de prática bem-feitos a muitas atividades rasas.
+
+## Feedback — alimentar a melhora
+- Priorize 1 ou 2 pontos de maior impacto por tarefa, não todos os erros.
+- Ajuste o tempo: imediato para forma e pronúncia; adiado em tarefas de fluência.
+- Use ciclos de retry e upgrade: o aluno tenta de novo com a forma corrigida.
+- Mantenha a linguagem de correção constante ("tenta de novo — olha o verbo").
+- Equilibre precisão e incentivo: confirme o que funcionou, depois aponte a melhora.
+
+## Perguntas de planejamento
+1. Focus: no que o aluno vai prestar atenção primeiro, e como deixo o alvo evidente?
+2. Frequency: quando esse conteúdo reaparece (hoje, na próxima, mais adiante)?
+3. Fixation: quando o aluno vai recuperar de memória e produzir sem consulta?
+4. Feedback: o que vou corrigir, e como o aluno tenta de novo?`},
+
+  {id:'fm-teorias', emoji:'📖', ordem:90, titulo:'Teorias de ensino de línguas',
+   resumo:'As principais correntes, com prós e limites de cada uma.',
+   conteudo:`Não defendemos uma teoria única. Conhecer as várias permite escolher com critério o que serve para cada turma e objetivo.
+
+## Behaviorismo
+Princípio: a língua se aprende por formação de hábito e reforço.
+- A favor: eficaz para padrões e estruturas básicas; método claro; bom para iniciantes e crianças.
+- Limites: ignora a criatividade e os processos cognitivos; pode virar mecânico.
+
+## Inatismo
+Princípio: existe uma capacidade inata de adquirir língua.
+- A favor: explica a aquisição rápida na infância; apoia imersão.
+- Limites: subestima o ensino explícito; difícil em sala formal; menos eficaz com adultos.
+
+## Construtivismo
+Princípio: o aluno constrói o próprio entendimento pela experiência.
+- A favor: aprendizagem ativa, autonomia, pensamento crítico.
+- Limites: leva tempo; exige mediação habilidosa.
+
+## Interacionismo social
+Princípio: a língua se aprende na interação social.
+- A favor: comunicação autêntica, competência cultural, colaboração.
+- Limites: desafiador em turma monolíngue; exige boa gestão de grupos.
+
+## Inteligências múltiplas
+Princípio: pessoas diferentes aprendem por caminhos diferentes.
+- A favor: acolhe estilos variados; ensino inclusivo.
+- Limites: complexo de implementar; exige recursos.
+
+## Teoria cognitiva
+Princípio: aprender língua envolve processos mentais ativos.
+- A favor: compreensão acima da memorização; aprendizagem significativa.
+- Limites: pode ser abstrato; exige andaimes bem postos.
+
+## Grammar Translation
+Princípio: a língua se aprende por análise e tradução.
+- A favor: desenvolve análise; foco em precisão; útil no acadêmico.
+- Limites: pouca comunicação; pode desmotivar; não gera fluência.
+
+## Hipótese da interação
+Princípio: a aquisição ocorre na interação com sentido.
+- A favor: uso natural da língua; motivação.
+- Limites: exige monitoramento; imprevisível.`},
+
+  {id:'fm-metodologias', emoji:'🧪', ordem:100, titulo:'Metodologias de ensino',
+   resumo:'CLT, TBLT, CLIL, TPR e as demais — o que são e quando usar.',
+   conteudo:`## Communicative Language Teaching (CLT)
+Foco em comunicação com sentido, material autêntico e integração das habilidades.
+Na prática: role-plays, information gap, projetos.
+Ganho: competência comunicativa e preparo para o uso real.
+
+## Task-Based Language Teaching (TBLT)
+Aprender realizando tarefas com objetivo real.
+Na prática: resolução de problemas, projetos, simulações.
+Ganho: aprendizagem ativa e integração de várias áreas da língua.
+
+## CLIL — conteúdo e língua integrados
+Ensinar conteúdo de outra área em inglês.
+Na prática: vocabulário específico, projetos interdisciplinares.
+Ganho: contexto com significado e linguagem acadêmica.
+
+## Community Language Learning (CLL)
+Centrado no aluno, com o professor como facilitador.
+Na prática: rodas de conversa, resolução em grupo, ensino entre pares.
+Ganho: reduz ansiedade e constrói confiança.
+
+## Direct Method
+Sem uso da língua materna, vocabulário do dia a dia, gramática indutiva.
+Na prática: imagens, mímica, pergunta e resposta.
+Ganho: desenvolve escuta e o hábito de pensar em inglês.
+
+## Audiolingualismo
+Prática de padrões e drills, foco no oral.
+Na prática: repetição, substituição, memorização de diálogos.
+Ganho: automatismo e pronúncia.
+
+## Total Physical Response (TPR)
+Movimento associado à compreensão, com produção oral adiada.
+Na prática: comandos com ação, atividades de movimento.
+Ganho: engaja vários sentidos e reduz o estresse; ótimo para iniciantes.
+
+## Suggestopedia
+Ambiente confortável, música e sugestão positiva.
+Na prática: música ao fundo, disposição acolhedora, role-play com outra identidade.
+Ganho: reduz ansiedade e favorece a memória.`},
+
+  {id:'fm-integracao', emoji:'🔗', ordem:110, titulo:'Como a Togethere combina as abordagens',
+   resumo:'Nenhuma teoria dá conta sozinha — como a gente mistura, e por quê.',
+   conteudo:`Nenhuma teoria ou metodologia isolada responde a tudo. Nossa abordagem é eclética, mas com princípio: escolhemos e combinamos conforme o objetivo da aula, o perfil da turma e o contexto.
+
+## Aprendizagem centrada na comunicação
+- Interacionismo social: a língua se aprende interagindo de verdade.
+- CLT: foco no uso funcional, não só no conhecimento estrutural.
+- Task-Based: tarefas autênticas que espelham a vida real.
+
+## Caminhos personalizados
+- Inteligências múltiplas: reconhecer e atender estilos diferentes.
+- Construtivismo: o aluno constrói sentido; o professor media.
+- Teoria cognitiva: a progressão entre níveis respeita os processos de aquisição.
+
+## Padrões modernos
+- CLIL: integrar inglês a conteúdos relevantes de outras áreas.
+- Hipótese da interação: atividades que geram negociação de sentido.
+
+## Flexibilidade
+- Direct Method: quando a exposição direta e autêntica ajuda.
+- TPR: sobretudo com os pequenos e nas fases iniciais.
+- Suggestopedia: para criar clima leve e reduzir ansiedade.
+
+O objetivo é aproveitar a força de cada abordagem e compensar os limites de todas.`},
+
+  {id:'fm-cefr', emoji:'📊', ordem:120, titulo:'Descritores CEFR — o que o aluno consegue fazer',
+   resumo:'De Pré-A1 a C2, em linguagem de can do.',
+   conteudo:`O CEFR é a base do nosso currículo e da avaliação. Use os descritores para definir objetivos, criar atividades no nível certo, dar feedback específico e escrever relatórios.
+
+## Pré-A1
+- Fala: frases curtas sobre si; cumprimentos; responde a perguntas pessoais simples ditas devagar.
+- Escrita: dados pessoais; copia palavras; frases isoladas.
+- Escuta: instruções básicas ditas devagar; palavras familiares.
+- Leitura: nomes, palavras e frases muito simples em avisos.
+
+## A1
+- Fala: interage de forma simples se o outro repetir ou reformular; pergunta e responde sobre necessidades imediatas.
+- Escrita: frases isoladas; um cartão-postal simples; preenche formulários.
+- Escuta: fala muito lenta e articulada, com pausas.
+- Leitura: nomes, palavras e frases muito simples; mensagens curtas.
+
+## A2
+- Fala: descreve seu entorno e sua rotina; troca informação em tarefas simples.
+- Escrita: bilhetes curtos; frases ligadas por conectores simples; cartas pessoais breves.
+- Escuta: pega o ponto principal de mensagens curtas e claras.
+- Leitura: textos curtos com vocabulário frequente; encontra informação específica.
+
+## B1
+- Fala: lida com a maioria das situações de viagem; entra em conversa sobre temas familiares; conecta ideias para narrar experiências.
+- Escrita: textos conectados sobre temas conhecidos; cartas pessoais com experiências e impressões.
+- Escuta: pontos principais de fala padrão clara; programas de TV e rádio sobre atualidades.
+- Leitura: textos com linguagem cotidiana; argumentos claros sobre temas familiares.
+
+## B2
+- Fala: fluência e espontaneidade suficientes para interagir com nativos; explica um ponto de vista com prós e contras.
+- Escrita: textos claros e detalhados; ensaios e relatórios argumentando.
+- Escuta: palestras e fala longa; maior parte de noticiários e filmes em dialeto padrão.
+- Leitura: artigos e reportagens sobre problemas contemporâneos; prosa literária.
+
+## C1
+- Fala: expressa-se com fluência e espontaneidade, sem procurar palavras; usa a língua com flexibilidade para fins sociais e profissionais.
+- Escrita: textos bem estruturados sobre temas complexos; escolhe o estilo conforme o leitor.
+- Escuta: fala longa mesmo sem estrutura clara; programas e filmes sem grande esforço.
+- Leitura: textos longos e complexos; artigos especializados fora da própria área.
+
+## C2
+- Fala: participa sem esforço de qualquer conversa; expressa-se com precisão e fluidez.
+- Escrita: textos fluidos no estilo adequado; relatórios e artigos complexos; resumos e resenhas.
+- Escuta: qualquer tipo de fala, inclusive discussões técnicas e uso regional.
+- Leitura: praticamente qualquer texto, com percepção de estilo e sentido implícito.
+
+## Como usar
+1. No planejamento: definir objetivo, escolher atividade e material do nível.
+2. Na avaliação: criar tarefas, avaliar desempenho, escrever relatórios.
+3. No feedback: apontar o que melhorar, definir metas alcançáveis, celebrar o avanço.
+4. No apoio: dar andaimes, diferenciar a instrução, estimular autonomia.
+
+Trate os descritores como referência flexível, não como camisa de força.`},
+
+  {id:'fm-niveis', emoji:'🪜', ordem:130, titulo:'Sistema de níveis Togethere',
+   resumo:'Segmentos por idade e a nomenclatura correta dos níveis.',
+   conteudo:`Cada nível dura um ano. O nome do nível combina o CEFR com o segmento — por exemplo, A2 JUNIOR ou B1+ TEENS. Use sempre o nome completo.
+
+## LITTLE ONES — 3 a 5 anos
+- LITTLE ONES STARTER, LITTLE ONES A, LITTLE ONES B
+- Todos servem como porta de entrada; foco no desenvolvimento infantil e em atividades adequadas à idade.
+
+## KIDS — 6 a 9 anos
+- Pré A1 KIDS, Pré A1+ KIDS, A1 KIDS, A1+ KIDS
+- Introdução ao estudo estruturado; construção de base; letramento adequado à idade.
+
+## JUNIOR — 10 a 12 anos
+- A1 JUNIOR, A1+ JUNIOR, A2 JUNIOR, A2+ JUNIOR
+- Estruturas mais complexas; habilidades acadêmicas; todas as competências.
+
+## TEENS — até 18 anos
+- A1 TEENS, A2 TEENS, B1 TEENS, B1+ TEENS, B2 TEENS, C1 TEENS, C1+ TEENS
+- Desenvolvimento completo; linguagem acadêmica e social; preparo para exames internacionais.
+
+## ADULTS — 18+
+- A1 ADULTS, A2 ADULTS, B1 ADULTS, B1+ ADULTS, B2 ADULTS, C1 ADULTS, C1+ ADULTS
+- Foco profissional e acadêmico; aplicação prática; abordagem flexível.
+
+## Programas especiais
+- C2 Pro: para quem concluiu o C1; domínio avançado.
+- VIP: teens e adultos, ensino por objetivo, percurso personalizado.
+
+## Implicações para o ensino
+1. Ajuste o método às características do segmento e ao estágio de desenvolvimento.
+2. Use sempre o nome completo do nível e mantenha o alinhamento com o CEFR em mente.
+3. Considere as opções especiais (C2 Pro e VIP) quando o objetivo do aluno pedir.
+4. Prepare a transição de nível e mantenha a coordenação informada.`},
+
+  {id:'fm-avaliacao', emoji:'🏅', ordem:140, titulo:'Sistema de avaliação — as quatro bandas',
+   resumo:'DISTINCTION, MERIT, PASS e UNSATISFACTORY nas seis habilidades.',
+   conteudo:`Os descritores de desempenho existem para dar um retrato claro do aluno à família e à escola. Avaliamos seis habilidades:
+- Gramática: uso correto das estruturas e regras.
+- Vocabulário: conhecimento e uso adequado de palavras e expressões.
+- Compreensão de Texto (Reading).
+- Compreensão Oral (Listening).
+- Produção Escrita (Writing).
+- Produção Oral (Speaking).
+
+## As quatro bandas
+- DISTINCTION: supera as expectativas do nível, com domínio excepcional.
+- MERIT: atingiu com excelência os objetivos do nível.
+- PASS: alcançou satisfatoriamente os objetivos essenciais do nível.
+- UNSATISFACTORY: ainda não atingiu os objetivos mínimos esperados.
+
+## Como ler os descritores
+- Cada habilidade tem cinco aspectos avaliados.
+- Os descritores são progressivos: cada nível superior inclui o que vem antes.
+- As descrições focam em comportamentos observáveis, não em impressões.
+- O objetivo é um retrato fiel e compreensível — que a família entenda onde o filho se destaca e onde pode melhorar.
+- Avalie também a aplicação prática em situações reais de comunicação, não só o conhecimento técnico.`},
+
+  {id:'fm-sponte', emoji:'💻', ordem:150, titulo:'Sponte — o que registrar e como',
+   resumo:'A rotina diária de registro e o padrão dos resumos.',
+   conteudo:`O Sponte é o canal com as famílias. Tudo é registrado em português, para comunicação clara com os pais. Cada professor tem login próprio.
+
+## Rotina diária
+1. Presença — marque presenças e faltas no início da aula; registre atrasos e saídas antecipadas.
+2. Resumo da aula — em português, contendo apenas:
+- as páginas trabalhadas (ex.: Student's Book páginas 24-25)
+- a tarefa com explicação clara (ex.: TASK: Workbook página 15 - exercícios 3 e 4: praticar o uso de adjetivos comparativos)
+3. Tema de casa — registre quem fez, quem não fez e quem fez parcialmente, antes da aula seguinte.
+
+## Boas práticas
+- Atualize todo dia; não deixe acumular.
+- Reserve um horário fixo para isso.
+- Mantenha o padrão: linguagem simples e voltada aos pais, só páginas e tarefa.`},
+
+  {id:'fm-planoaula', emoji:'📝', ordem:160, titulo:'Modelo de plano de aula',
+   resumo:'A estrutura padrão de um lesson plan Togethere.',
+   conteudo:`Cabeçalho: NÍVEL e TURMA — Aula X — Data.
+
+## Class objectives
+Os objetivos da aula: o que o aluno consegue fazer ao final.
+
+## Skills focus
+As habilidades trabalhadas (ex.: Reading, Vocabulary).
+
+## Materials needed
+O material necessário para a aula.
+
+## Lesson structure
+1. Warm-up (x-y minutos)
+2. Development (x-y minutos) — descreva cada estágio em detalhe
+3. Task assignment
+4. Wrap-up (x-y minutos)
+
+## Post class reflection
+Depois da aula: o que funcionou, o que não funcionou e o que ajustar na próxima.`}
   ];
   base.forEach(t=>{
     if(s.formacao.some(x=>x.id===t.id)) return;
