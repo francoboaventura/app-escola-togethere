@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Togethere · Sandbox de Presença (Supabase)</title>
+<style>
+  :root{ --azul:#2f6df6; --verde:#16a34a; --vermelho:#dc2626; --cinza:#64748b; --borda:#e2e8f0; --fundo:#f7f9fc; }
+  *{ box-sizing:border-box; }
+  body{ font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; margin:0; background:var(--fundo); color:#0f172a; }
+  .wrap{ max-width:720px; margin:0 auto; padding:16px; }
+  h1{ font-size:19px; margin:8px 0 2px; }
+  .sub{ color:var(--cinza); font-size:13px; margin:0 0 16px; }
+  .card{ background:#fff; border:1px solid var(--borda); border-radius:14px; padding:16px; margin-bottom:14px; box-shadow:0 1px 2px rgba(0,0,0,.03); }
+  label{ display:block; font-size:13px; font-weight:600; margin:10px 0 4px; }
+  input,select{ width:100%; padding:10px 12px; border:1px solid var(--borda); border-radius:10px; font-size:15px; }
+  button{ cursor:pointer; border:0; border-radius:10px; padding:10px 14px; font-size:15px; font-weight:600; }
+  .btn{ background:var(--azul); color:#fff; }
+  .btn.block{ width:100%; }
+  .btn.ghost{ background:#eef2f7; color:#0f172a; }
+  .row{ display:flex; gap:8px; }
+  .row > *{ flex:1; }
+  .pill{ display:inline-block; padding:3px 9px; border-radius:999px; font-size:12px; font-weight:600; }
+  .msg{ font-size:13px; padding:10px 12px; border-radius:10px; margin-top:10px; }
+  .msg.ok{ background:#ecfdf5; color:#065f46; }
+  .msg.err{ background:#fef2f2; color:#991b1b; }
+  .hide{ display:none; }
+  .aluno{ display:flex; align-items:center; justify-content:space-between; padding:9px 4px; border-bottom:1px solid var(--borda); }
+  .aluno:last-child{ border-bottom:0; }
+  .seg{ display:flex; gap:6px; }
+  .seg button{ padding:6px 10px; font-size:13px; background:#eef2f7; color:#334155; }
+  .seg button.on-p{ background:var(--verde); color:#fff; }
+  .seg button.on-f{ background:var(--vermelho); color:#fff; }
+  .alerta{ background:#fff7ed; border:1px solid #fed7aa; border-radius:12px; padding:12px; }
+  .alerta b{ color:#9a3412; }
+  small.hint{ color:var(--cinza); font-size:12px; }
+  .topbar{ display:flex; justify-content:space-between; align-items:center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div>
+      <h1>Togethere · Sandbox de Presença</h1>
+      <p class="sub">Área de teste isolada — conversa com o banco Supabase real, mas não encosta no app da escola.</p>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div id="cardLogin" class="card">
+    <label>E-mail</label>
+    <input id="email" type="email" placeholder="seu e-mail de direção" autocomplete="username">
+    <label>Senha</label>
+    <input id="senha" type="password" placeholder="a senha que você criou no Supabase" autocomplete="current-password">
+    <div style="height:12px"></div>
+    <button class="btn block" onclick="entrar()">Entrar</button>
+    <div id="loginMsg"></div>
+  </div>
+
+  <!-- APP -->
+  <div id="app" class="hide">
+    <div class="card">
+      <div class="topbar">
+        <span id="quemSou" class="pill" style="background:#eef2f7;color:#334155"></span>
+        <button class="btn ghost" onclick="sair()" style="flex:0">Sair</button>
+      </div>
+    </div>
+
+    <!-- TURMA + ALUNOS -->
+    <div class="card">
+      <label>Turma</label>
+      <div class="row">
+        <select id="selTurma" onchange="aoTrocarTurma()"></select>
+        <button class="btn ghost" style="flex:0;white-space:nowrap" onclick="novaTurma()">+ turma</button>
+      </div>
+
+      <label style="margin-top:14px">Adicionar aluno à turma</label>
+      <div class="row">
+        <input id="nomeAluno" placeholder="nome do aluno" onkeydown="if(event.key==='Enter')novoAluno()">
+        <button class="btn" style="flex:0" onclick="novoAluno()">Add</button>
+      </div>
+    </div>
+
+    <!-- CHAMADA -->
+    <div class="card">
+      <label>Data da chamada</label>
+      <input id="dataAula" type="date">
+      <div id="listaAlunos" style="margin-top:12px"></div>
+      <div style="height:12px"></div>
+      <button class="btn block" onclick="salvarChamada()">💾 Salvar chamada no banco</button>
+      <div id="chamadaMsg"></div>
+      <small class="hint">Dica: salve, abra esta mesma página em outro aparelho, faça login e veja a chamada aparecer.</small>
+    </div>
+
+    <!-- ALERTA -->
+    <div class="card">
+      <label style="margin-top:0">Alerta — 3 faltas consecutivas</label>
+      <div id="alertaBox"><small class="hint">Salve algumas chamadas para o alerta calcular.</small></div>
+      <button class="btn ghost block" style="margin-top:10px" onclick="recarregar()">↻ Recalcular do banco</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+const SUPABASE_URL = 'https://wkmmlbzrfkkalcsxxtze.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_CD6tvB_DTCH-QSfDNavreg_wtiKiWI1';
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let turmas = [], alunos = [], turmaAtual = null, marcas = {};
+
+const $ = id => document.getElementById(id);
+function msg(elId, texto, tipo){ $(elId).innerHTML = texto ? `<div class="msg ${tipo}">${texto}</div>` : ''; }
+
+// ---- LOGIN ----
+window.entrar = async function(){
+  msg('loginMsg','','');
+  const email = $('email').value.trim(), senha = $('senha').value;
+  if(!email || !senha){ return msg('loginMsg','Preencha e-mail e senha.','err'); }
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: senha });
+  if(error){ return msg('loginMsg','Não entrou: '+error.message,'err'); }
+  await iniciarSessao();
+};
+
+window.sair = async function(){ await sb.auth.signOut(); location.reload(); };
+
+async function iniciarSessao(){
+  const { data:{ user } } = await sb.auth.getUser();
+  if(!user) return;
+  $('cardLogin').classList.add('hide');
+  $('app').classList.remove('hide');
+  $('quemSou').textContent = 'Logado: ' + user.email;
+  $('dataAula').value = new Date().toISOString().slice(0,10);
+  await carregarTurmas();
+}
+
+// ---- TURMAS ----
+async function carregarTurmas(){
+  const { data, error } = await sb.from('turmas').select('*').order('nome');
+  if(error){ return alert('Erro ao carregar turmas: '+error.message); }
+  turmas = data || [];
+  const sel = $('selTurma');
+  sel.innerHTML = turmas.map(t=>`<option value="${t.id}">${t.nome}</option>`).join('') || '<option value="">(nenhuma turma ainda)</option>';
+  turmaAtual = turmas[0]?.id || null;
+  if(turmaAtual){ sel.value = turmaAtual; }
+  await aoTrocarTurma();
+}
+
+window.novaTurma = async function(){
+  const nome = prompt('Nome da turma (ex.: 5º Ano A):');
+  if(!nome) return;
+  const { error } = await sb.from('turmas').insert({ nome });
+  if(error){ return alert('Erro: '+error.message); }
+  await carregarTurmas();
+};
+
+window.aoTrocarTurma = async function(){
+  turmaAtual = $('selTurma').value || null;
+  marcas = {};
+  await carregarAlunos();
+  await recarregar();
+};
+
+// ---- ALUNOS ----
+async function carregarAlunos(){
+  if(!turmaAtual){ alunos=[]; renderAlunos(); return; }
+  const { data, error } = await sb.from('alunos').select('*').eq('turma_id', turmaAtual).eq('ativo', true).order('nome');
+  if(error){ return alert('Erro ao carregar alunos: '+error.message); }
+  alunos = data || [];
+  alunos.forEach(a=>{ if(!(a.id in marcas)) marcas[a.id]='presente'; });
+  renderAlunos();
+}
+
+window.novoAluno = async function(){
+  const nome = $('nomeAluno').value.trim();
+  if(!nome) return;
+  if(!turmaAtual){ return alert('Crie uma turma primeiro.'); }
+  const { error } = await sb.from('alunos').insert({ nome, turma_id: turmaAtual });
+  if(error){ return alert('Erro: '+error.message); }
+  $('nomeAluno').value='';
+  await carregarAlunos();
+};
+
+function renderAlunos(){
+  if(!alunos.length){ $('listaAlunos').innerHTML = '<small class="hint">Nenhum aluno nesta turma ainda. Adicione acima.</small>'; return; }
+  $('listaAlunos').innerHTML = alunos.map(a=>{
+    const m = marcas[a.id] || 'presente';
+    return `<div class="aluno">
+      <span>${a.nome}</span>
+      <span class="seg">
+        <button class="${m==='presente'?'on-p':''}" onclick="marcar('${a.id}','presente')">Presente</button>
+        <button class="${m==='falta'?'on-f':''}" onclick="marcar('${a.id}','falta')">Falta</button>
+      </span>
+    </div>`;
+  }).join('');
+}
+window.marcar = function(id, st){ marcas[id]=st; renderAlunos(); };
+
+// ---- CHAMADA (salva aula + presenças) ----
+window.salvarChamada = async function(){
+  msg('chamadaMsg','','');
+  if(!turmaAtual){ return msg('chamadaMsg','Escolha ou crie uma turma.','err'); }
+  if(!alunos.length){ return msg('chamadaMsg','Adicione alunos antes de fazer a chamada.','err'); }
+  const data = $('dataAula').value;
+  if(!data){ return msg('chamadaMsg','Escolha a data.','err'); }
+
+  // 1) acha ou cria a aula desta turma nesta data
+  let aulaId;
+  const { data:aulasExist } = await sb.from('aulas').select('id').eq('turma_id', turmaAtual).eq('data', data).limit(1);
+  if(aulasExist && aulasExist.length){ aulaId = aulasExist[0].id; }
+  else {
+    const { data:novaAula, error:e1 } = await sb.from('aulas').insert({ turma_id: turmaAtual, data }).select('id').single();
+    if(e1){ return msg('chamadaMsg','Erro ao criar a aula: '+e1.message,'err'); }
+    aulaId = novaAula.id;
+  }
+
+  // 2) grava a presença de cada aluno (upsert por aula+aluno)
+  const linhas = alunos.map(a=>({ aula_id: aulaId, aluno_id: a.id, situacao: marcas[a.id]||'presente' }));
+  const { error:e2 } = await sb.from('presencas').upsert(linhas, { onConflict: 'aula_id,aluno_id' });
+  if(e2){ return msg('chamadaMsg','Erro ao salvar presenças: '+e2.message,'err'); }
+
+  msg('chamadaMsg','✅ Chamada salva no banco! ('+data+')','ok');
+  await recarregar();
+};
+
+// ---- ALERTA: 3 faltas consecutivas ----
+window.recarregar = async function(){
+  if(!turmaAtual){ $('alertaBox').innerHTML=''; return; }
+  // pega as aulas da turma em ordem de data, e as presenças
+  const { data:aulasT } = await sb.from('aulas').select('id,data').eq('turma_id', turmaAtual).order('data');
+  if(!aulasT || !aulasT.length){ $('alertaBox').innerHTML='<small class="hint">Sem aulas registradas ainda.</small>'; return; }
+  const aulaIds = aulasT.map(a=>a.id);
+  const { data:pres } = await sb.from('presencas').select('aula_id,aluno_id,situacao').in('aula_id', aulaIds);
+  const ordem = {}; aulasT.forEach((a,i)=>ordem[a.id]=i);
+
+  // por aluno, sequência de situações em ordem de aula
+  const porAluno = {};
+  (pres||[]).forEach(p=>{
+    (porAluno[p.aluno_id] = porAluno[p.aluno_id] || []).push({ i: ordem[p.aula_id], falta: p.situacao==='falta' });
+  });
+  const nomes = {}; alunos.forEach(a=>nomes[a.id]=a.nome);
+
+  const alerta = [];
+  Object.keys(porAluno).forEach(alunoId=>{
+    const seq = porAluno[alunoId].sort((x,y)=>x.i-y.i);
+    let streak=0, max=0;
+    seq.forEach(s=>{ if(s.falta){ streak++; max=Math.max(max,streak);} else streak=0; });
+    if(max>=3){ alerta.push({ nome: nomes[alunoId]||'(aluno)', n:max }); }
+  });
+
+  if(!alerta.length){ $('alertaBox').innerHTML='<small class="hint">Nenhum aluno com 3+ faltas consecutivas. 👍</small>'; return; }
+  $('alertaBox').innerHTML = '<div class="alerta">'+alerta.map(a=>`⚠️ <b>${a.nome}</b> — ${a.n} faltas seguidas. Secretaria deve contatar o responsável.`).join('<br>')+'</div>';
+};
+
+// se já estiver logado (sessão salva), entra direto
+const { data:{ session } } = await sb.auth.getSession();
+if(session){ iniciarSessao(); }
+</script>
+</body>
+</html>
