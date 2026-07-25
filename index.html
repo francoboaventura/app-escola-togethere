@@ -1007,8 +1007,21 @@ async function fazerLogin(){
   const u=(S.usuarios||[]).find(x=>x.nome===resp.usuario) || {nome:resp.usuario, perfil:resp.perfil, ensina:null};
   aplicarLogin(u);
 }
+const _SPONTE_RETRO={"mqei3xy8hpcn":2,"mqei3xy89yst":1,"mqei3xy8rbiu":0,"mqei3xy8icmh":0,"mqei3xy8mp7w":1,"mqei3xy8z9bo":1,"mqei3xy85rj8":3,"mqei3xy8olkq":1,"mqei3xy8oc3p":1,"mqei3xy8p3id":2,"mqei3xy89zca":3,"mqei3xy8x0dw":0,"mqei3xy8a4uc":0,"mqei3xy8n7dz":2,"mqei3xy8mkgw":1,"mqei3xy8d85f":2,"mqei3xy8nopt":2,"mqlaibbq5h7a":1,"mqlaibbqq6hg":0,"mqlaibbq5g1b":0,"mqlaibbqz7vn":1,"mqlaibbr6bbf":2,"mqlaibbrww44":1,"mqlaibbrsp7b":1,"mqlaibbr5d11":0,"mqlaibbrgcxo":1,"mqlaibbrx6xh":2,"mqlaibbrn6u4":0,"mqlaibbr5slp":1,"mqlaibbr20k0":6,"mqlaibbr35tt":11,"mqlaibbresu5":2,"mqlaibbrtxps":8,"mqlaibbr81nb":2,"mqlaibbrgtnq":5,"mqlaibbrfdi5":4,"mqlaibbr8uew":3,"mqlaibbr38uw":5,"mqlaibbrs4zu":2,"mqlaibbrnspk":4,"mqlaibbr0h47":4,"mqlaibbr1lc8":1,"mqlaibbryj2v":2,"mqlaibbrjxez":0,"mqlaibbrpug3":1,"mqlaibbrmksv":0,"mqlaibbrni7a":0,"mqlaibbrzlbd":1,"mqlaibbrfp9h":1,"mqlaibbr5n9t":0,"mqlaibbrhm28":0,"mqlaibbr36m3":3,"mqlaibbrdwqi":3,"mqlaibbrt999":2,"mqlaibbrg38t":3,"mqlaibbrnyz7":1,"mqlaibbriq0g":1,"mqlaibbrfrqt":2,"mqlaibbr8w41":1,"mqlaibbr5usx":1,"mqlaibbrcvku":3,"mqlaibbrdqm8":1,"mqlaibbrs47k":3,"mqlaibbrxj2i":1,"mqlaibbr1fna":1,"mqlaibbrbme3":0,"mqlaibbrnkqu":3,"mqlaibbrvw6r":0,"mqlaibbrqit0":0,"mqlaibbrhfy5":0,"mqlaibbsv3k4":0,"mqlaibbsujx5":1,"mqlaibbswkn1":3,"mqlaibbskrlk":0,"mqlaibbs3agw":0,"mqlaibbsz91q":0,"mqlaibbs1nx8":1,"mqlaibbseynr":5,"mqlaibbsmqah":1,"mqlaibbsr2iz":1,"mqlaibbs23ii":2,"mqlaibbsp4ms":1,"mqlaibbsdkfx":1,"mqlaibbs5ptz":1,"mqlaibbsud4z":0,"mqlaibbscxvl":2,"mqlaibbsrrf6":1,"mqlaibbsir0i":1,"mqlaibbspwks":4,"mqlaibbsevys":0,"mqlaibbs30qa":2,"mqlaibbsr502":0,"mqlaibbsygl7":1,"mqlaibbswx3x":2,"mqlaibbsrk5x":2,"mqlaibbspqt2":0,"mqlaibbs306t":1,"mqlaibbs9cjz":0,"mqlaibbshqy0":0,"mqlaibbs098l":0,"mqlaibbsinbx":4,"mqlaibbss0ge":4,"mqlaibbs2dn2":3,"mqlaibbsfhnz":4,"mqlaibbsousq":3,"mqlaibbsdatv":7,"mqlaibbs67h1":2,"mqliytzdoutr":5};
+function _aplicarSponteRetro(){
+  try{
+    S.config=S.config||{};
+    if(S.config._sponteRetro) return;
+    let mudou=0;
+    (S.alunos||[]).forEach(a=>{ if(Object.prototype.hasOwnProperty.call(_SPONTE_RETRO,a.id)){ a.faltasRetro=_SPONTE_RETRO[a.id]; mudou++; } });
+    S.config._sponteRetro='2026-07-25';
+    if(typeof save==='function') save();
+    try{ toast('Faltas do Sponte aplicadas: '+mudou+' alunos'); }catch(e){}
+  }catch(e){ console.error('sponte retro',e); }
+}
 function aplicarLogin(u){
   S.perfil=u.perfil;
+  _aplicarSponteRetro();
   document.getElementById('login').style.display='none';
   document.getElementById('app').style.display='block';
   const meta=PERFIS[u.perfil];
@@ -1259,6 +1272,33 @@ function _reRenderAtual(){
   try{ if(painelTurma) renderPainelTurma(); else if(typeof rota!=='undefined' && VIEWS[rota]) VIEWS[rota](); }catch(e){}
 }
 
+function _presencaStats(turmaId, dias){
+  const corte=diasAtras(dias||30); let pres=0, tot=0;
+  (S.presencas||[]).forEach(p=>{
+    if(turmaId && p.turmaId!==turmaId) return;
+    if(!_aulaConta(p)) return;
+    if(p.data < corte) return;
+    [p.registros,p.registros2].forEach(reg=>{ if(!reg) return; Object.values(reg).forEach(s=>{ tot++; if(s==='presente') pres++; }); });
+  });
+  return {pres,tot,pct: tot? Math.round(pres/tot*100):null};
+}
+function renderPainelGestao(){
+  const tv=turmasVisiveis();
+  const geral=_presencaStats(null,30);
+  const alertas=alertasFaltas().concat(alertasMaterial());
+  const alPorTurma={};
+  alertas.forEach(o=>{ const a=S.alunos.find(x=>x.id===o.alunoId); if(a) alPorTurma[a.turmaId]=(alPorTurma[a.turmaId]||0)+1; });
+  const linhas=tv.map(t=>{
+    const n=alunosDa(t.id).length;
+    const st=_presencaStats(t.id,30);
+    const al=alPorTurma[t.id]||0;
+    const pct=st.pct;
+    const cor = pct===null?'#94a3b8':(pct>=90?'var(--verde)':(pct>=75?'#b88600':'var(--vermelho)'));
+    const barra = pct===null?'':`<div style="background:var(--linha);border-radius:6px;height:8px;width:84px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${cor}"></div></div>`;
+    return `<tr style="border-bottom:1px solid var(--linha)"><td style="padding:7px 4px">${esc(t.nome)}<br><small class="hint">${esc(t.professor||'')}</small></td><td style="text-align:center">${n}</td><td><div style="display:flex;align-items:center;gap:6px">${barra}<b style="color:${cor}">${pct===null?'—':pct+'%'}</b></div></td><td style="text-align:center">${al?`<b style="color:var(--vermelho)">${al}</b>`:`<span class="hint">0</span>`}</td></tr>`;
+  }).join('');
+  return `<div class="card"><div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h3 class="display">Painel de gestão</h3></div><p class="hint" style="margin:2px 0 12px">Presença dos últimos 30 dias · visão da direção</p><div class="grid g2" style="margin-bottom:12px"><div class="card" style="margin:0;padding:12px;background:#f2f8ff"><div class="num" style="color:var(--azul)">${geral.pct===null?'—':geral.pct+'%'}</div><small>Presença geral (30 dias)</small></div><div class="card" style="margin:0;padding:12px;background:#fff4f4"><div class="num" style="color:var(--vermelho)">${alertas.length}</div><small>Alunos em alerta</small></div></div><div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr style="text-align:left;color:#64748b;font-size:12px;border-bottom:1px solid var(--linha)"><th style="padding:4px">Turma</th><th style="text-align:center">Alunos</th><th>Presença (30d)</th><th style="text-align:center">Alertas</th></tr></thead><tbody>${linhas}</tbody></table></div></div>`;
+}
 VIEWS.painel=()=>{
   const v=document.getElementById('view');
   const tv=turmasVisiveis();
@@ -1280,6 +1320,7 @@ VIEWS.painel=()=>{
       ${cards.map(c=>`<div class="card" ${c.tap?`onclick="${c.tap}" style="cursor:pointer"`:''}><div class="kpi"><div class="k-ic" style="background:${c.bg};color:${c.cor}">${c.ic}</div><div><div class="num">${c.num}</div><small>${c.lbl}</small></div></div></div>`).join('')}
     </div>`;
   if(S.perfil==='direcao' && _alunosVisiveis) v.appendChild(el(`<div style="margin:-4px 0 10px"><button class="btn ghost sm" onclick="ocultarAlunos()">🔒 Ocultar total de alunos</button></div>`));
+  if(S.perfil==='direcao') v.appendChild(el(renderPainelGestao()));
   { const _pc=renderPendenciasCard(); if(_pc) v.appendChild(el(_pc)); }   // pendências (chamada/plano/relatório)
   { const _na=apoioBadge();
     if(_na){
@@ -3726,13 +3767,7 @@ function setFaltasRetro(id,val){
   const a=S.alunos.find(x=>x.id===id); if(!a)return;
   a.faltasRetro=Math.max(0,Math.round(+val||0)); save(); _refreshTurmas();
 }
-function faltasRetroLinha(a){
-  const val=(a.faltasRetro!=null?a.faltasRetro:0);
-  const ctrl=(S.perfil==='direcao')
-    ? '<input type="number" min="0" value="'+val+'" style="width:70px;text-align:center;font-size:.9rem" onchange="setFaltasRetro(\''+a.id+'\',this.value)">'
-    : '<b>'+val+'</b>';
-  return '<div style="margin-top:6px;display:flex;align-items:center;gap:8px;background:#fff8e6;border:1px dashed #e0b400;border-radius:8px;padding:6px 8px"><span style="flex:1;font-size:.82rem">⏪ <b>Faltas retroativas</b> <span class="hint">(manual · substitui o histórico do Sponte · removível depois)</span></span>'+ctrl+'</div>';
-}
+function faltasRetroLinha(a){ return ''; }   /* barra manual removida — faltas retroativas vêm do Sponte */
 function toggleArquivarAluno(id){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas'); if(ehProfessor())return toast('Sem permissão'); const a=S.alunos.find(x=>x.id===id); if(!a)return; a.arquivado=!a.arquivado; save(); _refreshTurmas(); montarNav(); toast(a.arquivado?'Aluno arquivado':'Aluno reativado'); }
 function toggleArquivarTurma(id){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas'); if(ehProfessor())return toast('Sem permissão'); const t=S.turmas.find(x=>x.id===id); if(!t)return; t.arquivada=!t.arquivada; if(t.arquivada && painelTurma===id) painelTurma=null; save(); VIEWS.turmas(); montarNav(); toast(t.arquivada?'Turma arquivada':'Turma reativada'); }
 // ---- Editar dados de uma turma já existente (só direção) ----
