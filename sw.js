@@ -1,36 +1,12 @@
-/* Togethere — service worker
-   Estratégia: network-first para arquivos do próprio site (sempre pega a versão
-   nova quando há internet; usa o cache só quando estiver offline).
-   Chamadas externas (planilha/Apps Script) e POSTs passam direto, sem cache. */
-const CACHE = 'togethere-2026-07-24-b90';
-const CORE = ['./', './index.html', './logo.png', './icon-192.png', './icon-512.png', './apple-touch-icon.png', './manifest.json'];
-
-self.addEventListener('install', function(e){
-  self.skipWaiting();
-  e.waitUntil(caches.open(CACHE).then(function(c){ return c.addAll(CORE); }).catch(function(){}));
-});
-
+// sw.js — auto-desativação (migração Supabase, 2026-07-25).
+// Substitui o service worker antigo: limpa os caches guardados,
+// se desregistra e recarrega as abas abertas com a versão nova.
+self.addEventListener('install', function(e){ self.skipWaiting(); });
 self.addEventListener('activate', function(e){
-  e.waitUntil(
-    caches.keys().then(function(keys){
-      return Promise.all(keys.map(function(k){ if(k!==CACHE) return caches.delete(k); }));
-    }).then(function(){ return self.clients.claim(); })
-  );
+  e.waitUntil((async function(){
+    try{ var ks=await caches.keys(); await Promise.all(ks.map(function(k){return caches.delete(k);})); }catch(err){}
+    try{ await self.registration.unregister(); }catch(err){}
+    try{ var cs=await self.clients.matchAll({type:'window'}); cs.forEach(function(c){ try{ c.navigate(c.url); }catch(e){} }); }catch(err){}
+  })());
 });
-
-self.addEventListener('fetch', function(e){
-  const req = e.request;
-  if (req.method !== 'GET') return;                 // não intercepta POST (sincronização da nuvem)
-  const url = new URL(req.url);
-  if (url.origin !== self.location.origin) return;  // chamadas externas (Apps Script) passam direto
-
-  e.respondWith(
-    fetch(req).then(function(res){
-      const copy = res.clone();
-      caches.open(CACHE).then(function(c){ c.put(req, copy); }).catch(function(){});
-      return res;
-    }).catch(function(){
-      return caches.match(req).then(function(m){ return m || caches.match('./index.html'); });
-    })
-  );
-});
+// sem handler de 'fetch' que responda do cache → tudo vai direto pra rede (sempre fresco)
