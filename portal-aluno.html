@@ -27,6 +27,7 @@
   input:focus{ outline:none; border-color:var(--azul); box-shadow:0 0 0 3px rgba(0,94,175,.12); }
   .msg{ margin-top:12px; font-size:.9rem; padding:9px 12px; border-radius:10px; display:none; }
   .msg.err{ display:block; background:#fdecec; border:1px solid var(--vermelho); color:#a01818; }
+  .msg.ok{ display:block; background:#eafaf4; border:1px solid var(--ok); color:#0b6b50; }
   .hint{ color:var(--fraco); font-size:.9rem; }
   .hero{ background:linear-gradient(135deg,var(--azul2),var(--azul)); color:#fff; border-radius:20px; padding:20px; display:flex; align-items:center; gap:14px; }
   .avatar{ width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,.18); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1.4rem; flex:none; }
@@ -91,6 +92,17 @@
     <input id="senha" type="password" autocomplete="current-password" placeholder="sua senha">
     <div style="margin-top:16px"><button class="btn" id="btnEntrar" style="width:100%">Entrar</button></div>
     <div id="loginMsg" class="msg"></div>
+  </div>
+
+  <div id="telaTroca" class="card login hide">
+    <h1>Crie a sua senha</h1>
+    <p class="hint">Este é o seu primeiro acesso. Para a sua segurança, defina uma senha só sua antes de continuar.</p>
+    <label for="nsenha">Nova senha</label>
+    <input id="nsenha" type="password" autocomplete="new-password" placeholder="mínimo 6 caracteres">
+    <label for="nsenha2">Repita a nova senha</label>
+    <input id="nsenha2" type="password" autocomplete="new-password" placeholder="digite de novo">
+    <div style="margin-top:16px"><button class="btn" id="btnTrocar" style="width:100%">Salvar e entrar</button></div>
+    <div id="trocaMsg" class="msg"></div>
   </div>
 
   <div id="app" class="hide">
@@ -280,7 +292,13 @@ async function entrar(){
 }
 async function abrirApp(){
   const { data:{ user } }=await sb.auth.getUser(); if(!user) return;
-  $('telaLogin').classList.add('hide'); $('app').classList.remove('hide'); $('carregando').classList.remove('hide');
+  // 1º acesso: obriga trocar a senha antes de mostrar a ficha
+  if(user.user_metadata && user.user_metadata.must_change_password){ mostrarTroca(); return; }
+  await carregarFicha();
+}
+async function carregarFicha(){
+  $('telaLogin').classList.add('hide'); $('telaTroca').classList.add('hide');
+  $('app').classList.remove('hide'); $('carregando').classList.remove('hide');
   try{
     const { data, error }=await sb.functions.invoke('minha-ficha');
     if(error) throw new Error(error.message||'falha ao carregar');
@@ -288,11 +306,32 @@ async function abrirApp(){
   }catch(e){ erro('Não consegui carregar a sua ficha. Detalhe: '+((e&&e.message)||e)); }
   $('carregando').classList.add('hide');
 }
+/* ---- troca de senha no 1º acesso ---- */
+function mostrarTroca(){
+  $('telaLogin').classList.add('hide'); $('app').classList.add('hide'); $('telaTroca').classList.remove('hide');
+  const n=$('nsenha'); if(n) n.focus();
+}
+function msgTroca(t,ok){ const m=$('trocaMsg'); m.textContent=t; m.className='msg '+(ok?'ok':'err'); }
+async function trocarSenha(){
+  const a=$('nsenha').value||'', b=$('nsenha2').value||'';
+  if(a.length<6) return msgTroca('A senha precisa ter ao menos 6 caracteres.');
+  if(a!==b) return msgTroca('As duas senhas não são iguais.');
+  $('btnTrocar').disabled=true; $('btnTrocar').textContent='Salvando…';
+  try{
+    const { error }=await sb.auth.updateUser({ password:a, data:{ must_change_password:false } });
+    if(error){ msgTroca('Não consegui salvar: '+(error.message||'tente de novo')); return; }
+    msgTroca('Senha criada! Entrando…', true);
+    await carregarFicha();
+  }catch(e){ msgTroca('Falha de conexão. Tente de novo.'); }
+  finally{ $('btnTrocar').disabled=false; $('btnTrocar').textContent='Salvar e entrar'; }
+}
 function erro(t){ $('erroBox').classList.remove('hide'); $('erroTxt').textContent=t; }
 async function sair(){ try{ await sb.auth.signOut(); }catch(e){} location.reload(); }
 
 $('btnEntrar').onclick=entrar;
 $('senha').addEventListener('keydown',e=>{ if(e.key==='Enter') entrar(); });
+$('btnTrocar').onclick=trocarSenha;
+$('nsenha2').addEventListener('keydown',e=>{ if(e.key==='Enter') trocarSenha(); });
 $('btnSair').onclick=sair;
 // pré-preenche o login se vier ?u=<email> (usado pelo QR do card)
 (()=>{ try{ const u=new URLSearchParams(location.search).get('u'); if(u && $('email')) $('email').value=u; }catch(e){} })();
