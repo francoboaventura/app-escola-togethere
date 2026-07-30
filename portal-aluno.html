@@ -294,6 +294,8 @@ async function sair(){ try{ await sb.auth.signOut(); }catch(e){} location.reload
 $('btnEntrar').onclick=entrar;
 $('senha').addEventListener('keydown',e=>{ if(e.key==='Enter') entrar(); });
 $('btnSair').onclick=sair;
+// pré-preenche o login se vier ?u=<email> (usado pelo QR do card)
+(()=>{ try{ const u=new URLSearchParams(location.search).get('u'); if(u && $('email')) $('email').value=u; }catch(e){} })();
 (async ()=>{ try{ const { data:{ session } }=await sb.auth.getSession(); if(session) await abrirApp(); }catch(e){} })();
 </script>
 </body>
