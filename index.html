@@ -674,8 +674,17 @@ async function _pullSilencioso(reRender){
     }
   }catch(e){}
 }
-async function cloudEmail(to, subject, body){
-  return {ok:false, erro:'envio por e-mail temporariamente indisponível — use o botão Copiar / WhatsApp'};
+async function cloudEmail(to, subject, body, html){
+  try{
+    const dest = Array.isArray(to) ? to.filter(Boolean) : [to].filter(Boolean);
+    if(!dest.length) return {ok:false, erro:'sem destinatários'};
+    const { data, error } = await sb.functions.invoke('enviar-email', {
+      body: { to: dest, subject: subject||'Togethere', text: body||'', html: html||'' }
+    });
+    if(error) return {ok:false, erro:(error.message||'falha no envio')};
+    if(data && data.ok===false) return {ok:false, erro:(data.error||'falha no envio')};
+    return {ok:true, data:data};
+  }catch(e){ return {ok:false, erro:(e && e.message) || 'rede'}; }
 }
 /* ---- Autenticação no servidor (login → token) ---- */
 async function cloudLogin(usuario, senha){
@@ -1922,8 +1931,12 @@ function renderBoletimArea(){
     <div class="card"><h3>Boletim gerado</h3><p class="hint">Pré-visualização na identidade Togethere. Imprima ou salve em PDF para entregar à família; ou copie o texto para o WhatsApp.</p>
       <iframe id="boFrame" title="Boletim" style="width:100%;height:600px;border:1px solid var(--linha);border-radius:14px;background:#fff;display:none"></iframe>
       <div class="gen-box" id="boVazio">Clique em “Gerar boletim completo”.</div>
+      <div id="boEditBanner" style="display:none;margin-top:12px;padding:8px 12px;background:#FFF7DA;border:1px solid var(--amarelo);border-radius:10px;font-size:.9rem">✏️ Este boletim tem <b>edições manuais</b> — Imprimir, Copiar e E-mail usam a versão editada. <a href="#" onclick="gerarBoletim(true);return false;" style="color:var(--azul);font-weight:600">Gerar do zero</a></div>
       <div class="row" style="margin-top:14px"><button class="btn" onclick="imprimirBoletim()">🖨️ Imprimir / PDF</button>
-      <button class="btn amarelo" onclick="copiarBoletim()">📋 Copiar texto</button></div></div>`;
+      <button class="btn amarelo" onclick="copiarBoletim()">📋 Copiar texto</button>
+      <button class="btn" onclick="editarBoletim()">✏️ Editar</button>
+      <button class="btn" onclick="salvarBoletim()">💾 Salvar edições</button>
+      <button class="btn" onclick="enviarBoletimEmail()">✉️ Enviar por e-mail</button></div></div>`;
   }
   box.innerHTML=h;
   const sel=document.getElementById('boAluno'); if(sel) sel.onchange=e=>{ boletimAluno=e.target.value||null; renderBoletimArea(); };
@@ -1940,13 +1953,18 @@ function _setDocIframe(fr, html){
   }catch(e){ try{ fr.srcdoc=html; }catch(_){ } }
   fr.style.display='block';
 }
-function gerarBoletim(){
+function gerarBoletim(forcar){
   if(!boletimAluno) return toast('Escolha o aluno');
-  const r=montarBoletimHTML(testeTurma, boletimAluno);
-  _boletimHTML=r.html; _boletimTxt=r.txt;
+  const k='boletim:'+testeTurma+':'+boletimAluno;
+  if(forcar) descartarDocEdicao(k);
+  let html, txt;
+  if(docTemEdicao(k)){ html=docHtmlEdit(k); txt=docTxtEdit(k); }
+  else { const r=montarBoletimHTML(testeTurma, boletimAluno); html=r.html; txt=r.txt; }
+  _boletimHTML=html; _boletimTxt=txt;
   const fr=document.getElementById('boFrame'), vz=document.getElementById('boVazio');
-  _setDocIframe(fr, r.html);
+  _setDocIframe(fr, html);
   if(vz) vz.style.display='none';
+  const bn=document.getElementById('boEditBanner'); if(bn) bn.style.display=docTemEdicao(k)?'block':'none';
 }
 const DOC_CSS=`
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Urbanist:ital,wght@0,400;0,500;0,600;1,400&family=Zilla+Slab:ital,wght@1,600&display=swap');
@@ -2082,6 +2100,65 @@ function imprimirDoc(html){
 }
 function imprimirBoletim(){ if(!_boletimHTML)return toast('Gere o boletim primeiro'); imprimirDoc(_boletimHTML); }
 
+
+/* ===== Edição de documentos (WYSIWYG) — boletim / ficha / relatórios ===== */
+if(typeof S==='object' && S && !S.docEdicoes) S.docEdicoes={};
+function _docStore(){ if(!S.docEdicoes) S.docEdicoes={}; return S.docEdicoes; }
+function docTemEdicao(k){ return !!_docStore()[k]; }
+function docHtmlEdit(k){ const e=_docStore()[k]; return e?e.html:null; }
+function docTxtEdit(k){ const e=_docStore()[k]; return e?(e.txt||''):null; }
+function salvarDocEdicao(k, html, txt){ _docStore()[k]={html:html||'', txt:txt||'', ts:Date.now()}; save(); }
+function descartarDocEdicao(k){ const st=_docStore(); if(st[k]){ delete st[k]; save(); } }
+function _escTA(t){ return String(t==null?'':t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function editarDocIframe(frId){
+  const fr=document.getElementById(frId); if(!fr) return toast('Gere o documento primeiro');
+  let d=null; try{ d=fr.contentDocument||(fr.contentWindow&&fr.contentWindow.document); }catch(e){ d=null; }
+  if(!d||!d.body) return toast('Gere o documento de novo para poder editar.');
+  d.body.contentEditable='true'; d.body.style.outline='2px dashed #FFC800'; d.body.style.outlineOffset='-2px';
+  try{ d.body.focus(); }catch(e){}
+  toast('Modo edição: altere o texto direto no documento e clique em “Salvar edições”.');
+}
+function lerDocIframe(frId){
+  const fr=document.getElementById(frId); if(!fr) return null;
+  let d=null; try{ d=fr.contentDocument||(fr.contentWindow&&fr.contentWindow.document); }catch(e){ return null; }
+  if(!d) return null;
+  if(d.body){ d.body.contentEditable='false'; d.body.style.outline=''; }
+  const html='<!doctype html>\n'+d.documentElement.outerHTML;
+  const txt=(d.body?(d.body.innerText||d.body.textContent||''):'').trim();
+  return { html:html, txt:txt };
+}
+/* Boletim */
+function _boletimKey(){ return 'boletim:'+testeTurma+':'+boletimAluno; }
+function editarBoletim(){ if(!_boletimHTML) return toast('Gere o boletim primeiro'); editarDocIframe('boFrame'); }
+function salvarBoletim(){
+  const r=lerDocIframe('boFrame'); if(!r) return toast('Nada para salvar');
+  _boletimHTML=r.html; _boletimTxt=r.txt;
+  salvarDocEdicao(_boletimKey(), r.html, r.txt);
+  const bn=document.getElementById('boEditBanner'); if(bn) bn.style.display='block';
+  toast('Edições do boletim salvas.');
+}
+async function enviarBoletimEmail(){
+  if(!_boletimHTML) return toast('Gere o boletim primeiro');
+  if(typeof ehProfessor==='function' && ehProfessor()) return toast('Sem permissão para enviar');
+  const a=(S.alunos||[]).find(x=>x.id===boletimAluno)||{};
+  const email=((a.email||'').trim());
+  if(!email || email.indexOf('@')<1) return toast('Sem e-mail do responsável. Cadastre em Turmas e alunos (ou na Ficha).');
+  if(!confirm('Enviar o boletim de '+(a.nome||'')+' para '+email+'?')) return;
+  toast('Enviando…');
+  const assunto='Boletim '+(new Date().getFullYear())+' — '+(a.nome||'')+' · Togethere';
+  const res=await cloudEmail([email], assunto, _boletimTxt, _boletimHTML);
+  if(res && res.ok) toast('Boletim enviado por e-mail.');
+  else toast('Não enviei: '+((res&&res.erro)||'erro')+'. Use Imprimir/PDF ou Copiar.');
+}
+/* Ficha do aluno — relatório editável (texto) */
+function _fichaTextoAtual(aid){
+  const el=document.getElementById('fichaCorpo');
+  if(el && typeof el.value==='string') return el.value;
+  const ed=docTxtEdit('ficha:'+aid); if(ed!=null) return ed;
+  return corpoFichaAluno(aid,_fichaDe,_fichaAte);
+}
+function _fichaCorpoInput(aid){ const el=document.getElementById('fichaCorpo'); if(el) salvarDocEdicao('ficha:'+aid,'',el.value); }
+function _fichaCorpoReset(aid){ descartarDocEdicao('ficha:'+aid); const el=document.getElementById('fichaCorpo'); if(el) el.value=corpoFichaAluno(aid,_fichaDe,_fichaAte); toast('Texto do relatório restaurado.'); }
 
 /* ---- MATERIAL ---- */
 let matTurma=null, matData=hoje(), matBusca='';
@@ -3383,13 +3460,13 @@ function _registrarEnvioFicha(a, via, corpo){
 }
 function copiarFicha(){
   const a=(S.alunos||[]).find(x=>x.id===_fichaAlunoId); if(!a) return;
-  const corpo=corpoFichaAluno(a.id,_fichaDe,_fichaAte);
+  const corpo=_fichaTextoAtual(a.id);
   copiarTexto(corpo,'Ficha copiada! Cole no WhatsApp');
   _registrarEnvioFicha(a,'whatsapp',corpo); save();
 }
 function imprimirFicha(){
   const a=(S.alunos||[]).find(x=>x.id===_fichaAlunoId); if(!a) return;
-  const txt=corpoFichaAluno(a.id,_fichaDe,_fichaAte);
+  const txt=_fichaTextoAtual(a.id);
   const html=`<div style="font-family:Arial,sans-serif;max-width:760px;margin:0 auto;padding:20px"><pre style="white-space:pre-wrap;font-family:Arial,sans-serif;font-size:13px;line-height:1.5">${escAttr(txt)}</pre></div>`;
   if(typeof imprimirDoc==='function') imprimirDoc(html); else toast('Impressão indisponível');
   _registrarEnvioFicha(a,'pdf',txt); save();
@@ -3401,7 +3478,7 @@ async function enviarFichaResponsavel(){
   if(!email || email.indexOf('@')<1) return toast('Sem e-mail do responsável. Cadastre no topo da ficha ou use Copiar para WhatsApp.');
   if(!confirm('Enviar a ficha de '+a.nome+' para '+email+'?')) return;
   const btn=document.getElementById('fcEnviar'); if(btn){ btn.disabled=true; btn.textContent='Enviando…'; }
-  const corpoFicha=corpoFichaAluno(a.id,_fichaDe,_fichaAte);
+  const corpoFicha=_fichaTextoAtual(a.id);
   const res=await cloudEmail([email], 'Acompanhamento de '+a.nome+' — Togethere', corpoFicha);
   if(btn){ btn.disabled=false; btn.textContent='✉️ Enviar ao responsável'; }
   if(res && res.ok){ a.fichaEnviadaEm=hoje(); a.fichaEnviadaPor=S.usuario; _registrarEnvioFicha(a,'email',corpoFicha); save(); VIEWS.ficha(); toast('Ficha enviada ao responsável'); }
@@ -3558,6 +3635,13 @@ VIEWS.ficha=()=>{
   h+=mat.length?'<div class="card" style="padding:10px 12px"><div class="hint">'+mat.sort().map(d=>brDate(d)).join(' · ')+'</div></div>':'<p class="hint">Nenhum.</p>';
   h+=`<h3 style="margin:18px 0 6px">💬 Comentários (${coms.length})</h3>`;
   h+=coms.length?'<div class="card" style="padding:10px 12px">'+coms.map(c=>`<div class="hint" style="border-top:1px solid var(--linha);padding:6px 0"><b>${brDate(c.data)}</b> (${escAttr(c.autor||'—')}): ${escAttr(c.texto||'')}</div>`).join('')+'</div>':'<p class="hint">Nenhum.</p>';
+  // relatório editável para a família
+  const _fichaTxt0 = (docTxtEdit('ficha:'+a.id)!=null) ? docTxtEdit('ficha:'+a.id) : corpoFichaAluno(a.id,_fichaDe,_fichaAte);
+  h+=`<div class="card" style="margin-top:16px"><h3 style="margin:0 0 6px">📝 Relatório para a família (editável)</h3>
+    <p class="hint">Edite livremente. <b>Copiar, Imprimir/PDF e Enviar usam exatamente o texto abaixo.</b></p>
+    <textarea id="fichaCorpo" style="width:100%;min-height:280px;padding:12px;border:1px solid var(--linha);border-radius:12px;font:inherit;line-height:1.5;resize:vertical" oninput="_fichaCorpoInput('${a.id}')">${_escTA(_fichaTxt0)}</textarea>
+    <div class="hint" style="margin-top:6px"><a href="#" onclick="_fichaCorpoReset('${a.id}');return false;" style="color:var(--azul)">↺ Restaurar texto gerado automaticamente</a></div>
+  </div>`;
   // ações
   h+=`<div class="card" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
     ${podeEnviar?`<button class="btn" id="fcEnviar" onclick="enviarFichaResponsavel()">✉️ Enviar ao responsável</button>`:''}
