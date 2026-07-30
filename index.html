@@ -674,13 +674,13 @@ async function _pullSilencioso(reRender){
     }
   }catch(e){}
 }
-async function cloudEmail(to, subject, body, html){
+async function cloudEmail(to, subject, body, html, attachments){
   try{
     const dest = Array.isArray(to) ? to.filter(Boolean) : [to].filter(Boolean);
     if(!dest.length) return {ok:false, erro:'sem destinatários'};
-    const { data, error } = await sb.functions.invoke('enviar-email', {
-      body: { to: dest, subject: subject||'Togethere', text: body||'', html: html||'' }
-    });
+    const payload = { to: dest, subject: subject||'Togethere', text: body||'', html: html||'' };
+    if(Array.isArray(attachments) && attachments.length) payload.attachments = attachments;
+    const { data, error } = await sb.functions.invoke('enviar-email', { body: payload });
     if(error) return {ok:false, erro:(error.message||'falha no envio')};
     if(data && data.ok===false) return {ok:false, erro:(data.error||'falha no envio')};
     return {ok:true, data:data};
@@ -1812,9 +1812,16 @@ function mediaTesteAluno(t,aid){
   const v=SKILLS.map(s=>t.notas[aid][s]).filter(x=>x!==''&&x!=null&&!isNaN(x)).map(Number);
   return v.length?v.reduce((a,n)=>a+n,0)/v.length:null;
 }
+function testeRealizado(t){
+  if(!t || !t.notas) return false;
+  return Object.keys(t.notas).some(aid=>{ const o=t.notas[aid]||{}; return SKILLS.some(sk=>{ const v=o[sk]; return v!==''&&v!=null&&!isNaN(v); }); });
+}
 function mediaSkillAno(turmaId,aid,skill){
-  const v=S.testes.filter(t=>t.turmaId===turmaId).map(t=>t.notas&&t.notas[aid]?t.notas[aid][skill]:'').filter(x=>x!==''&&x!=null&&!isNaN(x)).map(Number);
-  return v.length?Math.round(v.reduce((a,n)=>a+n,0)/v.length):null;
+  // Regra Togethere: num teste JÁ REALIZADO, nota em branco conta como 0.
+  const tests=(S.testes||[]).filter(t=>t.turmaId===turmaId && testeRealizado(t));
+  if(!tests.length) return null;
+  const vals=tests.map(t=>{ const v=t.notas&&t.notas[aid]?t.notas[aid][skill]:''; return (v!==''&&v!=null&&!isNaN(v))?Number(v):0; });
+  return Math.round(vals.reduce((a,n)=>a+n,0)/vals.length);
 }
 function boletimDe(turmaId,aid,criar){
   let b=S.boletins.find(x=>x.turmaId===turmaId && x.alunoId===aid);
@@ -1931,11 +1938,8 @@ function renderBoletimArea(){
     <div class="card"><h3>Boletim gerado</h3><p class="hint">Pré-visualização na identidade Togethere. Imprima ou salve em PDF para entregar à família; ou copie o texto para o WhatsApp.</p>
       <iframe id="boFrame" title="Boletim" style="width:100%;height:600px;border:1px solid var(--linha);border-radius:14px;background:#fff;display:none"></iframe>
       <div class="gen-box" id="boVazio">Clique em “Gerar boletim completo”.</div>
-      <div id="boEditBanner" style="display:none;margin-top:12px;padding:8px 12px;background:#FFF7DA;border:1px solid var(--amarelo);border-radius:10px;font-size:.9rem">✏️ Este boletim tem <b>edições manuais</b> — Imprimir, Copiar e E-mail usam a versão editada. <a href="#" onclick="gerarBoletim(true);return false;" style="color:var(--azul);font-weight:600">Gerar do zero</a></div>
       <div class="row" style="margin-top:14px"><button class="btn" onclick="imprimirBoletim()">🖨️ Imprimir / PDF</button>
       <button class="btn amarelo" onclick="copiarBoletim()">📋 Copiar texto</button>
-      <button class="btn" onclick="editarBoletim()">✏️ Editar</button>
-      <button class="btn" onclick="salvarBoletim()">💾 Salvar edições</button>
       <button class="btn" onclick="enviarBoletimEmail()">✉️ Enviar por e-mail</button>
       <button class="btn ghost" onclick="publicarBoletimPortal()">📲 Publicar no portal</button></div></div>`;
   }
@@ -1954,18 +1958,13 @@ function _setDocIframe(fr, html){
   }catch(e){ try{ fr.srcdoc=html; }catch(_){ } }
   fr.style.display='block';
 }
-function gerarBoletim(forcar){
+function gerarBoletim(){
   if(!boletimAluno) return toast('Escolha o aluno');
-  const k='boletim:'+testeTurma+':'+boletimAluno;
-  if(forcar) descartarDocEdicao(k);
-  let html, txt;
-  if(docTemEdicao(k)){ html=docHtmlEdit(k); txt=docTxtEdit(k); }
-  else { const r=montarBoletimHTML(testeTurma, boletimAluno); html=r.html; txt=r.txt; }
-  _boletimHTML=html; _boletimTxt=txt;
+  const r=montarBoletimHTML(testeTurma, boletimAluno);
+  _boletimHTML=r.html; _boletimTxt=r.txt;
   const fr=document.getElementById('boFrame'), vz=document.getElementById('boVazio');
-  _setDocIframe(fr, html);
+  _setDocIframe(fr, r.html);
   if(vz) vz.style.display='none';
-  const bn=document.getElementById('boEditBanner'); if(bn) bn.style.display=docTemEdicao(k)?'block':'none';
 }
 const DOC_CSS=`
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Urbanist:ital,wght@0,400;0,500;0,600;1,400&family=Zilla+Slab:ital,wght@1,600&display=swap');
@@ -2179,10 +2178,60 @@ function publicarBoletimPortal(){
   publicarNoPortal(boletimAluno, 'boletim', 'Boletim '+(new Date().getFullYear())+' — '+(a.nome||''), _boletimHTML, _boletimTxt);
 }
 function publicarFichaPortal(aid){
-  const a=(S.alunos||[]).find(x=>x.id===aid)||{};
-  const txt=_fichaTextoAtual(aid);
-  const html='<!doctype html><meta charset="utf-8"><body style="font-family:system-ui,sans-serif;padding:20px;color:#10243a;max-width:760px;margin:0 auto"><h2 style="color:#005EAF">Relatório — '+_escTA(a.nome||'')+'</h2><pre style="white-space:pre-wrap;font:inherit">'+_escTA(txt)+'</pre></body>';
-  publicarNoPortal(aid, 'ficha', 'Relatório — '+brDate(hoje()), html, txt);
+  const doc=montarFichaHTML(aid,_fichaDe,_fichaAte);
+  publicarNoPortal(aid, 'ficha', 'Relatório — '+brDate(hoje()), doc.html, doc.txt);
+}
+/* ===== Ficha em documento (visual Togethere) + PDF ===== */
+function montarFichaHTML(alunoId, de, ate){
+  const a=(S.alunos||[]).find(x=>x.id===alunoId)||{};
+  const turma=(S.turmas||[]).find(t=>t.id===a.turmaId)||{};
+  const txt=corpoFichaAluno(alunoId, de, ate);
+  const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const periodo=(de||ate)?((de?brDate(de):'início')+' a '+(ate?brDate(ate):'hoje')):'todo o histórico';
+  const html='<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
+    +'<style>@page{margin:14mm}*{box-sizing:border-box;margin:0;padding:0}html{-webkit-print-color-adjust:exact;print-color-adjust:exact}'
+    +'body{font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;color:#10243a;background:#fff;line-height:1.55}'
+    +'.page{max-width:760px;margin:0 auto}'
+    +'.hd{background:linear-gradient(135deg,#0a6dc4,#005EAF);color:#fff;padding:24px 28px}'
+    +'.hd .wm{font-weight:800;font-size:1.6rem;letter-spacing:-.5px}.hd .wm b{color:#FFC800}'
+    +'.hd .sub{opacity:.92;font-size:.95rem;margin-top:2px}'
+    +'.meta{display:flex;flex-wrap:wrap;gap:6px 22px;padding:14px 28px;border-bottom:3px solid #FFC800;background:#f7fafd}'
+    +'.meta div{font-size:.92rem}.meta b{color:#005EAF}'
+    +'.corpo{padding:20px 28px;white-space:pre-wrap;font-size:.95rem}'
+    +'.foot{padding:16px 28px;color:#5b6b7c;font-size:.8rem;border-top:1px solid #e7eef6;margin-top:6px;text-align:center}</style></head>'
+    +'<body><div class="page">'
+    +'<div class="hd"><div class="wm">togeth<b>e</b>re</div><div class="sub">Ficha de acompanhamento do aluno</div></div>'
+    +'<div class="meta"><div><b>Aluno:</b> '+esc(a.nome||'')+'</div><div><b>Turma:</b> '+esc(turma.nome||'—')+'</div><div><b>Período:</b> '+esc(periodo)+'</div></div>'
+    +'<div class="corpo">'+esc(txt)+'</div>'
+    +'<div class="foot">Togethere · Gravataí/RS — inglês para chegar lá</div>'
+    +'</div></body></html>';
+  return { html:html, txt:txt };
+}
+function montarFichaEmailHTML(alunoId, de, ate){
+  const a=(S.alunos||[]).find(x=>x.id===alunoId)||{};
+  const turma=(S.turmas||[]).find(t=>t.id===a.turmaId)||{};
+  const txt=corpoFichaAluno(alunoId, de, ate);
+  const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const periodo=(de||ate)?((de?brDate(de):'início')+' a '+(ate?brDate(ate):'hoje')):'todo o histórico';
+  const corpoHtml=esc(txt).replace(/\n/g,'<br>');
+  return '<!doctype html><html><body style="margin:0;padding:0;background:#eef3f8;">'
+    +'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef3f8;padding:16px 0;"><tr><td align="center">'
+    +'<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;font-family:Arial,Helvetica,sans-serif;color:#10243a;">'
+    +'<tr><td style="background:#005EAF;padding:20px 24px;"><div style="font-size:22px;font-weight:bold;color:#ffffff;letter-spacing:-0.5px;">togeth<span style="color:#FFC800;">e</span>re</div>'
+    +'<div style="font-size:14px;color:#dce8f6;margin-top:2px;">Ficha de acompanhamento do aluno</div></td></tr>'
+    +'<tr><td style="padding:14px 24px;border-bottom:3px solid #FFC800;background:#f7fafd;font-size:14px;">'
+    +'<b style="color:#005EAF;">Aluno:</b> '+esc(a.nome||'')+' &nbsp;&middot;&nbsp; '
+    +'<b style="color:#005EAF;">Turma:</b> '+esc(turma.nome||'—')+' &nbsp;&middot;&nbsp; '
+    +'<b style="color:#005EAF;">Período:</b> '+esc(periodo)+'</td></tr>'
+    +'<tr><td style="padding:20px 24px;font-size:15px;line-height:1.6;color:#10243a;">'+corpoHtml+'</td></tr>'
+    +'<tr><td style="padding:16px 24px;border-top:1px solid #e7eef6;color:#5b6b7c;font-size:12px;text-align:center;">Togethere &middot; Gravataí/RS — inglês para chegar lá</td></tr>'
+    +'</table></td></tr></table></body></html>';
+}
+function abrirBoletimDoAluno(aid){
+  const a=(S.alunos||[]).find(x=>x.id===aid); if(!a) return toast('Aluno não encontrado');
+  testeTurma=a.turmaId; boletimAluno=aid;
+  ir('testes');
+  setTimeout(()=>{ try{ gerarBoletim(); }catch(e){} const el=document.getElementById('teBoletim'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }, 90);
 }
 /* ---- MATERIAL ---- */
 let matTurma=null, matData=hoje(), matBusca='';
@@ -3484,16 +3533,15 @@ function _registrarEnvioFicha(a, via, corpo){
 }
 function copiarFicha(){
   const a=(S.alunos||[]).find(x=>x.id===_fichaAlunoId); if(!a) return;
-  const corpo=_fichaTextoAtual(a.id);
+  const corpo=corpoFichaAluno(a.id,_fichaDe,_fichaAte);
   copiarTexto(corpo,'Ficha copiada! Cole no WhatsApp');
   _registrarEnvioFicha(a,'whatsapp',corpo); save();
 }
 function imprimirFicha(){
   const a=(S.alunos||[]).find(x=>x.id===_fichaAlunoId); if(!a) return;
-  const txt=_fichaTextoAtual(a.id);
-  const html=`<div style="font-family:Arial,sans-serif;max-width:760px;margin:0 auto;padding:20px"><pre style="white-space:pre-wrap;font-family:Arial,sans-serif;font-size:13px;line-height:1.5">${escAttr(txt)}</pre></div>`;
-  if(typeof imprimirDoc==='function') imprimirDoc(html); else toast('Impressão indisponível');
-  _registrarEnvioFicha(a,'pdf',txt); save();
+  const doc=montarFichaHTML(a.id,_fichaDe,_fichaAte);
+  if(typeof imprimirDoc==='function') imprimirDoc(doc.html); else toast('Impressão indisponível');
+  _registrarEnvioFicha(a,'pdf',doc.txt); save();
 }
 async function enviarFichaResponsavel(){
   if(ehProfessor()) return toast('Sem permissão para enviar');
@@ -3501,11 +3549,12 @@ async function enviarFichaResponsavel(){
   const email=(a.email||'').trim();
   if(!email || email.indexOf('@')<1) return toast('Sem e-mail do responsável. Cadastre no topo da ficha ou use Copiar para WhatsApp.');
   if(!confirm('Enviar a ficha de '+a.nome+' para '+email+'?')) return;
-  const btn=document.getElementById('fcEnviar'); if(btn){ btn.disabled=true; btn.textContent='Enviando…'; }
-  const corpoFicha=_fichaTextoAtual(a.id);
-  const res=await cloudEmail([email], 'Acompanhamento de '+a.nome+' — Togethere', corpoFicha);
+    const btn=document.getElementById('fcEnviar'); if(btn){ btn.disabled=true; btn.textContent='Enviando…'; }
+  const txt=corpoFichaAluno(a.id,_fichaDe,_fichaAte);
+  const htmlEmail=montarFichaEmailHTML(a.id,_fichaDe,_fichaAte);
+  const res=await cloudEmail([email], 'Acompanhamento de '+a.nome+' — Togethere', txt, htmlEmail);
   if(btn){ btn.disabled=false; btn.textContent='✉️ Enviar ao responsável'; }
-  if(res && res.ok){ a.fichaEnviadaEm=hoje(); a.fichaEnviadaPor=S.usuario; _registrarEnvioFicha(a,'email',corpoFicha); save(); VIEWS.ficha(); toast('Ficha enviada ao responsável'); }
+  if(res && res.ok){ a.fichaEnviadaEm=hoje(); a.fichaEnviadaPor=S.usuario; _registrarEnvioFicha(a,'email',txt); save(); VIEWS.ficha(); toast('Ficha enviada ao responsável'); }
   else toast('Não foi possível enviar: '+((res&&res.erro)||'erro'));
 }
 // --- Trocar o aluno de turma (só direção). O histórico fica preservado na turma antiga. ---
@@ -3659,16 +3708,10 @@ VIEWS.ficha=()=>{
   h+=mat.length?'<div class="card" style="padding:10px 12px"><div class="hint">'+mat.sort().map(d=>brDate(d)).join(' · ')+'</div></div>':'<p class="hint">Nenhum.</p>';
   h+=`<h3 style="margin:18px 0 6px">💬 Comentários (${coms.length})</h3>`;
   h+=coms.length?'<div class="card" style="padding:10px 12px">'+coms.map(c=>`<div class="hint" style="border-top:1px solid var(--linha);padding:6px 0"><b>${brDate(c.data)}</b> (${escAttr(c.autor||'—')}): ${escAttr(c.texto||'')}</div>`).join('')+'</div>':'<p class="hint">Nenhum.</p>';
-  // relatório editável para a família
-  const _fichaTxt0 = (docTxtEdit('ficha:'+a.id)!=null) ? docTxtEdit('ficha:'+a.id) : corpoFichaAluno(a.id,_fichaDe,_fichaAte);
-  h+=`<div class="card" style="margin-top:16px"><h3 style="margin:0 0 6px">📝 Relatório para a família (editável)</h3>
-    <p class="hint">Edite livremente. <b>Copiar, Imprimir/PDF e Enviar usam exatamente o texto abaixo.</b></p>
-    <textarea id="fichaCorpo" style="width:100%;min-height:280px;padding:12px;border:1px solid var(--linha);border-radius:12px;font:inherit;line-height:1.5;resize:vertical" oninput="_fichaCorpoInput('${a.id}')">${_escTA(_fichaTxt0)}</textarea>
-    <div class="hint" style="margin-top:6px"><a href="#" onclick="_fichaCorpoReset('${a.id}');return false;" style="color:var(--azul)">↺ Restaurar texto gerado automaticamente</a></div>
-  </div>`;
   // ações
   h+=`<div class="card" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
     ${podeEnviar?`<button class="btn" id="fcEnviar" onclick="enviarFichaResponsavel()">✉️ Enviar ao responsável</button>`:''}
+    <button class="btn ghost" onclick="abrirBoletimDoAluno('${a.id}')">📊 Gerar boletim</button>
     <button class="btn ghost" onclick="copiarFicha()">📋 Copiar (WhatsApp)</button>
     <button class="btn ghost" onclick="imprimirFicha()">🖨️ Imprimir / PDF</button>
     <button class="btn ghost" onclick="publicarFichaPortal('${a.id}')">📲 Publicar no portal</button>
