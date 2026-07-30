@@ -8,27 +8,27 @@
 <style>
   :root{ --azul:#005EAF; --amarelo:#FFC800; --vermelho:#E52524; --tinta:#10243a; --linha:#e7eef6; --fraco:#5b6b7c; }
   *{ box-sizing:border-box; margin:0; padding:0; }
-  html,body{ height:100%; }
   body{ font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:var(--tinta); background:#eef3f8; line-height:1.5; }
-  .wrap{ max-width:820px; margin:0 auto; padding:20px 16px 60px; }
+  .wrap{ max-width:860px; margin:0 auto; padding:20px 16px 60px; }
   .brand{ display:flex; align-items:center; gap:10px; padding:18px 0 8px; }
   .brand .wm{ font-weight:800; font-size:1.5rem; letter-spacing:-.5px; color:var(--azul); }
   .brand .wm b{ color:var(--vermelho); }
   .brand .tag{ font-style:italic; color:var(--fraco); font-size:.85rem; }
-  .card{ background:#fff; border:1px solid var(--linha); border-radius:16px; padding:20px; box-shadow:0 8px 30px rgba(0,40,90,.06); margin-top:16px; }
-  h1{ font-size:1.25rem; margin-bottom:4px; }
-  h2{ font-size:1.05rem; margin:0 0 8px; }
+  .card{ background:#fff; border:1px solid var(--linha); border-radius:16px; padding:18px; box-shadow:0 8px 30px rgba(0,40,90,.06); margin-top:16px; }
+  h1{ font-size:1.2rem; margin-bottom:2px; }
+  h2{ font-size:1.05rem; margin:0; }
   label{ display:block; font-size:.85rem; color:var(--fraco); margin:10px 0 4px; }
   input{ width:100%; padding:12px 14px; border:1px solid var(--linha); border-radius:12px; font:inherit; }
-  button{ font:inherit; cursor:pointer; border:0; border-radius:12px; padding:12px 16px; font-weight:600; }
+  button{ font:inherit; cursor:pointer; border:0; border-radius:12px; padding:11px 15px; font-weight:600; }
   .btn{ background:var(--azul); color:#fff; }
   .btn.amarelo{ background:var(--amarelo); color:#10243a; }
   .btn.ghost{ background:#fff; color:var(--azul); border:1px solid var(--linha); }
   .btn:disabled{ opacity:.5; cursor:default; }
   .row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .top{ display:flex; align-items:center; gap:10px; }
+  .top .who{ flex:1; }
   .msg{ margin-top:10px; font-size:.9rem; padding:8px 12px; border-radius:10px; display:none; }
   .msg.err{ display:block; background:#fdecec; border:1px solid var(--vermelho); color:#a01818; }
-  .msg.ok{ display:block; background:#eafaf4; border:1px solid #16A07A; color:#0b6b50; }
   .hint{ color:var(--fraco); font-size:.9rem; }
   .item{ display:flex; align-items:center; gap:10px; padding:12px 4px; border-top:1px solid var(--linha); flex-wrap:wrap; }
   .item:first-child{ border-top:0; }
@@ -36,13 +36,10 @@
   .item .t b{ display:block; }
   .item .t span{ color:var(--fraco); font-size:.85rem; }
   .tipo{ font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; background:#eef3f8; color:var(--azul); padding:3px 8px; border-radius:999px; font-weight:700; }
-  .top{ display:flex; align-items:center; gap:10px; }
-  .top .who{ flex:1; }
-  .viewer{ background:#fff; border:1px solid var(--linha); border-radius:12px; overflow:hidden; margin-top:12px; }
-  .viewer iframe{ width:100%; height:70vh; border:0; background:#fff; display:block; }
+  iframe.doc{ width:100%; height:72vh; border:1px solid var(--linha); border-radius:12px; background:#fff; display:block; }
   .hide{ display:none !important; }
   .foot{ text-align:center; color:var(--fraco); font-size:.8rem; margin-top:26px; }
-  .spin{ width:22px; height:22px; border:3px solid var(--linha); border-top-color:var(--azul); border-radius:50%; animation:g 1s linear infinite; display:inline-block; vertical-align:middle; }
+  .spin{ width:20px; height:20px; border:3px solid var(--linha); border-top-color:var(--azul); border-radius:50%; animation:g 1s linear infinite; display:inline-block; vertical-align:middle; }
   @keyframes g{ to{ transform:rotate(360deg); } }
 </style>
 </head>
@@ -66,49 +63,114 @@
   <div id="telaPainel" class="hide">
     <div class="card">
       <div class="top">
-        <div class="who"><h1 id="ola">Olá</h1><p class="hint" id="subOla"></p></div>
+        <div class="who"><h1 id="ola">Olá 👋</h1><p class="hint" id="subOla">Aqui ficam as suas informações na Togethere.</p></div>
         <button class="btn ghost" id="btnSair">Sair</button>
       </div>
     </div>
-    <div class="card">
-      <h2>Meus relatórios</h2>
-      <p class="hint">Toque em um relatório para abrir e baixar em PDF.</p>
-      <div id="lista" style="margin-top:8px"></div>
-      <div id="listaVazia" class="hint hide" style="margin-top:10px">Ainda não há relatórios publicados para você. Assim que a escola publicar, eles aparecem aqui.</div>
-    </div>
-    <div id="viewerWrap" class="card hide">
-      <div class="top">
-        <div class="who"><h2 id="vTitulo">Relatório</h2></div>
-        <button class="btn amarelo" id="btnPDF">🖨️ Baixar PDF</button>
-        <button class="btn ghost" id="btnFechar">Fechar</button>
+
+    <div id="erroBox" class="card hide"><p class="hint" id="erroTxt"></p></div>
+
+    <!-- FICHA AO VIVO -->
+    <div id="fichaCard" class="card hide">
+      <div class="top" style="margin-bottom:10px">
+        <h2 style="flex:1">📇 Minha ficha</h2>
+        <button class="btn amarelo" id="btnFichaPDF">🖨️ Baixar PDF</button>
       </div>
-      <div class="viewer"><iframe id="vFrame" title="Relatório"></iframe></div>
+      <iframe id="fichaFrame" class="doc" title="Minha ficha"></iframe>
+    </div>
+
+    <!-- BOLETIM (só se aprovado) -->
+    <div id="boletimCard" class="card hide">
+      <div class="top" style="margin-bottom:10px">
+        <h2 style="flex:1" id="boletimTitulo">🎓 Boletim</h2>
+        <button class="btn amarelo" id="btnBoletimPDF">🖨️ Baixar PDF</button>
+      </div>
+      <iframe id="boletimFrame" class="doc" title="Boletim"></iframe>
+    </div>
+
+    <!-- EXTRAS publicados pela escola -->
+    <div id="extrasCard" class="card hide">
+      <h2>📎 Outros relatórios</h2>
+      <p class="hint">Documentos que a escola publicou para você.</p>
+      <div id="lista" style="margin-top:8px"></div>
     </div>
   </div>
 
   <div class="foot">Togethere · Gravataí/RS — <i>inglês para chegar lá</i></div>
 </div>
 
+<div id="viewerWrap" class="card hide" style="max-width:860px;margin:16px auto">
+  <div class="top"><h2 id="vTitulo" style="flex:1">Relatório</h2>
+    <button class="btn amarelo" id="btnPDF">🖨️ Baixar PDF</button>
+    <button class="btn ghost" id="btnFechar">Fechar</button></div>
+  <iframe id="vFrame" class="doc" title="Relatório"></iframe>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
-/* ===== Config (mesmas chaves públicas do app — o RLS é quem protege) ===== */
 const SUPA_URL = 'https://wkmmlbzrfkkalcsxxtze.supabase.co';
 const SUPA_KEY = 'sb_publishable_CD6tvB_DTCH-QSfDNavreg_wtiKiWI1';
 const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
-
 const $ = id => document.getElementById(id);
 let RELATORIOS = [];
 
-function brDate(s){ if(!s) return ''; const d=new Date(s); if(isNaN(d)) return s; return d.toLocaleDateString('pt-BR'); }
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function brDate(s){ if(!s) return ''; const d=new Date(s); if(isNaN(d)) return s; return d.toLocaleDateString('pt-BR'); }
 function tipoLabel(t){ return ({ficha:'Ficha', boletim:'Boletim', writing:'Writing', aula:'Aula'})[t] || (t||'Relatório'); }
+function setDoc(fr, html){ try{ if(fr._u){URL.revokeObjectURL(fr._u);} const b=new Blob([html||''],{type:'text/html;charset=utf-8'}); fr._u=URL.createObjectURL(b); fr.src=fr._u; }catch(e){ fr.srcdoc=html||''; } }
+function printFrame(fr){ try{ fr.contentWindow.focus(); fr.contentWindow.print(); }catch(e){ alert('Use o menu do navegador para imprimir/salvar em PDF.'); } }
+
+/* ===== Ficha (texto do servidor) -> HTML com hierarquia (igual ao e-mail) ===== */
+function fichaEmailHTML(txt, nome, turma){
+  const linhas=String(txt||'').split('\n');
+  const isHeader=l=>/^[\u{1F300}-\u{1FAFF}☀-➿←-⇿⬀-⯿]/u.test(l);
+  const secoes=[]; let atual=null;
+  for(const raw of linhas){
+    const l=raw.replace(/\s+$/,''); if(!l.trim()) continue;
+    if(isHeader(l)){ atual={titulo:l.trim(), itens:[]}; secoes.push(atual); }
+    else if(atual){ atual.itens.push(l.replace(/^•\s*/,'').trim()); }
+  }
+  const numDe=re=>{ const m=String(txt).match(re); return m?m[1]:null; };
+  const pres=numDe(/Presen[çc]as:\s*(\d+)/i);
+  const falt=numDe(/Faltas:\s*(\d+)/i);
+  const contHead=t=>{ const m=String(t||'').match(/\((\d+)\)\s*$/); return m?+m[1]:null; };
+  const temasSec=secoes.find(x=>/TEMAS/i.test(x.titulo));
+  const matSec=secoes.find(x=>/MATERIAL/i.test(x.titulo));
+  const temasN=temasSec?contHead(temasSec.titulo):null;
+  const matN=matSec?contHead(matSec.titulo):null;
+  const tile=(label,val,cor,bg)=>'<td width="25%" style="padding:5px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:'+bg+';border-radius:10px;"><tr><td style="padding:12px 6px;text-align:center;"><div style="font-size:22px;font-weight:bold;color:'+cor+';line-height:1;">'+(val==null?'—':esc(''+val))+'</div><div style="font-size:10px;color:#5b6b7c;text-transform:uppercase;letter-spacing:.04em;margin-top:3px;">'+esc(label)+'</div></td></tr></table></td>';
+  const tiles='<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>'
+    + tile('Presenças', pres, '#16A07A', '#E6F6F0')
+    + tile('Faltas', falt, (falt&&+falt>0)?'#E52524':'#5b6b7c', (falt&&+falt>0)?'#FDECEC':'#f1f4f8')
+    + tile('Temas pend.', temasN, (temasN&&temasN>0)?'#B8860B':'#5b6b7c', (temasN&&temasN>0)?'#FBF3D6':'#f1f4f8')
+    + tile('Material', matN, (matN&&matN>0)?'#B8860B':'#5b6b7c', (matN&&matN>0)?'#FBF3D6':'#f1f4f8')
+    + '</tr></table>';
+  const corDe=t=>/TEMA|MATERIAL/i.test(t)?'#B8860B':/TESTE|WRITING/i.test(t)?'#6C4BD8':/AULA|FALTA/i.test(t)?'#E52524':'#005EAF';
+  const secHTML=secoes.filter(x=>!/FREQU/i.test(x.titulo)).map(sec=>{
+    let titulo=sec.titulo, itens=sec.itens.slice().filter(it=> it && it!=='—' && !/^Togethere/i.test(it));
+    if(/AULAS/i.test(titulo)){ itens=itens.filter(it=>/FALTOU/i.test(it)); titulo='📅 Faltas no período (com o conteúdo perdido)'; }
+    const vazia = itens.length===0 || (itens.length===1 && /^Nenhum/i.test(itens[0]));
+    const cor=corDe(titulo);
+    const corpo = vazia ? '<div style="font-size:13px;color:#9aa6b6;font-style:italic;">Nada no período.</div>'
+      : itens.map(it=>'<div style="font-size:13px;color:#233;padding:4px 0;border-bottom:1px solid #eef2f7;">'+esc(it)+'</div>').join('');
+    return '<tr><td style="padding:16px 24px 2px;"><div style="font-weight:bold;color:'+cor+';font-size:14px;">'+esc(titulo)+'</div></td></tr>'
+      + '<tr><td style="padding:4px 24px 6px;">'+corpo+'</td></tr>';
+  }).join('');
+  return '<!doctype html><html><body style="margin:0;padding:0;background:#eef3f8;font-family:Arial,Helvetica,sans-serif;">'
+    +'<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef3f8;padding:16px 0;"><tr><td align="center">'
+    +'<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;background:#ffffff;border-radius:12px;overflow:hidden;color:#10243a;">'
+    +'<tr><td style="background:#005EAF;padding:20px 24px;"><div style="font-size:22px;font-weight:bold;color:#ffffff;letter-spacing:-0.5px;">togeth<span style="color:#FFC800;">e</span>re</div><div style="font-size:14px;color:#dce8f6;margin-top:2px;">Ficha de acompanhamento</div></td></tr>'
+    +'<tr><td style="padding:14px 24px;border-bottom:3px solid #FFC800;background:#f7fafd;"><div style="font-size:16px;font-weight:bold;color:#005EAF;">'+esc(nome||'')+'</div><div style="color:#5b6b7c;font-size:13px;margin-top:2px;">'+esc(turma||'')+'</div></td></tr>'
+    +'<tr><td style="padding:14px 19px 2px;">'+tiles+'</td></tr>'
+    + secHTML
+    +'<tr><td style="padding:16px 24px;border-top:1px solid #e7eef6;color:#5b6b7c;font-size:12px;text-align:center;">Togethere &middot; Gravataí/RS — inglês para chegar lá</td></tr>'
+    +'</table></td></tr></table></body></html>';
+}
 
 function msgLogin(txt, ok){ const m=$('loginMsg'); m.textContent=txt; m.className='msg '+(ok?'ok':'err'); }
 
-/* ===== Login ===== */
 async function entrar(){
-  const email=($('email').value||'').trim();
-  const senha=$('senha').value||'';
+  const email=($('email').value||'').trim(), senha=$('senha').value||'';
   if(!email || !senha) return msgLogin('Preencha e-mail e senha.', false);
   $('btnEntrar').disabled=true; $('btnEntrar').textContent='Entrando…';
   try{
@@ -121,63 +183,74 @@ async function entrar(){
 
 async function abrirPainel(){
   const { data:{ user } } = await sb.auth.getUser();
-  if(!user){ return; }
-  // Nome/saudação (perfis é opcional; se não houver, segue mesmo assim)
-  let nome='';
-  try{ const { data:perfil } = await sb.from('perfis').select('nome,papel').eq('id',user.id).single(); if(perfil) nome=perfil.nome||''; }catch(e){}
-  $('ola').textContent = 'Olá'+(nome?(', '+nome.split(' ')[0]):'')+' 👋';
-  $('subOla').textContent = 'Aqui ficam os seus relatórios da Togethere.';
+  if(!user) return;
   $('telaLogin').classList.add('hide');
   $('telaPainel').classList.remove('hide');
-  await carregarRelatorios();
+  await carregarTudo();
 }
 
-/* ===== Lista de relatórios (RLS devolve só os do próprio aluno) ===== */
-async function carregarRelatorios(){
-  const lista=$('lista'); lista.innerHTML='<div class="hint"><span class="spin"></span> Carregando…</div>';
-  const { data, error } = await sb.from('relatorios_aluno').select('*').order('publicado_em',{ascending:false});
-  if(error){ lista.innerHTML='<div class="hint">Não consegui carregar agora. Tente novamente mais tarde.</div>'; return; }
-  RELATORIOS = data||[];
-  if(!RELATORIOS.length){ lista.innerHTML=''; $('listaVazia').classList.remove('hide'); return; }
-  $('listaVazia').classList.add('hide');
-  lista.innerHTML = RELATORIOS.map((r,i)=>`
-    <div class="item">
-      <span class="tipo">${esc(tipoLabel(r.tipo))}</span>
+async function carregarTudo(){
+  // ficha ao vivo + boletim (função de servidor devolve só os dados do aluno)
+  try{
+    const { data, error } = await sb.functions.invoke('minha-ficha');
+    if(error) throw error;
+    if(data && data.ok){
+      $('ola').textContent = 'Olá'+(data.nome?(', '+String(data.nome).split(' ')[0]):'')+' 👋';
+      // ficha
+      $('fichaCard').classList.remove('hide');
+      setDoc($('fichaFrame'), fichaEmailHTML(data.ficha, data.nome, data.turma));
+      // boletim (só se aprovado)
+      if(data.boletim && data.boletim.html){
+        $('boletimCard').classList.remove('hide');
+        if(data.boletim.titulo) $('boletimTitulo').textContent = '🎓 ' + data.boletim.titulo;
+        setDoc($('boletimFrame'), data.boletim.html);
+        $('boletimCard')._html = data.boletim.html;
+      } else {
+        $('boletimCard').classList.add('hide');
+      }
+    } else {
+      mostrarErro((data && data.error) || 'Não consegui carregar a sua ficha agora.');
+    }
+  }catch(e){
+    mostrarErro('Não consegui carregar a sua ficha agora. Tente novamente mais tarde.');
+  }
+  await carregarExtras();
+}
+
+function mostrarErro(txt){ $('erroBox').classList.remove('hide'); $('erroTxt').textContent = txt; }
+
+/* Extras publicados manualmente pela escola (ex.: relatório de writing) */
+async function carregarExtras(){
+  const { data, error } = await sb.from('relatorios_aluno').select('*').neq('tipo','ficha').order('publicado_em',{ascending:false});
+  if(error) return; // silencioso: extras são opcionais
+  RELATORIOS = (data||[]).filter(r=>r.tipo!=='boletim'); // boletim já vem ao vivo
+  if(!RELATORIOS.length){ $('extrasCard').classList.add('hide'); return; }
+  $('extrasCard').classList.remove('hide');
+  $('lista').innerHTML = RELATORIOS.map((r,i)=>`
+    <div class="item"><span class="tipo">${esc(tipoLabel(r.tipo))}</span>
       <div class="t"><b>${esc(r.titulo||tipoLabel(r.tipo))}</b><span>Publicado em ${brDate(r.publicado_em)}</span></div>
-      <button class="btn ghost" onclick="abrirRelatorio(${i})">Abrir</button>
-    </div>`).join('');
+      <button class="btn ghost" onclick="abrirExtra(${i})">Abrir</button></div>`).join('');
 }
-
-/* ===== Visualizador + PDF ===== */
-function abrirRelatorio(i){
+function abrirExtra(i){
   const r=RELATORIOS[i]; if(!r) return;
   $('vTitulo').textContent = r.titulo || tipoLabel(r.tipo);
-  const fr=$('vFrame');
-  const html = r.html && r.html.trim()
-    ? r.html
-    : `<!doctype html><meta charset="utf-8"><body style="font-family:system-ui,sans-serif;padding:20px;color:#10243a"><pre style="white-space:pre-wrap;font:inherit">${esc(r.texto||'')}</pre></body>`;
-  try{ if(fr._u){ URL.revokeObjectURL(fr._u); } const b=new Blob([html],{type:'text/html;charset=utf-8'}); fr._u=URL.createObjectURL(b); fr.src=fr._u; }
-  catch(e){ fr.srcdoc=html; }
+  const html = (r.html && r.html.trim()) ? r.html
+    : '<!doctype html><meta charset="utf-8"><body style="font-family:system-ui,sans-serif;padding:20px;color:#10243a"><pre style="white-space:pre-wrap;font:inherit">'+esc(r.texto||'')+'</pre></body>';
+  setDoc($('vFrame'), html);
   $('viewerWrap').classList.remove('hide');
   $('viewerWrap').scrollIntoView({behavior:'smooth', block:'start'});
 }
-function baixarPDF(){
-  const fr=$('vFrame');
-  try{ fr.contentWindow.focus(); fr.contentWindow.print(); }
-  catch(e){ alert('Use o menu do navegador para imprimir/salvar em PDF.'); }
-}
-function fecharViewer(){ $('viewerWrap').classList.add('hide'); }
 
 async function sair(){ try{ await sb.auth.signOut(); }catch(e){} location.reload(); }
 
-/* ===== Eventos ===== */
 $('btnEntrar').onclick = entrar;
 $('senha').addEventListener('keydown', e=>{ if(e.key==='Enter') entrar(); });
 $('btnSair').onclick = sair;
-$('btnPDF').onclick = baixarPDF;
-$('btnFechar').onclick = fecharViewer;
+$('btnFichaPDF').onclick = ()=>printFrame($('fichaFrame'));
+$('btnBoletimPDF').onclick = ()=>printFrame($('boletimFrame'));
+$('btnPDF').onclick = ()=>printFrame($('vFrame'));
+$('btnFechar').onclick = ()=>$('viewerWrap').classList.add('hide');
 
-/* Sessão já ativa? entra direto. */
 (async ()=>{ try{ const { data:{ session } } = await sb.auth.getSession(); if(session) await abrirPainel(); }catch(e){} })();
 </script>
 </body>
