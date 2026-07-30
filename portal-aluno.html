@@ -100,7 +100,6 @@
       <button class="btn sm sair" id="btnSair">Sair</button>
     </div>
     <div id="tilesBox" class="tiles hide"></div>
-    <div class="toolbar"><button class="btn amarelo sm" id="btnPDF">🖨️ Baixar ficha em PDF</button></div>
 
     <div id="erroBox" class="card hide" style="padding:18px;margin-top:14px"><p class="hint" id="erroTxt"></p></div>
 
@@ -295,7 +294,6 @@ async function sair(){ try{ await sb.auth.signOut(); }catch(e){} location.reload
 $('btnEntrar').onclick=entrar;
 $('senha').addEventListener('keydown',e=>{ if(e.key==='Enter') entrar(); });
 $('btnSair').onclick=sair;
-$('btnPDF').onclick=()=>{ setDoc($('printFrame'), fichaDocHTML()); setTimeout(()=>printFrame($('printFrame')),300); };
 (async ()=>{ try{ const { data:{ session } }=await sb.auth.getSession(); if(session) await abrirApp(); }catch(e){} })();
 </script>
 </body>
