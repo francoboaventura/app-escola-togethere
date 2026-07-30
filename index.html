@@ -2027,8 +2027,7 @@ function renderBoletimArea(){
       <div id="boAprovBar" style="margin:14px 0 2px">${boAprovBarHTML()}</div>
       <div class="row" style="margin-top:12px"><button class="btn" onclick="imprimirBoletim()">🖨️ Imprimir / PDF</button>
       <button class="btn amarelo" onclick="copiarBoletim()">📋 Copiar texto</button>
-      <button class="btn" onclick="enviarBoletimEmail()">✉️ Enviar por e-mail</button>
-      <button class="btn ghost" onclick="publicarBoletimPortal()">📲 Publicar no portal</button></div></div>`;
+      <button class="btn" onclick="enviarBoletimEmail()">✉️ Enviar por e-mail</button></div></div>`;
   }
   box.innerHTML=h;
   const sel=document.getElementById('boAluno'); if(sel) sel.onchange=e=>{ boletimAluno=e.target.value||null; renderBoletimArea(); };
@@ -3844,7 +3843,6 @@ VIEWS.ficha=()=>{
     <button class="btn ghost" onclick="abrirBoletimDoAluno('${a.id}')">📊 Gerar boletim</button>
     <button class="btn ghost" onclick="copiarFicha()">📋 Copiar (WhatsApp)</button>
     <button class="btn ghost" onclick="imprimirFicha()">🖨️ Imprimir / PDF</button>
-    <button class="btn ghost" onclick="publicarFichaPortal('${a.id}')">📲 Publicar no portal</button>
   </div>`;
   v.innerHTML=h;
 };
@@ -5093,7 +5091,6 @@ const WA = (function(){
         <button class="wa-btn" onclick="WA.salvarEdicao('${id}','wa-modalpainel')">💾 Salvar edições</button>
         <button class="wa-btn wa-btn-ghost" onclick="WA.imprimirEl('wa-modalpainel')">🖨️ Imprimir</button>
         <button class="wa-btn wa-btn-ghost" onclick="WA.original('${id}','wa-modalpainel')">↺ Original</button>
-        <button class="wa-btn wa-btn-ghost" onclick="WA.publicarPortal('${id}','wa-modalpainel')">📲 Publicar no portal</button>
       </div>`);
     if(editado){ const p=q('wa-modalpainel'); if(p) p.innerHTML=w.htmlEditado; }
     else { render(w.full, 'wa-modalpainel'); const p=q('wa-modalpainel'); const b=p&&p.querySelector('button.wa-btn-ghost'); if(b) b.remove(); }
