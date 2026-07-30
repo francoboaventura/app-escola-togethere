@@ -113,6 +113,16 @@
     </div>
     <div id="tilesBox" class="tiles hide"></div>
 
+    <div id="emailBox" class="card hide" style="padding:16px;margin-top:14px">
+      <b style="font-size:1rem">📧 Seu e-mail</b>
+      <p class="hint" style="margin:4px 0 10px">Cadastre seu e-mail para receber recados da escola e poder recuperar a senha.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <input id="emailContato" type="email" autocomplete="email" placeholder="voce@exemplo.com" style="flex:1;min-width:180px">
+        <button class="btn sm" id="btnEmail">Salvar</button>
+      </div>
+      <div id="emailMsg" class="msg"></div>
+    </div>
+
     <div id="erroBox" class="card hide" style="padding:18px;margin-top:14px"><p class="hint" id="erroTxt"></p></div>
 
     <div id="tabs" class="tabs hide"></div>
@@ -130,7 +140,7 @@ const SUPA_URL='https://wkmmlbzrfkkalcsxxtze.supabase.co';
 const SUPA_KEY='sb_publishable_CD6tvB_DTCH-QSfDNavreg_wtiKiWI1';
 const sb=window.supabase.createClient(SUPA_URL, SUPA_KEY);
 const $=id=>document.getElementById(id);
-let DATA=null;
+let DATA=null, USER=null;
 
 function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function brDate(s){ if(!s) return ''; const [y,m,d]=String(s).split('-'); return (d&&m&&y)?`${d}/${m}/${y}`:s; }
@@ -292,13 +302,33 @@ async function entrar(){
 }
 async function abrirApp(){
   const { data:{ user } }=await sb.auth.getUser(); if(!user) return;
+  USER=user;
   // 1º acesso: obriga trocar a senha antes de mostrar a ficha
   if(user.user_metadata && user.user_metadata.must_change_password){ mostrarTroca(); return; }
   await carregarFicha();
 }
+function renderEmailContato(){
+  const box=$('emailBox'); if(!box) return;
+  const e=(USER && USER.user_metadata && USER.user_metadata.email_contato) || '';
+  if($('emailContato')) $('emailContato').value=e;
+  box.classList.remove('hide');
+}
+async function salvarEmailContato(){
+  const e=($('emailContato').value||'').trim(); const m=$('emailMsg');
+  if(e && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){ m.textContent='Digite um e-mail válido.'; m.className='msg err'; return; }
+  $('btnEmail').disabled=true; const o=$('btnEmail').textContent; $('btnEmail').textContent='Salvando…';
+  try{
+    const { data, error }=await sb.auth.updateUser({ data:{ email_contato:e } });
+    if(error){ m.textContent='Não consegui salvar. Tente de novo.'; m.className='msg err'; return; }
+    if(data && data.user) USER=data.user;
+    m.textContent=e?'E-mail salvo! ✅':'E-mail removido.'; m.className='msg ok';
+  }catch(err){ m.textContent='Falha de conexão. Tente de novo.'; m.className='msg err'; }
+  finally{ $('btnEmail').disabled=false; $('btnEmail').textContent=o; }
+}
 async function carregarFicha(){
   $('telaLogin').classList.add('hide'); $('telaTroca').classList.add('hide');
   $('app').classList.remove('hide'); $('carregando').classList.remove('hide');
+  renderEmailContato();
   try{
     const { data, error }=await sb.functions.invoke('minha-ficha');
     if(error) throw new Error(error.message||'falha ao carregar');
@@ -332,6 +362,8 @@ $('btnEntrar').onclick=entrar;
 $('senha').addEventListener('keydown',e=>{ if(e.key==='Enter') entrar(); });
 $('btnTrocar').onclick=trocarSenha;
 $('nsenha2').addEventListener('keydown',e=>{ if(e.key==='Enter') trocarSenha(); });
+$('btnEmail').onclick=salvarEmailContato;
+$('emailContato').addEventListener('keydown',e=>{ if(e.key==='Enter') salvarEmailContato(); });
 $('btnSair').onclick=sair;
 // pré-preenche o login se vier ?u=<email> (usado pelo QR do card)
 (()=>{ try{ const u=new URLSearchParams(location.search).get('u'); if(u && $('email')) $('email').value=u; }catch(e){} })();
