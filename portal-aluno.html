@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Togethere · Portal do Aluno</title>
+<link rel="icon" href="data:,">
+<style>
+  :root{ --azul:#005EAF; --amarelo:#FFC800; --vermelho:#E52524; --tinta:#10243a; --linha:#e7eef6; --fraco:#5b6b7c; }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  html,body{ height:100%; }
+  body{ font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; color:var(--tinta); background:#eef3f8; line-height:1.5; }
+  .wrap{ max-width:820px; margin:0 auto; padding:20px 16px 60px; }
+  .brand{ display:flex; align-items:center; gap:10px; padding:18px 0 8px; }
+  .brand .wm{ font-weight:800; font-size:1.5rem; letter-spacing:-.5px; color:var(--azul); }
+  .brand .wm b{ color:var(--vermelho); }
+  .brand .tag{ font-style:italic; color:var(--fraco); font-size:.85rem; }
+  .card{ background:#fff; border:1px solid var(--linha); border-radius:16px; padding:20px; box-shadow:0 8px 30px rgba(0,40,90,.06); margin-top:16px; }
+  h1{ font-size:1.25rem; margin-bottom:4px; }
+  h2{ font-size:1.05rem; margin:0 0 8px; }
+  label{ display:block; font-size:.85rem; color:var(--fraco); margin:10px 0 4px; }
+  input{ width:100%; padding:12px 14px; border:1px solid var(--linha); border-radius:12px; font:inherit; }
+  button{ font:inherit; cursor:pointer; border:0; border-radius:12px; padding:12px 16px; font-weight:600; }
+  .btn{ background:var(--azul); color:#fff; }
+  .btn.amarelo{ background:var(--amarelo); color:#10243a; }
+  .btn.ghost{ background:#fff; color:var(--azul); border:1px solid var(--linha); }
+  .btn:disabled{ opacity:.5; cursor:default; }
+  .row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .msg{ margin-top:10px; font-size:.9rem; padding:8px 12px; border-radius:10px; display:none; }
+  .msg.err{ display:block; background:#fdecec; border:1px solid var(--vermelho); color:#a01818; }
+  .msg.ok{ display:block; background:#eafaf4; border:1px solid #16A07A; color:#0b6b50; }
+  .hint{ color:var(--fraco); font-size:.9rem; }
+  .item{ display:flex; align-items:center; gap:10px; padding:12px 4px; border-top:1px solid var(--linha); flex-wrap:wrap; }
+  .item:first-child{ border-top:0; }
+  .item .t{ flex:1; min-width:180px; }
+  .item .t b{ display:block; }
+  .item .t span{ color:var(--fraco); font-size:.85rem; }
+  .tipo{ font-size:.72rem; text-transform:uppercase; letter-spacing:.04em; background:#eef3f8; color:var(--azul); padding:3px 8px; border-radius:999px; font-weight:700; }
+  .top{ display:flex; align-items:center; gap:10px; }
+  .top .who{ flex:1; }
+  .viewer{ background:#fff; border:1px solid var(--linha); border-radius:12px; overflow:hidden; margin-top:12px; }
+  .viewer iframe{ width:100%; height:70vh; border:0; background:#fff; display:block; }
+  .hide{ display:none !important; }
+  .foot{ text-align:center; color:var(--fraco); font-size:.8rem; margin-top:26px; }
+  .spin{ width:22px; height:22px; border:3px solid var(--linha); border-top-color:var(--azul); border-radius:50%; animation:g 1s linear infinite; display:inline-block; vertical-align:middle; }
+  @keyframes g{ to{ transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><span class="wm">togeth<b>e</b>re</span><span class="tag">portal do aluno</span></div>
+
+  <!-- LOGIN -->
+  <div id="telaLogin" class="card">
+    <h1>Entrar</h1>
+    <p class="hint">Acesse com o e-mail e a senha que a escola criou para você.</p>
+    <label for="email">E-mail</label>
+    <input id="email" type="email" autocomplete="username" placeholder="voce@exemplo.com">
+    <label for="senha">Senha</label>
+    <input id="senha" type="password" autocomplete="current-password" placeholder="sua senha">
+    <div class="row" style="margin-top:14px"><button class="btn" id="btnEntrar">Entrar</button></div>
+    <div id="loginMsg" class="msg"></div>
+  </div>
+
+  <!-- PAINEL -->
+  <div id="telaPainel" class="hide">
+    <div class="card">
+      <div class="top">
+        <div class="who"><h1 id="ola">Olá</h1><p class="hint" id="subOla"></p></div>
+        <button class="btn ghost" id="btnSair">Sair</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Meus relatórios</h2>
+      <p class="hint">Toque em um relatório para abrir e baixar em PDF.</p>
+      <div id="lista" style="margin-top:8px"></div>
+      <div id="listaVazia" class="hint hide" style="margin-top:10px">Ainda não há relatórios publicados para você. Assim que a escola publicar, eles aparecem aqui.</div>
+    </div>
+    <div id="viewerWrap" class="card hide">
+      <div class="top">
+        <div class="who"><h2 id="vTitulo">Relatório</h2></div>
+        <button class="btn amarelo" id="btnPDF">🖨️ Baixar PDF</button>
+        <button class="btn ghost" id="btnFechar">Fechar</button>
+      </div>
+      <div class="viewer"><iframe id="vFrame" title="Relatório"></iframe></div>
+    </div>
+  </div>
+
+  <div class="foot">Togethere · Gravataí/RS — <i>inglês para chegar lá</i></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+/* ===== Config (mesmas chaves públicas do app — o RLS é quem protege) ===== */
+const SUPA_URL = 'https://wkmmlbzrfkkalcsxxtze.supabase.co';
+const SUPA_KEY = 'sb_publishable_CD6tvB_DTCH-QSfDNavreg_wtiKiWI1';
+const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+
+const $ = id => document.getElementById(id);
+let RELATORIOS = [];
+
+function brDate(s){ if(!s) return ''; const d=new Date(s); if(isNaN(d)) return s; return d.toLocaleDateString('pt-BR'); }
+function esc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function tipoLabel(t){ return ({ficha:'Ficha', boletim:'Boletim', writing:'Writing', aula:'Aula'})[t] || (t||'Relatório'); }
+
+function msgLogin(txt, ok){ const m=$('loginMsg'); m.textContent=txt; m.className='msg '+(ok?'ok':'err'); }
+
+/* ===== Login ===== */
+async function entrar(){
+  const email=($('email').value||'').trim();
+  const senha=$('senha').value||'';
+  if(!email || !senha) return msgLogin('Preencha e-mail e senha.', false);
+  $('btnEntrar').disabled=true; $('btnEntrar').textContent='Entrando…';
+  try{
+    const { error } = await sb.auth.signInWithPassword({ email, password:senha });
+    if(error){ msgLogin('E-mail ou senha incorretos.', false); return; }
+    await abrirPainel();
+  }catch(e){ msgLogin('Falha de conexão. Tente de novo.', false); }
+  finally{ $('btnEntrar').disabled=false; $('btnEntrar').textContent='Entrar'; }
+}
+
+async function abrirPainel(){
+  const { data:{ user } } = await sb.auth.getUser();
+  if(!user){ return; }
+  // Nome/saudação (perfis é opcional; se não houver, segue mesmo assim)
+  let nome='';
+  try{ const { data:perfil } = await sb.from('perfis').select('nome,papel').eq('id',user.id).single(); if(perfil) nome=perfil.nome||''; }catch(e){}
+  $('ola').textContent = 'Olá'+(nome?(', '+nome.split(' ')[0]):'')+' 👋';
+  $('subOla').textContent = 'Aqui ficam os seus relatórios da Togethere.';
+  $('telaLogin').classList.add('hide');
+  $('telaPainel').classList.remove('hide');
+  await carregarRelatorios();
+}
+
+/* ===== Lista de relatórios (RLS devolve só os do próprio aluno) ===== */
+async function carregarRelatorios(){
+  const lista=$('lista'); lista.innerHTML='<div class="hint"><span class="spin"></span> Carregando…</div>';
+  const { data, error } = await sb.from('relatorios_aluno').select('*').order('publicado_em',{ascending:false});
+  if(error){ lista.innerHTML='<div class="hint">Não consegui carregar agora. Tente novamente mais tarde.</div>'; return; }
+  RELATORIOS = data||[];
+  if(!RELATORIOS.length){ lista.innerHTML=''; $('listaVazia').classList.remove('hide'); return; }
+  $('listaVazia').classList.add('hide');
+  lista.innerHTML = RELATORIOS.map((r,i)=>`
+    <div class="item">
+      <span class="tipo">${esc(tipoLabel(r.tipo))}</span>
+      <div class="t"><b>${esc(r.titulo||tipoLabel(r.tipo))}</b><span>Publicado em ${brDate(r.publicado_em)}</span></div>
+      <button class="btn ghost" onclick="abrirRelatorio(${i})">Abrir</button>
+    </div>`).join('');
+}
+
+/* ===== Visualizador + PDF ===== */
+function abrirRelatorio(i){
+  const r=RELATORIOS[i]; if(!r) return;
+  $('vTitulo').textContent = r.titulo || tipoLabel(r.tipo);
+  const fr=$('vFrame');
+  const html = r.html && r.html.trim()
+    ? r.html
+    : `<!doctype html><meta charset="utf-8"><body style="font-family:system-ui,sans-serif;padding:20px;color:#10243a"><pre style="white-space:pre-wrap;font:inherit">${esc(r.texto||'')}</pre></body>`;
+  try{ if(fr._u){ URL.revokeObjectURL(fr._u); } const b=new Blob([html],{type:'text/html;charset=utf-8'}); fr._u=URL.createObjectURL(b); fr.src=fr._u; }
+  catch(e){ fr.srcdoc=html; }
+  $('viewerWrap').classList.remove('hide');
+  $('viewerWrap').scrollIntoView({behavior:'smooth', block:'start'});
+}
+function baixarPDF(){
+  const fr=$('vFrame');
+  try{ fr.contentWindow.focus(); fr.contentWindow.print(); }
+  catch(e){ alert('Use o menu do navegador para imprimir/salvar em PDF.'); }
+}
+function fecharViewer(){ $('viewerWrap').classList.add('hide'); }
+
+async function sair(){ try{ await sb.auth.signOut(); }catch(e){} location.reload(); }
+
+/* ===== Eventos ===== */
+$('btnEntrar').onclick = entrar;
+$('senha').addEventListener('keydown', e=>{ if(e.key==='Enter') entrar(); });
+$('btnSair').onclick = sair;
+$('btnPDF').onclick = baixarPDF;
+$('btnFechar').onclick = fecharViewer;
+
+/* Sessão já ativa? entra direto. */
+(async ()=>{ try{ const { data:{ session } } = await sb.auth.getSession(); if(session) await abrirPainel(); }catch(e){} })();
+</script>
+</body>
+</html>
