@@ -1935,7 +1935,9 @@ function _refreshPilulaBoletim(){ const el=document.getElementById('boAprovBar')
 function aprovarBoletim(){
   if(!ehDirecao()) return toast('Só a direção pode aprovar o boletim.');
   const b=boletimAtual(true); if(!b) return toast('Escolha o aluno.');
-  b.aprovado=true; b.aprovadoPor=S.usuario; b.aprovadoEm=hoje(); b.atualizadoEm=Date.now(); save();
+  b.aprovado=true; b.aprovadoPor=S.usuario; b.aprovadoEm=hoje();
+  try{ const r=montarBoletimHTML(b.turmaId, b.alunoId); b.htmlAprovado=r.html; b.txtAprovado=r.txt; }catch(e){}
+  b.atualizadoEm=Date.now(); save();
   _refreshPilulaBoletim();
   toast('Boletim aprovado ✓ — já pode enviar/imprimir/publicar.');
 }
@@ -1969,7 +1971,7 @@ function boletinsParaAprovar(){
 function aprovarPelaLista(turmaId, alunoId, aprovar){
   if(!ehDirecao()) return toast('Só a direção pode aprovar.');
   const b=boletimDe(turmaId, alunoId, false); if(!b) return toast('Boletim não encontrado.');
-  if(aprovar){ b.aprovado=true; b.aprovadoPor=S.usuario; b.aprovadoEm=hoje(); }
+  if(aprovar){ b.aprovado=true; b.aprovadoPor=S.usuario; b.aprovadoEm=hoje(); try{ const r=montarBoletimHTML(turmaId, alunoId); b.htmlAprovado=r.html; b.txtAprovado=r.txt; }catch(e){} }
   else { b.aprovado=false; b.aprovadoPor=null; b.aprovadoEm=null; }
   b.atualizadoEm=Date.now(); save(); VIEWS.aprovacoes();
   toast(aprovar?'Boletim aprovado ✓':'Aprovação revogada.');
