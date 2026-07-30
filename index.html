@@ -1889,15 +1889,15 @@ function setBoletimConceito(skill,el){
   const b=boletimDe(testeTurma,boletimAluno,true);
   let val=el.value===''?'':Math.max(0,Math.min(100,Math.round(+el.value)));
   if(el.value!==''&&val!==+el.value) el.value=val;
-  b.conceitos[skill]=val; save();
+  b.conceitos[skill]=val; _boletimRevoga(b); save(); _refreshPilulaBoletim();
   const bd=bandaConceito(val); el.style.background=bd.bg; el.style.color=bd.cor;
   const lc=document.getElementById('bcl_'+skill); if(lc){ lc.textContent=bd.label; lc.style.color=bd.cor; }
   const g=document.getElementById('bGeral'); if(g) g.placeholder=(mediaConceitosBoletim()??'')+'';
 }
-function setBoletimDistincao(skill,el){ const b=boletimDe(testeTurma,boletimAluno,true); b.distincao[skill]=el.checked; save(); renderBoletimArea(); }
-function setBoletimDistincaoGeral(el){ const b=boletimDe(testeTurma,boletimAluno,true); b.distincaoGeral=el.checked; save(); renderBoletimArea(); }
-function setBoletimGeral(val){ const b=boletimDe(testeTurma,boletimAluno,true); b.conceitoGeral= val===''?'':Math.max(0,Math.min(100,Math.round(+val))); save(); }
-function setBoletimParecer(val){ const b=boletimDe(testeTurma,boletimAluno,true); b.parecer=val; save(); }
+function setBoletimDistincao(skill,el){ const b=boletimDe(testeTurma,boletimAluno,true); b.distincao[skill]=el.checked; _boletimRevoga(b); save(); renderBoletimArea(); }
+function setBoletimDistincaoGeral(el){ const b=boletimDe(testeTurma,boletimAluno,true); b.distincaoGeral=el.checked; _boletimRevoga(b); save(); renderBoletimArea(); }
+function setBoletimGeral(val){ const b=boletimDe(testeTurma,boletimAluno,true); b.conceitoGeral= val===''?'':Math.max(0,Math.min(100,Math.round(+val))); _boletimRevoga(b); save(); _refreshPilulaBoletim(); }
+function setBoletimParecer(val){ const b=boletimDe(testeTurma,boletimAluno,true); b.parecer=val; _boletimRevoga(b); save(); _refreshPilulaBoletim(); }
 function mediaConceitosBoletim(){
   if(!boletimAluno) return null;
   const b=boletimDe(testeTurma,boletimAluno,false)||{conceitos:{},distincao:{}};
@@ -1905,6 +1905,45 @@ function mediaConceitosBoletim(){
     .map(s=>(b.conceitos&&b.conceitos[s]!=null&&b.conceitos[s]!=='')?b.conceitos[s]:mediaSkillAno(testeTurma,boletimAluno,s))
     .filter(x=>x!==''&&x!=null&&!isNaN(x)).map(Number);
   return v.length?Math.round(v.reduce((a,n)=>a+n,0)/v.length):null;
+}
+function ehDirecao(){ return S.perfil==='direcao'; }
+function boletimAtual(criar){ return boletimAluno ? boletimDe(testeTurma, boletimAluno, !!criar) : null; }
+function _boletimRevoga(b){ if(b && b.aprovado){ b.aprovado=false; b.aprovadoPor=null; b.aprovadoEm=null; } }
+function _boletimAprovadoOuAvisa(){
+  const b=boletimAtual(false);
+  if(!b || !b.aprovado){ toast('Este boletim precisa ser APROVADO pela direção antes de enviar, imprimir ou publicar.'); return false; }
+  return true;
+}
+function boAprovBarHTML(){
+  const b=boletimAtual(false);
+  const aprovado=!!(b && b.aprovado);
+  const pill = aprovado
+    ? `<span class="pill" style="background:#e7f6ef;color:var(--ok)">✅ Aprovado${b.aprovadoPor?(' por '+escAttr(b.aprovadoPor)):''}${b.aprovadoEm?(' · '+brDate(b.aprovadoEm)):''}</span>`
+    : `<span class="pill" style="background:#fff7e6;color:var(--laranja)">⏳ Aguardando aprovação da direção</span>`;
+  let acao='';
+  if(ehDirecao()){
+    acao = aprovado
+      ? `<button class="btn ghost sm" onclick="revogarAprovacaoBoletim()">↩︎ Revogar aprovação</button>`
+      : `<button class="btn sm" onclick="aprovarBoletim()">✅ Aprovar boletim</button>`;
+  } else if(!aprovado){
+    acao = `<span class="hint">Só a direção aprova. Enviar/Imprimir/Publicar liberam após a aprovação.</span>`;
+  }
+  return `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">${pill}${acao}</div>`;
+}
+function _refreshPilulaBoletim(){ const el=document.getElementById('boAprovBar'); if(el) el.innerHTML=boAprovBarHTML(); }
+function aprovarBoletim(){
+  if(!ehDirecao()) return toast('Só a direção pode aprovar o boletim.');
+  const b=boletimAtual(true); if(!b) return toast('Escolha o aluno.');
+  b.aprovado=true; b.aprovadoPor=S.usuario; b.aprovadoEm=hoje(); b.atualizadoEm=Date.now(); save();
+  _refreshPilulaBoletim();
+  toast('Boletim aprovado ✓ — já pode enviar/imprimir/publicar.');
+}
+function revogarAprovacaoBoletim(){
+  if(!ehDirecao()) return toast('Só a direção pode revogar a aprovação.');
+  const b=boletimAtual(false); if(!b || !b.aprovado) return;
+  _boletimRevoga(b); b.atualizadoEm=Date.now(); save();
+  _refreshPilulaBoletim();
+  toast('Aprovação revogada.');
 }
 function renderBoletimArea(){
   const box=document.getElementById('teBoletim'); if(!box)return;
@@ -1938,7 +1977,8 @@ function renderBoletimArea(){
     <div class="card"><h3>Boletim gerado</h3><p class="hint">Pré-visualização na identidade Togethere. Imprima ou salve em PDF para entregar à família; ou copie o texto para o WhatsApp.</p>
       <iframe id="boFrame" title="Boletim" style="width:100%;height:600px;border:1px solid var(--linha);border-radius:14px;background:#fff;display:none"></iframe>
       <div class="gen-box" id="boVazio">Clique em “Gerar boletim completo”.</div>
-      <div class="row" style="margin-top:14px"><button class="btn" onclick="imprimirBoletim()">🖨️ Imprimir / PDF</button>
+      <div id="boAprovBar" style="margin:14px 0 2px">${boAprovBarHTML()}</div>
+      <div class="row" style="margin-top:12px"><button class="btn" onclick="imprimirBoletim()">🖨️ Imprimir / PDF</button>
       <button class="btn amarelo" onclick="copiarBoletim()">📋 Copiar texto</button>
       <button class="btn" onclick="enviarBoletimEmail()">✉️ Enviar por e-mail</button>
       <button class="btn ghost" onclick="publicarBoletimPortal()">📲 Publicar no portal</button></div></div>`;
@@ -2098,7 +2138,7 @@ function imprimirDoc(html){
   f.onload=()=>setTimeout(go,450);
   setTimeout(go,1200); // garantia caso o onload não dispare
 }
-function imprimirBoletim(){ if(!_boletimHTML)return toast('Gere o boletim primeiro'); imprimirDoc(_boletimHTML); }
+function imprimirBoletim(){ if(!_boletimHTML)return toast('Gere o boletim primeiro'); if(!_boletimAprovadoOuAvisa()) return; imprimirDoc(_boletimHTML); }
 
 
 /* ===== Edição de documentos (WYSIWYG) — boletim / ficha / relatórios ===== */
@@ -2139,6 +2179,7 @@ function salvarBoletim(){
 }
 async function enviarBoletimEmail(){
   if(!_boletimHTML) return toast('Gere o boletim primeiro');
+  if(!_boletimAprovadoOuAvisa()) return;
   if(typeof ehProfessor==='function' && ehProfessor()) return toast('Sem permissão para enviar');
   const a=(S.alunos||[]).find(x=>x.id===boletimAluno)||{};
   const email=((a.email||'').trim());
@@ -2174,6 +2215,7 @@ async function publicarNoPortal(aluno_id, tipo, titulo, html, texto){
 }
 function publicarBoletimPortal(){
   if(!_boletimHTML) return toast('Gere o boletim primeiro');
+  if(!_boletimAprovadoOuAvisa()) return;
   const a=(S.alunos||[]).find(x=>x.id===boletimAluno)||{};
   publicarNoPortal(boletimAluno, 'boletim', 'Boletim '+(new Date().getFullYear())+' — '+(a.nome||''), _boletimHTML, _boletimTxt);
 }
