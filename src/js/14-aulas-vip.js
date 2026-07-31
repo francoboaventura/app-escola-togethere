@@ -332,16 +332,20 @@ function renderVipLista(){
   const box=document.getElementById('vipBox'); if(!box)return;
   const vid=vipSel, al=S.vipAlunos.find(a=>a.id===vid);
   if(!vid||!al){ box.innerHTML=''; return; }
-  const aulas=S.aulasVip.filter(x=>x.vipId===vid && !x.ajusteManual).sort((a,b)=>b.data.localeCompare(a.data));
+  const todas=S.aulasVip.filter(x=>x.vipId===vid && !x.ajusteManual).sort((a,b)=>b.data.localeCompare(a.data));
+  const aulas=todas.filter(a=>a.tema!=='Importação');            // aulas reais lançadas no app
+  const consol=todas.filter(a=>a.tema==='Importação');           // consolidação (não conta como aula com presença)
+  const consolMin=consol.reduce((s,a)=>s+(+a.duracaoMin||0),0);
   const comp=aulas.filter(a=>!a.faltou); const compMin=comp.reduce((s,a)=>s+(+a.duracaoMin||0),0);
   const faltas=aulas.length-comp.length;
   let h=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0;flex:1">Aulas de ${al.nome}</h3>
     <button class="btn ghost sm" onclick="abrirFicha('${vid}')">📇 Ficha</button>
-    <button class="btn amarelo sm" ${aulas.length?'':'disabled style="opacity:.5;cursor:not-allowed"'} onclick="copiarRelatorioVip()">📋 Copiar relatório</button>
+    <button class="btn amarelo sm" ${todas.length?'':'disabled style="opacity:.5;cursor:not-allowed"'} onclick="copiarRelatorioVip()">📋 Copiar relatório</button>
     <button class="btn ghost sm" style="color:var(--vermelho)" onclick="delVipAluno('${vid}')">excluir aluno</button></div>`;
-  if(!aulas.length){ box.innerHTML=h+'<p class="hint" style="margin:8px 0 0">Nenhuma aula lançada ainda.</p>'; return; }
-  h+=`<p class="hint" style="margin:8px 0 10px"><b>${comp.length}</b> aula(s) com presença (${fmtDur(compMin)})${faltas?` · <b>${faltas}</b> falta(s)`:''}</p>`;
+  if(!todas.length){ box.innerHTML=h+'<p class="hint" style="margin:8px 0 0">Nenhuma aula lançada ainda.</p>'; return; }
+  h+=`<p class="hint" style="margin:8px 0 10px"><b>${comp.length}</b> aula(s) com presença (${fmtDur(compMin)})${faltas?` · <b>${faltas}</b> falta(s)`:''}${consolMin>0?` · <b>${fmtDur(consolMin)}</b> de aulas anteriores (consolidação)`:''}</p>`;
   h+=aulas.map(a=>`<div class="check"><span style="flex:1">${brDate(a.data)} · ${a.tema?`<b>${esc(a.tema)}</b> — `:''}<span style="white-space:pre-wrap">${esc(a.descricao)}</span> <span class="pill">${fmtDur(a.duracaoMin)}</span>${a.faltou?(' <span class="pill" style="background:#ffe9e9;color:var(--vermelho)">não compareceu</span>'+(a.cobrarFalta?' <span class="pill" style="background:#fff3cf;color:#8a6d00">hora debitada</span>':' <span class="pill" style="background:#eef1f6;color:#66788c">sem débito</span>')):''}</span><button class="btn ghost sm" onclick="editarAulaVip('${a.id}')">✏️ editar</button><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delAulaVip('${a.id}')">excluir</button></div>`).join('');
+  if(consol.length) h+=consol.map(a=>`<div class="check" style="background:#f4f7fb"><span style="flex:1">🕓 <b>Aulas anteriores (consolidação)</b> — horas da planilha, não conta como presença <span class="pill">${fmtDur(a.duracaoMin)}</span></span></div>`).join('');
   box.innerHTML=h;
 }
 function corpoRelatorioVip(vid){

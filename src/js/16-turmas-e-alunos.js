@@ -423,7 +423,10 @@ function salvarAulaVipFicha(vid){
 }
 function renderFichaVip(v, vip){
   const inRange=d=>(!_fichaDe||d>=_fichaDe)&&(!_fichaAte||d<=_fichaAte);
-  const aulas=(S.aulasVip||[]).filter(x=>x.vipId===vip.id && !x.ajusteManual && inRange(x.data)).sort((a,b)=>b.data.localeCompare(a.data));
+  const aulasTodas=(S.aulasVip||[]).filter(x=>x.vipId===vip.id && !x.ajusteManual && inRange(x.data)).sort((a,b)=>b.data.localeCompare(a.data));
+  const aulas=aulasTodas.filter(a=>a.tema!=='Importação');        // aulas de verdade lançadas no app
+  const consol=aulasTodas.filter(a=>a.tema==='Importação');       // consolidação da importação (não conta como aula com presença)
+  const consolMin=consol.reduce((s,a)=>s+(+a.duracaoMin||0),0);
   const comp=aulas.filter(a=>!a.faltou); const faltas=aulas.length-comp.length; const compMin=comp.reduce((s,a)=>s+(+a.duracaoMin||0),0);
   const wrs=(S.writings||[]).filter(w=>w.alunoId===vip.id && inRange(w.data)).sort((x,y)=>x.data.localeCompare(y.data));
   const coms=comentariosDoAluno(vip.id).filter(c=>inRange(c.data));
@@ -445,6 +448,7 @@ function renderFichaVip(v, vip){
     ${tile(fmtDur(compMin),'Tempo total','#005EAF')}
     ${tile(wrs.length,'Writings',wrs.length>0?'#9333c7':'var(--tinta)')}
   </div>
+  ${consolMin>0?`<p class="hint" style="margin:8px 0 0">🕓 Fora as aulas com presença acima, há <b>${fmtDur(consolMin)}</b> de <b>aulas anteriores</b> (consolidação da importação). Elas somam no pacote de horas, mas <b>não contam</b> como aulas com presença aqui.</p>`:''}
   ${_cardPacoteVip(vip.id)}
   <div class="card" style="margin-top:12px"><h3 style="margin:0 0 8px">Contato${VIP_PORTAL_ATIVO?' & portal':''}</h3>`;
   if(podeEd){
@@ -470,10 +474,9 @@ function renderFichaVip(v, vip){
     <button class="btn ghost sm" onclick="setFichaPeriodo('tudo')">Tudo</button>
   </div>`;
   h+=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:18px 0 6px"><h3 style="margin:0;flex:1">👑 Aulas VIP (${aulas.length})</h3>${!soLeitura()?`<button class="btn ghost sm" onclick="lancarAulaVip('${vip.id}')">+ Lançar aula</button>`:''}</div>`;
-  h+=aulas.length?aulas.map(a=>{ const ehImp=a.tema==='Importação';
-    if(ehImp) return `<div class="card" style="padding:10px 12px;background:#f4f7fb;border:1px dashed var(--linha)"><div style="display:flex;gap:8px;flex-wrap:wrap"><b style="flex:1">🕓 Aulas anteriores (consolidação)</b><span style="color:#005EAF;font-weight:600">${fmtDur(a.duracaoMin)}</span></div><p class="hint" style="margin:4px 0 0">Horas já realizadas antes do registro no app, trazidas da planilha só para o controle do saldo. ${a.data?('Referência: '+brDate(a.data)+'.'):''}</p></div>`;
-    return `<div class="card" style="padding:10px 12px"><div style="display:flex;gap:8px;flex-wrap:wrap"><b style="flex:1">${brDate(a.data)}</b><span style="color:${a.faltou?'var(--vermelho)':'#1a8a4a'};font-weight:600">${a.faltou?'❌ não compareceu':'✅ '+fmtDur(a.duracaoMin)}</span></div><p class="hint" style="margin:4px 0 0">${a.tema?('<b>'+escAttr(a.tema)+'</b> — '):''}${escAttr(a.descricao||'')}</p>${a.temaCasa?`<p class="hint" style="margin:4px 0 0">📚 <b>Tema de casa:</b> ${escAttr(a.temaCasa)}</p>`:''}</div>`;
-  }).join(''):'<p class="hint">Nenhuma aula no período.</p>';
+  h+=aulas.length?aulas.map(a=>`<div class="card" style="padding:10px 12px"><div style="display:flex;gap:8px;flex-wrap:wrap"><b style="flex:1">${brDate(a.data)}</b><span style="color:${a.faltou?'var(--vermelho)':'#1a8a4a'};font-weight:600">${a.faltou?'❌ não compareceu':'✅ '+fmtDur(a.duracaoMin)}</span></div><p class="hint" style="margin:4px 0 0">${a.tema?('<b>'+escAttr(a.tema)+'</b> — '):''}${escAttr(a.descricao||'')}</p>${a.temaCasa?`<p class="hint" style="margin:4px 0 0">📚 <b>Tema de casa:</b> ${escAttr(a.temaCasa)}</p>`:''}</div>`).join(''):'<p class="hint">Nenhuma aula lançada no app ainda.</p>';
+  // Bloco separado: consolidação de horas anteriores (não conta como aula com presença)
+  if(consol.length) h+=`<div style="margin:12px 0 0">${consol.map(a=>`<div class="card" style="padding:10px 12px;background:#f4f7fb;border:1px dashed var(--linha)"><div style="display:flex;gap:8px;flex-wrap:wrap"><b style="flex:1">🕓 Aulas anteriores (consolidação)</b><span style="color:#005EAF;font-weight:600">${fmtDur(a.duracaoMin)}</span></div><p class="hint" style="margin:4px 0 0">Horas já realizadas antes do registro no app, trazidas da planilha só para o controle do saldo${a.data?(' · ref. '+brDate(a.data)):''}. Não conta como aula com presença.</p></div>`).join('')}</div>`;
   h+=`<h3 style="margin:18px 0 6px">📝 Writings (${wrs.length})</h3>`;
   h+=wrs.length?'<div class="card" style="padding:10px 12px">'+wrs.map(w=>{
     const bt=(w.subscales||Object.keys(w.bands||{})).map(k=>`${WR_LBL(k)} <b>${w.bands[k]!=null?w.bands[k]:'—'}</b>`).join(' · ');
