@@ -432,3 +432,12 @@ button:disabled,.btn:disabled,button[disabled],.btn[disabled]{
   .tnav-dd{position:static;display:flex;box-shadow:none;border:none;border-radius:0;padding:0 0 6px 26px;min-width:0}
   .pagehead{padding:16px 16px 0}
 }
+
+/* Fotos (b106) — avatares com foto (bucket privado "fotos" + link temporário) */
+.fotoav{position:relative;background-size:cover;background-position:center}
+.fotoav .fotoav-ini{display:flex;align-items:center;justify-content:center;width:100%;height:100%}
+.fotoav.com-foto .fotoav-ini{display:none}
+.fotoav-add{position:absolute;right:-3px;bottom:-3px;width:23px;height:23px;border-radius:50%;border:2px solid #fff;background:var(--azul);color:#fff;font-size:.66rem;display:grid;place-items:center;cursor:pointer;padding:0;line-height:1;box-shadow:0 1px 5px rgba(0,20,55,.3)}
+.fotoav-add:hover{background:#0a6dc4;transform:scale(1.08)}
+.fx-av.fotoav{overflow:visible}
+.fx-av.com-foto{overflow:hidden}
