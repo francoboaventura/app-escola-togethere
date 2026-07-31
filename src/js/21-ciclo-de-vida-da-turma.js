@@ -170,3 +170,70 @@ function criarProximaTurma(){
   if(rota==='gturmas') VIEWS.gturmas(); else ir('gturmas');
   toast('Turma criada (EM FORMAÇÃO). Adicione os alunos pelo "+ Aluno".');
 }
+/* =====================================================================
+   GESTÃO RÁPIDA DE TURMAS (b112) — só direção
+   Trocar professor e nível de cada turma rapidinho; "Promover ↑" avança o
+   CEFR e atualiza o material (coleção do planejamento), zerando o progresso.
+   ===================================================================== */
+const _GT_CEFR=['A1','A1+','A2','A2+','B1','B1+','B2','B2+','C1','C1+','C2'];
+const _GT_CATS=['kids','junior','teens','adults','talking'];
+VIEWS.gestaoturmas=()=>{
+  const v=document.getElementById('view');
+  if(S.perfil!=='direcao'){ v.innerHTML='<div class="card empty"><div class="big">🔒</div>Só a direção acessa a gestão rápida de turmas.</div>'; return; }
+  const profs=[...new Set((S.usuarios||[]).filter(u=>u.ensina).map(u=>u.ensina).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const ts=S.turmas.filter(t=>!t.arquivada).sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
+  let h=`<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Gestão rápida de turmas</h2></div>
+    <p class="sub">Troque o <b>professor</b> e o <b>nível</b> de cada turma — salva na hora. No fim do ano, use <b>Promover ↑</b> para avançar a turma pro próximo CEFR (o <b>material</b> é trocado junto e o progresso do planejamento zera).</p>`;
+  if(!ts.length){ h+='<div class="card empty"><div class="big">🏫</div>Nenhuma turma ativa.</div>'; v.innerHTML=h; return; }
+  h+=ts.map(t=>{
+    const profOpts=`<option value="">— sem professor —</option>`+profs.map(p=>`<option value="${escAttr(p)}" ${t.professor===p?'selected':''}>${escAttr(p)}</option>`).join('');
+    const catOpts=_GT_CATS.map(c=>`<option value="${c}" ${((t.nivel||'')===c)?'selected':''}>${c}</option>`).join('');
+    const cefrOpts=`<option value="">—</option>`+_GT_CEFR.map(c=>`<option value="${c}" ${((t.cefr||'').toUpperCase()===c)?'selected':''}>${c}</option>`).join('');
+    const mat=(typeof planColecaoDe==='function' && planColecaoDe(t))||'—';
+    const noTopo=(_GT_CEFR.indexOf((t.cefr||'').toUpperCase())>=_GT_CEFR.length-1);
+    return `<div class="card gq">
+      <div class="gq-h"><b class="gq-nome">${escAttr(t.nome)}</b>${t.nivel?(' '+nivelTag(t.nivel)):''}${t.cefr?(' <span class="pill">'+escAttr(t.cefr)+'</span>'):''}</div>
+      <div class="gq-grid">
+        <label class="gq-f"><span>👤 Professor</span><select onchange="trocarProfTurma('${t.id}',this.value)">${profOpts}</select></label>
+        <label class="gq-f"><span>Categoria</span><select onchange="trocarCampoTurma('${t.id}','nivel',this.value)">${catOpts}</select></label>
+        <label class="gq-f"><span>Nível CEFR</span><select onchange="trocarCampoTurma('${t.id}','cefr',this.value)">${cefrOpts}</select></label>
+      </div>
+      <div class="gq-foot">
+        <span class="hint">📚 Material: <b>${escAttr(mat)}</b></span>
+        <button class="btn sm ${noTopo?'ghost':''}" ${noTopo?'disabled':''} onclick="promoverTurma('${t.id}')">⬆️ Promover nível</button>
+      </div>
+    </div>`;
+  }).join('');
+  v.innerHTML=h;
+};
+function trocarProfTurma(id,val){
+  const t=S.turmas.find(x=>x.id===id); if(!t) return;
+  t.professor=val||''; t.atualizadoEm=Date.now(); save();
+  toast('Professor de '+t.nome+(val?(' → '+val):' removido')+' ✅');
+}
+function trocarCampoTurma(id,campo,val){
+  const t=S.turmas.find(x=>x.id===id); if(!t) return;
+  t[campo]=val||''; t.atualizadoEm=Date.now(); save();
+  toast(t.nome+' atualizada');
+  if(campo==='nivel'||campo==='cefr'){ const el=document.querySelector('.gq [onclick*="promoverTurma(\''+id+'\')"]'); /* re-render leve p/ atualizar material */ VIEWS.gestaoturmas(); }
+}
+function promoverTurma(id){
+  const t=S.turmas.find(x=>x.id===id); if(!t) return;
+  const i=_GT_CEFR.indexOf((t.cefr||'').toUpperCase());
+  if(i<0){ toast('Defina o nível CEFR atual da turma primeiro'); return; }
+  if(i>=_GT_CEFR.length-1){ toast(t.nome+' já está no nível máximo'); return; }
+  const prox=_GT_CEFR[i+1];
+  if(!confirm('Promover "'+t.nome+'" de '+t.cefr+' para '+prox+'?\n\nO material será atualizado para o novo nível e o progresso do planejamento será zerado (a turma recomeça no material novo). O histórico de presença/notas continua intacto.')) return;
+  t.cefr=prox; t.atualizadoEm=Date.now();
+  try{
+    if(typeof _planUpsert==='function'){
+      const rec=_planUpsert(id);
+      const nova=(typeof planColecaoSugerida==='function')?planColecaoSugerida(t):'';
+      rec.colecao=nova||''; rec.dadas={}; delete rec.inicio; delete rec.pos; rec.atualizadoEm=Date.now();
+      if(typeof _planCommit==='function') _planCommit(rec);
+    }
+  }catch(e){}
+  save();
+  toast(t.nome+' promovida para '+prox+' ✅');
+  VIEWS.gestaoturmas();
+}

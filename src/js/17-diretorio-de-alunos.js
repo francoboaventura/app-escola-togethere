@@ -34,6 +34,7 @@ VIEWS.turmas=()=>{
   const ehProf=ehProfessor()||soLeitura();
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Turmas e alunos</h2></div>
     <p class="sub">${soLeitura()?'Todas as turmas da escola — <b>somente leitura</b>. Você pode consultar tudo e gerar relatórios, mas não editar.':ehProfessor()?'Suas turmas. Toque numa turma para abrir o painel (chamada, plano, material, temas, testes).':'Todas as turmas da escola. Toque numa turma para abrir o painel; ou cadastre uma nova.'}</p>
+    ${ehProf?'':`<div style="margin-bottom:12px"><button class="btn" onclick="ir('gestaoturmas')">🔁 Gestão rápida — trocar professor / promover nível</button></div>`}
     ${ehProf?'':`<div class="card"><h3>Nova turma</h3><div class="row">
       <div style="flex:2"><label class="lbl">Nome da turma</label><input type="text" id="nT" placeholder="Ex: A2 ADULTS NOITE"></div>
       <div><label class="lbl">Categoria</label><select id="nN"><option value="kids">kids</option><option value="junior">junior</option><option value="teens" selected>teens</option><option value="adults">adults</option><option value="talking">talking</option></select></div>

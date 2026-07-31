@@ -481,3 +481,13 @@ button:disabled,.btn:disabled,button[disabled],.btn[disabled]{
 
 /* Avatar pequeno em listas (b109) — chamada e diretório */
 .av-sm{width:34px;height:34px;border-radius:50%;background:#e6edf6;color:var(--azul);display:flex;align-items:center;justify-content:center;font-family:'Poppins';font-weight:700;font-size:.82rem;flex:none;overflow:hidden}
+
+/* Gestão rápida de turmas (b112) */
+.gq{padding:16px 18px}
+.gq-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.gq-nome{font-family:'Poppins';font-weight:600;font-size:1rem}
+.gq-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.gq-f{display:flex;flex-direction:column;gap:5px}
+.gq-f span{font-family:'Poppins';font-weight:500;font-size:.8rem;color:var(--tinta-suave)}
+.gq-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;flex-wrap:wrap}
+@media(max-width:860px){ .gq-grid{grid-template-columns:1fr} }
