@@ -149,6 +149,7 @@ function renderPres(){
         : segAula(a,1);
       return `<div style="padding:10px 0;border-bottom:1px dashed var(--linha)">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          ${avatarFoto('av-sm', a.foto, ((a.nome||'·').trim()[0]||'·').toUpperCase(), '')}
           <b style="flex:1;min-width:130px">${a.nome}</b>
           ${controles}
         </div>
