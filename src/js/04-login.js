@@ -90,9 +90,11 @@ function aplicarLogin(u){
   document.getElementById('app').style.display='block';
   const meta=PERFIS[u.perfil];
   document.getElementById('meName').textContent=u.nome;
-  document.getElementById('meDot').style.background=meta.cor;
-  document.getElementById('meDot').textContent=u.nome[0];
-  document.getElementById('perfilLabel').innerHTML='Conectado como <b style="color:#fff">'+u.nome+'</b> · '+meta.nome;
+  const _md=document.getElementById('meDot');
+  _md.classList.add('fotoav'); _md.style.background=meta.cor;
+  _md.innerHTML='<span class="fotoav-ini">'+escAttr((u.nome[0]||'·'))+'</span>';
+  if(u.foto) _md.dataset.foto=u.foto; else { delete _md.dataset.foto; delete _md.dataset.hid; _md.style.backgroundImage=''; }
+  document.getElementById('perfilLabel').innerHTML='Conectado como <b>'+escAttr(u.nome)+'</b> · '+meta.nome;
   montarNav(); ir(NAV.find(n=>n.roles.includes(u.perfil)).id);
   setTimeout(function(){ mostrarAniversariantes(); }, 600);
 }
@@ -154,6 +156,7 @@ function ir(id){
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.id===id));
   _fecharMenus();
   VIEWS[id]();
+  if(typeof _hidratarFotos==='function') setTimeout(_hidratarFotos,50);
   if(id==='alertas') _refreshAvisosNuvem();   // ao abrir Avisos, já puxa o que houver de novo
   else if(id==='relturma'||id==='arquivo'||id==='painel') _pullSilencioso(true);   // listas: pode redesenhar
   else if(id==='resumo'||id==='ficha'||id==='vip') _pullSilencioso(false);         // têm campos de digitação: só atualiza os dados

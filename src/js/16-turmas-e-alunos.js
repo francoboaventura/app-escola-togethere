@@ -350,7 +350,7 @@ VIEWS.ficha=()=>{
   const tile=(v2,l,c)=>`<div class="fx-tile"><div class="v" style="color:${c}">${v2==null?'—':v2}</div><div class="l">${l}</div></div>`;
   let h=`<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Ficha do aluno</h2></div>
   <div class="fx-hero">
-    <div class="fx-av">${escAttr((a.nome||'·').trim()[0]||'·').toUpperCase()}</div>
+    ${avatarFoto('fx-av', a.foto, ((a.nome||'·').trim()[0]||'·').toUpperCase(), "enviarFoto('aluno','"+a.id+"')")}
     <div style="flex:1;min-width:150px"><div class="fx-hnm">${escAttr(a.nome)}</div>
       <div class="fx-htu">${tatual?escAttr(tatual.nome):'sem turma atual'}${tatual&&tatual.professor?(' · Prof. '+escAttr(tatual.professor)):''}${idade!=null?(' · '+idade+' anos'):''}${multi?(' · histórico em '+turmas.length+' turmas'):''}</div></div>
     ${tatual?statusPill(tatual):''}
@@ -476,3 +476,81 @@ function _fxComentarios(coms){
   if(!coms.length) return '<div class="card fx-vazio">Nenhum comentário ainda.</div>';
   return '<div class="card">'+coms.slice().sort((a,b)=>b.data.localeCompare(a.data)).map(c=>`<div class="fx-li"><div>${escAttr(c.texto||'')}</div><div style="color:#5b6b7c;font-size:.85rem;margin-top:2px">${brDate(c.data)}${c.autor?(' · '+escAttr(c.autor)):''}</div></div>`).join('')+'</div>';
 }
+
+/* =====================================================================
+   FOTOS (b106) — alunos e equipe. Bucket privado "fotos" no Supabase.
+   Guarda só o caminho no registro (a.foto / u.foto); exibe via link
+   temporário (signed URL). Redimensiona no navegador mantendo qualidade
+   (máx 1600px, JPEG 0.9) para servir também aos cartões.
+   ===================================================================== */
+const _fotoCache = {};   // path -> { url, exp }
+function avatarFoto(cls, foto, inicial, addOnclick){
+  return `<div class="${cls} fotoav" data-foto="${escAttr(foto||'')}">`
+    + `<span class="fotoav-ini">${escAttr(inicial)}</span>`
+    + (addOnclick?`<button class="fotoav-add" onclick="${addOnclick}" title="Adicionar/trocar foto" aria-label="Adicionar foto">📷</button>`:'')
+    + `</div>`;
+}
+async function _hidratarFotos(){
+  if(typeof sb==='undefined' || !sb.storage) return;
+  const els = Array.from(document.querySelectorAll('.fotoav[data-foto]')).filter(e=>e.dataset.foto && !e.dataset.hid);
+  if(!els.length) return;
+  const paths = [...new Set(els.map(e=>e.dataset.foto))];
+  const faltam = paths.filter(p=>!_fotoCache[p] || _fotoCache[p].exp < Date.now());
+  if(faltam.length){
+    try{
+      const { data } = await sb.storage.from('fotos').createSignedUrls(faltam, 7200);
+      (data||[]).forEach((d,i)=>{ const p=faltam[i]; if(d && d.signedUrl) _fotoCache[p]={url:d.signedUrl, exp:Date.now()+7000*1000}; });
+    }catch(e){}
+  }
+  els.forEach(e=>{
+    const c=_fotoCache[e.dataset.foto];
+    if(c && c.url){ e.style.backgroundImage=`url("${c.url}")`; e.classList.add('com-foto'); e.dataset.hid='1'; }
+  });
+}
+function enviarFoto(tipo, id){
+  modal(`<h3>📷 Foto <button class="close" onclick="fechar()">×</button></h3>
+    <p class="hint" style="margin-bottom:12px">Boa qualidade — dá pra usar depois nos cartões. Máx 8&nbsp;MB.</p>
+    <div class="row" style="gap:10px">
+      <button class="btn block" onclick="_fotoPick('${tipo}','${escAttr(id)}',true)">📷 Tirar foto</button>
+      <button class="btn ghost block" onclick="_fotoPick('${tipo}','${escAttr(id)}',false)">🖼️ Escolher arquivo</button>
+    </div>
+    <input type="file" id="_fotoInput" accept="image/*" style="display:none">`);
+}
+function _fotoPick(tipo,id,camera){
+  const inp=document.getElementById('_fotoInput'); if(!inp) return;
+  if(camera) inp.setAttribute('capture','user'); else inp.removeAttribute('capture');
+  inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(f) _fotoProcessar(f,tipo,id); };
+  inp.click();
+}
+function _fotoResize(file, max, q){
+  return new Promise((res,rej)=>{
+    const img=new Image(); const url=URL.createObjectURL(file);
+    img.onload=()=>{
+      let w=img.naturalWidth, h=img.naturalHeight;
+      if(Math.max(w,h)>max){ const s=max/Math.max(w,h); w=Math.round(w*s); h=Math.round(h*s); }
+      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      URL.revokeObjectURL(url);
+      c.toBlob(b=>b?res(b):rej(new Error('toBlob')), 'image/jpeg', q);
+    };
+    img.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error('img')); };
+    img.src=url;
+  });
+}
+async function _fotoProcessar(file,tipo,id){
+  try{
+    toast('Preparando a foto…');
+    const blob = await _fotoResize(file, 1600, 0.9);
+    const path = (tipo==='aluno'?'alunos/':'equipe/') + _slugFoto(id) + '-' + Date.now() + '.jpg';
+    const { error } = await sb.storage.from('fotos').upload(path, blob, { contentType:'image/jpeg', upsert:true });
+    if(error){ toast('Não deu para enviar: '+(error.message||'')); return; }
+    if(tipo==='aluno'){ const a=S.alunos.find(x=>x.id===id); if(a){ a.foto=path; a.atualizadoEm=Date.now(); } }
+    else { const u=(S.usuarios||[]).find(x=>x.nome===id); if(u){ u.foto=path; } }
+    save();
+    delete _fotoCache[path];
+    fechar(); toast('Foto salva ✅');
+    if(typeof rota!=='undefined' && VIEWS[rota]) VIEWS[rota]();
+    setTimeout(_hidratarFotos, 120);
+  }catch(e){ toast('Erro ao processar a foto'); }
+}
+function _slugFoto(s){ return String(s).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-zA-Z0-9]+/g,'').slice(0,40) || 'x'; }
