@@ -30,7 +30,8 @@ const NAV=[
   {id:'cards', label:'Cards de acesso', em:'🖨️', grp:'Gestão', roles:['secretaria','direcao']},
 ];
 function ehProfessor(){ return S.perfil==='professor'; }
-function soLeitura(){ return S.perfil==='secretaria'; }   // secretaria: acesso somente leitura às turmas
+function soLeitura(){ return S.perfil==='secretaria'; }   // secretaria: leitura nas telas de SALA (chamada, testes, temas, planos)
+function podeCadastro(){ return S.perfil==='secretaria' || S.perfil==='direcao'; }   // cadastro de turmas e alunos: secretaria + direção
 const PERFIS={
   professor:{nome:'Professor(a)',cor:'var(--azul)',bg:'#eaf3ff'},
   secretaria:{nome:'Secretaria',cor:'var(--vermelho)',bg:'#fdeaea'},

@@ -33,7 +33,7 @@ VIEWS.turmas=()=>{
   const v=document.getElementById('view');
   const ehProf=ehProfessor()||soLeitura();
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Turmas e alunos</h2></div>
-    <p class="sub">${soLeitura()?'Todas as turmas da escola — <b>somente leitura</b>. Você pode consultar tudo e gerar relatórios, mas não editar.':ehProfessor()?'Suas turmas. Toque numa turma para abrir o painel (chamada, plano, material, temas, testes).':'Todas as turmas da escola. Toque numa turma para abrir o painel; ou cadastre uma nova.'}</p>
+    <p class="sub">${soLeitura()?'Todas as turmas da escola. Você <b>gerencia o cadastro</b> (criar/editar turmas e alunos, e-mails, arquivar); as ações de sala (chamada, planos, testes, temas) ficam com os professores.':ehProfessor()?'Suas turmas. Toque numa turma para abrir o painel (chamada, plano, material, temas, testes).':'Todas as turmas da escola. Toque numa turma para abrir o painel; ou cadastre uma nova.'}</p>
     ${ehProf?'':`<div style="margin-bottom:12px"><button class="btn" onclick="ir('gestaoturmas')">🔁 Gestão rápida — trocar professor / promover nível</button></div>`}
     ${ehProf?'':`<div class="card"><h3>Nova turma</h3><div class="row">
       <div style="flex:2"><label class="lbl">Nome da turma</label><input type="text" id="nT" placeholder="Ex: A2 ADULTS NOITE"></div>
@@ -54,7 +54,7 @@ VIEWS.turmas=()=>{
 };
 let _buscaAluno='';
 function filtrarAlunos(v){ _buscaAluno=v; renderTurmaList(); }
-function addTurma(){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');
+function addTurma(){if(!podeCadastro())return toast('Sem permissão para criar turmas');
   if(ehProfessor())return toast('Sem permissão');
   const nome=document.getElementById('nT').value.trim();
   if(!nome)return toast('Dê um nome à turma');
@@ -129,7 +129,7 @@ function renderTurmaList(){
         res.map(r=>`<div class="check"><span style="flex:1">${r.a.nome} <span class="pill">${r.t.nome}</span></span>
           <button class="btn ghost sm" onclick="abrirTurma('${r.t.id}')">🏫 Turma</button>
           <button class="btn ghost sm" onclick="abrirFicha('${r.a.id}')">📇 Ficha</button>
-          ${(ehProfessor()||soLeitura())?'':`<button class="btn ghost sm" style="color:var(--vermelho)" onclick="delAluno('${r.a.id}')">remover</button>`}</div>`).join('')+`</div>`
+          ${podeCadastro()?`<button class="btn ghost sm" style="color:var(--vermelho)" onclick="delAluno('${r.a.id}')">remover</button>`:''}</div>`).join('')+`</div>`
       : `<div class="card empty"><div class="big">🔎</div>Nenhum aluno encontrado para “${_buscaAluno}”${_filtroTurmaAtivo()?' com esses filtros':''}.</div>`);
     return;
   }
@@ -173,7 +173,7 @@ function renderPainelTurma(){
   const temasPend=S.temas.filter(x=>x.turmaId===id && Object.values(x.entregas).some(v=>v===false||v==='parcial')).length;
   const btn=(cor,acao,emoji,titulo,sub)=>`<button class="btn block" style="background:${cor};justify-content:flex-start;text-align:left;margin-bottom:10px;height:auto;padding:14px 16px" onclick="paAcao('${acao}')">${emoji} ${titulo}<span style="display:block;font-weight:400;font-size:.78rem;opacity:.85;margin-top:2px">${sub}</span></button>`;
   const v=document.getElementById('view');
-  const podeCadastrar=(S.perfil==='direcao');
+  const podeCadastrar=podeCadastro();
   v.innerHTML=`<button class="btn ghost sm" onclick="voltarTurmas()">‹ Voltar para turmas</button>
     <div class="section-title" style="margin-top:10px"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">${t.nome}</h2></div>
     <p class="sub">${nivelTag(t.nivel)}${t.cefr?` <span class="tag teens">${t.cefr}</span>`:''} · ${als.length} aluno(s)${t.professor?' · Prof. '+t.professor:''}${diasTurmaLabel(t)?' · '+diasTurmaLabel(t):''}${t.horario?' · '+t.horario:''} · ${freq}</p>
@@ -187,7 +187,7 @@ function renderPainelTurma(){
       </div>
       <p class="hint" style="margin:2px 0 0">Última chamada: ${ultTxt}${prox?` · Próximo plano: <b>${prox.titulo}</b> (${brDate(prox.data)})`:''}</p>
     </div>
-    <div class="card"><h3>O que você quer fazer?</h3>${soLeitura()?'<p class="hint" style="margin:-2px 0 8px;color:var(--azul)">👁️ Acesso de leitura: você pode <b>consultar</b> a chamada, os planos e os testes, e <b>gerar relatórios</b> — mas alterações não são salvas.</p>':''}
+    <div class="card"><h3>O que você quer fazer?</h3>${soLeitura()?'<p class="hint" style="margin:-2px 0 8px;color:var(--azul)">👁️ As ações de <b>sala de aula</b> abaixo (chamada, planos, testes, temas) são <b>somente leitura</b> para a secretaria — mas o <b>cadastro de alunos e da turma</b> (mais abaixo) você edita normalmente.</p>':''}
       ${btn('var(--azul)','presenca','📋','Chamada do dia','presença, atraso, saída antecipada, material e tema de casa — tudo aqui')}
       ${btn('var(--azul)','planos','🗒️','Planos de aula','ver o plano pendente e marcar como feito; criar novos')}
       ${btn('var(--roxo)','testes','✏️','Testes','lançar as notas da turma')}
@@ -205,16 +205,16 @@ function renderPainelTurma(){
   window.scrollTo(0,0);
 }
 function _refreshTurmas(){ if(painelTurma) renderPainelTurma(); else renderTurmaList(); }
-function setAlunoEmail(id,val){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');const a=S.alunos.find(x=>x.id===id);if(!a)return;a.email=(val||'').trim();save();}
-function setAlunoNascimento(id,val){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas'); if(ehProfessor())return; const a=S.alunos.find(x=>x.id===id); if(!a)return; a.nascimento=(val||'').trim(); save(); _refreshTurmas(); }
+function setAlunoEmail(id,val){if(ehProfessor())return;const a=S.alunos.find(x=>x.id===id);if(!a)return;a.email=(val||'').trim();save();}
+function setAlunoNascimento(id,val){if(ehProfessor())return; const a=S.alunos.find(x=>x.id===id); if(!a)return; a.nascimento=(val||'').trim(); save(); _refreshTurmas(); }
 function setFaltasRetro(id,val){
   if(S.perfil!=='direcao')return toast('Só a direção edita as faltas retroativas');
   const a=S.alunos.find(x=>x.id===id); if(!a)return;
   a.faltasRetro=Math.max(0,Math.round(+val||0)); save(); _refreshTurmas();
 }
 function faltasRetroLinha(a){ return ''; }   /* barra manual removida — faltas retroativas vêm do Sponte */
-function toggleArquivarAluno(id){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas'); if(ehProfessor())return toast('Sem permissão'); const a=S.alunos.find(x=>x.id===id); if(!a)return; a.arquivado=!a.arquivado; save(); _refreshTurmas(); montarNav(); toast(a.arquivado?'Aluno arquivado':'Aluno reativado'); }
-function toggleArquivarTurma(id){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas'); if(ehProfessor())return toast('Sem permissão'); const t=S.turmas.find(x=>x.id===id); if(!t)return; t.arquivada=!t.arquivada; if(t.arquivada && painelTurma===id) painelTurma=null; save(); VIEWS.turmas(); montarNav(); toast(t.arquivada?'Turma arquivada':'Turma reativada'); }
+function toggleArquivarAluno(id){if(ehProfessor())return toast('Sem permissão'); const a=S.alunos.find(x=>x.id===id); if(!a)return; a.arquivado=!a.arquivado; save(); _refreshTurmas(); montarNav(); toast(a.arquivado?'Aluno arquivado':'Aluno reativado'); }
+function toggleArquivarTurma(id){if(ehProfessor())return toast('Sem permissão'); const t=S.turmas.find(x=>x.id===id); if(!t)return; t.arquivada=!t.arquivada; if(t.arquivada && painelTurma===id) painelTurma=null; save(); VIEWS.turmas(); montarNav(); toast(t.arquivada?'Turma arquivada':'Turma reativada'); }
 // ---- Editar dados de uma turma já existente (só direção) ----
 function abrirEditarTurma(id){
   if(ehProfessor()) return toast('Sem permissão para editar a turma');
@@ -255,14 +255,13 @@ function salvarEdicaoTurma(id){
   save(); fechar(); renderPainelTurma(); montarNav(); toast('Turma atualizada');
 }
 function toggleVerArquivadas(){ _verArquivadas=!_verArquivadas; if(painelTurma) renderPainelTurma(); else VIEWS.turmas(); }
-function addAluno(turmaId){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');
-  if(ehProfessor())return toast('Sem permissão');
+function addAluno(turmaId){if(ehProfessor())return toast('Sem permissão');
   const inp=document.getElementById('al_'+turmaId);
   const nome=inp.value.trim();if(!nome)return toast('Digite o nome');
   S.alunos.push({id:uid(),nome,turmaId});save();_refreshTurmas();montarNav();toast('Aluno adicionado');
 }
-function delAluno(id){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');if(ehProfessor())return toast('Sem permissão');if(confirm('Remover este aluno?')){S.alunos=S.alunos.filter(a=>a.id!==id);marcarExcluido('alunos',id);save();_refreshTurmas();montarNav();}}
-function delTurma(id){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');if(ehProfessor())return toast('Sem permissão');if(confirm('Excluir turma e seus alunos?')){S.alunos.filter(a=>a.turmaId===id).forEach(a=>marcarExcluido('alunos',a.id));marcarExcluido('turmas',id);S.turmas=S.turmas.filter(t=>t.id!==id);S.alunos=S.alunos.filter(a=>a.turmaId!==id);painelTurma=null;save();VIEWS.turmas();montarNav();toast('Turma excluída');}}
+function delAluno(id){if(ehProfessor())return toast('Sem permissão');if(confirm('Remover este aluno?')){S.alunos=S.alunos.filter(a=>a.id!==id);marcarExcluido('alunos',id);save();_refreshTurmas();montarNav();}}
+function delTurma(id){if(ehProfessor())return toast('Sem permissão');if(confirm('Excluir turma e seus alunos?')){S.alunos.filter(a=>a.turmaId===id).forEach(a=>marcarExcluido('alunos',a.id));marcarExcluido('turmas',id);S.turmas=S.turmas.filter(t=>t.id!==id);S.alunos=S.alunos.filter(a=>a.turmaId!==id);painelTurma=null;save();VIEWS.turmas();montarNav();toast('Turma excluída');}}
 function resetarSeguro(){
   modal(`<h3>⚠️ Restaurar dados originais <button class="close" onclick="fechar()">×</button></h3>
     <p class="hint" style="margin-bottom:12px">Isto <b>apaga todos os dados atuais</b> (chamadas, temas, planos, testes, comentários…) e volta à base inicial de turmas. Um <b>backup será baixado automaticamente</b> antes de apagar.</p>
