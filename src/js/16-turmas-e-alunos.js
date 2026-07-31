@@ -505,7 +505,14 @@ async function _hidratarFotos(){
   }
   els.forEach(e=>{
     const c=_fotoCache[e.dataset.foto];
-    if(c && c.url){ e.style.backgroundImage=`url("${c.url}")`; e.classList.add('com-foto'); e.dataset.hid='1'; }
+    if(c && c.url){
+      // define tamanho/posição inline também: o atalho "background:cor" usado no avatar
+      // zera o background-size da classe, então garantimos "cover" aqui.
+      e.style.backgroundImage=`url("${c.url}")`;
+      e.style.backgroundSize='cover';
+      e.style.backgroundPosition='center';
+      e.classList.add('com-foto'); e.dataset.hid='1';
+    }
   });
 }
 function enviarFoto(tipo, id){
