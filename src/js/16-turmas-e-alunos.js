@@ -490,21 +490,17 @@ function avatarFoto(cls, foto, inicial, addOnclick){
     + (addOnclick?`<button class="fotoav-add" onclick="${addOnclick}" title="Adicionar/trocar foto" aria-label="Adicionar foto">📷</button>`:'')
     + `</div>`;
 }
-function _absFotoUrl(raw){
-  if(!raw) return '';
-  if(/^https?:/i.test(raw)) return raw;                 // já é absoluto
-  return SUPA_URL + (raw[0]==='/'?'':'/') + raw;        // relativo -> aponta pro Supabase (não pro GitHub Pages)
-}
 async function _hidratarFotos(){
   if(typeof sb==='undefined' || !sb.storage) return;
   const els = Array.from(document.querySelectorAll('.fotoav[data-foto]')).filter(e=>e.dataset.foto && !e.dataset.hid);
   if(!els.length) return;
-  const paths = [...new Set(els.map(e=>e.dataset.foto))].filter(p=>!_fotoCache[p] || _fotoCache[p].exp < Date.now());
+  const paths = [...new Set(els.map(e=>e.dataset.foto))].filter(p=>!(_fotoCache[p]&&_fotoCache[p].url));
   for(const p of paths){
     try{
-      const { data } = await sb.storage.from('fotos').createSignedUrl(p, 7200);
-      const raw = data && (data.signedUrl || data.signedURL);
-      if(raw) _fotoCache[p] = { url:_absFotoUrl(raw), exp:Date.now()+7000*1000 };
+      // download direto: baixa os bytes pela sessão logada (RLS) e monta a imagem localmente.
+      // Evita qualquer problema de link assinado/relativo entre navegadores.
+      const { data, error } = await sb.storage.from('fotos').download(p);
+      if(!error && data) _fotoCache[p] = { url: URL.createObjectURL(data) };
     }catch(e){}
   }
   els.forEach(e=>{
