@@ -332,3 +332,40 @@ tr:last-child td{border-bottom:none}
 .wr-err{border:1px solid var(--linha);border-radius:10px;padding:9px 11px;margin-bottom:7px;font-size:.9rem}
 .wr-err s{color:var(--vermelho)}.wr-err b{color:var(--ok)}
 .wr-tag{font-size:.64rem;font-weight:700;text-transform:uppercase;background:#eef2f7;color:#5b6b7c;padding:2px 7px;border-radius:999px;margin-right:4px}
+
+/* =====================================================================
+   Melhorias noturnas (aditivas — não alteram comportamento nem layout)
+   Foco: acessibilidade de teclado (WCAG 2.4.7), estado desabilitado,
+   alvos de toque no mobile e pequenos polimentos. Tudo reversível.
+   ===================================================================== */
+
+/* Foco visível só na navegação por TECLADO (mouse não vê o anel).
+   :where() mantém especificidade 0 para não brigar com estilos existentes. */
+:where(button,a[href],input,select,textarea,[tabindex]):focus-visible{
+  outline:3px solid var(--azul);outline-offset:2px;border-radius:6px;
+}
+/* Na sidebar escura, um anel claro contrasta melhor que o azul */
+.nav button:focus-visible,.side .foot button:focus-visible{outline:3px solid var(--amarelo);outline-offset:-2px}
+.fx-tab:focus-visible,.seg button:focus-visible{outline:3px solid var(--azul);outline-offset:2px}
+/* mantém o realce suave dos inputs e ainda garante o anel de teclado */
+input:focus-visible,textarea:focus-visible,select:focus-visible{box-shadow:0 0 0 3px rgba(0,94,175,.12)}
+
+/* Botões desabilitados agora parecem desabilitados (antes não havia estilo) */
+button:disabled,.btn:disabled,button[disabled],.btn[disabled]{
+  opacity:.5;cursor:not-allowed;transform:none!important;box-shadow:none!important;filter:grayscale(.15);
+}
+
+/* Alvos de toque confortáveis no celular (recomendação WCAG ~44px) */
+@media(max-width:860px){
+  .btn:not(.sm){min-height:44px}
+  .nav button{min-height:44px}
+  .perfil-btn{min-height:54px}
+  .fx-tab{min-height:40px}
+}
+
+/* Pequenos polimentos: seleção de texto na cor da marca e rolagem discreta */
+::selection{background:rgba(0,94,175,.18)}
+*{scrollbar-width:thin;scrollbar-color:#c3cee0 transparent}
+*::-webkit-scrollbar{width:10px;height:10px}
+*::-webkit-scrollbar-thumb{background:#c3cee0;border-radius:20px;border:2px solid var(--bg)}
+*::-webkit-scrollbar-thumb:hover{background:#a9bad6}

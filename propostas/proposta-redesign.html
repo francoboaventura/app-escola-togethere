@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Proposta de redesign · Togethere</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Urbanist:wght@400;500;600;700;800&family=Zilla+Slab:ital,wght@1,600&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --azul:#005EAF;--marinho:#002B64;--vermelho:#E52524;--amarelo:#FFC800;
+    --rosa:#FF005F;--roxo:#DF6DFF;--laranja:#FF2A00;
+    --bg:#F4F6FB;--card:#FFF;--tinta:#15233B;--suave:#5A6B86;--linha:#E4E9F2;--ok:#16A07A;
+    --r:16px;--sombra:0 8px 30px rgba(0,43,100,.08);--sombra-sm:0 2px 10px rgba(0,43,100,.06);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Urbanist',system-ui,sans-serif;background:var(--bg);color:var(--tinta);-webkit-font-smoothing:antialiased}
+  h1,h2,h3,h4{font-family:'Poppins',sans-serif;font-weight:600;line-height:1.2}
+
+  /* faixa de apresentação */
+  .intro{background:linear-gradient(135deg,#0a6dc4,var(--marinho));color:#fff;padding:26px 28px}
+  .intro .wrap{max-width:1180px;margin:0 auto}
+  .intro .tag{display:inline-block;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);color:#fff;font-family:'Poppins';font-weight:600;font-size:.72rem;padding:4px 12px;border-radius:20px;letter-spacing:.03em;text-transform:uppercase}
+  .intro h1{font-size:1.7rem;margin:12px 0 6px}
+  .intro p{opacity:.9;max-width:760px;line-height:1.55;font-size:.98rem}
+  .intro .aviso{margin-top:14px;font-size:.85rem;background:rgba(255,200,0,.16);border:1px solid rgba(255,200,0,.4);color:#fff;padding:9px 14px;border-radius:12px;display:inline-block}
+
+  .stage{max-width:1180px;margin:26px auto;padding:0 20px}
+  .stage>h2{font-size:1.25rem;margin:34px 0 4px;display:flex;align-items:center;gap:10px}
+  .stage>h2 .fj{width:16px;height:16px;border-radius:62% 38% 55% 45% / 55% 48% 52% 45%;background:var(--amarelo)}
+  .stage>.leg{color:var(--suave);margin-bottom:16px;font-size:.94rem}
+
+  /* moldura do "app" */
+  .frame{background:var(--card);border-radius:20px;box-shadow:var(--sombra);overflow:hidden;display:flex;border:1px solid var(--linha)}
+  .side{width:210px;background:linear-gradient(180deg,var(--marinho),#001a3f);color:#fff;flex:none;padding:16px 12px;display:flex;flex-direction:column}
+  .side .logo{background:#fff;border-radius:10px;padding:6px 10px;display:inline-flex;align-items:center;gap:6px;margin:4px 6px 16px}
+  .side .logo .mk{width:22px;height:22px;background:var(--azul);position:relative;border-radius:3px}
+  .side .logo .mk::after{content:"";position:absolute;width:9px;height:9px;background:var(--amarelo);border-radius:60% 40% 55% 45%;right:-3px;bottom:-3px}
+  .side .logo b{font-family:'Poppins';font-weight:700;color:var(--marinho);font-size:.95rem}
+  .side .grp{font-size:.62rem;text-transform:uppercase;letter-spacing:.12em;color:#7f94b8;margin:14px 10px 6px;font-family:'Poppins';font-weight:600}
+  .side .nav{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:10px;color:#c5d3ea;font-family:'Poppins';font-weight:500;font-size:.86rem;margin-bottom:2px}
+  .side .nav.on{background:var(--azul);color:#fff;box-shadow:0 4px 12px rgba(0,94,175,.3)}
+  .side .nav .bd{margin-left:auto;background:var(--vermelho);font-size:.66rem;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:grid;place-items:center;padding:0 4px}
+
+  .body{flex:1;min-width:0;background:var(--bg)}
+  .top{background:#fff;border-bottom:1px solid var(--linha);padding:14px 22px;display:flex;align-items:center;gap:14px}
+  .top .crumb{font-size:.76rem;color:var(--suave);font-family:'Poppins'}
+  .top h3{font-size:1.05rem}
+  .top .me{margin-left:auto;display:flex;align-items:center;gap:9px;font-size:.82rem;color:var(--suave)}
+  .top .me .av{width:30px;height:30px;border-radius:8px;background:var(--azul);color:#fff;display:grid;place-items:center;font-family:'Poppins';font-weight:600;font-size:.82rem}
+  .view{padding:22px}
+
+  .hello{font-family:'Poppins';font-weight:700;font-size:1.4rem}
+  .hello .em{font-style:normal}
+  .helloSub{color:var(--suave);font-size:.9rem;margin-top:2px}
+
+  /* trilho de próximas aulas (forward-looking) */
+  .rail{display:flex;gap:12px;overflow-x:auto;padding:16px 2px 6px}
+  .rcard{flex:0 0 190px;background:#fff;border:1px solid var(--linha);border-radius:14px;padding:13px 14px;box-shadow:var(--sombra-sm);position:relative}
+  .rcard.now{border:1.5px solid var(--azul);box-shadow:0 6px 18px rgba(0,94,175,.14)}
+  .rcard .when{font-family:'Poppins';font-weight:600;font-size:.74rem;color:var(--azul);text-transform:uppercase;letter-spacing:.03em}
+  .rcard .now-b{position:absolute;top:12px;right:12px;background:var(--azul);color:#fff;font-size:.6rem;font-weight:700;padding:2px 7px;border-radius:20px;font-family:'Poppins'}
+  .rcard .turma{font-family:'Poppins';font-weight:600;font-size:1rem;margin:7px 0 2px}
+  .rcard .meta{font-size:.8rem;color:var(--suave)}
+  .rcard .lvl{display:inline-block;margin-top:9px;font-size:.68rem;font-weight:700;font-family:'Poppins';padding:2px 9px;border-radius:20px}
+  .lvl.teens{background:#eaf3ff;color:var(--azul)}.lvl.kids{background:#fff0f6;color:var(--rosa)}.lvl.adults{background:#f4ecff;color:#9333c7}
+
+  /* KPIs */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:8px}
+  .kpi{background:#fff;border:1px solid var(--linha);border-radius:14px;padding:15px;box-shadow:var(--sombra-sm)}
+  .kpi .ic{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;font-size:1.15rem;margin-bottom:10px}
+  .kpi .n{font-family:'Poppins';font-weight:700;font-size:1.7rem;line-height:1}
+  .kpi .l{font-size:.78rem;color:var(--suave);margin-top:3px}
+  .kpi .tr{font-size:.72rem;font-weight:700;font-family:'Poppins';margin-top:6px;display:inline-flex;align-items:center;gap:3px}
+  .tr.up{color:var(--ok)}.tr.down{color:var(--vermelho)}
+
+  .cols{display:grid;grid-template-columns:1.4fr 1fr;gap:16px;margin-top:16px}
+  .panel{background:#fff;border:1px solid var(--linha);border-radius:16px;box-shadow:var(--sombra-sm);padding:18px}
+  .panel h4{font-size:1rem;margin-bottom:2px}
+  .panel .hint{font-size:.82rem;color:var(--suave);margin-bottom:14px}
+
+  .alert{display:flex;gap:12px;align-items:flex-start;border-left:4px solid var(--vermelho);background:#fff;border:1px solid var(--linha);border-left-width:4px;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+  .alert.mat{border-left-color:var(--laranja)}
+  .alert .ai{width:34px;height:34px;border-radius:9px;display:grid;place-items:center;flex:none;font-size:1rem}
+  .alert .ai.f{background:#fdeaea;color:var(--vermelho)}.alert .ai.m{background:#ffeee5;color:var(--laranja)}
+  .alert .in{flex:1}.alert .in b{font-family:'Poppins';font-size:.92rem}.alert .in p{font-size:.8rem;color:var(--suave);margin-top:2px}
+  .alert .cta{background:var(--azul);color:#fff;border:none;border-radius:9px;padding:7px 12px;font-family:'Poppins';font-weight:600;font-size:.76rem;white-space:nowrap;align-self:center}
+
+  .trow{display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid var(--linha)}
+  .trow:last-child{border-bottom:none}
+  .trow .tn{font-family:'Poppins';font-weight:600;font-size:.9rem;width:74px;flex:none}
+  .bar{flex:1;height:9px;background:#eef2f7;border-radius:20px;overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:20px}
+  .trow .pc{font-family:'Poppins';font-weight:700;font-size:.84rem;width:42px;text-align:right}
+
+  /* Chamada redesenhada */
+  .call{background:#fff;border:1px solid var(--linha);border-radius:16px;box-shadow:var(--sombra-sm);overflow:hidden}
+  .call .ch-top{display:flex;align-items:center;gap:14px;padding:16px 18px;border-bottom:1px solid var(--linha);flex-wrap:wrap}
+  .call .ch-top h4{font-size:1.05rem}
+  .call .prog{margin-left:auto;font-size:.8rem;color:var(--suave)}
+  .call .prog b{color:var(--ok);font-family:'Poppins'}
+  .quick{background:var(--ok);color:#fff;border:none;border-radius:10px;padding:9px 14px;font-family:'Poppins';font-weight:600;font-size:.82rem}
+  .stud{display:flex;align-items:center;gap:14px;padding:12px 18px;border-bottom:1px solid var(--linha)}
+  .stud:last-child{border-bottom:none}
+  .stud .sv{width:38px;height:38px;border-radius:50%;background:#e6edf6;color:var(--azul);display:grid;place-items:center;font-family:'Poppins';font-weight:700;flex:none}
+  .stud .sn{flex:1;font-weight:600;font-size:.94rem}
+  .stud .chips{display:flex;gap:6px}
+  .schip{font-size:.68rem;font-weight:700;font-family:'Poppins';padding:3px 9px;border-radius:20px}
+  .schip.tema{background:#E6F6F0;color:var(--ok)}.schip.notema{background:#FDECEC;color:var(--vermelho)}
+  .schip.mat{background:#FBF3D6;color:#B8860B}
+  .seg{display:inline-flex;background:#eef2f8;border-radius:11px;padding:3px;flex:none}
+  .seg button{background:none;border:none;padding:8px 14px;border-radius:9px;font-family:'Poppins';font-weight:600;font-size:.8rem;color:var(--suave);cursor:pointer;min-height:40px}
+  .seg .p{background:var(--ok);color:#fff}
+  .seg .f{background:var(--vermelho);color:#fff}
+
+  /* anotações */
+  .why{background:#fff;border:1px dashed #c7d3e6;border-radius:16px;padding:18px 20px;margin-top:16px}
+  .why h4{font-size:1rem;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .why ul{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .why li{display:flex;gap:10px;font-size:.9rem;line-height:1.45}
+  .why .b{width:22px;height:22px;border-radius:7px;background:var(--azul);color:#fff;font-family:'Poppins';font-weight:700;font-size:.76rem;display:grid;place-items:center;flex:none}
+  .why li b{font-family:'Poppins';font-weight:600}
+
+  .foot{max-width:1180px;margin:8px auto 40px;padding:0 20px;color:var(--suave);font-size:.85rem;line-height:1.6}
+  @media(max-width:820px){
+    .kpis{grid-template-columns:1fr 1fr}.cols{grid-template-columns:1fr}.why ul{grid-template-columns:1fr}
+    .side{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="intro"><div class="wrap">
+  <span class="tag">Proposta · conceito para aprovação</span>
+  <h1>Redesign do Togethere — foco no dia a dia do professor</h1>
+  <p>Uma releitura das telas mais usadas, mantendo 100% a identidade NUSA (as cores, o feijão, as fontes) e tudo o que já funciona. A ideia é reduzir cliques na rotina, deixar o que é urgente saltar aos olhos e melhorar o uso no celular entre uma aula e outra.</p>
+  <div class="aviso">🔒 Isto é só uma maquete. Não altera o app que está no ar — serve para você aprovar a direção.</div>
+</div></div>
+
+<div class="stage">
+
+  <h2><span class="fj"></span> 1. Painel — a sua tela inicial, agora "olhando pra frente"</h2>
+  <div class="leg">Hoje o painel mostra o retrato do momento. A proposta acrescenta o que vem a seguir (próximas aulas), deixa os números com tendência e dá um caminho de 1 clique para cada alerta.</div>
+
+  <div class="frame">
+    <div class="side">
+      <div class="logo"><span class="mk"></span><b>togethere</b></div>
+      <div class="grp">Escola</div>
+      <div class="nav on">🏠 Painel</div>
+      <div class="nav">🗓️ Chamada</div>
+      <div class="nav">👥 Turmas</div>
+      <div class="nav">📊 Relatórios</div>
+      <div class="grp">Secretaria</div>
+      <div class="nav">🔔 Avisos <span class="bd">3</span></div>
+      <div class="nav">📇 Alunos</div>
+      <div class="grp">Interno</div>
+      <div class="nav">✅ Tarefas</div>
+      <div class="nav">📝 Atas</div>
+    </div>
+    <div class="body">
+      <div class="top">
+        <div><div class="crumb">Início</div><h3>Painel de Gestão</h3></div>
+        <div class="me">Franco <span class="av">F</span></div>
+      </div>
+      <div class="view">
+        <div class="hello">Bom dia, Franco <span class="em">👋</span></div>
+        <div class="helloSub">Sexta-feira, 31 de julho · você tem 3 aulas hoje e 3 alertas para a secretaria.</div>
+
+        <div class="rail">
+          <div class="rcard now">
+            <span class="now-b">AGORA</span>
+            <div class="when">09:00 – 10:00</div>
+            <div class="turma">Teens B1+</div>
+            <div class="meta">8 alunos · Sala 2</div>
+            <span class="lvl teens">TEENS</span>
+          </div>
+          <div class="rcard">
+            <div class="when">Hoje · 10:15</div>
+            <div class="turma">Kids A1</div>
+            <div class="meta">6 alunos · Sala 1</div>
+            <span class="lvl kids">KIDS</span>
+          </div>
+          <div class="rcard">
+            <div class="when">Hoje · 14:00</div>
+            <div class="turma">Adults B2</div>
+            <div class="meta">5 alunos · Online</div>
+            <span class="lvl adults">ADULTS</span>
+          </div>
+          <div class="rcard">
+            <div class="when">Amanhã · 09:00</div>
+            <div class="turma">Teens A2</div>
+            <div class="meta">9 alunos · Sala 2</div>
+            <span class="lvl teens">TEENS</span>
+          </div>
+        </div>
+
+        <div class="kpis">
+          <div class="kpi"><div class="ic" style="background:#eaf3ff;color:var(--azul)">📈</div><div class="n">92%</div><div class="l">Presença (30 dias)</div><div class="tr up">▲ 3% vs. mês anterior</div></div>
+          <div class="kpi"><div class="ic" style="background:#fdeaea;color:var(--vermelho)">🔔</div><div class="n">3</div><div class="l">Alertas ativos</div><div class="tr down">2 faltas · 1 material</div></div>
+          <div class="kpi"><div class="ic" style="background:#fff8e0;color:#b88600">📚</div><div class="n">12</div><div class="l">Temas pendentes</div><div class="tr">em 4 turmas</div></div>
+          <div class="kpi"><div class="ic" style="background:#ffeee5;color:var(--laranja)">🎒</div><div class="n">5</div><div class="l">Sem material hoje</div><div class="tr">Kids A1 · Teens B1+</div></div>
+        </div>
+
+        <div class="cols">
+          <div class="panel">
+            <h4>Alertas para a secretaria</h4>
+            <div class="hint">Alunos que cruzaram o limite de faltas ou material. Um toque já abre o contato do responsável.</div>
+            <div class="alert">
+              <div class="ai f">⚠️</div>
+              <div class="in"><b>Lucas Andrade — 3 faltas seguidas</b><p>Teens B1+ · última presença 24/07 · responsável: Marta (51 9•••• )</p></div>
+              <button class="cta">Contatar</button>
+            </div>
+            <div class="alert">
+              <div class="ai f">⚠️</div>
+              <div class="in"><b>Sofia Meireles — 3 faltas seguidas</b><p>Adults B2 · última presença 23/07 · responsável: —</p></div>
+              <button class="cta">Contatar</button>
+            </div>
+            <div class="alert mat">
+              <div class="ai m">🎒</div>
+              <div class="in"><b>Pedro Lima — 5 aulas sem material</b><p>Kids A1 · alternadas no mês · responsável: Ana</p></div>
+              <button class="cta">Contatar</button>
+            </div>
+          </div>
+          <div class="panel">
+            <h4>Presença por turma</h4>
+            <div class="hint">Verde acima de 90%, âmbar 75–90%, vermelho abaixo. Clique para abrir a turma.</div>
+            <div class="trow"><span class="tn">Teens B1+</span><div class="bar"><i style="width:94%;background:var(--ok)"></i></div><span class="pc" style="color:var(--ok)">94%</span></div>
+            <div class="trow"><span class="tn">Kids A1</span><div class="bar"><i style="width:88%;background:var(--amarelo)"></i></div><span class="pc" style="color:#b88600">88%</span></div>
+            <div class="trow"><span class="tn">Adults B2</span><div class="bar"><i style="width:72%;background:var(--vermelho)"></i></div><span class="pc" style="color:var(--vermelho)">72%</span></div>
+            <div class="trow"><span class="tn">Teens A2</span><div class="bar"><i style="width:96%;background:var(--ok)"></i></div><span class="pc" style="color:var(--ok)">96%</span></div>
+            <div class="trow"><span class="tn">Kids A2</span><div class="bar"><i style="width:91%;background:var(--ok)"></i></div><span class="pc" style="color:var(--ok)">91%</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2><span class="fj"></span> 2. Chamada — a tarefa de todo dia, mais rápida e no dedo</h2>
+  <div class="leg">O ponto mais repetido do app. Botões grandes de presença (bons no toque), um "marcar todos presentes" para começar pelo comum, barra de progresso e os avisos de tema/material já ali na linha do aluno.</div>
+
+  <div class="call">
+    <div class="ch-top">
+      <div><h4>Teens B1+ · 31/07</h4></div>
+      <button class="quick">✓ Marcar todos presentes</button>
+      <div class="prog">Progresso: <b>5</b>/8 chamados</div>
+    </div>
+    <div class="stud">
+      <div class="sv">LA</div><div class="sn">Lucas Andrade</div>
+      <div class="chips"><span class="schip notema">sem tema</span></div>
+      <div class="seg"><button class="p">Presente</button><button>Faltou</button><button>Atraso</button></div>
+    </div>
+    <div class="stud">
+      <div class="sv">MB</div><div class="sn">Marina Becker</div>
+      <div class="chips"><span class="schip tema">tema ✓</span></div>
+      <div class="seg"><button class="p">Presente</button><button>Faltou</button><button>Atraso</button></div>
+    </div>
+    <div class="stud">
+      <div class="sv">PL</div><div class="sn">Pedro Lima</div>
+      <div class="chips"><span class="schip tema">tema ✓</span><span class="schip mat">🎒 sem material</span></div>
+      <div class="seg"><button>Presente</button><button class="f">Faltou</button><button>Atraso</button></div>
+    </div>
+    <div class="stud">
+      <div class="sv">SM</div><div class="sn">Sofia Meireles</div>
+      <div class="chips"><span class="schip tema">tema ✓</span></div>
+      <div class="seg"><button class="p">Presente</button><button>Faltou</button><button>Atraso</button></div>
+    </div>
+  </div>
+
+  <div class="why">
+    <h4>🎯 Por que essas mudanças (o que o mercado faz de melhor)</h4>
+    <ul>
+      <li><span class="b">1</span><div><b>Olhar pra frente.</b> Painéis bons mostram as próximas horas/dias, não só o agora — reduz o "esqueci que tinha aula".</div></li>
+      <li><span class="b">2</span><div><b>Ação em 1 toque.</b> Cada alerta já leva ao contato do responsável, sem procurar o aluno em outra tela.</div></li>
+      <li><span class="b">3</span><div><b>Alvos grandes no toque.</b> Presença/falta com botões confortáveis para o dedo — chamada mais rápida no celular.</div></li>
+      <li><span class="b">4</span><div><b>Menos carga mental.</b> Tema e material aparecem na própria linha do aluno; nada de abrir sub-telas.</div></li>
+      <li><span class="b">5</span><div><b>Tendência, não só número.</b> "92% ▲ 3%" conta uma história melhor que só "92%".</div></li>
+      <li><span class="b">6</span><div><b>Acessibilidade (WCAG).</b> Foco visível no teclado e bom contraste — já apliquei a base disso no app real.</div></li>
+    </ul>
+  </div>
+
+</div>
+
+<div class="foot">
+  Maquete conceitual · Togethere · identidade NUSA preservada. Nada aqui está no ar. Aprovando a direção, eu implemento por partes, sempre numa branch para você validar antes de publicar.
+</div>
+
+</body>
+</html>
