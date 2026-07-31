@@ -209,6 +209,15 @@ const ABAS=[
 ];
 function renderPainel(data){
   DATA=data;
+  // Alunos VIP não têm portal por enquanto — controle de horas/pacote é só com a secretaria/direção no app da escola.
+  if(data && data.vip){
+    const nomeV=data.nome||'';
+    $('nm').textContent=nomeV||'Aluno'; $('tu').textContent='';
+    $('avatar').textContent=(nomeV.trim()[0]||'·').toUpperCase();
+    ['tilesBox','tabs','panes','perfilBox','pacoteBox'].forEach(id=>{ const e=$(id); if(e){ e.innerHTML=''; e.classList.add('hide'); } });
+    erro('Seu portal ainda não está disponível. Suas informações e o seu pacote de horas são acompanhados diretamente com a secretaria da escola.');
+    return;
+  }
   const nome=data.nome||''; $('nm').textContent=nome||'Aluno'; $('tu').textContent=data.turma||'';
   $('avatar').textContent=(nome.trim()[0]||'·').toUpperCase();
   const r=data.resumo||{};
