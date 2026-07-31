@@ -387,13 +387,11 @@ const WA = (function(){
   function reduzirParaJpeg(blob){ return new Promise((ok,erro)=>{ const url=URL.createObjectURL(blob); const img=new Image(); img.onload=()=>{ URL.revokeObjectURL(url); const escala=Math.min(1,MAX_LADO/Math.max(img.width,img.height)); const c=document.createElement('canvas'); c.width=Math.round(img.width*escala); c.height=Math.round(img.height*escala); const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height); ok(c.toDataURL('image/jpeg',QUALIDADE)); }; img.onerror=()=>{ URL.revokeObjectURL(url); erro(new Error('Formato de imagem não suportado pelo navegador.')); }; img.src=url; }); }
   // Uma requisição por imagem, com timeout — evita o "Load Failed" de payloads grandes (várias páginas juntas).
   async function _transcreverImagem(img, mode){
-    const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(), 60000);
-    try{
-      const r=await fetch(CFG.apiUrl.replace(/\/$/,'')+'/transcribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({images:[img],mode}),signal:ctrl.signal});
-      let d; try{ d=await r.json(); }catch(_){ throw new Error('resposta inválida do servidor (HTTP '+r.status+')'); }
-      if(!r.ok) throw new Error(d.error||'HTTP '+r.status);
-      return (d.text||'').trim();
-    } finally { clearTimeout(to); }
+    // Via proxy no Supabase (server-to-server): contorna o CORS do worker externo e já usa o novo formato ('image').
+    const { data, error } = await sb.functions.invoke('wa-proxy', { body:{ kind:'transcribe', image:img, mode } });
+    if(error){ let m=error.message||'falha no servidor'; try{ const c=await error.context.json(); if(c&&c.result&&c.result.error) m=c.result.error; }catch(_){ } throw new Error(m); }
+    if(!data || data.ok===false) throw new Error((data&&data.result&&data.result.error) || ('HTTP '+((data&&data.status)||'?')));
+    return ((data.text!=null?data.text:((data.result&&data.result.text)||''))+'').trim();
   }
   async function transcrever({botao,rotulo,imagens,mode,aoChegar}){
     const b=q(botao); const imgs=(imagens||[]).filter(Boolean);
@@ -511,8 +509,10 @@ const WA = (function(){
     const alunoNome= _pessoa ? (_pessoa.nome||'') : '';
     carregando('Avaliando contra a escala Cambridge…');
     try{
-      const r=await fetch(CFG.apiUrl.replace(/\/$/,'')+'/assess',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({student:alunoNome, level:q('wa-nivel').value, task_part:q('wa-tarefa').value, task_prompt:q('wa-enunciado').value, text})});
-      const d=await r.json(); if(!r.ok) throw new Error(d.error||'HTTP '+r.status);
+      const { data, error } = await sb.functions.invoke('wa-proxy', { body:{ kind:'assess', payload:{ student:alunoNome, level:q('wa-nivel').value, task_part:q('wa-tarefa').value, task_prompt:q('wa-enunciado').value, text } } });
+      if(error){ let m=error.message||'falha no servidor'; try{ const c=await error.context.json(); if(c&&c.result&&c.result.error) m=c.result.error; }catch(_){ } throw new Error(m); }
+      if(!data || data.ok===false) throw new Error((data&&data.result&&data.result.error) || ('HTTP '+((data&&data.status)||'?')));
+      const d=data.result;
       render(d);
       if(alunoId) salvarWriting(alunoId, turmaId, d, text, ((q('wa-enunciado')||{}).value)||'');
       else if(turmaId==='__avulso__') toast('Correção avulsa — não fica registrada em nenhum aluno.');
