@@ -255,7 +255,7 @@ const WA = (function(){
   const CORES = { content:'var(--azul)', communicative_achievement:'var(--roxo)', organisation:'var(--amarelo)', language:'var(--rosa)' };
   const NOMES = { content:"Content <span class='wa-pt'>· Conteúdo</span>", communicative_achievement:"Communicative Achievement <span class='wa-pt'>· Comunicação</span>", organisation:"Organisation <span class='wa-pt'>· Organização</span>", language:"Language <span class='wa-pt'>· Linguagem</span>" };
   const CHIP = { DISTINCTION:'wa-chip-dist', MERIT:'wa-chip-merit', PASS:'wa-chip-pass', UNSATISFACTORY:'wa-chip-unsat' };
-  const MAX_LADO=2000, QUALIDADE=0.85;
+  const MAX_LADO=1600, QUALIDADE=0.82;
   let paginas=[], imgTarefa=null;
   const q=id=>document.getElementById(id);
   const contar=t=>t.trim()?t.trim().split(/\s+/).length:0;
@@ -288,6 +288,13 @@ const WA = (function(){
 .wa-num{position:absolute;left:0;bottom:0;background:var(--azul);color:#fff;font-size:11px;font-weight:700;padding:1px 6px;border-radius:0 8px 0 0}
 .wa-x{position:absolute;top:2px;right:2px;width:18px;height:18px;border:0;border-radius:50%;background:rgba(26,35,48,.75);color:#fff;font-size:13px;line-height:1;cursor:pointer;padding:0}
 .wa-x:hover{background:var(--vermelho)}
+.wa-crop{position:absolute;top:2px;left:2px;width:18px;height:18px;border:0;border-radius:50%;background:rgba(0,94,175,.85);color:#fff;font-size:10px;line-height:18px;text-align:center;cursor:pointer;padding:0}
+.wa-crop:hover{background:var(--azul-escuro)}
+.wacrop-h{position:absolute;width:20px;height:20px;background:#fff;border:1.5px solid var(--azul);border-radius:50%;touch-action:none}
+.wacrop-h[data-c="nw"]{left:-11px;top:-11px;cursor:nwse-resize}
+.wacrop-h[data-c="ne"]{right:-11px;top:-11px;cursor:nesw-resize}
+.wacrop-h[data-c="sw"]{left:-11px;bottom:-11px;cursor:nesw-resize}
+.wacrop-h[data-c="se"]{right:-11px;bottom:-11px;cursor:nwse-resize}
 .wa-pagmsg{align-self:center;font-size:12px;color:var(--texto-fraco)}
 .wa-btn{margin-top:14px;width:100%;padding:14px;border:0;border-radius:999px;background:var(--azul);color:#fff;font-family:var(--wa-corpo);font-weight:700;font-size:15px;cursor:pointer;transition:.15s}
 .wa-btn:hover{background:var(--azul-escuro)}
@@ -372,12 +379,71 @@ const WA = (function(){
   function montarTarefas(){ const l=nivelAtual(); if(!l) return; q('wa-tarefa').innerHTML=l.tasks.map(t=>{ const faixa=t.max_words?`${t.min_words}–${t.max_words} palavras`:`mín. ${t.min_words} palavras`; return `<option value="${t.id}" data-min="${t.min_words}" data-free="${!!t.free}">${t.label} · ${faixa}</option>`; }).join(''); q('wa-tarefa').onchange=aoTrocarTarefa; aoTrocarTarefa(); }
   function aoTrocarTarefa(){ const opt=q('wa-tarefa').selectedOptions[0]; const l=nivelAtual(); const aviso=q('wa-aviso-nivel'); if(opt) q('wa-minimo').textContent=opt.dataset.min; if(opt && opt.dataset.free==='true'){ aviso.hidden=false; aviso.className='wa-hint warn'; aviso.textContent='Texto livre: o motor aplica a régua de '+l.label+' a um texto fora do formato do exame. Descreva bem no enunciado o gênero e para quem o aluno escreveu — é isso que sustenta a nota de Communicative Achievement.'; } else if(l && l.calibrated===false){ aviso.hidden=false; aviso.className='wa-hint warn'; aviso.textContent='Motor não calibrado neste nível — revisão do professor é obrigatória.'; } else { aviso.hidden=true; } }
   function ligarDrop(zona,input,multi){ zona.onclick=()=>input.click(); zona.ondragover=e=>{e.preventDefault();zona.classList.add('over');}; zona.ondragleave=()=>zona.classList.remove('over'); zona.ondrop=e=>{e.preventDefault();zona.classList.remove('over');receber([...e.dataTransfer.files],multi);}; input.onchange=()=>receber([...input.files],multi); }
-  async function receber(arquivos,multi){ if(!arquivos.length) return; const zona=multi?q('wa-drop'):q('wa-drop-tarefa'); const btn=multi?q('wa-btn-ocr'):q('wa-btn-ocr-tarefa'); const originais=zona.innerHTML; btn.disabled=true; zona.innerHTML=`<strong>Preparando ${arquivos.length} ${arquivos.length>1?'imagens':'imagem'}…</strong>`; try{ const prontas=[]; for(const f of arquivos) prontas.push({nome:f.name,url:await prepararImagem(f)}); if(multi){ paginas=paginas.concat(prontas); zona.innerHTML=originais; renderPaginas(); } else { imgTarefa=prontas[0].url; const kb=Math.round(imgTarefa.length*0.75/1024); zona.innerHTML=`<strong>${prontas[0].nome}</strong><br><small>pronta · ${kb} KB</small><img src="${imgTarefa}" alt="">`; } btn.disabled=false; }catch(e){ zona.innerHTML=`<strong>Não consegui ler a imagem</strong><br><small>${e.message}<br>Tente JPEG ou PNG.</small>`; } }
-  function renderPaginas(){ const alvo=q('wa-paginas'); if(!paginas.length){ alvo.innerHTML=''; q('wa-btn-ocr').disabled=true; return; } alvo.innerHTML=paginas.map((p,i)=>`<div class="wa-pag"><img src="${p.url}" alt=""><span class="wa-num">${i+1}</span><button type="button" class="wa-x" data-i="${i}" title="Remover">×</button></div>`).join('')+`<div class="wa-pagmsg">${paginas.length} página${paginas.length>1?'s':''}, nesta ordem</div>`; alvo.querySelectorAll('.wa-x').forEach(b=>b.onclick=()=>{ paginas.splice(+b.dataset.i,1); renderPaginas(); }); q('wa-btn-ocr').disabled=false; }
+  async function receber(arquivos,multi){ if(!arquivos.length) return; const zona=multi?q('wa-drop'):q('wa-drop-tarefa'); const btn=multi?q('wa-btn-ocr'):q('wa-btn-ocr-tarefa'); const originais=zona.innerHTML; btn.disabled=true; zona.innerHTML=`<strong>Preparando ${arquivos.length} ${arquivos.length>1?'imagens':'imagem'}…</strong>`; try{ const prontas=[]; for(const f of arquivos) prontas.push({nome:f.name,url:await prepararImagem(f)}); if(multi){ paginas=paginas.concat(prontas); zona.innerHTML=originais; renderPaginas(); } else { imgTarefa=prontas[0].url; _pintarTarefa(prontas[0].nome); } btn.disabled=false; }catch(e){ zona.innerHTML=`<strong>Não consegui ler a imagem</strong><br><small>${e.message}<br>Tente JPEG ou PNG.</small>`; } }
+  function renderPaginas(){ const alvo=q('wa-paginas'); if(!paginas.length){ alvo.innerHTML=''; q('wa-btn-ocr').disabled=true; return; } alvo.innerHTML=paginas.map((p,i)=>`<div class="wa-pag"><img src="${p.url}" alt=""><span class="wa-num">${i+1}</span><button type="button" class="wa-crop" data-i="${i}" title="Recortar">✂</button><button type="button" class="wa-x" data-i="${i}" title="Remover">×</button></div>`).join('')+`<div class="wa-pagmsg">${paginas.length} página${paginas.length>1?'s':''}, nesta ordem · ✂ recorta, × remove</div>`; alvo.querySelectorAll('.wa-x').forEach(b=>b.onclick=()=>{ paginas.splice(+b.dataset.i,1); renderPaginas(); }); alvo.querySelectorAll('.wa-crop').forEach(b=>b.onclick=()=>{ const i=+b.dataset.i; abrirRecorte(paginas[i].url, novo=>{ paginas[i].url=novo; renderPaginas(); }); }); q('wa-btn-ocr').disabled=false; }
+  function _pintarTarefa(nome){ const zona=q('wa-drop-tarefa'); if(!zona||!imgTarefa) return; const kb=Math.round(imgTarefa.length*0.75/1024); zona.innerHTML=`<strong>${esc(nome||'imagem')}</strong><br><small>pronta · ${kb} KB</small><img src="${imgTarefa}" alt=""><button type="button" class="wa-btn wa-btn-ghost wa-btn-mini" id="wa-crop-tarefa" style="margin-top:6px">✂️ Recortar</button>`; const cb=q('wa-crop-tarefa'); if(cb) cb.onclick=e=>{ e.stopPropagation(); abrirRecorte(imgTarefa, novo=>{ imgTarefa=novo; _pintarTarefa(nome); }); }; }
   async function prepararImagem(f){ let blob=f; if(/heic|heif/i.test(f.type)||/\.hei[cf]$/i.test(f.name)) blob=await heicParaJpeg(f); return reduzirParaJpeg(blob); }
   async function heicParaJpeg(f){ if(!window.heic2any){ await new Promise((ok,erro)=>{ const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/heic2any/0.0.4/heic2any.min.js'; s.onload=ok; s.onerror=()=>erro(new Error('Falha ao carregar o conversor de HEIC.')); document.head.appendChild(s); }); } return window.heic2any({blob:f,toType:'image/jpeg',quality:QUALIDADE}); }
   function reduzirParaJpeg(blob){ return new Promise((ok,erro)=>{ const url=URL.createObjectURL(blob); const img=new Image(); img.onload=()=>{ URL.revokeObjectURL(url); const escala=Math.min(1,MAX_LADO/Math.max(img.width,img.height)); const c=document.createElement('canvas'); c.width=Math.round(img.width*escala); c.height=Math.round(img.height*escala); const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height); ctx.drawImage(img,0,0,c.width,c.height); ok(c.toDataURL('image/jpeg',QUALIDADE)); }; img.onerror=()=>{ URL.revokeObjectURL(url); erro(new Error('Formato de imagem não suportado pelo navegador.')); }; img.src=url; }); }
-  async function transcrever({botao,rotulo,corpo,aoChegar}){ const b=q(botao); b.disabled=true; b.textContent='Transcrevendo…'; try{ const r=await fetch(CFG.apiUrl.replace(/\/$/,'')+'/transcribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(corpo())}); const d=await r.json(); if(!r.ok) throw new Error(d.error||'HTTP '+r.status); aoChegar(d.text); }catch(e){ toast('Falha na transcrição: '+e.message); } finally{ b.disabled=false; b.textContent=rotulo; } }
+  // Uma requisição por imagem, com timeout — evita o "Load Failed" de payloads grandes (várias páginas juntas).
+  async function _transcreverImagem(img, mode){
+    const ctrl=new AbortController(); const to=setTimeout(()=>ctrl.abort(), 60000);
+    try{
+      const r=await fetch(CFG.apiUrl.replace(/\/$/,'')+'/transcribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({images:[img],mode}),signal:ctrl.signal});
+      let d; try{ d=await r.json(); }catch(_){ throw new Error('resposta inválida do servidor (HTTP '+r.status+')'); }
+      if(!r.ok) throw new Error(d.error||'HTTP '+r.status);
+      return (d.text||'').trim();
+    } finally { clearTimeout(to); }
+  }
+  async function transcrever({botao,rotulo,imagens,mode,aoChegar}){
+    const b=q(botao); const imgs=(imagens||[]).filter(Boolean);
+    if(!imgs.length){ toast('Adicione uma foto primeiro.'); return; }
+    b.disabled=true;
+    try{
+      const partes=[];
+      for(let i=0;i<imgs.length;i++){
+        b.textContent = imgs.length>1 ? `Transcrevendo ${i+1}/${imgs.length}…` : 'Transcrevendo…';
+        partes.push(await _transcreverImagem(imgs[i], mode));
+      }
+      aoChegar(partes.filter(Boolean).join('\n\n').trim());
+    }catch(e){
+      const m=(e&&(e.message||''))+''; const nm=(e&&(e.name||''))+'';
+      const msg = /abort/i.test(nm)||/abort/i.test(m) ? 'a foto demorou demais (grande demais?). Recorte só onde está o texto e tente de novo.'
+                : /load failed|failed to fetch|networkerror|network request/i.test(m) ? 'sem conexão com o servidor de transcrição, ou foto grande demais. Confira a internet e tente recortar a foto.'
+                : m;
+      toast('Falha na transcrição: '+msg);
+    } finally { b.disabled=false; b.textContent=rotulo; }
+  }
+  // ---- Recorte de foto (ajustar à região do texto) ----
+  function abrirRecorte(dataUrl, aoAplicar){
+    injetarCSS();
+    modal(`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><h3 style="flex:1;margin:0">✂️ Recortar foto</h3><button class="close" onclick="fechar()">×</button></div>
+      <p class="hint" style="margin:0 0 8px">Arraste as bordas para deixar só onde está o texto. Isso melhora a leitura e evita falhas por foto grande.</p>
+      <div id="wacrop-wrap" style="position:relative;max-width:100%;user-select:none;touch-action:none;background:#111;border-radius:10px;overflow:hidden">
+        <img id="wacrop-img" src="${dataUrl}" style="display:block;width:100%;pointer-events:none">
+        <div id="wacrop-box" style="position:absolute;border:2px solid #fff;box-shadow:0 0 0 9999px rgba(0,0,0,.45);box-sizing:border-box;cursor:move;touch-action:none">
+          ${['nw','ne','sw','se'].map(c=>`<span class="wacrop-h" data-c="${c}"></span>`).join('')}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        <button class="wa-btn" id="wacrop-ok" style="flex:1">Aplicar recorte</button>
+        <button class="wa-btn wa-btn-ghost" onclick="fechar()" style="flex:1">Cancelar</button>
+      </div>`);
+    setTimeout(()=>_ligarRecorte(dataUrl, aoAplicar), 60);
+  }
+  function _ligarRecorte(dataUrl, aoAplicar){
+    const wrap=q('wacrop-wrap'), img=q('wacrop-img'), box=q('wacrop-box'); if(!wrap||!img||!box) return;
+    const MIN=30; let st=null;
+    const cur=()=>({x:box.offsetLeft,y:box.offsetTop,w:box.offsetWidth,h:box.offsetHeight});
+    function setBox(x,y,w,h){ const W=wrap.clientWidth, H=img.clientHeight; w=Math.max(MIN,Math.min(w,W)); h=Math.max(MIN,Math.min(h,H)); x=Math.max(0,Math.min(x,W-w)); y=Math.max(0,Math.min(y,H-h)); box.style.left=x+'px'; box.style.top=y+'px'; box.style.width=w+'px'; box.style.height=h+'px'; }
+    function init(){ const W=wrap.clientWidth, H=img.clientHeight; setBox(W*0.08, H*0.08, W*0.84, H*0.84); }
+    box.addEventListener('pointerdown',e=>{ const h=e.target.closest && e.target.closest('.wacrop-h'); const c=cur(); st={mode:h?('resize-'+h.dataset.c):'move', sx:e.clientX, sy:e.clientY, x:c.x, y:c.y, w:c.w, h:c.h}; try{box.setPointerCapture(e.pointerId);}catch(_){} e.preventDefault(); });
+    box.addEventListener('pointermove',e=>{ if(!st) return; const dx=e.clientX-st.sx, dy=e.clientY-st.sy; if(st.mode==='move'){ setBox(st.x+dx, st.y+dy, st.w, st.h); return; } let x=st.x,y=st.y,w=st.w,h=st.h; const c=st.mode.split('-')[1]; if(c.indexOf('e')>=0) w=st.w+dx; if(c.indexOf('s')>=0) h=st.h+dy; if(c.indexOf('w')>=0){ w=st.w-dx; x=st.x+dx; } if(c.indexOf('n')>=0){ h=st.h-dy; y=st.y+dy; } if(w<MIN){ w=MIN; if(c.indexOf('w')>=0) x=st.x+st.w-MIN; } if(h<MIN){ h=MIN; if(c.indexOf('n')>=0) y=st.y+st.h-MIN; } setBox(x,y,w,h); });
+    const fim=e=>{ if(st){ try{box.releasePointerCapture(e.pointerId);}catch(_){} } st=null; };
+    box.addEventListener('pointerup',fim); box.addEventListener('pointercancel',fim);
+    if(img.complete && img.clientHeight) init(); else img.onload=init;
+    q('wacrop-ok').onclick=()=>{ const scale=img.naturalWidth/img.clientWidth; const b=cur(); const sx=Math.round(b.x*scale), sy=Math.round(b.y*scale), sw=Math.max(1,Math.round(b.w*scale)), sh=Math.max(1,Math.round(b.h*scale)); const im=new Image(); im.onload=()=>{ const c=document.createElement('canvas'); c.width=sw; c.height=sh; const ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,sw,sh); ctx.drawImage(im,sx,sy,sw,sh,0,0,sw,sh); const out=c.toDataURL('image/jpeg',QUALIDADE); fechar(); aoAplicar(out); }; im.src=dataUrl; };
+  }
   function _turmasWA(){ try{ return (typeof turmasVisiveis==='function'?turmasVisiveis():(S.turmas||[])).filter(t=>!t.arquivada); }catch(e){ return (S.turmas||[]).filter(t=>!t.arquivada); } }
   function _vipWA(){ const gestor=(S.perfil==='direcao'||S.perfil==='secretaria'); const meu=(typeof _meuEnsina==='function')?_meuEnsina():''; return (S.vipAlunos||[]).filter(v=>!v.arquivado && (gestor || v.professor===meu)).sort((a,b)=>a.nome.localeCompare(b.nome)); }
   function montarTurmasAlunos(){ const tsel=q('wa-turma'); if(!tsel) return; const ts=_turmasWA(); let html=ts.map(t=>`<option value="${t.id}">${esc(t.nome)}</option>`).join(''); if(_vipWA().length) html+=`<option value="__vip__">👑 Alunos VIP</option>`; html+=`<option value="__avulso__">✏️ Correção avulsa (não salva)</option>`; tsel.innerHTML = html || '<option value="">(sem turmas)</option>'; montarAlunos(); }
@@ -476,8 +542,8 @@ const WA = (function(){
     q('wa-texto').addEventListener('input', ()=>{ q('wa-contador').textContent=contar(q('wa-texto').value); ajustarAltura(); });
     ligarDrop(q('wa-drop'), q('wa-file'), true);
     ligarDrop(q('wa-drop-tarefa'), q('wa-file-tarefa'), false);
-    q('wa-btn-ocr').onclick=()=>transcrever({ botao:'wa-btn-ocr', rotulo:'Transcrever a redação', corpo:()=>({images:paginas.map(p=>p.url), mode:'learner'}), aoChegar:texto=>{ q('wa-texto').value=texto; q('wa-contador').textContent=contar(texto); ajustarAltura(); q('wa-aviso-ocr').hidden=false; q('wa-texto').focus(); } });
-    q('wa-btn-ocr-tarefa').onclick=()=>transcrever({ botao:'wa-btn-ocr-tarefa', rotulo:'Transcrever o enunciado', corpo:()=>({images:[imgTarefa], mode:'task'}), aoChegar:texto=>{ q('wa-enunciado').value=texto; const a=q('wa-aviso-ocr-tarefa'); a.hidden=false; a.className='wa-hint warn'; q('wa-enunciado').focus(); } });
+    q('wa-btn-ocr').onclick=()=>transcrever({ botao:'wa-btn-ocr', rotulo:'Transcrever a redação', imagens:paginas.map(p=>p.url), mode:'learner', aoChegar:texto=>{ q('wa-texto').value=texto; q('wa-contador').textContent=contar(texto); ajustarAltura(); q('wa-aviso-ocr').hidden=false; q('wa-texto').focus(); } });
+    q('wa-btn-ocr-tarefa').onclick=()=>transcrever({ botao:'wa-btn-ocr-tarefa', rotulo:'Transcrever o enunciado', imagens:[imgTarefa], mode:'task', aoChegar:texto=>{ q('wa-enunciado').value=texto; const a=q('wa-aviso-ocr-tarefa'); a.hidden=false; a.className='wa-hint warn'; q('wa-enunciado').focus(); } });
     q('wa-form').onsubmit=avaliar;
     q('wa-demo').onclick=()=>{ carregando('Carregando exemplo…'); setTimeout(()=>render(SAMPLE),150); };
     ajustarAltura();

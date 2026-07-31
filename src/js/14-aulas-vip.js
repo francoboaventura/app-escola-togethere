@@ -135,18 +135,32 @@ function _vipTemAulaPerto(vid, data){
   const alvo=new Date(data+'T12:00:00').getTime();
   return (S.aulasVip||[]).some(x=>x.vipId===vid && !x.ajusteManual && Math.abs(new Date(x.data+'T12:00:00').getTime()-alvo)<=864e5);
 }
+// aulas pausadas (recesso individual do VIP) — não geram alerta
+function vipEmPausa(vip, data){ return !!vip && (vip.pausas||[]).some(p=>p.de && p.ate && data>=p.de && data<=p.ate); }
+function vipPausaAtual(vip){ const h=hoje(); return !!vip && (vip.pausas||[]).find(p=>p.de && p.ate && h>=p.de && h<=p.ate) || null; }
+// ocorrência prevista que foi remanejada para outro dia (não cobra no dia original)
+function _vipRemarcadaDe(vip, data){ return !!vip && (vip.remarcacoes||[]).some(r=>r.de===data); }
 function pendenciasAulaVip(vid){
-  const vip=(S.vipAlunos||[]).find(v=>v.id===vid); if(!vipTemHorario(vip)) return [];
-  const out=[]; const hojeY=hoje();
+  const vip=(S.vipAlunos||[]).find(v=>v.id===vid); if(!vip) return [];
+  const out=[]; const seen={}; const hojeY=hoje();
   const c=new Date(); c.setDate(c.getDate()-PEND_JANELA_DIAS); const corteY=ymd(c);
-  _datasPrevistasVip(vip, Math.ceil(PEND_JANELA_DIAS/7)+1, 0).forEach(data=>{
+  const checar=(data, hora)=>{
+    if(!data || seen[data]) return;
     if(data<corteY || data>hojeY) return;
     if(data<PEND_INICIO) return;
     if((typeof _emRecessoISO==='function' && _emRecessoISO(data)) || (typeof _emFeriasFixas==='function' && _emFeriasFixas(data))) return;
+    if(vipEmPausa(vip, data)) return;
     if(_vipTemAulaPerto(vid, data)) return;
-    const nivel=_nivelPend(_fimAulaVipTs(data, vip.horaPrev)); if(!nivel) return;
-    out.push({ vipId:vid, nome:vip.nome, data, tipo:'aulavip', nivel, fimTs:_fimAulaVipTs(data, vip.horaPrev) });
-  });
+    const nivel=_nivelPend(_fimAulaVipTs(data, hora)); if(!nivel) return;
+    seen[data]=1;
+    out.push({ vipId:vid, nome:vip.nome, data, tipo:'aulavip', nivel, fimTs:_fimAulaVipTs(data, hora) });
+  };
+  // ocorrências previstas pelos dias fixos (menos as que foram remanejadas p/ outro dia)
+  if(vipTemHorario(vip)){
+    _datasPrevistasVip(vip, Math.ceil(PEND_JANELA_DIAS/7)+1, 0).forEach(data=>{ if(!_vipRemarcadaDe(vip,data)) checar(data, vip.horaPrev); });
+  }
+  // ocorrências remanejadas / avulsas (dia e hora próprios)
+  (vip.remarcacoes||[]).forEach(r=>{ if(r.data) checar(r.data, r.hora||vip.horaPrev); });
   return out;
 }
 function _souProfVip(vip){

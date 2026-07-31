@@ -309,11 +309,15 @@ function setVipMaterial(id, val){
   const vp=(S.vipAlunos||[]).find(x=>x.id===id); if(!vp) return;
   vp.material=(val||'').trim(); vp.atualizadoEm=Date.now(); save(); toast('Material atualizado');
 }
-// Horários previstos das aulas VIP — dias da semana + horário. Base do alerta de aula não registrada.
+// Horários previstos das aulas VIP — dias da semana + horário + remanejamentos + pausa. Base do alerta.
 function _cardHorariosVip(vip){
   const dias=Array.isArray(vip.dias)?vip.dias:[];
   const lbl=(typeof vipHorarioLabel==='function')?vipHorarioLabel(vip):'';
-  return `<div class="card" style="margin-top:12px"><h3 style="margin:0 0 8px;font-size:1rem">🕒 Horários previstos das aulas</h3>
+  const podePausar=!ehProfessor();
+  const rem=(vip.remarcacoes||[]).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||''));
+  const pausas=(vip.pausas||[]).slice().sort((a,b)=>(a.de||'').localeCompare(b.de||''));
+  const pausaAtiva=(typeof vipPausaAtual==='function')?vipPausaAtual(vip):null;
+  let h=`<div class="card" style="margin-top:12px"><h3 style="margin:0 0 8px;font-size:1rem">🕒 Horários previstos das aulas</h3>
     <p class="hint" style="margin:0 0 8px">Marque os dias e o horário previstos. Passada a aula sem registro, o app avisa o professor e, após 24h, a direção — como nas turmas.</p>
     <div style="display:flex;flex-wrap:wrap;gap:6px">
       ${[0,1,2,3,4,5,6].map(d=>`<label style="display:flex;align-items:center;gap:5px;font-size:.88rem;border:1px solid var(--linha);border-radius:9px;padding:6px 10px;cursor:pointer"><input type="checkbox" class="vipDia" value="${d}" ${dias.indexOf(d)>=0?'checked':''} onchange="setVipHorario('${vip.id}')"> ${DIAS_SEMANA[d]}</label>`).join('')}
@@ -321,13 +325,77 @@ function _cardHorariosVip(vip){
     <div class="row" style="margin-top:10px;align-items:flex-end">
       <div class="field" style="margin:0;max-width:160px"><label class="lbl">Horário previsto</label><input type="time" id="vipHoraPrev" value="${escAttr(vip.horaPrev||'')}" onchange="setVipHorario('${vip.id}')"></div>
       <span class="hint" style="flex:1">${lbl?('Previsto: <b>'+esc(lbl)+'</b>'):'Nenhum horário definido ainda.'}</span>
-    </div></div>`;
+    </div>`;
+  if(pausaAtiva) h+=`<p class="hint" style="margin:10px 0 0;color:#c2560b">⏸️ <b>Aulas pausadas</b> de ${brDate(pausaAtiva.de)} a ${brDate(pausaAtiva.ate)}${pausaAtiva.motivo?(' · '+esc(pausaAtiva.motivo)):''} — sem alertas nesse período.</p>`;
+  // Remanejamentos (qualquer perfil que abre a ficha)
+  h+=`<div style="margin-top:14px;border-top:1px solid var(--linha);padding-top:10px">
+      <div style="display:flex;align-items:center;gap:8px"><b style="flex:1;font-size:.92rem">🔀 Remanejamentos</b><button class="btn ghost sm" onclick="abrirRemarcarVip('${vip.id}')">+ Remanejar aula</button></div>
+      ${rem.length?rem.map(r=>`<div class="check"><span style="flex:1">${r.de?(brDate(r.de)+' → '):''}<b>${brDate(r.data)}${r.hora?(' · '+esc(r.hora)):''}</b>${r.motivo?(' · '+esc(r.motivo)):''}</span><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delRemarcarVip('${vip.id}','${r.id}')">remover</button></div>`).join(''):'<p class="hint" style="margin:6px 0 0">Nenhum. Use quando o aluno pedir para trocar o dia/horário de uma aula (antes ou depois do previsto).</p>'}
+    </div>`;
+  // Pausa (só secretaria/direção edita; professor vê em leitura)
+  if(podePausar){
+    h+=`<div style="margin-top:12px;border-top:1px solid var(--linha);padding-top:10px">
+      <div style="display:flex;align-items:center;gap:8px"><b style="flex:1;font-size:.92rem">⏸️ Pausar aulas (recesso do aluno)</b><button class="btn ghost sm" onclick="abrirPausaVip('${vip.id}')">+ Pausa</button></div>
+      <p class="hint" style="margin:6px 0 0">No período de pausa não há alerta de aula não registrada.</p>
+      ${pausas.map(p=>`<div class="check"><span style="flex:1"><b>${brDate(p.de)} a ${brDate(p.ate)}</b>${p.motivo?(' · '+esc(p.motivo)):''}</span><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delPausaVip('${vip.id}','${p.id}')">remover</button></div>`).join('')}
+    </div>`;
+  } else if(pausas.length){
+    h+=`<div style="margin-top:12px;border-top:1px solid var(--linha);padding-top:10px"><b style="font-size:.92rem">⏸️ Pausas</b>${pausas.map(p=>`<p class="hint" style="margin:6px 0 0">${brDate(p.de)} a ${brDate(p.ate)}${p.motivo?(' · '+esc(p.motivo)):''}</p>`).join('')}<p class="hint" style="margin:6px 0 0">Só a secretaria/direção altera as pausas.</p></div>`;
+  }
+  return h+`</div>`;
 }
 function setVipHorario(id){
   const vp=(S.vipAlunos||[]).find(x=>x.id===id); if(!vp) return;
   const dias=[...document.querySelectorAll('.vipDia:checked')].map(c=>+c.value).sort((a,b)=>a-b);
   const hp=(document.getElementById('vipHoraPrev')||{}).value||'';
   vp.dias=dias; vp.horaPrev=hp; vp.atualizadoEm=Date.now(); save(); toast('Horários atualizados');
+}
+// --- Remanejar uma aula VIP para outro dia/horário (antes ou depois do previsto) ---
+function abrirRemarcarVip(id){
+  const vip=(S.vipAlunos||[]).find(x=>x.id===id); if(!vip) return;
+  let opts='<option value="">— (opcional) dia originalmente previsto —</option>';
+  if(typeof _datasPrevistasVip==='function'){ try{ const ds=_datasPrevistasVip(vip,2,1).filter(d=>!(typeof _vipRemarcadaDe==='function' && _vipRemarcadaDe(vip,d))); opts+=ds.map(d=>`<option value="${d}">${brDate(d)}</option>`).join(''); }catch(e){} }
+  modal(`<h3>🔀 Remanejar aula VIP <button class="close" onclick="fechar()">×</button></h3>
+    <p class="hint" style="margin:0 0 10px">Quando o aluno pede para trocar o dia/horário de uma aula. O app deixa de cobrar no dia original e passa a esperar no novo dia.</p>
+    <div class="field"><label class="lbl">Dia originalmente previsto (opcional)</label><select id="rmDe">${opts}</select></div>
+    <div class="row"><div class="field"><label class="lbl">Novo dia</label><input type="date" id="rmData" value="${hoje()}"></div>
+      <div class="field"><label class="lbl">Novo horário</label><input type="time" id="rmHora" value="${escAttr(vip.horaPrev||'')}"></div></div>
+    <div class="field"><label class="lbl">Motivo (opcional)</label><input type="text" id="rmMotivo" placeholder="Ex: aluno viajou; pediu para adiantar"></div>
+    <button class="btn block" onclick="salvarRemarcarVip('${id}')">Salvar remanejamento</button>`);
+}
+function salvarRemarcarVip(id){
+  const vip=(S.vipAlunos||[]).find(x=>x.id===id); if(!vip) return;
+  const data=(document.getElementById('rmData').value||''); if(!data) return toast('Escolha o novo dia');
+  const r={ id:uid(), de:(document.getElementById('rmDe').value||''), data, hora:(document.getElementById('rmHora').value||''), motivo:(document.getElementById('rmMotivo').value||'').trim() };
+  vip.remarcacoes=vip.remarcacoes||[]; vip.remarcacoes.push(r); vip.atualizadoEm=Date.now(); save(); fechar(); VIEWS.ficha(); toast('Aula remanejada');
+}
+function delRemarcarVip(id, rid){
+  const vip=(S.vipAlunos||[]).find(x=>x.id===id); if(!vip) return;
+  vip.remarcacoes=(vip.remarcacoes||[]).filter(r=>r.id!==rid); vip.atualizadoEm=Date.now(); save(); VIEWS.ficha(); toast('Remanejamento removido');
+}
+// --- Pausar as aulas do VIP num período (só secretaria/direção) ---
+function abrirPausaVip(id){
+  if(ehProfessor()) return toast('Só a secretaria ou a direção pausa as aulas');
+  const vip=(S.vipAlunos||[]).find(x=>x.id===id); if(!vip) return;
+  modal(`<h3>⏸️ Pausar aulas do aluno <button class="close" onclick="fechar()">×</button></h3>
+    <p class="hint" style="margin:0 0 10px">No período de pausa não há alerta de aula não registrada (viagem, recesso do aluno, etc.).</p>
+    <div class="row"><div class="field"><label class="lbl">De</label><input type="date" id="pzDe" value="${hoje()}"></div>
+      <div class="field"><label class="lbl">Até</label><input type="date" id="pzAte" value="${hoje()}"></div></div>
+    <div class="field"><label class="lbl">Motivo (opcional)</label><input type="text" id="pzMotivo" placeholder="Ex: viagem de férias"></div>
+    <button class="btn block" onclick="salvarPausaVip('${id}')">Salvar pausa</button>`);
+}
+function salvarPausaVip(id){
+  if(ehProfessor()) return toast('Sem permissão');
+  const vip=(S.vipAlunos||[]).find(x=>x.id===id); if(!vip) return;
+  const de=(document.getElementById('pzDe').value||''), ate=(document.getElementById('pzAte').value||'');
+  if(!de||!ate) return toast('Preencha as duas datas');
+  if(ate<de) return toast('A data final deve ser depois da inicial');
+  vip.pausas=vip.pausas||[]; vip.pausas.push({ id:uid(), de, ate, motivo:(document.getElementById('pzMotivo').value||'').trim() }); vip.atualizadoEm=Date.now(); save(); fechar(); VIEWS.ficha(); toast('Aulas pausadas nesse período');
+}
+function delPausaVip(id, pid){
+  if(ehProfessor()) return toast('Sem permissão');
+  const vip=(S.vipAlunos||[]).find(x=>x.id===id); if(!vip) return;
+  vip.pausas=(vip.pausas||[]).filter(p=>p.id!==pid); vip.atualizadoEm=Date.now(); save(); VIEWS.ficha(); toast('Pausa removida');
 }
 // Lançar aula VIP direto da ficha (professor + direção; secretaria não lança).
 function lancarAulaVip(vid){
