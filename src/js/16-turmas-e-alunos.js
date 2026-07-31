@@ -186,6 +186,17 @@ function fichaSetEmail(){
   a.email=(document.getElementById('fcEmail').value||'').trim();
   save(); toast('E-mail do responsável atualizado');
 }
+// Edita os dados cadastrais do aluno direto na ficha (secretaria + direção).
+function fichaSetCampoAluno(id,campo,val){
+  if(ehProfessor()) return toast('Sem permissão para editar os dados do aluno');
+  const a=(S.alunos||[]).find(x=>x.id===id); if(!a) return;
+  val=(val||'').trim();
+  if(campo==='nome' && !val){ toast('O nome não pode ficar vazio'); return VIEWS.ficha(); }
+  a[campo]=val; a.atualizadoEm=Date.now();
+  save();
+  if(campo==='nome' || campo==='nascimento'){ montarNav(); VIEWS.ficha(); }   // atualiza nome/idade no topo
+  else toast('Dados atualizados');
+}
 // Registra no histórico que um relatório por aluno (ficha) foi enviado.
 // Sem duplicidade: 1 registro por aluno por dia — se reenviar no mesmo dia, atualiza via/hora.
 // Só conta como "enviado à família" quando feito por secretaria/direção (não por professor).
@@ -443,9 +454,23 @@ VIEWS.ficha=()=>{
   </div>
   ${streak>=3?`<div class="card" style="border-left:4px solid var(--vermelho);margin-top:12px"><b style="color:var(--vermelho)">🚨 ${streak} faltas seguidas</b> <span class="hint">— atenção para contato com o responsável.</span></div>`:''}
   <div class="card" style="margin-top:12px">
-    ${podeEnviar?`<div class="field" style="margin:0"><label class="lbl">E-mail do responsável</label><input type="email" id="fcEmail" value="${escAttr(a.email||'')}" placeholder="email@exemplo.com" onchange="fichaSetEmail()"></div>`:(a.email?`<p class="hint" style="margin:0">📧 ${escAttr(a.email)}</p>`:'')}
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:${podeEnviar?'8px':'2px'}">
+      <h3 style="margin:0;flex:1;font-size:1rem">Dados do aluno</h3>
+      ${podeEnviar?'<span class="pill" style="background:#eafaf0;color:#1a8a4a">✏️ editável</span>':'<span class="pill" style="background:#eef;color:#667">somente leitura</span>'}
+    </div>
+    ${podeEnviar?`
+      <div class="row" style="flex-wrap:wrap">
+        <div class="field" style="flex:2;min-width:200px;margin:0"><label class="lbl">Nome completo</label><input type="text" value="${escAttr(a.nome||'')}" onchange="fichaSetCampoAluno('${a.id}','nome',this.value)"></div>
+        <div class="field" style="min-width:150px;margin:0"><label class="lbl">🎂 Nascimento</label><input type="date" value="${escAttr(a.nascimento||'')}" onchange="fichaSetCampoAluno('${a.id}','nascimento',this.value)"></div>
+      </div>
+      <div class="row" style="flex-wrap:wrap;margin-top:10px">
+        <div class="field" style="flex:1;min-width:170px;margin:0"><label class="lbl">📱 Telefone / WhatsApp</label><input type="text" value="${escAttr(a.telefone||'')}" placeholder="(51) 9…" onchange="fichaSetCampoAluno('${a.id}','telefone',this.value)"></div>
+        <div class="field" style="flex:2;min-width:200px;margin:0"><label class="lbl">📧 E-mail do responsável</label><input type="email" id="fcEmail" value="${escAttr(a.email||'')}" placeholder="email@exemplo.com" onchange="fichaSetCampoAluno('${a.id}','email',this.value)"></div>
+      </div>
+      <p class="hint" style="margin:8px 0 0">As alterações salvam sozinhas ao sair do campo e sincronizam entre os aparelhos.</p>
+    `:`<p class="hint" style="margin:0">${a.nascimento?('🎂 '+brDate(a.nascimento)):''}${a.telefone?((a.nascimento?' · ':'')+'📱 '+escAttr(a.telefone)):''}${a.email?(((a.nascimento||a.telefone)?' · ':'')+'📧 '+escAttr(a.email)):''}${(!a.nascimento&&!a.telefone&&!a.email)?'Sem dados de contato cadastrados.':''}</p>`}
     ${a.fichaEnviadaEm?`<p class="hint" style="margin:8px 0 0">✓ Ficha enviada em ${brDate(a.fichaEnviadaEm)}${a.fichaEnviadaPor?(' por '+escAttr(a.fichaEnviadaPor)):''}</p>`:''}
-    <div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+    <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--linha);display:flex;gap:6px;flex-wrap:wrap;align-items:center">
       ${!ehProfessor()?`<button class="btn ghost sm" onclick="abrirTrocarTurma('${a.id}')">🔄 Trocar de turma</button><button class="btn ghost sm" onclick="alunoParaVip('${a.id}')">⭐ Tornar VIP</button>`:''}
       <span class="hint" style="margin-left:auto">Período: <b>${periodoTxt}</b></span>
       <button class="btn ghost sm" onclick="setFichaPeriodo('ano')">Este ano</button>
