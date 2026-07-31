@@ -37,6 +37,7 @@ function migrar(s){
   s.aulasVip=s.aulasVip||[];
   s.vipAlunos=s.vipAlunos||[];
   s.pacotesVip=s.pacotesVip||[];   // pacotes de horas contratadas dos alunos VIP
+  s.contratos=s.contratos||[];     // PDFs de contrato assinado por aluno (bucket 'contratos')
   s.planejamento=s.planejamento||[];
   s.recessos=s.recessos||[];       // recessos/férias (pausam o ritmo previsto)
   s.alertas=s.alertas||[];

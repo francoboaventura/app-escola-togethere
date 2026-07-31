@@ -323,6 +323,7 @@ function renderFichaVip(v, vip){
     </div>
   </div>
   ${_cardAcessoPortal(vip.id)}
+  ${_cardContratos(vip.id)}
   <div class="card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
     <span class="hint" style="flex:1">Período: <b>${periodoTxt}</b></span>
     <button class="btn ghost sm" onclick="setFichaPeriodo('ano')">Este ano</button>
@@ -433,6 +434,49 @@ function imprimirCardAcesso(email,senha,nome){
   if(typeof _abrirCardsImpressao!=='function') return toast('Impressão indisponível');
   _abrirCardsImpressao([{nome,email,senha}], true, null);
 }
+// ===== Contratos (PDF assinado) — direção + secretaria =====
+function _cardContratos(alunoId){
+  if(ehProfessor()) return '';
+  const cs=(S.contratos||[]).filter(c=>c.alunoId===alunoId && !c.excluido).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  return `<div class="card" style="margin-top:12px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0;flex:1;font-size:1rem">📄 Contrato</h3><button class="btn ghost sm" onclick="subirContrato('${alunoId}')">⬆️ Subir PDF assinado</button></div>
+    ${cs.length?cs.map(c=>`<div style="border-top:1px solid var(--linha);padding:8px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="flex:1">📄 ${escAttr(c.nome||'contrato.pdf')}<br><span class="hint">${_dataContrato(c.ts)}${c.por?(' · '+escAttr(c.por)):''}</span></span><button class="btn ghost sm" onclick="verContrato('${escAttr(c.path)}')">👁️ Ver / imprimir</button><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delContrato('${c.id}')">excluir</button></div>`).join(''):'<p class="hint" style="margin:8px 0 0">Nenhum contrato anexado. Suba o PDF assinado para consultar e imprimir aqui.</p>'}
+  </div>`;
+}
+function _dataContrato(ts){ try{ return new Date(ts).toLocaleDateString('pt-BR'); }catch(e){ return ''; } }
+function subirContrato(alunoId){
+  if(ehProfessor()) return toast('Sem permissão');
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='application/pdf,.pdf';
+  inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(!f) return; if(f.type!=='application/pdf' && !/\.pdf$/i.test(f.name||'')) return toast('Envie um arquivo PDF'); _enviarContrato(alunoId,f); };
+  inp.click();
+}
+async function _enviarContrato(alunoId,f){
+  if(typeof sb==='undefined' || !sb.storage) return toast('Sem conexão para enviar');
+  toast('Enviando contrato…');
+  try{
+    const path='alunos/'+alunoId+'-'+Date.now()+'.pdf';
+    const { error }=await sb.storage.from('contratos').upload(path, f, { contentType:'application/pdf', upsert:true });
+    if(error){ toast('Não consegui subir: '+(error.message||'')); return; }
+    S.contratos=S.contratos||[];
+    S.contratos.push({ id:uid(), alunoId, path, nome:(f.name||'contrato.pdf'), ts:Date.now(), por:S.usuario });
+    save(); VIEWS.ficha(); toast('Contrato anexado ✅');
+  }catch(e){ toast('Erro ao enviar o contrato'); }
+}
+async function verContrato(path){
+  if(typeof sb==='undefined' || !sb.storage) return toast('Sem conexão');
+  try{
+    const { data, error }=await sb.storage.from('contratos').createSignedUrl(path, 3600);
+    if(error || !data || !data.signedUrl){ toast('Não consegui abrir o contrato'); return; }
+    window.open(data.signedUrl, '_blank');
+  }catch(e){ toast('Erro ao abrir o contrato'); }
+}
+function delContrato(id){
+  if(ehProfessor()) return toast('Sem permissão');
+  const c=(S.contratos||[]).find(x=>x.id===id); if(!c) return;
+  if(!confirm('Remover este contrato?')) return;
+  try{ if(typeof sb!=='undefined' && sb.storage) sb.storage.from('contratos').remove([c.path]); }catch(e){}
+  S.contratos=(S.contratos||[]).filter(x=>x.id!==id); marcarExcluido('contratos',id);
+  save(); VIEWS.ficha(); toast('Contrato removido');
+}
 VIEWS.ficha=()=>{
   const v=document.getElementById('view');
   const _vipF=(S.vipAlunos||[]).find(x=>x.id===_fichaAlunoId);
@@ -512,6 +556,7 @@ VIEWS.ficha=()=>{
     </div>
   </div>
   ${_cardAcessoPortal(a.id)}
+  ${_cardContratos(a.id)}
   <div class="fx-tabs">${ABAS.map(x=>`<button class="fx-tab${x.id===_fichaAba?' on':''}" onclick="fichaAba('${x.id}')">${x.label}${x.n!=null?` <span class="n">${x.n}</span>`:''}</button>`).join('')}</div>
   <div>${pane}</div>
   <div class="card" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
