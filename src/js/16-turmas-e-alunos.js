@@ -490,16 +490,21 @@ function avatarFoto(cls, foto, inicial, addOnclick){
     + (addOnclick?`<button class="fotoav-add" onclick="${addOnclick}" title="Adicionar/trocar foto" aria-label="Adicionar foto">📷</button>`:'')
     + `</div>`;
 }
+function _absFotoUrl(raw){
+  if(!raw) return '';
+  if(/^https?:/i.test(raw)) return raw;                 // já é absoluto
+  return SUPA_URL + (raw[0]==='/'?'':'/') + raw;        // relativo -> aponta pro Supabase (não pro GitHub Pages)
+}
 async function _hidratarFotos(){
   if(typeof sb==='undefined' || !sb.storage) return;
   const els = Array.from(document.querySelectorAll('.fotoav[data-foto]')).filter(e=>e.dataset.foto && !e.dataset.hid);
   if(!els.length) return;
-  const paths = [...new Set(els.map(e=>e.dataset.foto))];
-  const faltam = paths.filter(p=>!_fotoCache[p] || _fotoCache[p].exp < Date.now());
-  if(faltam.length){
+  const paths = [...new Set(els.map(e=>e.dataset.foto))].filter(p=>!_fotoCache[p] || _fotoCache[p].exp < Date.now());
+  for(const p of paths){
     try{
-      const { data } = await sb.storage.from('fotos').createSignedUrls(faltam, 7200);
-      (data||[]).forEach((d,i)=>{ const p=faltam[i]; if(d && d.signedUrl) _fotoCache[p]={url:d.signedUrl, exp:Date.now()+7000*1000}; });
+      const { data } = await sb.storage.from('fotos').createSignedUrl(p, 7200);
+      const raw = data && (data.signedUrl || data.signedURL);
+      if(raw) _fotoCache[p] = { url:_absFotoUrl(raw), exp:Date.now()+7000*1000 };
     }catch(e){}
   }
   els.forEach(e=>{
@@ -548,6 +553,7 @@ async function _fotoProcessar(file,tipo,id){
     else { const u=(S.usuarios||[]).find(x=>x.nome===id); if(u){ u.foto=path; } }
     save();
     delete _fotoCache[path];
+    if(tipo==='usuario' && id===S.usuario){ const md=document.getElementById('meDot'); if(md){ md.dataset.foto=path; delete md.dataset.hid; md.style.backgroundImage=''; } }
     fechar(); toast('Foto salva ✅');
     if(typeof rota!=='undefined' && VIEWS[rota]) VIEWS[rota]();
     setTimeout(_hidratarFotos, 120);

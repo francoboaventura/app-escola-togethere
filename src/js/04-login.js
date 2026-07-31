@@ -135,6 +135,34 @@ function montarNav(){
     g.itens.forEach(n=>dd.appendChild(_navItemBtn(n,'tnav-di')));
     wrap.appendChild(top); wrap.appendChild(dd); nav.appendChild(wrap);
   });
+  montarNavMobile();
+}
+/* ===== Menu inferior no CELULAR (b107) — resolve a status bar e fica no polegar ===== */
+const NAV_MOBILE_PRIOR=['painel','presenca','alunos','alertas','resumo','planejamento','turmas','writings'];
+const _BNAV_LBL={presenca:'Chamada',alertas:'Avisos',resumo:'Relatórios',planejamento:'Planejam.',painel:'Painel',alunos:'Alunos',turmas:'Turmas',writings:'Writings'};
+function montarNavMobile(){
+  const bn=document.getElementById('bnav'); if(!bn) return; bn.innerHTML='';
+  const cand=NAV_MOBILE_PRIOR.map(id=>NAV.find(n=>n.id===id)).filter(n=>n && n.roles.includes(S.perfil)).slice(0,4);
+  cand.forEach(n=>{
+    const b=document.createElement('button'); b.className='bnav-i'; b.dataset.id=n.id;
+    const bd=_navBadge(n);
+    b.innerHTML=`<span class="e">${n.em}</span><span class="bl">${_BNAV_LBL[n.id]||n.label}</span>`+(bd?`<span class="badge">${bd}</span>`:'');
+    b.onclick=()=>ir(n.id); bn.appendChild(b);
+  });
+  const mais=document.createElement('button'); mais.className='bnav-i';
+  mais.innerHTML='<span class="e">☰</span><span class="bl">Mais</span>';
+  mais.onclick=(e)=>{ e.stopPropagation(); _abrirMais(); };
+  bn.appendChild(mais);
+  _montarMais();
+}
+function _abrirMais(){ const m=document.getElementById('maisMenu'); if(m) m.classList.toggle('open'); }
+function _montarMais(){
+  const m=document.getElementById('maisMenu'); if(!m) return;
+  const itens=NAV.filter(n=>n.menu!==false && n.roles.includes(S.perfil));
+  const grupos=[]; itens.forEach(n=>{ let g=grupos.find(x=>x.grp===n.grp); if(!g){g={grp:n.grp,itens:[]}; grupos.push(g);} g.itens.push(n); });
+  let html='<div class="mais-head">Menu <button class="mais-x" onclick="_abrirMais()" aria-label="Fechar">×</button></div>';
+  grupos.forEach(g=>{ html+=`<div class="mais-grp">${g.grp}</div>`+g.itens.map(n=>{const bd=_navBadge(n);return `<button class="mais-i" data-id="${n.id}" onclick="ir('${n.id}')"><span class="em">${n.em}</span> ${n.label}${bd?`<span class="badge">${bd}</span>`:''}</button>`;}).join(''); });
+  m.innerHTML=html;
 }
 function _toggleGrp(wrap){
   const open=wrap.classList.contains('open');
@@ -146,6 +174,7 @@ function _toggleMenu(e){ if(e) e.stopPropagation(); const a=document.getElementB
 function _fecharMenus(){
   document.querySelectorAll('.tnav-grp.open').forEach(w=>w.classList.remove('open'));
   const m=document.getElementById('perfilMenu'); if(m) m.classList.remove('open');
+  const mm=document.getElementById('maisMenu'); if(mm) mm.classList.remove('open');
   const a=document.getElementById('app'); if(a) a.classList.remove('menu-open');
 }
 document.addEventListener('click',()=>_fecharMenus());
@@ -153,7 +182,7 @@ function ir(id){
   rota=id; const n=NAV.find(x=>x.id===id);
   document.getElementById('pageTitle').textContent=n.label;
   document.getElementById('crumb').textContent=n.grp;
-  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.id===id));
+  document.querySelectorAll('#nav button, #bnav button, .mais-i').forEach(b=>b.classList.toggle('active',b.dataset.id===id));
   _fecharMenus();
   VIEWS[id]();
   if(typeof _hidratarFotos==='function') setTimeout(_hidratarFotos,50);
