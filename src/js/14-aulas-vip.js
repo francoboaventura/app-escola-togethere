@@ -1,0 +1,286 @@
+/* ===== AULAS VIP (aulas avulsas por aluno) ===== */
+let vipSel=null;
+function fmtDur(min){ min=+min||0; const h=Math.floor(min/60), m=min%60; if(!min)return '0min'; return (h?h+'h':'')+(m?(h?' ':'')+m+'min':''); }
+VIEWS.vip=()=>{
+  const v=document.getElementById('view');
+  const ehDir=S.perfil==='direcao';
+  const ehSec=soLeitura();               // secretaria: gestão (vê todos, troca professor, converte), mas não lança aula
+  const ehGestor=ehDir||ehSec;
+  const meuEns=_meuEnsina();
+  const profs=[...new Set((S.usuarios||[]).filter(u=>u.ensina).map(u=>u.ensina).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const lista=S.vipAlunos.filter(a=>!a.arquivado && (ehGestor || a.professor===meuEns)).sort((a,b)=>a.nome.localeCompare(b.nome));
+  if(vipSel && !lista.some(a=>a.id===vipSel)) vipSel=null;
+  vipSel=vipSel||(lista[0]&&lista[0].id)||null;
+  const vObj=lista.find(a=>a.id===vipSel)||{};
+  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:#C8A200"></span><h2 class="display">👑 Alunos VIP</h2></div>
+    <p class="sub">${ehSec?'Gestão dos alunos particulares — vincule cada um a um professor ou converta para turma.':ehDir?'Aulas particulares, uma a uma. Cadastre o aluno, vincule a um professor e lance cada aula.':'Seus alunos particulares — cadastre, lance cada aula e tire o relatório.'}</p>
+    <div class="card"><h3>Alunos VIP</h3>
+      ${!ehSec?`<div class="row"><div style="flex:3"><input type="text" id="vipNome" placeholder="Nome do aluno VIP" onkeydown="if(event.key==='Enter')addVipAluno()"></div>
+      ${ehDir?`<div style="flex:2"><select id="vipProf"><option value="">— professor…</option>${profs.map(p=>`<option value="${escAttr(p)}">${esc(p)}</option>`).join('')}</select></div>`:''}
+      <button class="btn ghost" onclick="addVipAluno()">+ Aluno VIP</button></div>`:''}
+      ${lista.length?`<div class="field" style="margin-top:12px"><label class="lbl">Selecionar aluno</label><select id="vipSelAluno" onchange="vipSel=this.value;VIEWS.vip()">${lista.map(a=>`<option value="${a.id}" ${a.id===vipSel?'selected':''}>${a.nome}${ehGestor?(a.professor?' · '+esc(a.professor):' · (sem professor)'):''}</option>`).join('')}</select></div>`:`<p class="hint" style="margin:10px 0 0">${ehGestor?'Nenhum aluno VIP cadastrado ainda.':'Você ainda não tem alunos VIP.'}</p>`}
+      ${vipSel&&ehGestor?`<div class="row" style="margin-top:10px;align-items:flex-end;gap:8px">
+        <div style="flex:1"><label class="lbl">Professor(a) responsável</label><select id="vipTrocaProf" onchange="trocarProfVip('${vipSel}',this.value)"><option value="">— sem professor</option>${profs.map(p=>`<option value="${escAttr(p)}" ${vObj.professor===p?'selected':''}>${esc(p)}</option>`).join('')}</select></div>
+        <button class="btn ghost sm" onclick="vipParaAluno('${vipSel}')">🎓 Mover para turma</button></div>`:''}
+    </div>
+    ${vipSel&&!ehSec?`<div class="card"><h3>Lançar aula</h3>
+      <div class="field"><label class="lbl">Tema</label><input type="text" id="vipTema" placeholder="Ex: Simple Past · entrevista de emprego"></div>
+      <div class="field"><label class="lbl">Descrição da aula</label><textarea id="vipDesc" style="min-height:130px" placeholder="Ex: Conversação — entrevista de emprego. Descreva com detalhes o que foi trabalhado na aula."></textarea></div>
+      <div class="row">
+        <div class="field"><label class="lbl">Data</label><input type="date" id="vipData" value="${hoje()}"></div>
+        <div class="field"><label class="lbl">Duração (min)</label><input type="number" id="vipDur" value="60" min="5" step="5"></div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:2px 0 12px"><input type="checkbox" id="vipFaltou"> ❌ Aluno não compareceu</label>
+      <button class="btn" onclick="addAulaVip()">+ Lançar aula</button></div>
+      <div class="card" id="vipBox"></div>`:''}`;
+  renderVipLista();
+};
+// --- Converter entre aluno de turma e VIP (só direção). Preserva o histórico arquivando a origem. ---
+function alunoParaVip(alunoId){
+  if(ehProfessor()) return toast('Sem permissão para alterar a modalidade do aluno');
+  const a=(S.alunos||[]).find(x=>x.id===alunoId); if(!a) return;
+  if(!confirm('Transformar "'+a.nome+'" em aluno VIP? Ele sai da turma (o histórico é preservado) e passa a ter aulas VIP individuais.')) return;
+  const tOrig=(S.turmas||[]).find(x=>x.id===a.turmaId);
+  S.vipAlunos.push({id:uid(), nome:a.nome, professor:(tOrig&&tOrig.professor)||''});
+  vipSel=S.vipAlunos[S.vipAlunos.length-1].id;
+  a.arquivado=true; a.atualizadoEm=Date.now();
+  save(); montarNav(); toast(a.nome+' agora é aluno VIP'); ir('vip');
+}
+function vipParaAluno(vipId){
+  if(ehProfessor()) return toast('Sem permissão para alterar a modalidade do aluno');
+  const v=(S.vipAlunos||[]).find(x=>x.id===vipId); if(!v) return;
+  const destinos=(S.turmas||[]).filter(t=>!t.arquivada).sort((x,y)=>(x.nome||'').localeCompare(y.nome||''));
+  if(!destinos.length) return toast('Crie uma turma ativa primeiro');
+  modal(`<h3>Mover VIP para turma <button class="close" onclick="fechar()">×</button></h3>
+    <p class="hint" style="margin:0 0 8px"><b>${esc(v.nome)}</b> deixará de ser VIP e entrará como aluno de turma. O histórico das aulas VIP é preservado.</p>
+    <div class="field"><label class="lbl">Turma de destino</label>
+      <select id="vpDestino">${destinos.map(t=>`<option value="${t.id}">${esc(t.nome)}${t.professor?' · '+esc(t.professor):''}</option>`).join('')}</select></div>
+    <div class="row" style="margin-top:14px;gap:8px"><button class="btn" onclick="confirmarVipParaAluno('${vipId}')">Confirmar</button><button class="btn ghost" onclick="fechar()">Cancelar</button></div>`);
+}
+function confirmarVipParaAluno(vipId){
+  if(ehProfessor()) return toast('Sem permissão para alterar a modalidade do aluno');
+  const v=(S.vipAlunos||[]).find(x=>x.id===vipId); if(!v) return;
+  const destino=(document.getElementById('vpDestino')||{}).value;
+  const t=(S.turmas||[]).find(x=>x.id===destino); if(!t) return toast('Selecione a turma de destino');
+  S.alunos.push({id:uid(), nome:v.nome, turmaId:t.id});
+  v.arquivado=true; v.atualizadoEm=Date.now();
+  if(vipSel===vipId) vipSel=null;
+  save(); fechar(); montarNav(); toast(v.nome+' movido para '+t.nome); ir('turmas');
+}
+function addVipAluno(){
+  const nome=(document.getElementById('vipNome').value||'').trim(); if(!nome)return toast('Digite o nome');
+  let professor;
+  if(S.perfil==='direcao'){ professor=((document.getElementById('vipProf')||{}).value||'').trim(); if(!professor) return toast('Escolha o professor responsável'); }
+  else { professor=_meuEnsina(); }
+  const a={id:uid(),nome,professor}; S.vipAlunos.push(a); vipSel=a.id; save(); VIEWS.vip(); toast('Aluno VIP cadastrado');
+}
+function trocarProfVip(vipId, prof){
+  if(ehProfessor()) return;
+  const v=(S.vipAlunos||[]).find(x=>x.id===vipId); if(!v) return;
+  v.professor=(prof||'').trim(); v.atualizadoEm=Date.now();
+  save(); toast(v.professor?('VIP agora é de '+v.professor):'Professor removido do VIP');
+}
+function delVipAluno(id){
+  if(!confirm('Excluir este aluno VIP e todas as suas aulas?'))return;
+  S.aulasVip.filter(x=>x.vipId===id).forEach(x=>marcarExcluido('aulasVip',x.id)); marcarExcluido('vipAlunos',id);
+  S.vipAlunos=S.vipAlunos.filter(a=>a.id!==id); S.aulasVip=S.aulasVip.filter(x=>x.vipId!==id);
+  if(vipSel===id)vipSel=null; save(); VIEWS.vip(); toast('Aluno VIP excluído');
+}
+function addAulaVip(){
+  const vid=vipSel; if(!vid)return toast('Selecione um aluno VIP');
+  const tema=(document.getElementById('vipTema').value||'').trim();
+  const desc=document.getElementById('vipDesc').value.trim(); if(!desc)return toast('Descreva a aula');
+  const data=document.getElementById('vipData').value; if(!data)return toast('Escolha a data');
+  const dur=+document.getElementById('vipDur').value||0;
+  const faltou=!!document.getElementById('vipFaltou').checked;
+  S.aulasVip.push({id:uid(),vipId:vid,data,tema,descricao:desc,duracaoMin:dur,faltou,atualizadoEm:Date.now()});
+  save(); renderVipLista();
+  const t=document.getElementById('vipTema'); if(t)t.value='';
+  const d=document.getElementById('vipDesc'); if(d)d.value='';
+  const f=document.getElementById('vipFaltou'); if(f)f.checked=false;
+  toast(faltou?'Aula lançada (não compareceu)':'Aula lançada');
+}
+function delAulaVip(id){ if(!confirm('Excluir esta aula VIP?'))return; S.aulasVip=S.aulasVip.filter(x=>x.id!==id); marcarExcluido('aulasVip',id); save(); renderVipLista(); }
+function editarAulaVip(id){
+  if(soLeitura())return toast('Somente leitura — a secretaria não edita aulas VIP');
+  const a=S.aulasVip.find(x=>x.id===id); if(!a)return;
+  modal(`<h3>✏️ Editar aula VIP <button class="close" onclick="fechar()">×</button></h3>
+    <div class="field"><label class="lbl">Tema</label><input type="text" id="evTema" value="${escAttr(a.tema||'')}" placeholder="Ex: Simple Past · entrevista de emprego"></div>
+    <div class="field"><label class="lbl">Descrição da aula</label><textarea id="evDesc" style="min-height:150px" placeholder="O que foi trabalhado na aula">${escAttr(a.descricao||'')}</textarea></div>
+    <div class="row"><div class="field"><label class="lbl">Data</label><input type="date" id="evData" value="${escAttr(a.data||'')}"></div>
+      <div class="field"><label class="lbl">Duração (min)</label><input type="number" id="evDur" value="${+a.duracaoMin||0}" min="5" step="5"></div></div>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:2px 0 12px"><input type="checkbox" id="evFaltou" ${a.faltou?'checked':''}> ❌ Aluno não compareceu</label>
+    <button class="btn block" onclick="salvarEdicaoAulaVip('${id}')">Salvar alterações</button>`);
+  setTimeout(()=>{const i=document.getElementById('evDesc'); if(i)i.focus();},60);
+}
+function salvarEdicaoAulaVip(id){
+  if(soLeitura())return toast('Somente leitura — a secretaria não edita aulas VIP');
+  const a=S.aulasVip.find(x=>x.id===id); if(!a)return;
+  const desc=(document.getElementById('evDesc').value||'').trim(); if(!desc)return toast('Descreva a aula');
+  a.tema=(document.getElementById('evTema').value||'').trim();
+  a.descricao=desc;
+  a.data=document.getElementById('evData').value||a.data;
+  a.duracaoMin=+document.getElementById('evDur').value||0;
+  a.faltou=!!document.getElementById('evFaltou').checked;
+  a.atualizadoEm=Date.now();                 // carimbo para a sincronização entre aparelhos
+  save(); fechar(); renderVipLista(); toast('Aula atualizada');
+}
+function renderVipLista(){
+  const box=document.getElementById('vipBox'); if(!box)return;
+  const vid=vipSel, al=S.vipAlunos.find(a=>a.id===vid);
+  if(!vid||!al){ box.innerHTML=''; return; }
+  const aulas=S.aulasVip.filter(x=>x.vipId===vid).sort((a,b)=>b.data.localeCompare(a.data));
+  const comp=aulas.filter(a=>!a.faltou); const compMin=comp.reduce((s,a)=>s+(+a.duracaoMin||0),0);
+  const faltas=aulas.length-comp.length;
+  let h=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0;flex:1">Aulas de ${al.nome}</h3>
+    <button class="btn ghost sm" onclick="abrirFicha('${vid}')">📇 Ficha</button>
+    <button class="btn amarelo sm" ${aulas.length?'':'disabled style="opacity:.5;cursor:not-allowed"'} onclick="copiarRelatorioVip()">📋 Copiar relatório</button>
+    <button class="btn ghost sm" style="color:var(--vermelho)" onclick="delVipAluno('${vid}')">excluir aluno</button></div>`;
+  if(!aulas.length){ box.innerHTML=h+'<p class="hint" style="margin:8px 0 0">Nenhuma aula lançada ainda.</p>'; return; }
+  h+=`<p class="hint" style="margin:8px 0 10px"><b>${comp.length}</b> aula(s) com presença (${fmtDur(compMin)})${faltas?` · <b>${faltas}</b> falta(s)`:''}</p>`;
+  h+=aulas.map(a=>`<div class="check"><span style="flex:1">${brDate(a.data)} · ${a.tema?`<b>${esc(a.tema)}</b> — `:''}<span style="white-space:pre-wrap">${esc(a.descricao)}</span> <span class="pill">${fmtDur(a.duracaoMin)}</span>${a.faltou?' <span class="pill" style="background:#ffe9e9;color:var(--vermelho)">não compareceu</span>':''}</span><button class="btn ghost sm" onclick="editarAulaVip('${a.id}')">✏️ editar</button><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delAulaVip('${a.id}')">excluir</button></div>`).join('');
+  box.innerHTML=h;
+}
+function corpoRelatorioVip(vid){
+  const al=S.vipAlunos.find(a=>a.id===vid); if(!al)return'';
+  const aulas=S.aulasVip.filter(x=>x.vipId===vid).sort((a,b)=>a.data.localeCompare(b.data));
+  const comp=aulas.filter(a=>!a.faltou); const compMin=comp.reduce((s,a)=>s+(+a.duracaoMin||0),0);
+  const faltas=aulas.length-comp.length;
+  let b=`Relatório de aulas VIP — ${al.nome}\n`;
+  if(aulas.length) b+=`Período: ${brDate(aulas[0].data)} a ${brDate(aulas[aulas.length-1].data)}\n`;
+  b+=`\n`+aulas.map(a=>`• ${brDate(a.data)} — ${a.tema?a.tema+': ':''}${a.descricao} (${fmtDur(a.duracaoMin)})${a.faltou?' — NÃO COMPARECEU':''}`).join('\n');
+  b+=`\n\nAulas com presença: ${comp.length} (${fmtDur(compMin)})${faltas?` · Faltas: ${faltas}`:''}\n`;
+  b+=`\n${(S.config&&S.config.assinatura)||ASSINATURA_PADRAO}`;
+  return b;
+}
+function copiarRelatorioVip(){ const txt=corpoRelatorioVip(vipSel); if(!txt)return toast('Nada para copiar'); copiarTexto(txt,'Relatório VIP copiado'); }
+function gerarResumo(){
+  const turmaId=document.getElementById('rT').value, data=document.getElementById('rD').value;
+  const turma=S.turmas.find(t=>t.id===turmaId);
+  const plano=S.planos.find(p=>p.turmaId===turmaId&&p.data===data);
+  const tema=S.temas.find(t=>t.turmaId===turmaId&&t.data===data);
+  const feitos=plano?plano.itens.filter(i=>i.done).map(i=>i.txt):[];
+  let txt=`Olá, famílias! 👋\n\nResumo da aula de hoje (${brDate(data)}) — ${turma.nome}:\n\n`;
+  if(plano){
+    txt+=`📖 Conteúdo: ${plano.conteudo||plano.titulo}\n`;
+    if(feitos.length)txt+=`✅ Trabalhamos: ${feitos.join(', ')}.\n`;
+  }else{
+    txt+=`📖 Tivemos mais um dia de aprendizado de inglês!\n`;
+  }
+  if(tema)txt+=`\n📚 Tema de casa: ${tema.descricao}\n`;
+  else txt+=`\n📚 Hoje não passamos tema de casa.\n`;
+  txt+=`\nQualquer dúvida, estamos à disposição.\nEquipe Togethere 💙\ninglês para chegar lá`;
+  document.getElementById('rOut').textContent=txt;
+}
+function copiarResumo(){
+  const t=document.getElementById('rOut').textContent;
+  if(t.startsWith('Clique'))return toast('Gere o resumo primeiro');
+  copiarTexto(t,'Texto copiado!');
+}
+// resumo do que foi dado numa aula (para os dias de falta)
+function resumoAulaDoDia(turmaId,data){
+  const plano=S.planos.find(p=>p.turmaId===turmaId&&p.data===data);
+  const tema=S.temas.find(t=>t.turmaId===turmaId&&t.data===data);
+  let s='';
+  if(plano){ s=plano.conteudo||plano.titulo; const f=plano.itens.filter(i=>i.done).map(i=>i.txt); if(f.length)s+=' (trabalhado: '+f.join(', ')+')'; }
+  if(tema) s+=(s?' | ':'')+'Tema passado: '+tema.descricao;
+  return s||'aula não registrada no sistema';
+}
+function corpoRelatorioAluno(alunoId,turmaId,de,ate){
+  const inRange=d=> (!de||d>=de) && (!ate||d<=ate);
+  const aluno=S.alunos.find(a=>a.id===alunoId), turma=S.turmas.find(t=>t.id===turmaId);
+  const faltas=faltasDoAluno(alunoId,turmaId).filter(inRange), mat=materialDoAluno(alunoId,turmaId).filter(inRange);
+  const temas=temasNaoFeitosDoAluno(alunoId,turmaId).filter(t=>inRange(t.data)), coms=comentariosDoAluno(alunoId).filter(c=>inRange(c.data));
+  const atrasos=atrasosDoAluno(alunoId,turmaId).filter(inRange), saidas=saidasCedoDoAluno(alunoId,turmaId).filter(inRange);
+  const peso=pesoFalta(turmaId);
+  const baseF=Number(aluno.faltasRetro)||0, totalF=baseF+faltas.length;
+  let txt=`RELATÓRIO DO ALUNO\n${aluno.nome}\nTurma: ${turma.nome}${turma.professor?' · Prof. '+turma.professor:''}\nPeríodo: ${de?brDate(de):'início'} a ${ate?brDate(ate):'hoje'}\nGerado em ${brDate(hoje())} por ${S.usuario}\n`;
+  txt+=`\n📋 FALTAS (${totalF}${peso===2?` — turma com 2 aulas por encontro`:''})\n`;
+  if(baseF) txt+=`• ${baseF} falta(s) retroativas (registro manual)\n`;
+  if(faltas.length) faltas.forEach(d=>{ txt+=`• ${brDate(d)} — conteúdo da aula: ${resumoAulaDoDia(turmaId,d)}\n`; });
+  if(!totalF) txt+=`• Nenhuma falta registrada.\n`;
+  txt+=`\n⏰ CHEGOU ATRASADO (${atrasos.length})\n`;
+  if(atrasos.length) atrasos.forEach(d=>{ txt+=`• ${brDate(d)}\n`; }); else txt+=`• Nenhum registro.\n`;
+  txt+=`\n🚪 SAIU MAIS CEDO (${saidas.length})\n`;
+  if(saidas.length) saidas.forEach(d=>{ txt+=`• ${brDate(d)}\n`; }); else txt+=`• Nenhum registro.\n`;
+  txt+=`\n🎒 MATERIAL NÃO TRAZIDO (${mat.length})\n`;
+  if(mat.length) mat.forEach(d=>{ txt+=`• ${brDate(d)}\n`; }); else txt+=`• Nenhum registro.\n`;
+  txt+=`\n📚 TEMAS DE CASA NÃO FEITOS / PARCIAIS (${temas.length})\n`;
+  if(temas.length) temas.forEach(t=>{ txt+=`• ${brDate(t.data)} — ${t.descricao}${t.origem==='plano'?' (do plano de aula)':' (extra)'} — ${t.status==='parcial'?'parcialmente feito':'não feito'}\n`; }); else txt+=`• Nenhum registro.\n`;
+  const wrsR=(S.writings||[]).filter(w=>w.alunoId===alunoId && inRange(w.data)).sort((x,y)=>x.data.localeCompare(y.data));
+  txt+=`\n📝 WRITINGS (${wrsR.length})\n`;
+  if(wrsR.length) wrsR.forEach(w=>{ const bt=(w.subscales||Object.keys(w.bands||{})).map(k=>WR_LBL(k)+' '+(w.bands[k]!=null?w.bands[k]:'—')).join(', '); txt+=`• ${brDate(w.data)} — ${w.levelLabel||w.level||''}${w.taskLabel?(' · '+w.taskLabel):''} — Geral ${w.overall_band!=null?w.overall_band:'—'}/5 (${bt})${w.togethere_band?(' · '+w.togethere_band):''}\n`; }); else txt+=`• Nenhum.\n`;
+  txt+=`\n💬 COMENTÁRIOS (${coms.length})\n`;
+  if(coms.length) coms.forEach(c=>{ txt+=`• ${brDate(c.data)} (${c.autor}): ${c.texto}\n`; }); else txt+=`• Nenhum comentário.\n`;
+  txt+=`\n—\nTogethere · inglês para chegar lá`;
+  return txt;
+}
+let _relatorioHTML='', _relatorioTxt='';
+function montarRelatorioHTML(alunoId, turmaId, de, ate){
+  const turma=S.turmas.find(t=>t.id===turmaId)||{}, aluno=S.alunos.find(a=>a.id===alunoId)||{};
+  const esc=s=>(s==null?'':s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const inRange=d=>(!de||d>=de)&&(!ate||d<=ate);
+  const faltas=faltasDoAluno(alunoId,turmaId).filter(inRange);
+  const atrasos=atrasosDoAluno(alunoId,turmaId).filter(inRange);
+  const saidas=saidasCedoDoAluno(alunoId,turmaId).filter(inRange);
+  const mat=materialDoAluno(alunoId,turmaId).filter(inRange);
+  const temas=temasNaoFeitosDoAluno(alunoId,turmaId).filter(t=>inRange(t.data));
+  const coms=comentariosDoAluno(alunoId).filter(c=>inRange(c.data));
+  const peso=pesoFalta(turmaId);
+  const baseF=Number(aluno.faltasRetro)||0;
+  const totalF=baseF+faltas.length;
+  const testes=S.testes.filter(t=>t.turmaId===turmaId && t.notas && t.notas[alunoId] && SKILLS.some(s=>t.notas[alunoId][s]!==''&&t.notas[alunoId][s]!=null)).sort((a,b)=>(a.numero||0)-(b.numero||0));
+  const tile=(v,k)=>`<div class="st"><div class="v">${v}</div><div class="k">${k}</div></div>`;
+  const statsHTML=`<div class="stats">${tile(totalF,'Faltas')}${tile(atrasos.length,'Atrasos')}${tile(saidas.length,'Saídas antecip.')}${tile(mat.length,'Aulas sem material')}${tile(temas.length,'Temas pendentes')}</div>`;
+  let notasHTML;
+  if(testes.length){
+    notasHTML=`<table class="tnotas"><thead><tr><th class="s">Habilidade</th>${testes.map(t=>`<th>${t.numero}º teste</th>`).join('')}</tr></thead><tbody>`+
+      SKILLS.map(s=>`<tr><td class="s">${s}</td>${testes.map(t=>{const v=t.notas[alunoId][s];const bd=bandaConceito(v===''||v==null?'':v);return `<td><span class="num" style="color:${bd.cor}">${v===''||v==null?'—':v}</span></td>`;}).join('')}</tr>`).join('')+
+      `</tbody></table>`;
+  } else notasHTML='<div class="okline">Ainda não há notas de teste lançadas.</div>';
+  const lista=(arr,fmt)=>arr.length?('<ul class="lst">'+arr.map(fmt).join('')+'</ul>'):'<div class="okline">Nenhum registro ✓</div>';
+  const periodo=`${de?brDate(de):'início'} — ${ate?brDate(ate):'hoje'}`;
+  const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Relatório — ${esc(aluno.nome)}</title>
+<style>${DOC_CSS}</style></head>
+<body><div class="page">
+  <div class="hd"><img src="${LOGO_B64}" alt="Togethere">
+    <div><div class="nm">Togethere</div><div class="tg">inglês para chegar lá</div></div>
+    <div class="doc"><b>Relatório</b><span>do aluno</span></div></div>
+  <div class="who"><div class="al">${esc(aluno.nome)}</div>
+    <div class="meta">${esc(turma.nome)}${turma.cefr?' · Nível '+esc(turma.cefr):''}${turma.professor?' · Prof. '+esc(turma.professor):''}<br>Período: ${periodo} · Emitido em ${brDate(hoje())} por ${esc(S.usuario)}</div></div>
+  <div class="sec"><h2>Resumo do período</h2>${statsHTML}${peso===2?`<div class="leg">Turma de 1 encontro por semana, com 2 aulas no mesmo dia: cada aula conta como uma presença.</div>`:''}</div>
+  <div class="sec"><h2>Resultados de testes</h2>${notasHTML}</div>
+  ${(function(){ const wrs=(S.writings||[]).filter(w=>w.alunoId===alunoId && inRange(w.data)).sort((x,y)=>x.data.localeCompare(y.data)); if(!wrs.length) return ''; const rows=wrs.map(w=>`<li><span class="d">${brDate(w.data)}</span><span>${esc(w.levelLabel||w.level||'')}${w.taskLabel?(' · '+esc(w.taskLabel)):''} — Geral <b>${w.overall_band!=null?w.overall_band:'—'}/5</b>${w.togethere_band?(' · '+esc(w.togethere_band)):''} — ${(w.subscales||Object.keys(w.bands||{})).map(k=>WR_LBL(k)+' '+(w.bands[k]!=null?w.bands[k]:'—')).join(', ')}</span></li>`).join(''); return `<div class="sec"><h2>Writings (${wrs.length})</h2><ul class="lst">${rows}</ul></div>`; })()}
+  <div class="sec"><h2>Faltas — com o conteúdo da aula (${totalF})</h2>${baseF?`<div class="leg" style="margin-bottom:8px">Inclui <b>${baseF} falta(s) retroativas</b> (registro manual). As datas abaixo são as faltas registradas no app durante o período.</div>`:''}${lista(faltas,d=>`<li><span class="d">${brDate(d)}</span><span>${esc(resumoAulaDoDia(turmaId,d))}</span></li>`)}</div>
+  <div class="sec"><h2>Atrasos (${atrasos.length}) e saídas antecipadas (${saidas.length})</h2>
+    <div class="skills"><div><div class="leg" style="margin:0 0 6px">Atrasos</div>${lista(atrasos,d=>`<li><span class="d">${brDate(d)}</span></li>`)}</div><div><div class="leg" style="margin:0 0 6px">Saídas antecipadas</div>${lista(saidas,d=>`<li><span class="d">${brDate(d)}</span></li>`)}</div></div></div>
+  <div class="sec"><h2>Material não trazido (${mat.length})</h2>${lista(mat,d=>`<li><span class="d">${brDate(d)}</span></li>`)}</div>
+  <div class="sec"><h2>Temas de casa não feitos / parciais (${temas.length})</h2>${lista(temas,t=>`<li><span class="d">${brDate(t.data)}</span><span>${esc(t.descricao)}${t.origem==='plano'?' (do plano de aula)':''} — ${t.status==='parcial'?'parcialmente feito':'não feito'}</span></li>`)}</div>
+  <div class="sec"><h2>Comentários (${coms.length})</h2>${lista(coms,c=>`<li><span class="d">${brDate(c.data)}</span><span><b>${esc(c.autor)}:</b> ${esc(c.texto)}</span></li>`)}</div>
+  <div class="ft"><div>${esc((S.config&&S.config.assinatura)||'Equipe Togethere').replace(/\n/g,'<br>')}<br><small>Documento interno · emitido em ${brDate(hoje())}</small></div><div class="tag">Togethere</div></div>
+</div></body></html>`;
+  return {html, txt:corpoRelatorioAluno(alunoId,turmaId,de,ate)};
+}
+function gerarRelatorioAluno(){
+  const turmaId=document.getElementById('relT').value, alunoId=document.getElementById('relA').value;
+  if(!alunoId)return toast('Escolha o aluno');
+  const de=(document.getElementById('relDe')||{}).value||'', ate=(document.getElementById('relAte')||{}).value||'';
+  if(de&&ate&&de>ate)return toast('A data inicial é maior que a final');
+  const r=montarRelatorioHTML(alunoId,turmaId,de,ate);
+  _relatorioHTML=r.html; _relatorioTxt=r.txt;
+  const fr=document.getElementById('relFrame'), vz=document.getElementById('relVazio');
+  _setDocIframe(fr, r.html);
+  if(vz) vz.style.display='none';
+}
+function addComentario(){
+  const alunoId=document.getElementById('relA').value;
+  if(!alunoId)return toast('Escolha o aluno');
+  const txt=document.getElementById('relCom').value.trim();
+  if(!txt)return toast('Escreva o comentário');
+  S.comentarios.push({id:uid(),alunoId,data:hoje(),texto:txt,autor:S.usuario});
+  document.getElementById('relCom').value=''; save(); toast('Comentário adicionado');
+  if(_relatorioHTML) gerarRelatorioAluno();
+}
+function copiarRelatorio(){ if(!_relatorioTxt)return toast('Gere o relatório primeiro'); copiarTexto(_relatorioTxt,'Relatório copiado!'); }
+function imprimirRelatorio(){ if(!_relatorioHTML)return toast('Gere o relatório primeiro'); imprimirDoc(_relatorioHTML); }

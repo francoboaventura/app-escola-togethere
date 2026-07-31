@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Togethere · Gestão Escolar</title>
+<!-- PWA: app instalável no celular/tablet -->
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#005EAF" />
+<script>
+/*__VENDOR_SUPABASE__*/
+</script>
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Togethere" />
+<link rel="apple-touch-icon" href="apple-touch-icon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Urbanist:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&family=Zilla+Slab:ital,wght@1,600;1,700&display=swap" rel="stylesheet" />
+<style>
+/*__APP_CSS__*/
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<div id="login">
+  <span class="feijao blob b1"></span>
+  <span class="feijao blob b2"></span>
+  <span class="feijao blob b3"></span>
+  <span class="feijao blob b4"></span>
+  <div class="login-card">
+    <div class="brand"><img src="logo.png" alt="togethere" class="logo-img" onerror="logoFallback(this)"></div>
+    <div class="tagline">inglês para chegar lá</div>
+    <h2 id="loginTitulo">Entrar</h2>
+    <div id="loginPanel"></div>
+  </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="app">
+  <div class="shell">
+    <aside class="side" id="side">
+      <div class="top">
+        <div class="brand"><img src="logo.png" alt="togethere" class="logo-img" onerror="logoFallback(this)"></div>
+      </div>
+      <nav class="nav" id="nav"></nav>
+      <div class="foot">
+        <div id="syncDot" onclick="puxarDaNuvem()" style="font-size:.72rem;color:#9fb1d1;margin-bottom:8px;cursor:pointer" title="Clique para puxar os dados mais recentes da nuvem">☁️ …</div>
+        <button onclick="puxarDaNuvem()" style="margin-bottom:8px">🔄 Atualizar (puxar da nuvem)</button>
+        <div id="perfilLabel" style="margin-bottom:8px"></div>
+        <div style="font-size:.66rem;color:#9fb1d1;margin-bottom:6px">versão <span id="appVer"></span></div>
+        <button onclick="trocarMinhaSenha()" style="margin-bottom:8px">🔑 Trocar minha senha</button>
+        <button class="btn-sair" onclick="logout()">🚪 Sair</button>
+      </div>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <button class="burger" onclick="document.getElementById('side').classList.toggle('open')">☰</button>
+        <div>
+          <div class="crumb" id="crumb">Início</div>
+          <h1 id="pageTitle">Painel</h1>
+        </div>
+        <div class="me">
+          <span id="meName"></span>
+          <span class="dot" id="meDot"></span>
+        </div>
+      </header>
+      <div class="content" id="view"></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+/*__APP_JS__*/
+</script>
+
+
+<script>
+/*__VENDOR_QR__*/
+</script>
+</body>
+</html>

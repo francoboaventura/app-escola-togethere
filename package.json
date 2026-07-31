@@ -1,0 +1,18 @@
+{
+  "name": "togethere-app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Togethere · Gestão Escolar — app (b101) com fontes modulares e build de arquivo único.",
+  "scripts": {
+    "split": "node scripts/split.mjs",
+    "build": "node scripts/build.mjs",
+    "build:min": "node scripts/build.mjs --min",
+    "verify": "node scripts/build.mjs --verify",
+    "test:boot": "node scripts/boot-test.mjs dist/index.html"
+  },
+  "devDependencies": {
+    "esbuild": "0.23.1",
+    "playwright-core": "1.47.2"
+  }
+}

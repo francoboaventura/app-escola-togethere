@@ -1,0 +1,31 @@
+{
+  "appJs": [
+    "src/js/00-estado-persistencia-em-localstorage.js",
+    "src/js/01-nuvem-sincronizacao-com-o-google-apps-sc.js",
+    "src/js/02-autenticacao-no-servidor.js",
+    "src/js/03-navegacao-itens-por-perfil.js",
+    "src/js/04-login.js",
+    "src/js/05-views.js",
+    "src/js/06-presenca.js",
+    "src/js/07-temas-de-casa.js",
+    "src/js/08-testes.js",
+    "src/js/09-edicao-de-documentos-boletim-ficha-relat.js",
+    "src/js/10-material.js",
+    "src/js/11-planos-de-aula.js",
+    "src/js/12-resumo-para-pais.js",
+    "src/js/13-relatorios-por-turma.js",
+    "src/js/14-aulas-vip.js",
+    "src/js/15-alertas.js",
+    "src/js/16-turmas-e-alunos.js",
+    "src/js/17-diretorio-de-alunos.js",
+    "src/js/18-acessos.js",
+    "src/js/19-logins-do-portal-do-aluno-cards-para-imp.js",
+    "src/js/20-boot.js",
+    "src/js/21-ciclo-de-vida-da-turma.js",
+    "src/js/22-aniversariantes-da-semana.js",
+    "src/js/23-pwa-registra-o-service-worker.js",
+    "src/js/24-planejamento-modulo-consolidado.js",
+    "src/js/25-formacao-metodologia-togethere-viva-dent.js",
+    "src/js/26-tutorial-o-que-cada-perfil-consegue-faze.js"
+  ]
+}
