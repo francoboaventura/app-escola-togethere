@@ -308,8 +308,10 @@ function renderFichaVip(v, vip){
     h+=`<p class="hint" style="margin:0">${vip.email?('📧 '+escAttr(vip.email)):'Sem e-mail cadastrado'}${vip.telefone?(' · 📱 '+escAttr(vip.telefone)):''}${idade!=null?(' · 🎂 '+idade+' anos'):''}</p>`;
   }
   h+=`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
-      <p class="hint" style="margin:0 0 3px">🎫 <b>Portal do aluno:</b> <a href="${portalURL}" target="_blank" style="color:var(--azul);word-break:break-all">${escAttr(portalURL.replace(/^https?:\/\//,''))}</a></p>
-      <p class="hint" style="margin:0">O login individual (e-mail + senha) do portal é gerado em <b>Cards de acesso</b>. O acesso de aluno VIP ao portal é liberado à parte pela Secretaria/Direção.</p>
+      <p class="hint" style="margin:0 0 6px">🎫 <b>Portal do aluno:</b> <a href="${portalURL}" target="_blank" style="color:var(--azul);word-break:break-all">${escAttr(portalURL.replace(/^https?:\/\//,''))}</a></p>
+      ${S.perfil==='direcao'
+        ? `<button class="btn ghost sm" id="vpAcessoBtn" onclick="gerarAcessoVip('${vip.id}')">🎫 Gerar / ver acesso ao portal</button><div id="vpAcessoBox"></div>`
+        : `<p class="hint" style="margin:0">O login individual do portal (e-mail + senha) é gerado pela Direção — depois é só entrar no endereço acima.</p>`}
     </div>
   </div>
   <div class="card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
@@ -362,6 +364,29 @@ async function enviarFichaVipResponsavel(id){
   if(btn){ btn.disabled=false; btn.textContent='✉️ Enviar ao responsável'; }
   if(res && res.ok){ toast('Ficha enviada ao responsável'); }
   else toast('Não foi possível enviar: '+((res&&res.erro)||'erro'));
+}
+async function gerarAcessoVip(id){
+  if(S.perfil!=='direcao') return toast('Só a direção gera acesso ao portal');
+  const vp=(S.vipAlunos||[]).find(x=>x.id===id); if(!vp) return;
+  const btn=document.getElementById('vpAcessoBtn'); if(btn){ btn.disabled=true; btn.textContent='Gerando…'; }
+  try{
+    const { data, error }=await sb.functions.invoke('criar-login-vip', { body:{ vipId:id } });
+    if(error) throw new Error(error.message||'falha');
+    if(!data || data.ok===false) throw new Error((data&&data.error)||'falha');
+    const box=document.getElementById('vpAcessoBox');
+    if(box) box.innerHTML=`<div class="card" style="background:#f4ecff;border:1px solid #e6d4ff;margin-top:10px;padding:12px 14px">
+      <p class="hint" style="margin:0 0 6px"><b>Acesso ao portal ${data.novo?'criado ✅':'(já existia)'}</b></p>
+      <p class="hint" style="margin:0">Login: <b>${escAttr(data.email||'—')}</b><br>Senha: <b>${escAttr(data.senha||'—')}</b></p>
+      <p class="hint" style="margin:6px 0 8px">No 1º acesso o aluno cria a própria senha.</p>
+      <button class="btn ghost sm" onclick="imprimirCardVip('${escAttr(data.email||'')}','${escAttr(data.senha||'')}','${escAttr(vp.nome)}')">🖨️ Imprimir card do portal</button>
+    </div>`;
+    toast(data.novo?'Acesso criado':'Acesso já existia');
+  }catch(e){ toast('Não consegui: '+((e&&e.message)||e)); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='🎫 Gerar / ver acesso ao portal'; } }
+}
+function imprimirCardVip(email,senha,nome){
+  if(typeof _abrirCardsImpressao!=='function') return toast('Impressão de cards indisponível');
+  _abrirCardsImpressao([{nome,email,senha}], true, null);
 }
 VIEWS.ficha=()=>{
   const v=document.getElementById('view');
