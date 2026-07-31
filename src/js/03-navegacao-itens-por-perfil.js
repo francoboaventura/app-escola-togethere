@@ -4,6 +4,7 @@
 const NAV=[
   {id:'painel', label:'Painel', em:'📊', grp:'Início', roles:['professor','secretaria','direcao']},
   {id:'tutorial', label:'Tutorial', em:'📖', grp:'Início', roles:['professor','secretaria','direcao']},
+  {id:'perfil', label:'Meu perfil', em:'👤', grp:'Início', roles:['professor','secretaria','direcao'], menu:false},
   {id:'presenca', label:'Chamada do dia', em:'📋', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
   {id:'testes', label:'Testes', em:'✏️', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
   {id:'planos', label:'Planos de aula', em:'🗒️', grp:'Sala de aula', roles:['professor','direcao'], menu:false},
