@@ -319,12 +319,10 @@ function renderFichaVip(v, vip){
     h+=`<p class="hint" style="margin:0">${vip.email?('📧 '+escAttr(vip.email)):'Sem e-mail cadastrado'}${vip.telefone?(' · 📱 '+escAttr(vip.telefone)):''}${idade!=null?(' · 🎂 '+idade+' anos'):''}</p>`;
   }
   h+=`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
-      <p class="hint" style="margin:0 0 6px">🎫 <b>Portal do aluno:</b> <a href="${portalURL}" target="_blank" style="color:var(--azul);word-break:break-all">${escAttr(portalURL.replace(/^https?:\/\//,''))}</a></p>
-      ${S.perfil==='direcao'
-        ? `<button class="btn ghost sm" id="vpAcessoBtn" onclick="gerarAcessoVip('${vip.id}')">🎫 Gerar / ver acesso ao portal</button><div id="vpAcessoBox"></div>`
-        : `<p class="hint" style="margin:0">O login individual do portal (e-mail + senha) é gerado pela Direção — depois é só entrar no endereço acima.</p>`}
+      <p class="hint" style="margin:0">🎫 <b>Portal do aluno:</b> <a href="${portalURL}" target="_blank" style="color:var(--azul);word-break:break-all">${escAttr(portalURL.replace(/^https?:\/\//,''))}</a></p>
     </div>
   </div>
+  ${_cardAcessoPortal(vip.id)}
   <div class="card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
     <span class="hint" style="flex:1">Período: <b>${periodoTxt}</b></span>
     <button class="btn ghost sm" onclick="setFichaPeriodo('ano')">Este ano</button>
@@ -376,27 +374,63 @@ async function enviarFichaVipResponsavel(id){
   if(res && res.ok){ toast('Ficha enviada ao responsável'); }
   else toast('Não foi possível enviar: '+((res&&res.erro)||'erro'));
 }
-async function gerarAcessoVip(id){
-  if(S.perfil!=='direcao') return toast('Só a direção gera acesso ao portal');
-  const vp=(S.vipAlunos||[]).find(x=>x.id===id); if(!vp) return;
-  const btn=document.getElementById('vpAcessoBtn'); if(btn){ btn.disabled=true; btn.textContent='Gerando…'; }
+// ===== Acesso ao portal (gestão de credenciais) — direção + secretaria =====
+// Cartão reutilizado na ficha do aluno de turma e na ficha VIP.
+function _cardAcessoPortal(id){
+  if(ehProfessor()) return '';
+  return `<div class="card" style="margin-top:12px"><h3 style="margin:0 0 8px;font-size:1rem">🔑 Acesso ao portal do aluno</h3>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn ghost sm" id="acNovaSenha" onclick="acessoNovaSenha('${id}')">🔑 Gerar senha nova</button>
+      <button class="btn ghost sm" onclick="acessoTrocarUsuario('${id}')">✏️ Trocar nome de usuário</button>
+      <button class="btn ghost sm" onclick="acessoEnviarReset('${id}')">✉️ Enviar link por e-mail</button>
+    </div>
+    <div id="fcAcessoBox"></div>
+    <p class="hint" style="margin:8px 0 0">"Gerar senha nova" cria o acesso (se ainda não existir) e define uma senha nova — o aluno cria a dele no 1º acesso. O link por e-mail vai para o e-mail do responsável cadastrado na ficha.</p>
+  </div>`;
+}
+async function acessoNovaSenha(id){
+  if(ehProfessor()) return toast('Sem permissão');
+  const btn=document.getElementById('acNovaSenha'); if(btn){ btn.disabled=true; btn.textContent='Gerando…'; }
   try{
-    const { data, error }=await sb.functions.invoke('criar-login-vip', { body:{ vipId:id } });
+    const { data, error }=await sb.functions.invoke('acesso-aluno', { body:{ alunoId:id, acao:'nova_senha' } });
     if(error) throw new Error(error.message||'falha');
     if(!data || data.ok===false) throw new Error((data&&data.error)||'falha');
-    const box=document.getElementById('vpAcessoBox');
-    if(box) box.innerHTML=`<div class="card" style="background:#f4ecff;border:1px solid #e6d4ff;margin-top:10px;padding:12px 14px">
-      <p class="hint" style="margin:0 0 6px"><b>Acesso ao portal ${data.novo?'criado ✅':'(já existia)'}</b></p>
+    const box=document.getElementById('fcAcessoBox');
+    if(box) box.innerHTML=`<div class="card" style="background:#eef6ff;border:1px solid #d4e6ff;margin-top:10px;padding:12px 14px">
+      <p class="hint" style="margin:0 0 4px"><b>Acesso ${data.novo?'criado ✅':'com senha nova ✅'}</b></p>
       <p class="hint" style="margin:0">Login: <b>${escAttr(data.email||'—')}</b><br>Senha: <b>${escAttr(data.senha||'—')}</b></p>
       <p class="hint" style="margin:6px 0 8px">No 1º acesso o aluno cria a própria senha.</p>
-      <button class="btn ghost sm" onclick="imprimirCardVip('${escAttr(data.email||'')}','${escAttr(data.senha||'')}','${escAttr(vp.nome)}')">🖨️ Imprimir card do portal</button>
-    </div>`;
-    toast(data.novo?'Acesso criado':'Acesso já existia');
+      <button class="btn ghost sm" onclick="imprimirCardAcesso('${escAttr(data.email||'')}','${escAttr(data.senha||'')}','${escAttr(data.nome||'')}')">🖨️ Imprimir card</button></div>`;
+    toast('Senha nova gerada');
   }catch(e){ toast('Não consegui: '+((e&&e.message)||e)); }
-  finally{ if(btn){ btn.disabled=false; btn.textContent='🎫 Gerar / ver acesso ao portal'; } }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='🔑 Gerar senha nova'; } }
 }
-function imprimirCardVip(email,senha,nome){
-  if(typeof _abrirCardsImpressao!=='function') return toast('Impressão de cards indisponível');
+async function acessoTrocarUsuario(id){
+  if(ehProfessor()) return toast('Sem permissão');
+  const novo=prompt('Novo nome de usuário do portal (só o começo, sem espaços — ex.: joaosilva). O sistema completa com @tgt.app.');
+  if(novo==null) return;
+  const v=(novo||'').trim(); if(!v) return toast('Digite o novo nome de usuário');
+  try{
+    const { data, error }=await sb.functions.invoke('acesso-aluno', { body:{ alunoId:id, acao:'trocar_usuario', novoUsuario:v } });
+    if(error) throw new Error(error.message||'falha');
+    if(!data || data.ok===false) throw new Error((data&&data.error)||'falha');
+    const box=document.getElementById('fcAcessoBox');
+    if(box) box.innerHTML=`<div class="card" style="background:#eef6ff;border:1px solid #d4e6ff;margin-top:10px;padding:12px 14px"><p class="hint" style="margin:0">Novo login: <b>${escAttr(data.email||'')}</b></p></div>`;
+    toast('Nome de usuário atualizado');
+  }catch(e){ toast('Não consegui: '+((e&&e.message)||e)); }
+}
+async function acessoEnviarReset(id){
+  if(ehProfessor()) return toast('Sem permissão');
+  if(!confirm('Enviar por e-mail (ao responsável) o link para o aluno criar uma nova senha?')) return;
+  try{
+    const { data, error }=await sb.functions.invoke('acesso-aluno', { body:{ alunoId:id, acao:'enviar_reset' } });
+    if(error) throw new Error(error.message||'falha');
+    if(!data || data.ok===false) throw new Error((data&&data.error)||'falha');
+    toast('Link enviado para '+(data.enviadoPara||'o e-mail de contato'));
+  }catch(e){ toast('Não consegui: '+((e&&e.message)||e)); }
+}
+function imprimirCardAcesso(email,senha,nome){
+  if(typeof _abrirCardsImpressao!=='function') return toast('Impressão indisponível');
   _abrirCardsImpressao([{nome,email,senha}], true, null);
 }
 VIEWS.ficha=()=>{
@@ -477,6 +511,7 @@ VIEWS.ficha=()=>{
       <button class="btn ghost sm" onclick="setFichaPeriodo('tudo')">Tudo</button>
     </div>
   </div>
+  ${_cardAcessoPortal(a.id)}
   <div class="fx-tabs">${ABAS.map(x=>`<button class="fx-tab${x.id===_fichaAba?' on':''}" onclick="fichaAba('${x.id}')">${x.label}${x.n!=null?` <span class="n">${x.n}</span>`:''}</button>`).join('')}</div>
   <div>${pane}</div>
   <div class="card" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
