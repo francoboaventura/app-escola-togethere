@@ -23,7 +23,6 @@ function iniciarTurma(id){
 }
 /* ---- + Aluno: buscar existente (unicidade) ou criar novo ---- */
 function abrirAddAluno(turmaId){
-  if(soLeitura()) return toast('Somente leitura — a secretaria não edita turmas');
   if(ehProfessor()) return toast('Sem permissão');
   if(turmaTrancada(turmaId)) return toast('Turma encerrada — não dá para adicionar alunos');
   modal(`<h3>+ Aluno <button class="close" onclick="fechar()">×</button></h3>

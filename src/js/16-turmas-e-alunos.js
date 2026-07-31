@@ -256,7 +256,12 @@ function corpoFichaVip(id){
   const comp=aulas.filter(a=>!a.faltou); const faltas=aulas.length-comp.length; const compMin=comp.reduce((s,a)=>s+(+a.duracaoMin||0),0);
   const wrs=(S.writings||[]).filter(w=>w.alunoId===id && inRange(w.data)).sort((x,y)=>x.data.localeCompare(y.data));
   const coms=comentariosDoAluno(id).filter(c=>inRange(c.data));
-  let txt=`FICHA DO ALUNO (VIP)\n${vip.nome}\n${vip.professor?('Prof. '+vip.professor+'\n'):''}Período: ${_fichaDe?brDate(_fichaDe):'início'} a ${_fichaAte?brDate(_fichaAte):'hoje'}\nGerado em ${brDate(hoje())} por ${S.usuario}\n`;
+  const _idadeV=vip.nascimento?(Math.floor((Date.now()-new Date(vip.nascimento).getTime())/(365.25*864e5))):null;
+  let txt=`FICHA DO ALUNO (VIP)\n${vip.nome}\n${vip.professor?('Prof. '+vip.professor+'\n'):''}`;
+  if(vip.email) txt+=`E-mail: ${vip.email}\n`;
+  if(vip.telefone) txt+=`Telefone/WhatsApp: ${vip.telefone}\n`;
+  if(_idadeV!=null) txt+=`Idade: ${_idadeV} anos\n`;
+  txt+=`Período: ${_fichaDe?brDate(_fichaDe):'início'} a ${_fichaAte?brDate(_fichaAte):'hoje'}\nGerado em ${brDate(hoje())} por ${S.usuario}\n`;
   txt+=`\n👑 AULAS VIP (${aulas.length}) — ${comp.length} com presença (${fmtDur(compMin)})${faltas?(' · '+faltas+' falta(s)'):''}\n`;
   if(aulas.length) aulas.forEach(a=>{ txt+=`• ${brDate(a.data)} — ${a.tema?a.tema+': ':''}${a.descricao} (${fmtDur(a.duracaoMin)})${a.faltou?' — NÃO COMPARECEU':''}\n`; }); else txt+=`• Nenhuma.\n`;
   txt+=`\n📝 WRITINGS (${wrs.length})\n`;
@@ -275,16 +280,37 @@ function renderFichaVip(v, vip){
   const wrs=(S.writings||[]).filter(w=>w.alunoId===vip.id && inRange(w.data)).sort((x,y)=>x.data.localeCompare(y.data));
   const coms=comentariosDoAluno(vip.id).filter(c=>inRange(c.data));
   const periodoTxt=(_fichaDe||_fichaAte)?(brDate(_fichaDe||'')+' a '+(_fichaAte?brDate(_fichaAte):'hoje')):'todo o histórico';
+  const idade=vip.nascimento?(Math.floor((Date.now()-new Date(vip.nascimento).getTime())/(365.25*864e5))):null;
+  const podeEd=!ehProfessor();
+  const portalURL=(typeof PORTAL_ALUNO_URL!=='undefined'?PORTAL_ALUNO_URL:'https://app.togethere.com.br/portal-aluno.html');
+  const tile=(val,l,c)=>`<div class="fx-tile"><div class="v" style="color:${c}">${val==null?'—':val}</div><div class="l">${l}</div></div>`;
   let h=`<div class="section-title"><span class="feijao fj" style="background:#C8A200"></span><h2 class="display">Ficha do aluno</h2></div>
-  <div class="card">
-    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center"><h3 style="margin:0;flex:1">${escAttr(vip.nome)}</h3><span class="pill" style="background:#fff8e0;color:#b88600">👑 Aluno VIP</span></div>
-    <p class="hint" style="margin:4px 0 8px">Aula particular${vip.professor?(' · Prof. '+escAttr(vip.professor)):''}</p>
-    <div style="margin-top:2px;display:flex;gap:6px;flex-wrap:wrap"><button class="btn ghost sm" onclick="ir('vip')">👑 Abrir em Alunos VIP</button></div>
+  <div class="fx-hero">
+    ${avatarFoto('fx-av', vip.foto, ((vip.nome||'·').trim()[0]||'·').toUpperCase(), "enviarFoto('vip','"+vip.id+"')")}
+    <div style="flex:1;min-width:150px"><div class="fx-hnm">${escAttr(vip.nome)}</div>
+      <div class="fx-htu">Aula particular${vip.professor?(' · Prof. '+escAttr(vip.professor)):''}${idade!=null?(' · '+idade+' anos'):''}</div></div>
+    <span class="pill" style="background:#fff8e0;color:#b88600">👑 Aluno VIP</span>
   </div>
-  <div class="card" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-    <span class="pill" style="background:#eafaf0;color:#1a8a4a">✅ ${comp.length} aula(s) com presença (${fmtDur(compMin)})</span>
-    ${faltas?`<span class="pill" style="background:#fdeaea;color:var(--vermelho)">❌ ${faltas} falta(s)</span>`:''}
-    ${wrs.length?`<span class="pill" style="background:#f4ecff;color:#9333c7">📝 ${wrs.length} writing(s)</span>`:''}
+  <div class="fx-tiles">
+    ${tile(comp.length,'Aulas c/ presença','var(--ok)')}
+    ${tile(faltas,'Faltas',faltas>0?'var(--vermelho)':'var(--tinta)')}
+    ${tile(fmtDur(compMin),'Tempo total','#005EAF')}
+    ${tile(wrs.length,'Writings',wrs.length>0?'#9333c7':'var(--tinta)')}
+  </div>
+  <div class="card" style="margin-top:12px"><h3 style="margin:0 0 8px">Contato & portal</h3>`;
+  if(podeEd){
+    h+=`<div class="row" style="flex-wrap:wrap">
+      <div class="field" style="flex:2;min-width:210px;margin:0"><label class="lbl">E-mail (responsável / aluno)</label><input type="email" value="${escAttr(vip.email||'')}" placeholder="email@exemplo.com" onchange="setVipCampo('${vip.id}','email',this.value)"></div>
+      <div class="field" style="flex:1;min-width:150px;margin:0"><label class="lbl">Telefone / WhatsApp</label><input type="text" value="${escAttr(vip.telefone||'')}" placeholder="(51) 9…" onchange="setVipCampo('${vip.id}','telefone',this.value)"></div>
+      <div class="field" style="min-width:150px;margin:0"><label class="lbl">Nascimento</label><input type="date" value="${escAttr(vip.nascimento||'')}" onchange="setVipCampo('${vip.id}','nascimento',this.value)"></div>
+    </div>`;
+  } else {
+    h+=`<p class="hint" style="margin:0">${vip.email?('📧 '+escAttr(vip.email)):'Sem e-mail cadastrado'}${vip.telefone?(' · 📱 '+escAttr(vip.telefone)):''}${idade!=null?(' · 🎂 '+idade+' anos'):''}</p>`;
+  }
+  h+=`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
+      <p class="hint" style="margin:0 0 3px">🎫 <b>Portal do aluno:</b> <a href="${portalURL}" target="_blank" style="color:var(--azul);word-break:break-all">${escAttr(portalURL.replace(/^https?:\/\//,''))}</a></p>
+      <p class="hint" style="margin:0">O login individual (e-mail + senha) do portal é gerado em <b>Cards de acesso</b>. O acesso de aluno VIP ao portal é liberado à parte pela Secretaria/Direção.</p>
+    </div>
   </div>
   <div class="card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
     <span class="hint" style="flex:1">Período: <b>${periodoTxt}</b></span>
@@ -302,11 +328,40 @@ function renderFichaVip(v, vip){
   }).join('')+'</div>':'<p class="hint">Nenhum.</p>';
   h+=`<h3 style="margin:18px 0 6px">💬 Comentários (${coms.length})</h3>`;
   h+=coms.length?'<div class="card" style="padding:10px 12px">'+coms.map(c=>`<div class="hint" style="border-top:1px solid var(--linha);padding:6px 0"><b>${brDate(c.data)}</b> (${escAttr(c.autor||'—')}): ${escAttr(c.texto||'')}</div>`).join('')+'</div>':'<p class="hint">Nenhum.</p>';
+  h+=`<div class="card" style="margin-top:8px"><div class="field" style="margin:0"><label class="lbl">Adicionar comentário</label><textarea id="vfCom" style="min-height:70px" placeholder="Observação sobre o aluno (visível na ficha e no relatório)"></textarea></div>
+    <button class="btn ghost sm" style="margin-top:8px" onclick="addComentarioVip('${vip.id}')">+ Comentário</button></div>`;
   h+=`<div class="card" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+    ${podeEd?`<button class="btn" id="vfEnviar" onclick="enviarFichaVipResponsavel('${vip.id}')">✉️ Enviar ao responsável</button>`:''}
     <button class="btn ghost" onclick="copiarFichaVip('${vip.id}')">📋 Copiar (WhatsApp)</button>
     <button class="btn ghost" onclick="imprimirFichaVip('${vip.id}')">🖨️ Imprimir / PDF</button>
   </div>`;
   v.innerHTML=h;
+}
+function setVipCampo(id,campo,val){
+  if(ehProfessor()) return;
+  const vp=(S.vipAlunos||[]).find(x=>x.id===id); if(!vp) return;
+  vp[campo]=(val||'').trim(); vp.atualizadoEm=Date.now(); save();
+  if(campo==='nascimento') VIEWS.ficha(); else toast('Atualizado');
+}
+function addComentarioVip(id){
+  const el=document.getElementById('vfCom'); const txt=((el&&el.value)||'').trim();
+  if(!txt) return toast('Escreva o comentário');
+  S.comentarios.push({id:uid(),alunoId:id,data:hoje(),texto:txt,autor:S.usuario});
+  save(); VIEWS.ficha(); toast('Comentário adicionado');
+}
+async function enviarFichaVipResponsavel(id){
+  if(ehProfessor()) return toast('Sem permissão para enviar');
+  const vp=(S.vipAlunos||[]).find(x=>x.id===id); if(!vp) return;
+  const email=(vp.email||'').trim();
+  if(!email || email.indexOf('@')<1) return toast('Cadastre o e-mail no topo da ficha ou use Copiar para WhatsApp.');
+  if(!confirm('Enviar a ficha de '+vp.nome+' para '+email+'?')) return;
+  const btn=document.getElementById('vfEnviar'); if(btn){ btn.disabled=true; btn.textContent='Enviando…'; }
+  const txt=corpoFichaVip(id);
+  const htmlEmail='<pre style="font-family:Arial,sans-serif;white-space:pre-wrap;font-size:13px;line-height:1.5">'+escAttr(txt)+'</pre>';
+  const res=await cloudEmail([email], 'Aulas VIP de '+vp.nome+' — Togethere', txt, htmlEmail);
+  if(btn){ btn.disabled=false; btn.textContent='✉️ Enviar ao responsável'; }
+  if(res && res.ok){ toast('Ficha enviada ao responsável'); }
+  else toast('Não foi possível enviar: '+((res&&res.erro)||'erro'));
 }
 VIEWS.ficha=()=>{
   const v=document.getElementById('view');
@@ -549,10 +604,11 @@ async function _fotoProcessar(file,tipo,id){
   try{
     toast('Preparando a foto…');
     const blob = await _fotoResize(file, 1600, 0.9);
-    const path = (tipo==='aluno'?'alunos/':'equipe/') + _slugFoto(id) + '-' + Date.now() + '.jpg';
+    const path = (tipo==='aluno'?'alunos/':tipo==='vip'?'vip/':'equipe/') + _slugFoto(id) + '-' + Date.now() + '.jpg';
     const { error } = await sb.storage.from('fotos').upload(path, blob, { contentType:'image/jpeg', upsert:true });
     if(error){ toast('Não deu para enviar: '+(error.message||'')); return; }
     if(tipo==='aluno'){ const a=S.alunos.find(x=>x.id===id); if(a){ a.foto=path; a.atualizadoEm=Date.now(); } }
+    else if(tipo==='vip'){ const vp=(S.vipAlunos||[]).find(x=>x.id===id); if(vp){ vp.foto=path; vp.atualizadoEm=Date.now(); } }
     else { const u=(S.usuarios||[]).find(x=>x.nome===id); if(u){ u.foto=path; } }
     save();
     delete _fotoCache[path];

@@ -1,6 +1,6 @@
 /* ===== Logins do portal do aluno + cards para imprimir (b93) ===== */
 let LOGINS_ALUNOS=[], LOGINS_TURMA='';
-const PORTAL_ALUNO_URL='https://francoboaventura.github.io/app-escola-togethere/portal-aluno.html';
+const PORTAL_ALUNO_URL='https://app.togethere.com.br/portal-aluno.html';
 
 async function criarLoginsAlunos(){
   const sel=document.getElementById('alSelTurma'); const turmaId=sel&&sel.value; if(!turmaId) return;
