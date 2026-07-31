@@ -38,6 +38,8 @@ function _cardPacoteVip(vid){
     ${tile(fmtDur(Math.max(0,saldo)),'Saldo',saldo<=0?'var(--vermelho)':'var(--ok)')}
     ${tile(fim?brDate(fim):'—','Válido até',(dias!=null&&dias<=30)?'#c2560b':'var(--tinta)')}
   </div>`;
+  { const impMin=(S.aulasVip||[]).filter(a=>a.vipId===vid && a.tema==='Importação' && (!a.faltou||a.cobrarFalta)).reduce((s,a)=>s+(+a.duracaoMin||0),0);
+    if(impMin>0) h+=`<p class="hint" style="margin:8px 0 0">Das <b>${fmtDur(usado)}</b> utilizadas: <b>${fmtDur(impMin)}</b> de <b>aulas anteriores</b> (consolidadas na importação da planilha) + <b>${fmtDur(usado-impMin)}</b> lançadas no app.</p>`; }
   if(ehGestor) h+=`<div class="row" style="flex-wrap:wrap;margin-top:10px">
       <div class="field" style="flex:1;min-width:150px;margin:0"><label class="lbl">✏️ Horas contratadas</label><input type="number" min="0" step="1" value="${contr/60}" onchange="setVipContratadas('${vid}',this.value)"></div>
       <div class="field" style="flex:1;min-width:150px;margin:0"><label class="lbl">✏️ Horas utilizadas</label><input type="number" min="0" step="0.25" value="${(usado/60)}" onchange="setVipUtilizadas('${vid}',this.value)"></div>
