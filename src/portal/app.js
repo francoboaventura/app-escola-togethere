@@ -106,6 +106,98 @@ function renderComentarios(cs){
     <div class="sub">${brDate(c.data)}${c.autor?(' · '+esc(c.autor)):''}</div></div>`).join('')+'</div>';
 }
 
+/* ---- meu perfil (dados editáveis + foto) e pacote VIP ---- */
+function escA(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function setAvatarFoto(av, url, nome){
+  if(!av) return;
+  if(url){ av.style.backgroundImage='url("'+url+'")'; av.style.backgroundSize='cover'; av.style.backgroundPosition='center'; av.textContent=''; }
+  else { av.style.backgroundImage=''; av.textContent=((nome||'·').trim()[0]||'·').toUpperCase(); }
+}
+function renderPerfil(al){
+  const box=$('perfilBox'); if(!box) return;
+  box.innerHTML=`<div class="card" style="padding:16px;margin-top:14px">
+    <b style="font-size:1rem">👤 Meus dados</b>
+    <p class="hint" style="margin:4px 0 12px">Mantenha seus dados atualizados — a escola usa para contato e para o seu cadastro.</p>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+      <div class="avatar" id="perfilAv" style="width:64px;height:64px;color:var(--azul);background:#eaf2fb">${((al.nome||'·').trim()[0]||'·').toUpperCase()}</div>
+      <button class="btn ghost sm" id="btnFoto" onclick="escolherFoto()">📷 Enviar / trocar foto</button>
+    </div>
+    <label>Nome completo</label>
+    <input id="pfNome" type="text" value="${escA(al.nome)}">
+    <label style="display:block;margin-top:10px">E-mail</label>
+    <input id="pfEmail" type="email" autocomplete="email" value="${escA(al.email)}" placeholder="voce@exemplo.com">
+    <label style="display:block;margin-top:10px">Telefone / WhatsApp</label>
+    <input id="pfTel" type="text" value="${escA(al.telefone)}" placeholder="(51) 9…">
+    <label style="display:block;margin-top:10px">Data de aniversário</label>
+    <input id="pfNasc" type="date" value="${escA(al.nascimento)}">
+    <div style="margin-top:14px"><button class="btn" id="btnSalvarPerfil" onclick="salvarPerfil()" style="width:100%">Salvar meus dados</button></div>
+    <div id="perfilMsg" class="msg"></div>
+  </div>`;
+  if(al.fotoUrl) setAvatarFoto($('perfilAv'), al.fotoUrl, al.nome);
+}
+async function salvarPerfil(){
+  const nome=($('pfNome').value||'').trim(), email=($('pfEmail').value||'').trim();
+  const tel=($('pfTel').value||'').trim(), nasc=($('pfNasc').value||'').trim();
+  const m=$('perfilMsg');
+  if(!nome){ m.textContent='O nome não pode ficar vazio.'; m.className='msg err'; return; }
+  if(email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){ m.textContent='E-mail inválido.'; m.className='msg err'; return; }
+  const btn=$('btnSalvarPerfil'); btn.disabled=true; const o=btn.textContent; btn.textContent='Salvando…';
+  try{
+    const { data, error }=await sb.functions.invoke('aluno-editar-perfil', { body:{ nome, email, telefone:tel, nascimento:nasc } });
+    if(error) throw new Error(error.message||'falha');
+    if(!data || data.ok===false) throw new Error((data&&data.error)||'falha');
+    try{ await sb.auth.updateUser({ data:{ email_contato: email } }); }catch(_e){}
+    $('nm').textContent=nome; if(DATA){ DATA.nome=nome; DATA.aluno=Object.assign(DATA.aluno||{},{nome,email,telefone:tel,nascimento:nasc}); }
+    m.textContent='Dados salvos! ✅'; m.className='msg ok';
+  }catch(e){ m.textContent='Não consegui salvar: '+((e&&e.message)||e); m.className='msg err'; }
+  finally{ btn.disabled=false; btn.textContent=o; }
+}
+function escolherFoto(){ const inp=$('fotoInput'); if(!inp) return; inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(f) enviarFotoPortal(f); inp.value=''; }; inp.click(); }
+function _resizeFoto(file, max, q){
+  return new Promise((res,rej)=>{ const img=new Image(); const url=URL.createObjectURL(file);
+    img.onload=()=>{ let w=img.naturalWidth,h=img.naturalHeight; if(Math.max(w,h)>max){ const s=max/Math.max(w,h); w=Math.round(w*s); h=Math.round(h*s); }
+      const c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h); URL.revokeObjectURL(url);
+      c.toBlob(b=>b?res(b):rej(new Error('toBlob')),'image/jpeg',q); };
+    img.onerror=()=>{ URL.revokeObjectURL(url); rej(new Error('imagem inválida')); }; img.src=url; });
+}
+function _blobB64(blob){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result)); r.onerror=rej; r.readAsDataURL(blob); }); }
+async function enviarFotoPortal(file){
+  const btn=$('btnFoto'); const m=$('perfilMsg'); if(btn){ btn.disabled=true; btn.textContent='Enviando…'; }
+  try{
+    const blob=await _resizeFoto(file, 1200, 0.85);
+    const dataUrl=await _blobB64(blob);
+    const { data, error }=await sb.functions.invoke('aluno-foto', { body:{ base64:dataUrl } });
+    if(error) throw new Error(error.message||'falha');
+    if(!data || data.ok===false) throw new Error((data&&data.error)||'falha');
+    if(data.fotoUrl){ setAvatarFoto($('avatar'), data.fotoUrl, ''); setAvatarFoto($('perfilAv'), data.fotoUrl, ''); if(DATA&&DATA.aluno) DATA.aluno.fotoUrl=data.fotoUrl; }
+    if(m){ m.textContent='Foto atualizada! ✅'; m.className='msg ok'; }
+  }catch(e){ if(m){ m.textContent='Não consegui enviar a foto: '+((e&&e.message)||e); m.className='msg err'; } }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='📷 Enviar / trocar foto'; } }
+}
+function _fmtH(min){ min=+min||0; const h=Math.floor(min/60), mm=min%60; if(!min) return '0min'; return (h?h+'h':'')+(mm?(h?' ':'')+mm+'min':''); }
+function renderPacote(isVip, pac){
+  const box=$('pacoteBox'); if(!box) return;
+  if(!isVip || !pac || !pac.temPacote){ box.innerHTML=''; return; }
+  const saldo=pac.saldoMin;
+  const tile=(v,l,c)=>`<div class="tile"><div class="v" style="color:${c}">${v}</div><div class="l">${l}</div></div>`;
+  let al='';
+  if(pac.alerta){ const a=pac.alerta, ms=[];
+    if(a.esgotado) ms.push('saldo esgotado'); else if(a.baixo) ms.push('saldo baixo');
+    if(a.vencido) ms.push('vigência vencida'); else if(a.vencendo) ms.push('vigência acaba em '+a.dias+' dia'+(a.dias===1?'':'s'));
+    al=`<div style="background:#fff1e6;border:1px solid #ffd9bf;border-radius:12px;padding:10px 12px;margin-top:10px;color:#c2560b;font-size:.9rem"><b>⚠️ Atenção:</b> ${ms.join(' · ')}. Fale com a secretaria para renovar.</div>`;
+  }
+  box.innerHTML=`<div class="card" style="padding:16px;margin-top:14px">
+    <b style="font-size:1rem">⏱️ Meu pacote de horas</b>
+    <div class="tiles" style="grid-template-columns:repeat(3,1fr);margin-top:12px">
+      ${tile(_fmtH(pac.contratadasMin),'Contratadas','#005EAF')}
+      ${tile(_fmtH(pac.usadasMin),'Utilizadas','#B8860B')}
+      ${tile(_fmtH(Math.max(0,saldo)),'Saldo',saldo<=0?'#E52524':'#16A07A')}
+    </div>
+    ${pac.vigenciaFim?`<p class="hint" style="margin:10px 0 0">Válido até <b>${brDate(pac.vigenciaFim)}</b>${pac.dias!=null?(pac.dias>=0?(' · '+pac.dias+' dia'+(pac.dias===1?'':'s')+' restante'+(pac.dias===1?'':'s')):' · vencido'):''}</p>`:''}
+    ${al}
+  </div>`;
+}
+
 /* ---- painel principal ---- */
 const ABAS=[
   {id:'aulas', label:'Aulas'},
@@ -127,6 +219,12 @@ function renderPainel(data){
     + tile(r.temasPend,'Temas pend.',(r.temasPend>0)?'var(--ouro)':'var(--tinta)')
     + tile(r.materialPend,'Material',(r.materialPend>0)?'var(--ouro)':'var(--tinta)');
   $('tilesBox').classList.remove('hide');
+
+  // avatar com foto + perfil editável + pacote (VIP)
+  const al=data.aluno||{};
+  setAvatarFoto($('avatar'), al.fotoUrl, nome);
+  renderPacote(!!data.vip, data.pacote);
+  renderPerfil(al);
 
   const bol=data.boletim||{liberado:false};
   const cont={
@@ -217,7 +315,6 @@ async function salvarEmailContato(){
 async function carregarFicha(){
   $('telaLogin').classList.add('hide'); $('telaTroca').classList.add('hide');
   $('app').classList.remove('hide'); $('carregando').classList.remove('hide');
-  renderEmailContato();
   try{
     const { data, error }=await sb.functions.invoke('minha-ficha');
     if(error) throw new Error(error.message||'falha ao carregar');
@@ -251,8 +348,6 @@ $('btnEntrar').onclick=entrar;
 $('senha').addEventListener('keydown',e=>{ if(e.key==='Enter') entrar(); });
 $('btnTrocar').onclick=trocarSenha;
 $('nsenha2').addEventListener('keydown',e=>{ if(e.key==='Enter') trocarSenha(); });
-$('btnEmail').onclick=salvarEmailContato;
-$('emailContato').addEventListener('keydown',e=>{ if(e.key==='Enter') salvarEmailContato(); });
 $('btnSair').onclick=sair;
 // pré-preenche o login se vier ?u=<email> (usado pelo QR do card)
 (()=>{ try{ const u=new URLSearchParams(location.search).get('u'); if(u && $('email')) $('email').value=u; }catch(e){} })();
