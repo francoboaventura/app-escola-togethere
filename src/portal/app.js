@@ -220,10 +220,10 @@ function renderPainel(data){
     + tile(r.materialPend,'Material',(r.materialPend>0)?'var(--ouro)':'var(--tinta)');
   $('tilesBox').classList.remove('hide');
 
-  // avatar com foto + perfil editável + pacote (VIP)
+  // avatar com foto + perfil editável (o controle de horas/pacote fica oculto no portal por ora)
   const al=data.aluno||{};
   setAvatarFoto($('avatar'), al.fotoUrl, nome);
-  renderPacote(!!data.vip, data.pacote);
+  $('pacoteBox').innerHTML='';   // renderPacote() desativado no portal (a pedido)
   renderPerfil(al);
 
   const bol=data.boletim||{liberado:false};

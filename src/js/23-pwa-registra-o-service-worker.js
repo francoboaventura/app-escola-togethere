@@ -1,4 +1,27 @@
 /* PWA: registra o service worker (offline + instalável) */
+/* Auto-atualização: checa versao.json e recarrega sozinho quando há deploy novo. */
+(function(){
+  var _chk=false;
+  function _v(){ return (typeof APP_VERSAO!=='undefined')?APP_VERSAO:''; }
+  async function checarVersao(){
+    if(_chk) return; _chk=true;
+    try{
+      var r=await fetch('versao.json?_='+Date.now(), {cache:'no-store'});
+      if(r&&r.ok){
+        var j=await r.json();
+        if(j&&j.v&&_v()&&j.v!==_v()){
+          try{ if(sessionStorage.getItem('_verReload')===j.v){ return; } sessionStorage.setItem('_verReload', j.v); }catch(e){}
+          try{ if(typeof toast==='function') toast('Atualizando o app…'); }catch(e){}
+          setTimeout(function(){ location.replace(location.pathname + '?v=' + encodeURIComponent(j.v)); }, 1200);
+        }
+      }
+    }catch(e){}
+    finally{ _chk=false; }
+  }
+  window.addEventListener('load', function(){ setTimeout(checarVersao, 4000); });
+  document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='visible') checarVersao(); });
+  setInterval(checarVersao, 5*60*1000);
+})();
 function mostrarAtualizacao(){
   if(document.getElementById('updBanner')) return;
   var b=document.createElement('div');

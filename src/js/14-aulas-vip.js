@@ -24,6 +24,7 @@ function _vipAlertaTxt(al){
   return m.join(' · ');
 }
 function _cardPacoteVip(vid){
+  if(ehProfessor()) return '';   // professor VIP só lança aulas/tema; controle de horas é da secretaria/direção
   const ehGestor=(S.perfil==='direcao'||soLeitura());
   const contr=vipContratadoMin(vid), usado=vipConsumoMin(vid), saldo=contr-usado;
   const pac=(S.pacotesVip||[]).filter(p=>p.vipId===vid && !p.arquivado).sort((a,b)=>(a.inicio||'').localeCompare(b.inicio||''));
@@ -37,6 +38,11 @@ function _cardPacoteVip(vid){
     ${tile(fmtDur(Math.max(0,saldo)),'Saldo',saldo<=0?'var(--vermelho)':'var(--ok)')}
     ${tile(fim?brDate(fim):'—','Válido até',(dias!=null&&dias<=30)?'#c2560b':'var(--tinta)')}
   </div>`;
+  if(ehGestor) h+=`<div class="row" style="flex-wrap:wrap;margin-top:10px">
+      <div class="field" style="flex:1;min-width:150px;margin:0"><label class="lbl">✏️ Horas contratadas</label><input type="number" min="0" step="1" value="${contr/60}" onchange="setVipContratadas('${vid}',this.value)"></div>
+      <div class="field" style="flex:1;min-width:150px;margin:0"><label class="lbl">✏️ Horas utilizadas</label><input type="number" min="0" step="0.25" value="${(usado/60)}" onchange="setVipUtilizadas('${vid}',this.value)"></div>
+    </div>
+    <p class="hint" style="margin:6px 0 0">Editar aqui ajusta o total na hora. As aulas lançadas continuam contando; o valor de "utilizadas" que você digitar prevalece como ajuste.</p>`;
   if(al) h+=`<div class="card" style="background:#fff1e6;border:1px solid #ffd9bf;margin-top:10px;padding:10px 12px"><b style="color:#c2560b">⚠️ Atenção:</b> <span class="hint">${_vipAlertaTxt(al)}. Renovar ou avisar o responsável.</span></div>`;
   h+=pac.map(p=>{
     const d=p.fim?Math.round((new Date(p.fim+'T23:59:59').getTime()-Date.now())/864e5):null;
@@ -71,6 +77,28 @@ function delPacoteVip(id){
   S.pacotesVip=(S.pacotesVip||[]).filter(x=>x.id!==id); marcarExcluido('pacotesVip',id);
   save(); VIEWS.vip(); toast('Pacote excluído');
 }
+// Secretaria/direção editam as horas contratadas direto na ficha.
+function setVipContratadas(vid, val){
+  if(!(S.perfil==='direcao'||soLeitura())) return toast('Sem permissão');
+  const alvoH=Math.max(0, Math.round(parseFloat(String(val||'0').replace(',','.'))||0));
+  const pac=(S.pacotesVip||[]).filter(p=>p.vipId===vid && !p.arquivado).sort((a,b)=>(a.inicio||'').localeCompare(b.inicio||''));
+  if(!pac.length){ S.pacotesVip.push({id:uid(), vipId:vid, horas:alvoH, inicio:hoje(), fim:'', obs:'', criadoEm:Date.now(), atualizadoEm:Date.now()}); }
+  else { const outros=pac.slice(1).reduce((s,p)=>s+(+p.horas||0),0); pac[0].horas=Math.max(0, alvoH-outros); pac[0].atualizadoEm=Date.now(); }
+  save(); VIEWS.ficha(); toast('Horas contratadas atualizadas');
+}
+// Editar "utilizadas": mantém as aulas lançadas e guarda um ajuste único para bater o total.
+function setVipUtilizadas(vid, val){
+  if(!(S.perfil==='direcao'||soLeitura())) return toast('Sem permissão');
+  const alvoMin=Math.max(0, Math.round((parseFloat(String(val||'0').replace(',','.'))||0)*60));
+  const conta=a=>a.vipId===vid && (!a.faltou || a.cobrarFalta);
+  const baseMin=(S.aulasVip||[]).filter(a=>conta(a) && !a.ajusteManual).reduce((s,a)=>s+(+a.duracaoMin||0),0);
+  const delta=alvoMin-baseMin;
+  const aj=(S.aulasVip||[]).find(a=>a.vipId===vid && a.ajusteManual);
+  if(delta===0){ if(aj) S.aulasVip=S.aulasVip.filter(a=>a!==aj); }
+  else if(aj){ aj.duracaoMin=delta; aj.atualizadoEm=Date.now(); }
+  else { S.aulasVip.push({id:uid(), vipId:vid, data:hoje(), tema:'Ajuste', descricao:'Ajuste manual de horas utilizadas', duracaoMin:delta, faltou:false, cobrarFalta:false, ajusteManual:true, atualizadoEm:Date.now()}); }
+  save(); VIEWS.ficha(); toast('Horas utilizadas atualizadas');
+}
 function _bannerAlertasVip(lista){
   const avisos=(lista||[]).filter(a=>vipAlertaPacote(a.id));
   if(!avisos.length) return '';
@@ -94,7 +122,8 @@ VIEWS.vip=()=>{
       ${!ehSec?`<div class="row"><div style="flex:3"><input type="text" id="vipNome" placeholder="Nome do aluno VIP" onkeydown="if(event.key==='Enter')addVipAluno()"></div>
       ${ehDir?`<div style="flex:2"><select id="vipProf"><option value="">— professor…</option>${profs.map(p=>`<option value="${escAttr(p)}">${esc(p)}</option>`).join('')}</select></div>`:''}
       <button class="btn ghost" onclick="addVipAluno()">+ Aluno VIP</button></div>`:''}
-      ${lista.length?`<div class="field" style="margin-top:12px"><label class="lbl">Selecionar aluno</label><select id="vipSelAluno" onchange="vipSel=this.value;VIEWS.vip()">${lista.map(a=>`<option value="${a.id}" ${a.id===vipSel?'selected':''}>${a.nome}${ehGestor?(a.professor?' · '+esc(a.professor):' · (sem professor)'):''}</option>`).join('')}</select></div>`:`<p class="hint" style="margin:10px 0 0">${ehGestor?'Nenhum aluno VIP cadastrado ainda.':'Você ainda não tem alunos VIP.'}</p>`}
+      ${lista.length?`<div class="field" style="margin-top:12px"><label class="lbl">Selecionar aluno (abre a ficha completa)</label><select id="vipSelAluno" onchange="if(this.value)abrirFicha(this.value)"><option value="">— escolha um aluno…</option>${lista.map(a=>`<option value="${a.id}">${a.nome}${ehGestor?(a.professor?' · '+esc(a.professor):' · (sem professor)'):''}</option>`).join('')}</select></div>
+      <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">${lista.map(a=>`<button class="btn ghost sm" onclick="abrirFicha('${a.id}')">${esc(a.nome)}</button>`).join('')}</div>`:`<p class="hint" style="margin:10px 0 0">${ehGestor?'Nenhum aluno VIP cadastrado ainda.':'Você ainda não tem alunos VIP.'}</p>`}
       ${vipSel&&ehGestor?`<div class="row" style="margin-top:10px;align-items:flex-end;gap:8px">
         <div style="flex:1"><label class="lbl">Professor(a) responsável</label><select id="vipTrocaProf" onchange="trocarProfVip('${vipSel}',this.value)"><option value="">— sem professor</option>${profs.map(p=>`<option value="${escAttr(p)}" ${vObj.professor===p?'selected':''}>${esc(p)}</option>`).join('')}</select></div>
         <button class="btn ghost sm" onclick="vipParaAluno('${vipSel}')">🎓 Mover para turma</button></div>`:''}
@@ -207,7 +236,7 @@ function renderVipLista(){
   const box=document.getElementById('vipBox'); if(!box)return;
   const vid=vipSel, al=S.vipAlunos.find(a=>a.id===vid);
   if(!vid||!al){ box.innerHTML=''; return; }
-  const aulas=S.aulasVip.filter(x=>x.vipId===vid).sort((a,b)=>b.data.localeCompare(a.data));
+  const aulas=S.aulasVip.filter(x=>x.vipId===vid && !x.ajusteManual).sort((a,b)=>b.data.localeCompare(a.data));
   const comp=aulas.filter(a=>!a.faltou); const compMin=comp.reduce((s,a)=>s+(+a.duracaoMin||0),0);
   const faltas=aulas.length-comp.length;
   let h=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0;flex:1">Aulas de ${al.nome}</h3>

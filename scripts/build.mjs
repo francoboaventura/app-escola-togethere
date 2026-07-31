@@ -58,6 +58,11 @@ for (const f of fs.readdirSync(path.join(ROOT, 'public'))) {
 // 2) ... e depois grava as páginas montadas (vencem qualquer cópia estática).
 fs.writeFileSync(path.join(ROOT, 'dist/index.html'), appHtml);
 fs.writeFileSync(path.join(ROOT, 'dist/portal-aluno.html'), portalHtml);
+// 3) versao.json — usado pelo app para se auto-atualizar quando há deploy novo.
+{
+  const mv = read('src/js/01-nuvem-sincronizacao-com-o-google-apps-sc.js').match(/APP_VERSAO\s*=\s*['"]([^'"]+)['"]/);
+  fs.writeFileSync(path.join(ROOT, 'dist/versao.json'), JSON.stringify({ v: (mv ? mv[1] : '') }));
+}
 
 console.log('Build:', MIN ? 'produção (minificado: só espaço/comentários)' : 'padrão (sem minificar)');
 console.log('  dist/index.html       :', kb(appHtml));

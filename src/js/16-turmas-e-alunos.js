@@ -284,9 +284,31 @@ function corpoFichaVip(id){
 }
 function copiarFichaVip(id){ const t=corpoFichaVip(id); if(!t) return; copiarTexto(t,'Ficha copiada! Cole no WhatsApp'); }
 function imprimirFichaVip(id){ const t=corpoFichaVip(id); if(!t) return; const html=`<div style="font-family:Arial,sans-serif;max-width:760px;margin:0 auto;padding:20px"><pre style="white-space:pre-wrap;font-family:Arial,sans-serif;font-size:13px;line-height:1.5">${escAttr(t)}</pre></div>`; if(typeof imprimirDoc==='function') imprimirDoc(html); else toast('Impressão indisponível'); }
+// Lançar aula VIP direto da ficha (professor + direção; secretaria não lança).
+function lancarAulaVip(vid){
+  if(soLeitura()) return toast('A secretaria não lança aulas VIP');
+  modal(`<h3>+ Lançar aula VIP <button class="close" onclick="fechar()">×</button></h3>
+    <div class="field"><label class="lbl">Tema</label><input type="text" id="laTema" placeholder="Ex: Simple Past · entrevista de emprego"></div>
+    <div class="field"><label class="lbl">Descrição da aula</label><textarea id="laDesc" style="min-height:120px" placeholder="O que foi trabalhado na aula"></textarea></div>
+    <div class="row"><div class="field"><label class="lbl">Data</label><input type="date" id="laData" value="${hoje()}"></div>
+      <div class="field"><label class="lbl">Duração (min)</label><input type="number" id="laDur" value="60" min="5" step="5"></div></div>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:2px 0 6px"><input type="checkbox" id="laFaltou" onchange="document.getElementById('laCobrarW').style.display=this.checked?'flex':'none'"> ❌ Aluno não compareceu</label>
+    <label id="laCobrarW" style="display:none;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:0 0 12px 22px;color:#b8860b"><input type="checkbox" id="laCobrar"> 💳 Debitar a hora mesmo assim (professor estava disponível)</label>
+    <button class="btn block" onclick="salvarAulaVipFicha('${vid}')">Lançar aula</button>`);
+  setTimeout(()=>{const i=document.getElementById('laDesc'); if(i)i.focus();},60);
+}
+function salvarAulaVipFicha(vid){
+  if(soLeitura()) return toast('A secretaria não lança aulas VIP');
+  const desc=(document.getElementById('laDesc').value||'').trim(); if(!desc) return toast('Descreva a aula');
+  const data=document.getElementById('laData').value; if(!data) return toast('Escolha a data');
+  const faltou=!!document.getElementById('laFaltou').checked;
+  S.aulasVip.push({ id:uid(), vipId:vid, data, tema:(document.getElementById('laTema').value||'').trim(), descricao:desc,
+    duracaoMin:+document.getElementById('laDur').value||0, faltou, cobrarFalta: faltou && !!(document.getElementById('laCobrar')||{}).checked, atualizadoEm:Date.now() });
+  save(); fechar(); VIEWS.ficha(); toast(faltou?'Falta lançada':'Aula lançada ✅');
+}
 function renderFichaVip(v, vip){
   const inRange=d=>(!_fichaDe||d>=_fichaDe)&&(!_fichaAte||d<=_fichaAte);
-  const aulas=(S.aulasVip||[]).filter(x=>x.vipId===vip.id && inRange(x.data)).sort((a,b)=>b.data.localeCompare(a.data));
+  const aulas=(S.aulasVip||[]).filter(x=>x.vipId===vip.id && !x.ajusteManual && inRange(x.data)).sort((a,b)=>b.data.localeCompare(a.data));
   const comp=aulas.filter(a=>!a.faltou); const faltas=aulas.length-comp.length; const compMin=comp.reduce((s,a)=>s+(+a.duracaoMin||0),0);
   const wrs=(S.writings||[]).filter(w=>w.alunoId===vip.id && inRange(w.data)).sort((x,y)=>x.data.localeCompare(y.data));
   const coms=comentariosDoAluno(vip.id).filter(c=>inRange(c.data));
@@ -308,6 +330,7 @@ function renderFichaVip(v, vip){
     ${tile(fmtDur(compMin),'Tempo total','#005EAF')}
     ${tile(wrs.length,'Writings',wrs.length>0?'#9333c7':'var(--tinta)')}
   </div>
+  ${_cardPacoteVip(vip.id)}
   <div class="card" style="margin-top:12px"><h3 style="margin:0 0 8px">Contato & portal</h3>`;
   if(podeEd){
     h+=`<div class="row" style="flex-wrap:wrap">
@@ -329,7 +352,7 @@ function renderFichaVip(v, vip){
     <button class="btn ghost sm" onclick="setFichaPeriodo('ano')">Este ano</button>
     <button class="btn ghost sm" onclick="setFichaPeriodo('tudo')">Tudo</button>
   </div>`;
-  h+=`<h3 style="margin:18px 0 6px">👑 Aulas VIP (${aulas.length})</h3>`;
+  h+=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:18px 0 6px"><h3 style="margin:0;flex:1">👑 Aulas VIP (${aulas.length})</h3>${!soLeitura()?`<button class="btn ghost sm" onclick="lancarAulaVip('${vip.id}')">+ Lançar aula</button>`:''}</div>`;
   h+=aulas.length?aulas.map(a=>`<div class="card" style="padding:10px 12px"><div style="display:flex;gap:8px;flex-wrap:wrap"><b style="flex:1">${brDate(a.data)}</b><span style="color:${a.faltou?'var(--vermelho)':'#1a8a4a'};font-weight:600">${a.faltou?'❌ não compareceu':'✅ '+fmtDur(a.duracaoMin)}</span></div><p class="hint" style="margin:4px 0 0">${a.tema?('<b>'+escAttr(a.tema)+'</b> — '):''}${escAttr(a.descricao||'')}</p></div>`).join(''):'<p class="hint">Nenhuma aula no período.</p>';
   h+=`<h3 style="margin:18px 0 6px">📝 Writings (${wrs.length})</h3>`;
   h+=wrs.length?'<div class="card" style="padding:10px 12px">'+wrs.map(w=>{
