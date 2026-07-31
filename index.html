@@ -455,7 +455,7 @@ const SUPA_KEY='sb_publishable_CD6tvB_DTCH-QSfDNavreg_wtiKiWI1';
 const sb = window.supabase.createClient(SUPA_URL, SUPA_KEY);
 function normNome(s){ return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,''); }
 let CLOUD_TOKEN = (function(){ try{ return localStorage.getItem(TKEY)||null; }catch(e){ return null; } })();
-const APP_VERSAO = '2026.07.30 · b98 (Supabase)';   // aparece no rodapé; mude a cada publicação no GitHub
+const APP_VERSAO = '2026.07.30 · b99 (Supabase)';   // aparece no rodapé; mude a cada publicação no GitHub
 const LOGO_B64 = 'data:image/png;base64,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';
 /* ============================================================================ */
 let _syncTimer=null;
@@ -1347,6 +1347,7 @@ VIEWS.painel=()=>{
   if(S.perfil==='direcao' && _alunosVisiveis) v.appendChild(el(`<div style="margin:-4px 0 10px"><button class="btn ghost sm" onclick="ocultarAlunos()">🔒 Ocultar total de alunos</button></div>`));
   if(S.perfil==='direcao') v.appendChild(el(renderPainelGestao()));
   { const _pc=renderPendenciasCard(); if(_pc) v.appendChild(el(_pc)); }   // pendências (chamada/plano/relatório)
+  { const _rb=renderBoletinsReprovadosCard(); if(_rb) v.appendChild(el(_rb)); }   // aviso ao professor: boletins reprovados
   { const _na=apoioBadge();
     if(_na){
       const _msg = S.perfil==='direcao' ? `${_na} indicação(ões) de aula de apoio aguardam sua aprovação.`
@@ -1911,7 +1912,12 @@ function mediaConceitosBoletim(){
 }
 function ehDirecao(){ return S.perfil==='direcao'; }
 function boletimAtual(criar){ return boletimAluno ? boletimDe(testeTurma, boletimAluno, !!criar) : null; }
-function _boletimRevoga(b){ if(b && b.aprovado){ b.aprovado=false; b.aprovadoPor=null; b.aprovadoEm=null; } }
+function _boletimRevoga(b){
+  if(!b) return;
+  if(b.aprovado){ b.aprovado=false; b.aprovadoPor=null; b.aprovadoEm=null; }
+  // editar um boletim reprovado limpa a reprovação (o professor está refazendo)
+  if(b.reprovado){ b.reprovado=false; b.motivoReprovacao=''; b.reprovadoPor=null; b.reprovadoEm=null; }
+}
 function _boletimAprovadoOuAvisa(){
   const b=boletimAtual(false);
   if(!b || !b.aprovado){ toast('Este boletim precisa ser APROVADO pela direção antes de enviar, imprimir ou publicar.'); return false; }
@@ -1920,9 +1926,14 @@ function _boletimAprovadoOuAvisa(){
 function boAprovBarHTML(){
   const b=boletimAtual(false);
   const aprovado=!!(b && b.aprovado);
+  const reprovado=!!(b && b.reprovado);
   const pill = aprovado
     ? `<span class="pill" style="background:#e7f6ef;color:var(--ok)">✅ Aprovado${b.aprovadoPor?(' por '+escAttr(b.aprovadoPor)):''}${b.aprovadoEm?(' · '+brDate(b.aprovadoEm)):''}</span>`
-    : `<span class="pill" style="background:#fff7e6;color:var(--laranja)">⏳ Aguardando aprovação da direção</span>`;
+    : reprovado
+      ? `<span class="pill" style="background:#fdeaea;color:var(--vermelho)">✖ Reprovado${b.reprovadoPor?(' por '+escAttr(b.reprovadoPor)):''}${b.reprovadoEm?(' · '+brDate(b.reprovadoEm)):''}</span>`
+      : (b&&b.gerado)
+        ? `<span class="pill" style="background:#fff7e6;color:var(--laranja)">⏳ Aguardando aprovação da direção</span>`
+        : `<span class="pill" style="background:#eef2f7;color:#5b6b7c">Rascunho — gere para enviar à aprovação</span>`;
   let acao='';
   if(ehDirecao()){
     acao = aprovado
@@ -1931,13 +1942,19 @@ function boAprovBarHTML(){
   } else if(!aprovado){
     acao = `<span class="hint">Só a direção aprova. Enviar/Imprimir/Publicar liberam após a aprovação.</span>`;
   }
-  return `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">${pill}${acao}</div>`;
+  let extra='';
+  if(reprovado && b.motivoReprovacao){
+    extra = `<div style="flex-basis:100%;background:#fdeaea;border:1px solid #f3c2c2;border-radius:10px;padding:10px 12px;margin-top:4px;font-size:.9rem"><b style="color:var(--vermelho)">Motivo da reprovação:</b> ${escAttr(b.motivoReprovacao)}<div class="hint" style="margin-top:4px">Ajuste o boletim e gere de novo para reenviar à aprovação.</div></div>`;
+  }
+  const del = (b && (b.gerado||boletimTemConteudo(b))) ? `<button class="btn ghost sm" onclick="apagarBoletimAtual()">🗑️ Apagar boletim</button>` : '';
+  return `<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">${pill}${acao}${del}${extra}</div>`;
 }
 function _refreshPilulaBoletim(){ const el=document.getElementById('boAprovBar'); if(el) el.innerHTML=boAprovBarHTML(); }
 function aprovarBoletim(){
   if(!ehDirecao()) return toast('Só a direção pode aprovar o boletim.');
   const b=boletimAtual(true); if(!b) return toast('Escolha o aluno.');
-  b.aprovado=true; b.aprovadoPor=S.usuario; b.aprovadoEm=hoje();
+  b.aprovado=true; b.aprovadoPor=S.usuario; b.aprovadoEm=hoje(); b.gerado=true;
+  b.reprovado=false; b.motivoReprovacao=''; b.reprovadoPor=null; b.reprovadoEm=null;
   try{ const r=montarBoletimHTML(b.turmaId, b.alunoId); b.htmlAprovado=r.html; b.txtAprovado=r.txt; }catch(e){}
   b.atualizadoEm=Date.now(); save();
   _refreshPilulaBoletim();
@@ -1958,22 +1975,25 @@ function boletimTemConteudo(b){
   return temC || temD || !!(b.parecer && b.parecer.trim()) || (b.conceitoGeral!=null && b.conceitoGeral!=='') || !!b.distincaoGeral;
 }
 function boletinsParaAprovar(){
-  const pend=[], aprov=[];
+  const pend=[], aprov=[], reprov=[];
   (S.boletins||[]).forEach(b=>{
-    if(!boletimTemConteudo(b)) return;
+    // aparece se foi GERADO (enviado), ou aprovado/reprovado, ou já tem conteúdo digitado
+    if(!(b.gerado || b.aprovado || b.reprovado || boletimTemConteudo(b))) return;
     const a=(S.alunos||[]).find(x=>x.id===b.alunoId); if(!a || a.arquivado) return;
     const t=(S.turmas||[]).find(x=>x.id===b.turmaId)||{};
     const item={ b, nome:a.nome, turma:t.nome||'—', turmaId:b.turmaId, alunoId:b.alunoId };
-    (b.aprovado?aprov:pend).push(item);
+    if(b.aprovado) aprov.push(item);
+    else if(b.reprovado) reprov.push(item);
+    else pend.push(item);
   });
   const ord=(x,y)=> (x.turma||'').localeCompare(y.turma) || (x.nome||'').localeCompare(y.nome);
-  pend.sort(ord); aprov.sort(ord);
-  return { pend, aprov };
+  pend.sort(ord); aprov.sort(ord); reprov.sort(ord);
+  return { pend, aprov, reprov };
 }
 function aprovarPelaLista(turmaId, alunoId, aprovar){
   if(!ehDirecao()) return toast('Só a direção pode aprovar.');
   const b=boletimDe(turmaId, alunoId, false); if(!b) return toast('Boletim não encontrado.');
-  if(aprovar){ b.aprovado=true; b.aprovadoPor=S.usuario; b.aprovadoEm=hoje(); try{ const r=montarBoletimHTML(turmaId, alunoId); b.htmlAprovado=r.html; b.txtAprovado=r.txt; }catch(e){} }
+  if(aprovar){ b.aprovado=true; b.aprovadoPor=S.usuario; b.aprovadoEm=hoje(); b.gerado=true; b.reprovado=false; b.motivoReprovacao=''; b.reprovadoPor=null; b.reprovadoEm=null; try{ const r=montarBoletimHTML(turmaId, alunoId); b.htmlAprovado=r.html; b.txtAprovado=r.txt; }catch(e){} }
   else { b.aprovado=false; b.aprovadoPor=null; b.aprovadoEm=null; }
   b.atualizadoEm=Date.now(); save(); VIEWS.aprovacoes();
   toast(aprovar?'Boletim aprovado ✓':'Aprovação revogada.');
@@ -1981,18 +2001,25 @@ function aprovarPelaLista(turmaId, alunoId, aprovar){
 VIEWS.aprovacoes=()=>{
   const v=document.getElementById('view');
   if(!ehDirecao()){ v.innerHTML='<p class="sub">Somente a direção acessa a aprovação de boletins.</p>'; return; }
-  const {pend, aprov}=boletinsParaAprovar();
-  const linha=(it,aprovado)=>`<div class="wa-hist-item" style="align-items:center;gap:8px">
-    <span style="flex:1;min-width:170px"><b>${escAttr(it.nome)}</b> <span class="hint">· ${escAttr(it.turma)}</span>${aprovado?`<br><span class="hint" style="color:var(--ok)">✅ ${escAttr(it.b.aprovadoPor||'')}${it.b.aprovadoEm?(' · '+brDate(it.b.aprovadoEm)):''}</span>`:''}</span>
+  const {pend, aprov, reprov}=boletinsParaAprovar();
+  const linha=(it,estado)=>`<div class="wa-hist-item" style="align-items:center;gap:8px">
+    <span style="flex:1;min-width:170px"><b>${escAttr(it.nome)}</b> <span class="hint">· ${escAttr(it.turma)}</span>
+      ${estado==='aprov'?`<br><span class="hint" style="color:var(--ok)">✅ ${escAttr(it.b.aprovadoPor||'')}${it.b.aprovadoEm?(' · '+brDate(it.b.aprovadoEm)):''}</span>`:''}
+      ${estado==='reprov'?`<br><span class="hint" style="color:var(--vermelho)">✖ ${escAttr(it.b.reprovadoPor||'')}${it.b.reprovadoEm?(' · '+brDate(it.b.reprovadoEm)):''} — ${escAttr(it.b.motivoReprovacao||'')}</span>`:''}</span>
     <button class="btn ghost sm" onclick="abrirBoletimDoAluno('${it.alunoId}','${it.turmaId}')">Abrir</button>
-    ${aprovado
+    ${estado==='aprov'
       ? `<button class="btn ghost sm" onclick="aprovarPelaLista('${it.turmaId}','${it.alunoId}',false)">↩︎ Revogar</button>`
-      : `<button class="btn sm" onclick="aprovarPelaLista('${it.turmaId}','${it.alunoId}',true)">✅ Aprovar</button>`}
+      : estado==='reprov'
+        ? `<button class="btn sm" onclick="aprovarPelaLista('${it.turmaId}','${it.alunoId}',true)">✅ Aprovar</button>`
+        : `<button class="btn sm" onclick="aprovarPelaLista('${it.turmaId}','${it.alunoId}',true)">✅ Aprovar</button>
+           <button class="btn sm" style="background:var(--vermelho)" onclick="reprovarBoletimModal('${it.turmaId}','${it.alunoId}')">✖ Reprovar</button>`}
+    <button class="btn ghost sm" title="Apagar boletim" onclick="apagarBoletim('${it.turmaId}','${it.alunoId}')">🗑️</button>
   </div>`;
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Aprovar boletins</h2></div>
-    <p class="sub">Boletins preparados pelos professores. <b>Abra para conferir</b> e aprove — só depois de aprovado o boletim pode ser enviado, impresso ou publicado. Editar um boletim aprovado cancela a aprovação.</p>
-    <div class="card"><h3>⏳ Aguardando aprovação (${pend.length})</h3>${pend.length?pend.map(it=>linha(it,false)).join(''):'<p class="hint" style="margin:0">Nenhum boletim aguardando aprovação.</p>'}</div>
-    <div class="card"><h3>✅ Aprovados (${aprov.length})</h3>${aprov.length?aprov.map(it=>linha(it,true)).join(''):'<p class="hint" style="margin:0">Nenhum aprovado ainda.</p>'}</div>`;
+    <p class="sub">Boletins gerados pelos professores. <b>Abra para conferir</b> e aprove — só depois de aprovado o boletim pode ser enviado, impresso ou publicado. Ao reprovar, escreva o motivo: ele vira um aviso para o professor. Editar um boletim aprovado cancela a aprovação.</p>
+    <div class="card"><h3>⏳ Aguardando aprovação (${pend.length})</h3>${pend.length?pend.map(it=>linha(it,'pend')).join(''):'<p class="hint" style="margin:0">Nenhum boletim aguardando aprovação.</p>'}</div>
+    ${reprov.length?`<div class="card"><h3>✖ Reprovados — com o professor (${reprov.length})</h3>${reprov.map(it=>linha(it,'reprov')).join('')}</div>`:''}
+    <div class="card"><h3>✅ Aprovados (${aprov.length})</h3>${aprov.length?aprov.map(it=>linha(it,'aprov')).join(''):'<p class="hint" style="margin:0">Nenhum aprovado ainda.</p>'}</div>`;
 };
 function renderBoletimArea(){
   const box=document.getElementById('teBoletim'); if(!box)return;
@@ -2053,6 +2080,67 @@ function gerarBoletim(){
   const fr=document.getElementById('boFrame'), vz=document.getElementById('boVazio');
   _setDocIframe(fr, r.html);
   if(vz) vz.style.display='none';
+  // gerar = enviar para a aba "Aprovar boletins" (a menos que já esteja aprovado)
+  const b=boletimDe(testeTurma, boletimAluno, true);
+  if(b && !b.gerado){ b.gerado=true; b.atualizadoEm=Date.now(); save(); if(!b.aprovado) toast('Boletim gerado e enviado para a aprovação da direção ✓'); }
+  _refreshPilulaBoletim();
+}
+function apagarBoletim(turmaId, alunoId){
+  const b=boletimDe(turmaId, alunoId, false); if(!b) return toast('Boletim não encontrado.');
+  if(b.aprovado && !confirm('Este boletim está APROVADO. Apagar assim mesmo?')) return;
+  if(!confirm('Apagar este boletim? Não dá para desfazer.')) return;
+  S.boletins=(S.boletins||[]).filter(x=>x.id!==b.id);
+  marcarExcluido('boletins', b.id);
+  save();
+  if(typeof rota!=='undefined' && rota==='aprovacoes') VIEWS.aprovacoes();
+  else if(typeof renderBoletimArea==='function') renderBoletimArea();
+  toast('Boletim apagado.');
+}
+function apagarBoletimAtual(){ if(boletimAluno) apagarBoletim(testeTurma, boletimAluno); }
+function reprovarBoletimModal(turmaId, alunoId){
+  if(!ehDirecao()) return toast('Só a direção pode reprovar.');
+  const a=(S.alunos||[]).find(x=>x.id===alunoId)||{};
+  modal(`<h3 style="margin-bottom:4px">Reprovar boletim <button class="close" onclick="fechar()">×</button></h3>
+    <p class="hint" style="margin-bottom:12px">${escAttr(a.nome||'Aluno')} — escreva o motivo. Ele vai como aviso para o professor.</p>
+    <div class="field"><label class="lbl">Motivo da reprovação</label>
+      <textarea id="repMotivo" placeholder="Ex.: rever o conceito de Speaking e completar o parecer descritivo…" style="min-height:110px"></textarea></div>
+    <div class="row" style="justify-content:flex-end;gap:8px;margin-top:12px">
+      <button class="btn ghost sm" onclick="fechar()">Cancelar</button>
+      <button class="btn sm" style="background:var(--vermelho)" onclick="confirmarReprovacao('${turmaId}','${alunoId}')">✖ Reprovar e avisar</button>
+    </div>`);
+  setTimeout(()=>{ const el=document.getElementById('repMotivo'); if(el) el.focus(); }, 60);
+}
+function confirmarReprovacao(turmaId, alunoId){
+  if(!ehDirecao()) return toast('Só a direção pode reprovar.');
+  const motivo=(document.getElementById('repMotivo')||{}).value||'';
+  if(!motivo.trim()) return toast('Escreva o motivo da reprovação.');
+  const b=boletimDe(turmaId, alunoId, false); if(!b){ fechar(); return toast('Boletim não encontrado.'); }
+  b.aprovado=false; b.aprovadoPor=null; b.aprovadoEm=null;
+  b.reprovado=true; b.motivoReprovacao=motivo.trim(); b.reprovadoPor=S.usuario; b.reprovadoEm=hoje();
+  b.atualizadoEm=Date.now(); save(); fechar();
+  if(typeof rota!=='undefined' && rota==='aprovacoes') VIEWS.aprovacoes();
+  toast('Boletim reprovado — o professor foi avisado.');
+}
+// Aviso ao professor: boletins reprovados das turmas dele (aparece no Painel)
+function renderBoletinsReprovadosCard(){
+  if(S.perfil!=='professor') return '';
+  const meus=turmasVisiveis().map(t=>t.id);
+  const reps=(S.boletins||[]).filter(b=>b.reprovado && meus.indexOf(b.turmaId)>=0);
+  if(!reps.length) return '';
+  const linhas=reps.map(b=>{
+    const a=(S.alunos||[]).find(x=>x.id===b.alunoId)||{};
+    const t=(S.turmas||[]).find(x=>x.id===b.turmaId)||{};
+    return `<div class="li" style="padding:10px 0">
+      <b>${escAttr(a.nome||'Aluno')}</b> <span class="hint">· ${escAttr(t.nome||'')}</span>
+      <div style="margin-top:4px;font-size:.9rem"><b style="color:var(--vermelho)">Motivo:</b> ${escAttr(b.motivoReprovacao||'')}</div>
+      <div class="hint" style="margin-top:2px">Reprovado por ${escAttr(b.reprovadoPor||'')}${b.reprovadoEm?(' · '+brDate(b.reprovadoEm)):''}</div>
+      <div style="margin-top:6px"><button class="btn ghost sm" onclick="abrirBoletimDoAluno('${b.alunoId}','${b.turmaId}')">Abrir e corrigir</button></div>
+    </div>`;
+  }).join('');
+  return `<div class="card" style="border-left:4px solid var(--vermelho)">
+    <div class="section-title"><span class="feijao fj" style="background:var(--vermelho)"></span><h3 class="display">Boletins reprovados (${reps.length})</h3></div>
+    <p class="hint" style="margin:2px 0 6px">A direção reprovou estes boletins. Ajuste e gere de novo para reenviar à aprovação.</p>
+    ${linhas}</div>`;
 }
 const DOC_CSS=`
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Urbanist:ital,wght@0,400;0,500;0,600;1,400&family=Zilla+Slab:ital,wght@1,600&display=swap');
