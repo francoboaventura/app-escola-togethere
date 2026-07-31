@@ -77,6 +77,32 @@
   .spin{ width:22px; height:22px; border:3px solid var(--linha); border-top-color:var(--azul); border-radius:50%; animation:g 1s linear infinite; display:inline-block; }
   @keyframes g{ to{ transform:rotate(360deg); } } .center{ text-align:center; padding:30px 0; }
   .rowbtn{ display:flex; justify-content:flex-end; margin:12px 2px 0; }
+  /* writing — relatório rico */
+  .wr{ padding:16px; }
+  .wr-top{ display:flex; align-items:flex-start; gap:12px; }
+  .wr-lvl{ font-weight:700; font-size:1.02rem; }
+  .wr-date{ color:var(--fraco); font-size:.85rem; margin-top:2px; }
+  .wr-overall{ margin-left:auto; font-weight:800; font-size:1.9rem; line-height:1; white-space:nowrap; }
+  .wr-overall small{ font-size:.8rem; font-weight:700; opacity:.6; }
+  .wr-chips{ display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+  .wr-chip{ font-size:.72rem; font-weight:700; padding:3px 10px; border-radius:999px; background:#e7f0fb; color:var(--azul); }
+  .wr-chip.ghost{ background:#eef2f7; color:var(--fraco); }
+  .wr-chip.ok{ background:#E6F6F0; color:var(--ok); }
+  .wr-chip.bad{ background:#FDECEC; color:var(--vermelho); }
+  .wr-bars{ margin-top:14px; display:flex; flex-direction:column; gap:12px; }
+  .wr-skill .wr-sk-h{ display:flex; justify-content:space-between; font-size:.9rem; font-weight:600; }
+  .wr-sk-v small{ font-weight:700; opacity:.6; font-size:.75rem; }
+  .wr-track{ height:8px; background:#eef2f7; border-radius:999px; overflow:hidden; margin:5px 0; }
+  .wr-fill{ height:100%; border-radius:999px; }
+  .wr-why{ font-size:.85rem; color:#5b6b7c; line-height:1.45; }
+  .wr-sec{ margin-top:14px; }
+  .wr-sec h4{ font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; color:#8595a6; margin-bottom:6px; }
+  .wr-sec ul{ margin:0 0 0 18px; } .wr-sec li{ font-size:.9rem; margin:3px 0; }
+  .wr-resumo{ margin-top:14px; background:#fffaf0; border-left:4px solid var(--amarelo); border-radius:0 12px 12px 0; padding:12px 14px; font-size:.95rem; line-height:1.5; }
+  .wr-resumo b{ display:block; color:#b88600; font-size:.8rem; text-transform:uppercase; letter-spacing:.04em; margin-bottom:4px; }
+  .wr-err{ border:1px solid var(--linha); border-radius:10px; padding:9px 11px; margin-bottom:7px; font-size:.9rem; }
+  .wr-err s{ color:var(--vermelho); } .wr-err b{ color:var(--ok); }
+  .wr-tag{ font-size:.64rem; font-weight:700; text-transform:uppercase; background:#eef2f7; color:var(--fraco); padding:2px 7px; border-radius:999px; margin-right:4px; }
 </style>
 </head>
 <body>
@@ -174,12 +200,36 @@ function renderAulas(aulas){
       </div>
     </div>`).join('')+'</div>';
 }
+function wBandCor(n){ if(n==null||n==='') return '#9aa6b6'; n=+n; if(n>=4) return '#16A07A'; if(n>=3) return '#005EAF'; if(n>=2) return '#B8860B'; return '#E52524'; }
+function wChipCls(t){ t=(t||'').toUpperCase(); if(/PASS|MERIT|DISTINCT|ACHIEV/.test(t)) return 'ok'; if(/FAIL|BELOW|NOT/.test(t)) return 'bad'; return ''; }
 function renderWritings(ws){
   if(!ws.length) return '<div class="card vazio">Nenhum writing avaliado ainda.</div>';
-  return '<div class="card">'+ws.map(w=>`<div class="li">
-    <b>${esc(w.nivel)}${w.task?(' · '+esc(w.task)):''} — Geral ${w.overall!=null?w.overall:'—'}/5${w.togethere?(' · '+esc(w.togethere)):''}</b>
-    <div class="sub">${brDate(w.data)}${w.cefr?(' · '+esc(w.cefr)):''}</div>
-    <div class="txt">${esc(w.bands)}</div></div>`).join('')+'</div>';
+  return ws.map(w=>{
+    const oc=wBandCor(w.overall);
+    const bandas=(w.bandas&&w.bandas.length)?w.bandas:null;
+    const bars = bandas ? bandas.map(b=>{
+      const c=wBandCor(b.band); const pct=(b.band==null)?0:Math.max(6,Math.min(100,(b.band/5)*100));
+      return `<div class="wr-skill"><div class="wr-sk-h"><span>${esc(b.label)}</span><span class="wr-sk-v" style="color:${c}">${b.band==null?'—':b.band}<small>/5</small></span></div>
+        <div class="wr-track"><div class="wr-fill" style="width:${pct}%;background:${c}"></div></div>
+        ${b.justificativa?`<div class="wr-why">${esc(b.justificativa)}</div>`:''}</div>`;
+    }).join('') : (w.bands?`<div class="wr-why">${esc(w.bands)}</div>`:'');
+    const chips = (w.togethere?`<span class="wr-chip ${wChipCls(w.togethere)}">${esc(w.togethere)}</span>`:'')
+                + (w.cefr?`<span class="wr-chip ghost">${esc(w.cefr)}</span>`:'');
+    const resumo = w.resumo?`<div class="wr-resumo"><b>Para você e sua família</b>${esc(w.resumo)}</div>`:'';
+    const fortes = (w.pontos_fortes&&w.pontos_fortes.length)?`<div class="wr-sec"><h4>O que funcionou bem</h4><ul>${w.pontos_fortes.map(s=>`<li>${esc(s)}</li>`).join('')}</ul></div>`:'';
+    const passos = (w.proximos_passos&&w.proximos_passos.length)?`<div class="wr-sec"><h4>Próximos passos</h4><ul>${w.proximos_passos.map(s=>`<li>${esc(s)}</li>`).join('')}</ul></div>`:'';
+    const erros = (w.correcoes&&w.correcoes.length)?`<div class="wr-sec"><h4>Correções</h4>${w.correcoes.map(e=>`<div class="wr-err">${e.tipo?`<span class="wr-tag">${esc(e.tipo)}</span>`:''}<s>${esc(e.trecho)}</s> → <b>${esc(e.correcao)}</b>${e.explicacao?`<div class="wr-why">${esc(e.explicacao)}</div>`:''}</div>`).join('')}</div>`:'';
+    return `<div class="card wr">
+      <div class="wr-top">
+        <div><div class="wr-lvl">${esc(w.nivel||'Writing')}${w.task?(' · '+esc(w.task)):''}</div>
+          <div class="wr-date">${brDate(w.data)}${w.word_count!=null?(' · '+w.word_count+' palavras'):''}</div></div>
+        <div class="wr-overall" style="color:${oc}">${w.overall!=null?w.overall:'—'}<small>/5</small></div>
+      </div>
+      ${chips?`<div class="wr-chips">${chips}</div>`:''}
+      ${bars?`<div class="wr-bars">${bars}</div>`:''}
+      ${resumo}${fortes}${passos}${erros}
+    </div>`;
+  }).join('');
 }
 function banda(n){ if(n==null||n==='') return {cor:'#9aa6b6',bg:'#f1f4f8'}; n=+n;
   if(n>=90) return {cor:'#005EAF',bg:'#E7F0FB'};
