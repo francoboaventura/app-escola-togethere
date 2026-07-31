@@ -51,9 +51,9 @@
       </button>
       <div class="tb-perfil" id="perfilMenu" onclick="event.stopPropagation()">
         <div id="perfilLabel" style="margin-bottom:10px"></div>
+        <button class="btn ghost sm block" onclick="ir('perfil')" style="margin-bottom:8px">👤 Meu perfil</button>
         <div id="syncDot" onclick="puxarDaNuvem()" style="font-size:.74rem;color:var(--tinta-suave);margin-bottom:8px;cursor:pointer" title="Clique para puxar os dados mais recentes da nuvem">☁️ …</div>
         <button class="btn ghost sm block" onclick="puxarDaNuvem()" style="margin-bottom:8px">🔄 Atualizar (puxar da nuvem)</button>
-        <button class="btn ghost sm block" onclick="enviarFoto('usuario', S.usuario)" style="margin-bottom:8px">📷 Minha foto</button>
         <button class="btn ghost sm block" onclick="trocarMinhaSenha()" style="margin-bottom:8px">🔑 Trocar minha senha</button>
         <button class="btn red sm block" onclick="logout()" style="margin-bottom:10px">🚪 Sair</button>
         <div style="font-size:.66rem;color:var(--tinta-suave);text-align:center">versão <span id="appVer"></span></div>

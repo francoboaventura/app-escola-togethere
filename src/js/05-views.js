@@ -276,3 +276,43 @@ function renderProximasAulas(){
   }).join('');
   return `<div class="pa-wrap"><div class="pa-head">🗓️ Suas próximas aulas</div><div class="pa-rail">${cards}</div></div>`;
 }
+
+/* ===== Meu perfil (b108) — cada usuário edita os próprios dados ===== */
+VIEWS.perfil=()=>{
+  const v=document.getElementById('view');
+  const u=(S.usuarios||[]).find(x=>x.nome===S.usuario)||{nome:S.usuario};
+  const meta=(typeof PERFIS!=='undefined'&&PERFIS[S.perfil])||{cor:'var(--azul)',nome:''};
+  const ini=escAttr(((u.nome||'·').trim()[0]||'·').toUpperCase());
+  v.innerHTML=`
+    <div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Meu perfil</h2></div>
+    <p class="sub">Seus dados — só você edita o seu.</p>
+    <div class="card">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:8px">
+        <div class="fx-av fotoav" data-foto="${escAttr(u.foto||'')}" style="background:${meta.cor};width:74px;height:74px;font-size:1.9rem;overflow:visible">
+          <span class="fotoav-ini" style="color:#fff">${ini}</span>
+          <button class="fotoav-add" onclick="enviarFoto('usuario','${escAttr(S.usuario)}')" title="Trocar foto" aria-label="Trocar foto">📷</button>
+        </div>
+        <div><div style="font-family:'Poppins';font-weight:600;font-size:1.15rem">${escAttr(u.nome||'')}</div>
+          <div class="hint">${escAttr(meta.nome||'')} · toque no 📷 para a foto</div></div>
+      </div>
+      <div class="field"><label class="lbl">Nome completo</label>
+        <input type="text" id="pfNome" value="${escAttr(u.nomeCompleto||'')}" placeholder="Seu nome completo"></div>
+      <div class="row">
+        <div class="field"><label class="lbl">E-mail</label>
+          <input type="email" id="pfEmail" value="${escAttr(u.email||'')}" placeholder="email@exemplo.com"></div>
+        <div class="field"><label class="lbl">Telefone / WhatsApp</label>
+          <input type="text" id="pfTel" value="${escAttr(u.telefone||'')}" placeholder="(51) 9 9999-9999"></div>
+      </div>
+      <div class="field" style="max-width:220px"><label class="lbl">Data de nascimento</label>
+        <input type="date" id="pfNasc" value="${escAttr(u.nascimento||'')}"></div>
+      <button class="btn" onclick="salvarPerfil()">💾 Salvar</button>
+    </div>`;
+};
+function salvarPerfil(){
+  const u=(S.usuarios||[]).find(x=>x.nome===S.usuario); if(!u){ toast('Usuário não encontrado'); return; }
+  u.nomeCompleto=(document.getElementById('pfNome').value||'').trim();
+  u.email=(document.getElementById('pfEmail').value||'').trim();
+  u.telefone=(document.getElementById('pfTel').value||'').trim();
+  u.nascimento=document.getElementById('pfNasc').value||'';
+  save(); toast('Perfil salvo ✅');
+}
