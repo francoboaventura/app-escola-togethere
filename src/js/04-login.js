@@ -103,32 +103,56 @@ function logout(){
   location.reload();
 }
 
-function montarNav(){
-  const nav=document.getElementById('nav'); nav.innerHTML='';
-  let grpAtual='';
-  NAV.filter(n=>n.menu!==false && n.roles.includes(S.perfil)).forEach(n=>{
-    if(n.grp!==grpAtual){grpAtual=n.grp;const g=document.createElement('div');g.className='grp';g.textContent=n.grp;nav.appendChild(g);}
-    const a=document.createElement('button');
-    a.className='nav-a'; a.dataset.id=n.id;
-    a.innerHTML=`<span class="em">${n.em}</span> ${n.label}`;
-    let _bn=0;
-    if(n.badge) _bn=totalAlertas();
-    else if(n.badgeApoio) _bn=apoioBadge();   // indicações de apoio que exigem ação do perfil atual
-    else if(n.badgeFormacao) _bn=formacaoBadge();   // tópicos de metodologia por ver/revisar
-    else if(n.id==='painel' && S.perfil==='professor') _bn=todasMinhasPendencias().length;   // alerta de pendências do professor
-    if(_bn) a.innerHTML+=`<span class="badge">${_bn}</span>`;
-    a.onclick=()=>ir(n.id);
-    nav.appendChild(a);
-  });
-  // aplica classe ".nav a" via tag genérica
-  nav.querySelectorAll('button').forEach(b=>b.classList.add('navbtn'));
+// ===== Menu no TOPO (b105): "Início" como botões diretos; demais grupos como menus suspensos =====
+function _navBadge(n){
+  if(n.badge) return totalAlertas();
+  if(n.badgeApoio) return apoioBadge();
+  if(n.badgeFormacao) return formacaoBadge();
+  if(n.id==='painel' && S.perfil==='professor') return todasMinhasPendencias().length;
+  return 0;
 }
+function _navItemBtn(n, cls){
+  const b=document.createElement('button'); b.className=cls+' navbtn'; b.dataset.id=n.id;
+  const bn=_navBadge(n);
+  b.innerHTML=`<span class="em">${n.em}</span> <span class="lb">${n.label}</span>`+(bn?`<span class="badge">${bn}</span>`:'');
+  b.onclick=()=>ir(n.id);
+  return b;
+}
+function montarNav(){
+  const nav=document.getElementById('nav'); if(!nav) return; nav.innerHTML='';
+  const itens=NAV.filter(n=>n.menu!==false && n.roles.includes(S.perfil));
+  const grupos=[]; itens.forEach(n=>{ let g=grupos.find(x=>x.grp===n.grp); if(!g){g={grp:n.grp,itens:[]}; grupos.push(g);} g.itens.push(n); });
+  grupos.forEach(g=>{
+    if(g.grp==='Início'){ g.itens.forEach(n=>nav.appendChild(_navItemBtn(n,'tnav-item'))); return; }
+    const wrap=document.createElement('div'); wrap.className='tnav-grp';
+    const top=document.createElement('button'); top.className='tnav-top';
+    let gb=0; g.itens.forEach(n=>gb+=_navBadge(n));
+    top.innerHTML=`<span class="lb">${g.grp}</span> <span class="cx">▾</span>`+(gb?`<span class="badge">${gb}</span>`:'');
+    top.onclick=(e)=>{ e.stopPropagation(); _toggleGrp(wrap); };
+    const dd=document.createElement('div'); dd.className='tnav-dd';
+    g.itens.forEach(n=>dd.appendChild(_navItemBtn(n,'tnav-di')));
+    wrap.appendChild(top); wrap.appendChild(dd); nav.appendChild(wrap);
+  });
+}
+function _toggleGrp(wrap){
+  const open=wrap.classList.contains('open');
+  document.querySelectorAll('.tnav-grp.open').forEach(w=>w.classList.remove('open'));
+  if(!open) wrap.classList.add('open');
+}
+function _togglePerfil(e){ if(e) e.stopPropagation(); const m=document.getElementById('perfilMenu'); if(m) m.classList.toggle('open'); }
+function _toggleMenu(e){ if(e) e.stopPropagation(); const a=document.getElementById('app'); if(a) a.classList.toggle('menu-open'); }
+function _fecharMenus(){
+  document.querySelectorAll('.tnav-grp.open').forEach(w=>w.classList.remove('open'));
+  const m=document.getElementById('perfilMenu'); if(m) m.classList.remove('open');
+  const a=document.getElementById('app'); if(a) a.classList.remove('menu-open');
+}
+document.addEventListener('click',()=>_fecharMenus());
 function ir(id){
   rota=id; const n=NAV.find(x=>x.id===id);
   document.getElementById('pageTitle').textContent=n.label;
   document.getElementById('crumb').textContent=n.grp;
   document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('active',b.dataset.id===id));
-  document.getElementById('side').classList.remove('open');
+  _fecharMenus();
   VIEWS[id]();
   if(id==='alertas') _refreshAvisosNuvem();   // ao abrir Avisos, já puxa o que houver de novo
   else if(id==='relturma'||id==='arquivo'||id==='painel') _pullSilencioso(true);   // listas: pode redesenhar
