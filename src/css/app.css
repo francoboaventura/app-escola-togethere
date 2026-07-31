@@ -380,3 +380,55 @@ button:disabled,.btn:disabled,button[disabled],.btn[disabled]{
 .pa-when{font-family:'Poppins';font-weight:600;font-size:.74rem;color:var(--azul);text-transform:uppercase;letter-spacing:.02em}
 .pa-turma{font-family:'Poppins';font-weight:600;font-size:1rem;margin:7px 0 2px}
 .pa-meta{font-size:.8rem;color:var(--tinta-suave)}
+
+/* =====================================================================
+   MENU NO TOPO (b105) — barra horizontal clara + menus suspensos + perfil.
+   Substitui a navegação lateral. Estilo "claro" (opção B).
+   ===================================================================== */
+#app{display:none}
+.tbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:16px;background:#fff;border-bottom:1px solid var(--linha);padding:10px 22px;box-shadow:0 1px 0 rgba(0,43,100,.02)}
+.tbar .brand{flex:none;display:flex;align-items:center}
+.tbar .logo-img{height:30px;width:auto;display:block}
+.tb-burger{display:none;background:none;border:none;font-size:1.6rem;line-height:1;color:var(--marinho);padding:4px 8px;margin-left:-4px;border-radius:10px;cursor:pointer}
+.tb-burger:active{background:rgba(0,0,0,.06)}
+
+.tnav{flex:1;display:flex;align-items:center;gap:3px;min-width:0}
+.tnav .em{font-size:1rem}
+.tnav-item,.tnav-top{display:inline-flex;align-items:center;gap:7px;background:none;border:none;cursor:pointer;padding:9px 13px;border-radius:10px;font-family:'Poppins';font-weight:500;font-size:.88rem;color:var(--tinta-suave);white-space:nowrap;transition:.13s}
+.tnav-item:hover,.tnav-top:hover{background:#f2f6fc;color:var(--tinta)}
+.tnav-item.active{background:#eaf3ff;color:var(--azul);font-weight:600}
+.tnav-top .cx{font-size:.62rem;opacity:.7;margin-left:-2px}
+.tnav-grp{position:relative}
+.tnav-grp.open .tnav-top,.tnav-grp:has(.active) .tnav-top{background:#eaf3ff;color:var(--azul);font-weight:600}
+.tnav .badge{background:var(--vermelho);color:#fff;font-size:.64rem;font-weight:700;min-width:17px;height:17px;border-radius:9px;display:inline-grid;place-items:center;padding:0 5px;font-family:'Poppins'}
+.tnav-dd{position:absolute;top:calc(100% + 6px);left:0;min-width:220px;background:#fff;border:1px solid var(--linha);border-radius:14px;box-shadow:var(--sombra);padding:7px;z-index:40;display:none;flex-direction:column;gap:1px}
+.tnav-grp.open .tnav-dd,.tnav-grp:hover .tnav-dd{display:flex}
+.tnav-di{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:none;border:none;cursor:pointer;padding:9px 11px;border-radius:9px;font-family:'Poppins';font-weight:500;font-size:.86rem;color:var(--tinta);white-space:nowrap}
+.tnav-di:hover{background:#f2f6fc;color:var(--azul)}
+.tnav-di.active{background:#eaf3ff;color:var(--azul);font-weight:600}
+.tnav-di .badge{margin-left:auto}
+
+.tb-right{position:relative;margin-left:auto;flex:none}
+.tb-me{display:flex;align-items:center;gap:9px;background:none;border:1px solid var(--linha);border-radius:999px;padding:5px 8px 5px 14px;cursor:pointer;font-family:'Poppins';font-weight:600;font-size:.85rem;color:var(--tinta)}
+.tb-me:hover{border-color:var(--azul);background:#f7fbff}
+.tb-me .dot{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:#fff;font-weight:700;font-family:'Poppins';font-size:.85rem;flex:none}
+.tb-perfil{position:absolute;top:calc(100% + 8px);right:0;width:240px;background:#fff;border:1px solid var(--linha);border-radius:16px;box-shadow:var(--sombra);padding:16px;z-index:40;display:none}
+.tb-perfil.open{display:block}
+.tb-perfil #perfilLabel{font-size:.86rem;color:var(--tinta);line-height:1.4}
+
+.pagehead{max-width:1180px;margin:0 auto;padding:20px 28px 0}
+.pagehead .crumb{font-size:.8rem;color:var(--tinta-suave);font-family:'Poppins'}
+.pagehead h1{font-size:1.3rem;margin-top:1px}
+.content{margin:0 auto}
+
+/* ---- mobile: barra vira gaveta (hambúrguer) com grupos expandidos ---- */
+@media(max-width:960px){
+  .tb-burger{display:block}
+  .tnav{position:absolute;left:0;right:0;top:100%;flex-direction:column;align-items:stretch;gap:2px;background:#fff;border-bottom:1px solid var(--linha);box-shadow:var(--sombra);padding:10px;display:none;max-height:78vh;overflow:auto}
+  #app.menu-open .tnav{display:flex}
+  .tnav-item,.tnav-top{width:100%;justify-content:flex-start;font-size:.95rem;padding:11px 12px}
+  .tnav-grp{position:static}
+  .tnav-top .cx{display:none}
+  .tnav-dd{position:static;display:flex;box-shadow:none;border:none;border-radius:0;padding:0 0 6px 26px;min-width:0}
+  .pagehead{padding:16px 16px 0}
+}
