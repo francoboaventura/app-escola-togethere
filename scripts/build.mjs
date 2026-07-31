@@ -1,7 +1,9 @@
-// build.mjs — remonta o index.html a partir de src/. Dois modos:
-//   node scripts/build.mjs           -> saída IDÊNTICA ao original (prova de integridade)
-//   node scripts/build.mjs --min     -> minifica CSS e o JS do app (sem renomear nomes globais)
-// Vendor (supabase, qrcode) nunca é tocado. Nomes globais (usados nos onclick) são preservados.
+// build.mjs — remonta o app (index.html) e o portal (portal-aluno.html) a partir de src/.
+//   node scripts/build.mjs           -> saída idêntica ao b101 (sem minificar)
+//   node scripts/build.mjs --min     -> minifica CSS + JS (só espaço/comentários; sem renomear
+//                                       nomes globais nem transformar sintaxe -> risco mínimo)
+//   node scripts/build.mjs --verify  -> prova que o build (sem --min) reproduz o b101 byte a byte
+// Vendor (supabase, qrcode) e o <script src> do CDN do portal nunca são tocados.
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -9,56 +11,65 @@ const ROOT = path.resolve(import.meta.dirname, '..');
 const MIN = process.argv.includes('--min');
 const VERIFY = process.argv.includes('--verify');
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
+const kb = (s) => (Buffer.byteLength(s) / 1024).toFixed(0) + ' KB';
 
-const template = read('src/index.template.html');
-const manifest = JSON.parse(read('src/manifest.json'));
-
-const vendorSupabase = read('src/vendor/supabase.min.js');
-const vendorQr = read('src/vendor/qrcode.min.js');
-let appCss = read('src/css/app.css');
-let appJs = manifest.appJs.map(read).join('\n'); // concat na ordem exata
-
-if (MIN) {
-  const esbuild = await import('esbuild');
-  // JS: só espaço/sintaxe. minifyIdentifiers:false => NÃO renomeia funções globais
-  // (senão quebraria os 360 handlers onclick="..."). Zero risco de escopo.
-  appJs = (await esbuild.transform(appJs, {
-    loader: 'js', minifyWhitespace: true, minifySyntax: true, minifyIdentifiers: false,
+let esbuild = null;
+const minifyJs = async (code) => {
+  if (!MIN) return code;
+  esbuild ??= await import('esbuild');
+  // minifyIdentifiers:false + minifySyntax:false => NÃO renomeia funções globais (os onclick
+  // continuam válidos) e NÃO reescreve o código. Só remove espaços/comentários. Seguro.
+  return (await esbuild.transform(code, {
+    loader: 'js', minifyWhitespace: true, minifySyntax: false, minifyIdentifiers: false,
     legalComments: 'none', target: 'es2019',
   })).code;
-  appCss = (await esbuild.transform(appCss, { loader: 'css', minify: true })).code;
-}
-
-// Substitui cada token (linha própria) pela peça correspondente.
-const pieces = {
-  '/*__VENDOR_SUPABASE__*/': vendorSupabase,
-  '/*__APP_CSS__*/': appCss,
-  '/*__APP_JS__*/': appJs,
-  '/*__VENDOR_QR__*/': vendorQr,
 };
-const out = template.split('\n')
-  .map((line) => (line in pieces ? pieces[line] : line))
-  .join('\n');
+const minifyCss = async (code) => {
+  if (!MIN) return code;
+  esbuild ??= await import('esbuild');
+  return (await esbuild.transform(code, { loader: 'css', minify: true })).code;
+};
 
+// Monta uma página trocando cada token (linha própria) pela peça correspondente.
+const assemble = (template, pieces) =>
+  template.split('\n').map((line) => (line in pieces ? pieces[line] : line)).join('\n');
+
+// --------- APP (index.html) ---------
+const manifest = JSON.parse(read('src/manifest.json'));
+const appHtml = assemble(read('src/index.template.html'), {
+  '/*__VENDOR_SUPABASE__*/': read('src/vendor/supabase.min.js'),      // vendor: nunca minifica
+  '/*__APP_CSS__*/': await minifyCss(read('src/css/app.css')),
+  '/*__APP_JS__*/': await minifyJs(manifest.appJs.map(read).join('\n')),
+  '/*__VENDOR_QR__*/': read('src/vendor/qrcode.min.js'),              // vendor: nunca minifica
+});
+
+// --------- PORTAL (portal-aluno.html) ---------
+const portalHtml = assemble(read('src/portal/index.template.html'), {
+  '/*__PORTAL_CSS__*/': await minifyCss(read('src/portal/app.css')),
+  '/*__PORTAL_JS__*/': await minifyJs(read('src/portal/app.js')),
+});
+
+// --------- Escreve dist/ ---------
 fs.mkdirSync(path.join(ROOT, 'dist'), { recursive: true });
-fs.writeFileSync(path.join(ROOT, 'dist/index.html'), out);
-
-// Copia os estáticos e apps auxiliares para o dist (o Pages serve a pasta inteira).
+// 1) copia os estáticos de public/ ...
 for (const f of fs.readdirSync(path.join(ROOT, 'public'))) {
   fs.copyFileSync(path.join(ROOT, 'public', f), path.join(ROOT, 'dist', f));
 }
+// 2) ... e depois grava as páginas montadas (vencem qualquer cópia estática).
+fs.writeFileSync(path.join(ROOT, 'dist/index.html'), appHtml);
+fs.writeFileSync(path.join(ROOT, 'dist/portal-aluno.html'), portalHtml);
 
-const sizeKB = (s) => (Buffer.byteLength(s) / 1024).toFixed(0) + ' KB';
-console.log('Build:', MIN ? 'produção (minificado)' : 'padrão (sem minificar)');
-console.log('  dist/index.html:', sizeKB(out));
+console.log('Build:', MIN ? 'produção (minificado: só espaço/comentários)' : 'padrão (sem minificar)');
+console.log('  dist/index.html       :', kb(appHtml));
+console.log('  dist/portal-aluno.html:', kb(portalHtml));
 
-// --verify: prova de integridade do CUTOVER — só faz sentido ANTES de editar os fontes.
-// Confere se o build (sem minificar) reproduz o b101 original byte a byte.
 if (VERIFY) {
-  const baseline = read('scripts/reference/b101-index.html');
-  const identical = out === baseline && !MIN;
-  console.log('  baseline b101:', sizeKB(baseline));
-  console.log(identical ? '  ✅ IDÊNTICO ao b101 (byte a byte) — split sem perdas'
-                        : (MIN ? '  ⚠️  use --verify sem --min' : '  ❌ DIFERENTE do b101 — investigar'));
-  if (!identical) process.exit(1);
+  const baseIdx = read('scripts/reference/b101-index.html');
+  const basePortal = read('scripts/reference/b101-portal-aluno.html');
+  const okIdx = appHtml === baseIdx;
+  const okPortal = portalHtml === basePortal;
+  console.log('  verificação (só faz sentido sem --min e antes de editar os fontes):');
+  console.log('   ', okIdx ? '✅ index.html idêntico ao b101' : '❌ index.html DIFERE do b101');
+  console.log('   ', okPortal ? '✅ portal-aluno.html idêntico ao b101' : '❌ portal DIFERE do b101');
+  if (MIN || !okIdx || !okPortal) process.exit(1);
 }

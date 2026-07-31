@@ -88,9 +88,40 @@ fs.writeFileSync(path.join(ROOT, 'src/index.template.html'), templateLines.join(
 // Manifesto: ordem exata de montagem do JS do app.
 fs.writeFileSync(path.join(ROOT, 'src/manifest.json'), JSON.stringify({ appJs: jsFiles }, null, 2));
 
-console.log('Split OK:');
+console.log('Split OK (app):');
 console.log('  vendor/supabase.min.js  ', vendorSupabase.length, 'linhas');
 console.log('  vendor/qrcode.min.js    ', vendorQr.length, 'linhas');
 console.log('  css/app.css             ', appCss.length, 'linhas');
 console.log('  js/*.js                 ', jsFiles.length, 'arquivos');
-jsFiles.forEach(f => console.log('     ', f));
+
+// ===================== PORTAL DO ALUNO =====================
+// Estrutura simples: um bloco <style>, corpo, <script src=CDN supabase> e um
+// <script> de app. Externalizamos só o CSS e o JS; o <script src> do CDN fica
+// no template (não é lib embutida, é referência externa — sem mudar comportamento).
+const pOrig = fs.readFileSync(path.join(ROOT, 'scripts/reference/b101-portal-aluno.html'), 'utf8');
+const pLines = pOrig.split('\n');
+const pIdx = (tag) => pLines.findIndex((l) => l.trim() === tag);
+const pStyleOpen = pIdx('<style>');
+const pStyleClose = pIdx('</style>');
+// o <script> de app é o primeiro <script> SEM atributos (o do CDN tem src=)
+const pAppOpen = pLines.findIndex((l) => l.trim() === '<script>');
+const pAppClose = pLines.findIndex((l, i) => i > pAppOpen && l.trim() === '</script>');
+if ([pStyleOpen, pStyleClose, pAppOpen, pAppClose].some((x) => x < 0)) {
+  console.error('Portal: marcadores não encontrados', { pStyleOpen, pStyleClose, pAppOpen, pAppClose }); process.exit(1);
+}
+const pCss = pLines.slice(pStyleOpen + 1, pStyleClose);
+const pJs = pLines.slice(pAppOpen + 1, pAppClose);
+fs.writeFileSync(path.join(ROOT, 'src/portal/app.css'), pCss.join('\n'));
+fs.writeFileSync(path.join(ROOT, 'src/portal/app.js'), pJs.join('\n'));
+const pTemplate = [
+  ...pLines.slice(0, pStyleOpen + 1),      // ... <style>
+  '/*__PORTAL_CSS__*/',
+  ...pLines.slice(pStyleClose, pAppOpen + 1), // </style> ... corpo ... <script src=cdn> ... <script>
+  '/*__PORTAL_JS__*/',
+  ...pLines.slice(pAppClose),                 // </script> ... fim
+];
+fs.writeFileSync(path.join(ROOT, 'src/portal/index.template.html'), pTemplate.join('\n'));
+
+console.log('Split OK (portal):');
+console.log('  portal/app.css          ', pCss.length, 'linhas');
+console.log('  portal/app.js           ', pJs.length, 'linhas');

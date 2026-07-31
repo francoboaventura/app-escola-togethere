@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Togethere · Portal do Aluno</title>
+<link rel="icon" href="data:,">
+<style>
+/*__PORTAL_CSS__*/
+</style>
+</head>
+<body>
+<div class="appbar"><div class="in"><span class="wm">togeth<b>e</b>re</span><span class="tag">portal do aluno</span></div></div>
+
+<div class="wrap">
+  <div id="telaLogin" class="card login">
+    <h1>Entrar</h1>
+    <p class="hint">Acesse com o e-mail e a senha que a escola criou para você.</p>
+    <label for="email">E-mail</label>
+    <input id="email" type="email" autocomplete="username" placeholder="voce@exemplo.com">
+    <label for="senha">Senha</label>
+    <input id="senha" type="password" autocomplete="current-password" placeholder="sua senha">
+    <div style="margin-top:16px"><button class="btn" id="btnEntrar" style="width:100%">Entrar</button></div>
+    <div id="loginMsg" class="msg"></div>
+  </div>
+
+  <div id="telaTroca" class="card login hide">
+    <h1>Crie a sua senha</h1>
+    <p class="hint">Este é o seu primeiro acesso. Para a sua segurança, defina uma senha só sua antes de continuar.</p>
+    <label for="nsenha">Nova senha</label>
+    <input id="nsenha" type="password" autocomplete="new-password" placeholder="mínimo 6 caracteres">
+    <label for="nsenha2">Repita a nova senha</label>
+    <input id="nsenha2" type="password" autocomplete="new-password" placeholder="digite de novo">
+    <div style="margin-top:16px"><button class="btn" id="btnTrocar" style="width:100%">Salvar e entrar</button></div>
+    <div id="trocaMsg" class="msg"></div>
+  </div>
+
+  <div id="app" class="hide">
+    <div class="hero">
+      <div class="avatar" id="avatar">·</div>
+      <div><div class="nm" id="nm">—</div><div class="tu" id="tu"></div></div>
+      <button class="btn sm sair" id="btnSair">Sair</button>
+    </div>
+    <div id="tilesBox" class="tiles hide"></div>
+
+    <div id="emailBox" class="card hide" style="padding:16px;margin-top:14px">
+      <b style="font-size:1rem">📧 Seu e-mail</b>
+      <p class="hint" style="margin:4px 0 10px">Cadastre seu e-mail para receber recados da escola e poder recuperar a senha.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <input id="emailContato" type="email" autocomplete="email" placeholder="voce@exemplo.com" style="flex:1;min-width:180px">
+        <button class="btn sm" id="btnEmail">Salvar</button>
+      </div>
+      <div id="emailMsg" class="msg"></div>
+    </div>
+
+    <div id="erroBox" class="card hide" style="padding:18px;margin-top:14px"><p class="hint" id="erroTxt"></p></div>
+
+    <div id="tabs" class="tabs hide"></div>
+    <div id="panes"></div>
+    <div class="center" id="carregando"><span class="spin"></span></div>
+  </div>
+  <div class="foot">Togethere · Gravataí/RS — <i>inglês para chegar lá</i></div>
+</div>
+
+<iframe id="printFrame" title="print" style="position:fixed;left:-10000px;top:0;width:794px;height:1123px;border:0"></iframe>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+/*__PORTAL_JS__*/
+</script>
+</body>
+</html>
