@@ -25,6 +25,7 @@ const NAV=[
   {id:'alunos', label:'Alunos', em:'🧑\u200d🎓', grp:'Gestão', roles:['professor','secretaria','direcao']},
   {id:'dupes', label:'Limpar duplicidades', em:'🧹', grp:'Gestão', roles:['secretaria','direcao']},
   {id:'gturmas', label:'Trocar / criar turma', em:'🔄', grp:'Gestão', roles:['secretaria','direcao']},
+  {id:'gestaoturmas', label:'Gestão rápida de turmas', em:'🔁', grp:'Gestão', roles:['direcao'], menu:false},
   {id:'acessos', label:'Acessos', em:'🔑', grp:'Gestão', roles:['direcao']},
   {id:'cards', label:'Cards de acesso', em:'🖨️', grp:'Gestão', roles:['secretaria','direcao']},
 ];
