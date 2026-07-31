@@ -207,9 +207,11 @@ VIEWS.painel=()=>{
     {ic:'🔔',bg:'#fdeaea',cor:'var(--vermelho)',num:nAlertas,lbl:'Alertas abertos',tap:(nAlertas?'verAlertas()':'')},
     {ic:'🗒️',bg:'#f4ecff',cor:'#9333c7',num:planosAbertos,lbl:'Planos em andamento'},
   ].filter(c=>!c.dir || S.perfil==='direcao');   // total de alunos só para a direção
+  const paHtml=(typeof renderProximasAulas==='function')?renderProximasAulas():'';   // trilho "próximas aulas" (b104)
   v.innerHTML=`
     <div class="section-title"><span class="feijao fj" style="background:var(--amarelo)"></span><h2 class="display">Olá, ${S.usuario}!</h2></div>
     <p class="sub">Resumo rápido — ${brDate(hoje())}</p>
+    ${paHtml}
     <div class="grid g4" style="margin-bottom:8px">
       ${cards.map(c=>`<div class="card" ${c.tap?`onclick="${c.tap}" style="cursor:pointer"`:''}><div class="kpi"><div class="k-ic" style="background:${c.bg};color:${c.cor}">${c.ic}</div><div><div class="num">${c.num}</div><small>${c.lbl}</small></div></div></div>`).join('')}
     </div>`;
@@ -243,3 +245,34 @@ VIEWS.painel=()=>{
       ${S.perfil==='direcao'?'<button class="btn ghost" onclick="ir(\'tarefas\')">🎯 Tarefas internas</button>':''}
     </div></div>`));
 };
+
+/* ===== Trilho "Próximas aulas" no Painel (b104) — aditivo, olhar pra frente ===== */
+function _paHora(t){ const m=String((t&&t.horario)||'').match(/(\d{1,2}):(\d{2})/); return m?m[0]:''; }
+function proximasAulasLista(limite){
+  const tv=(typeof turmasVisiveis==='function')?turmasVisiveis():S.turmas.filter(t=>!t.arquivada);
+  const h=hoje(); const itens=[];
+  tv.forEach(t=>{
+    if(!t.dias||!t.dias.length) return;
+    const fut=datasAula(t.id,0,3).filter(d=>d>=h).sort();
+    if(!fut.length) return;
+    itens.push({turma:t, data:fut[0], hora:_paHora(t), nAl:S.alunos.filter(a=>a.turmaId===t.id).length});
+  });
+  itens.sort((a,b)=> a.data.localeCompare(b.data) || (a.hora||'').localeCompare(b.hora||''));
+  return itens.slice(0, limite||6);
+}
+function renderProximasAulas(){
+  const itens=proximasAulasLista(6); if(!itens.length) return '';
+  const h=hoje();
+  const cards=itens.map(it=>{
+    const ehHoje=it.data===h;
+    const quando= ehHoje ? ('Hoje'+(it.hora?' · '+it.hora:'')) : (DIAS_SEMANA[weekdayOf(it.data)]+' '+brDate(it.data).slice(0,5)+(it.hora?' · '+it.hora:''));
+    return `<button class="pa-card${ehHoje?' hoje':''}" onclick="ir('presenca')">
+      ${ehHoje?'<span class="pa-now">HOJE</span>':''}
+      <div class="pa-when">${quando}</div>
+      <div class="pa-turma">${escAttr(it.turma.nome)}</div>
+      <div class="pa-meta">${it.nAl} aluno(s)${it.turma.professor?(' · '+escAttr(it.turma.professor)):''}</div>
+      ${it.turma.nivel?('<div style="margin-top:9px">'+nivelTag(it.turma.nivel)+'</div>'):''}
+    </button>`;
+  }).join('');
+  return `<div class="pa-wrap"><div class="pa-head">🗓️ Suas próximas aulas</div><div class="pa-rail">${cards}</div></div>`;
+}
