@@ -1,0 +1,45 @@
+name: Build e publicar (GitHub Pages)
+
+# Publica automaticamente a cada push na main: monta o index.html a partir de src/
+# e envia a pasta dist/ para o GitHub Pages. Sem upload manual de arquivo.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}   # permite disparar na mão pela aba Actions
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      # devDependencies (esbuild) para o build:min. O build padrão nem precisa,
+      # mas instalamos para o "npm run build:min" funcionar se você quiser.
+      - run: npm ci || npm install
+
+      # Build padrão = byte-idêntico ao b101 no 1º deploy (zero mudança de comportamento).
+      # Para publicar minificado, troque por: npm run build:min
+      - run: npm run build
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deploy
+        uses: actions/deploy-pages@v4
