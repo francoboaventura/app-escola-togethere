@@ -70,7 +70,9 @@ const APOIO_STATUS={
   pendente:{lbl:'Aguardando direção', bg:'#fff8e0', cor:'#b88600'},
   aprovado:{lbl:'Encaminhado à secretaria', bg:'#eaf3ff', cor:'var(--azul)'},
   agendado:{lbl:'Agendado', bg:'#eafaf0', cor:'#1a8a4a'},
+  nao_agendado:{lbl:'Não agendada — devolvida à direção', bg:'#fff1e6', cor:'#c2560b'},
   recusado:{lbl:'Não aprovado', bg:'#fdeaea', cor:'var(--vermelho)'},
+  arquivado:{lbl:'Arquivada', bg:'#eef0f4', cor:'#7a8798'},
 };
 function apoioMotivosTxt(m){ return (m||[]).map(k=>{const o=MOTIVOS_APOIO.find(x=>x.k===k);return o?o.t:k;}); }
 function apoioAlunoNome(ap){ const a=S.alunos.find(a=>a.id===ap.alunoId); return a?a.nome:(ap.alunoNome||'—'); }
@@ -79,7 +81,7 @@ function _apoioData(ts){ if(!ts) return ''; try{ return new Date(ts).toLocaleDat
 // indicações que exigem AÇÃO do perfil atual (para o badge do menu)
 function apoioBadge(){
   const aps=(S.apoios||[]).filter(a=>!a.excluido);
-  if(S.perfil==='direcao')    return aps.filter(a=>a.status==='pendente').length;
+  if(S.perfil==='direcao')    return aps.filter(a=>a.status==='pendente'||a.status==='nao_agendado').length;
   if(S.perfil==='secretaria') return aps.filter(a=>a.status==='aprovado').length;
   return 0;
 }
@@ -211,6 +213,40 @@ function excluirApoio(id){
   marcarExcluido('apoios',id);
   save(); montarNav(); VIEWS.apoio(); toast('Indicação removida');
 }
+/* ----- secretaria: não consegui agendar (devolve à direção com justificativa) ----- */
+function abrirNaoAgendou(id){
+  const ap=S.apoios.find(a=>a.id===id); if(!ap) return;
+  modal(`<h3 style="margin-bottom:6px">⚠️ Não consegui agendar</h3>
+    <p class="hint" style="margin-bottom:12px"><b>${esc(apoioAlunoNome(ap))}</b> · ${esc(turmaNome(ap.turmaId))}<br>
+      Explique o motivo — a indicação volta para a direção decidir.</p>
+    <div class="field"><label class="lbl">Justificativa (obrigatória)</label>
+      <textarea id="apJust" rows="3" placeholder="Ex.: responsável não retornou os contatos; sem horário compatível; família recusou…">${esc((ap.naoAgendou&&ap.naoAgendou.justificativa)||'')}</textarea></div>
+    <div class="row" style="margin-top:8px;justify-content:flex-end">
+      <button class="btn ghost" onclick="fechar()">Cancelar</button>
+      <button class="btn" style="background:#c2560b" onclick="confirmarNaoAgendou('${id}')">Devolver à direção</button>
+    </div>`);
+}
+function confirmarNaoAgendou(id){
+  const ap=S.apoios.find(a=>a.id===id); if(!ap) return;
+  const just=(document.getElementById('apJust').value||'').trim();
+  if(!just) return toast('Explique por que não foi possível agendar');
+  ap.naoAgendou={ justificativa:just, por:S.usuario, em:Date.now() };
+  ap.status='nao_agendado'; ap.atualizadoEm=Date.now();
+  save(); montarNav(); fechar(); VIEWS.apoio();
+  toast('Devolvido à direção ⚠️');
+}
+/* ----- direção: decidir sobre indicação devolvida (reenviar ou arquivar) ----- */
+function reenviarApoio(id){
+  const ap=S.apoios.find(a=>a.id===id); if(!ap) return;
+  ap.status='aprovado'; ap.atualizadoEm=Date.now();   // volta para a fila da secretaria; mantém o histórico da devolução
+  save(); montarNav(); VIEWS.apoio(); toast('Reenviado à secretaria para agendamento ✅');
+}
+function arquivarApoio(id){
+  const ap=S.apoios.find(a=>a.id===id); if(!ap) return;
+  if(!confirm('Arquivar esta indicação? Ela sai das listas ativas e fica no histórico.')) return;
+  ap.status='arquivado'; ap.atualizadoEm=Date.now();
+  save(); montarNav(); VIEWS.apoio(); toast('Indicação arquivada 🗄');
+}
 
 /* ----- card e view ----- */
 function _apoioCard(ap,acoes){
@@ -225,6 +261,7 @@ function _apoioCard(ap,acoes){
     <div style="margin:4px 0">${apoioMotivosTxt(ap.motivos).map(t=>`<span class="pill">${esc(t)}</span>`).join(' ')}</div>
     ${ap.obs?`<p class="hint" style="margin-top:6px">📝 ${esc(ap.obs)}</p>`:''}
     ${ap.parecer?`<p class="hint" style="margin-top:6px;color:var(--tinta)"><b>Parecer da direção:</b> ${esc(ap.parecer)}</p>`:''}
+    ${ap.naoAgendou&&ap.naoAgendou.justificativa?`<p class="hint" style="margin-top:6px;color:#c2560b"><b>⚠️ Secretaria não conseguiu agendar:</b> ${esc(ap.naoAgendou.justificativa)}${ap.naoAgendou.por?' — '+esc(ap.naoAgendou.por):''}</p>`:''}
     ${(S.perfil==='secretaria'||S.perfil==='direcao')&&(ap.status==='aprovado'||ap.status==='agendado')?`<p class="hint" style="margin-top:6px">📧 Responsável: ${email?esc(email):'<span style="color:var(--vermelho)">sem e-mail cadastrado</span>'}</p>`:''}
     ${ap.status==='agendado'?`<p class="hint" style="margin-top:6px;color:#1a8a4a"><b>📆 Agendado:</b> ${brDate(ap.agendaData)}${ap.agendaHora?' às '+ap.agendaHora:''}${ap.secretariaObs?' · '+esc(ap.secretariaObs):''}</p>`:''}
     ${acoes?`<div class="row" style="margin-top:10px;gap:8px">${acoes}</div>`:''}
@@ -246,10 +283,14 @@ VIEWS.apoio=()=>{
   }
   if(S.perfil==='direcao'){
     const pend=aps.filter(a=>a.status==='pendente');
-    const resto=aps.filter(a=>a.status!=='pendente');
+    const devolvidas=aps.filter(a=>a.status==='nao_agendado');
+    const resto=aps.filter(a=>a.status!=='pendente' && a.status!=='nao_agendado');
     v.appendChild(el(`<h3 style="margin:6px 0 10px;font-size:1rem">⏳ Aguardando sua aprovação (${pend.length})</h3>`));
     if(!pend.length) v.appendChild(el('<div class="card"><p class="hint" style="margin:0">Nenhuma indicação pendente.</p></div>'));
     pend.forEach(ap=>v.appendChild(el(_apoioCard(ap, `<button class="btn sm" onclick="abrirDecisaoApoio('${ap.id}')">Analisar</button><button class="btn ghost sm" onclick="excluirApoio('${ap.id}')">🗑</button>`))));
+    v.appendChild(el(`<h3 style="margin:22px 0 10px;font-size:1rem">↩️ Devolvidas pela secretaria (${devolvidas.length})</h3>`));
+    if(!devolvidas.length) v.appendChild(el('<div class="card"><p class="hint" style="margin:0">Nenhuma indicação devolvida.</p></div>'));
+    devolvidas.forEach(ap=>v.appendChild(el(_apoioCard(ap, `<button class="btn sm" onclick="reenviarApoio('${ap.id}')">↩️ Reenviar para agendamento</button><button class="btn ghost sm" onclick="arquivarApoio('${ap.id}')">🗄 Arquivar</button>`))));
     v.appendChild(el(`<h3 style="margin:22px 0 10px;font-size:1rem">📋 Histórico (${resto.length})</h3>`));
     if(!resto.length) v.appendChild(el('<div class="card"><p class="hint" style="margin:0">Sem histórico ainda.</p></div>'));
     resto.forEach(ap=>v.appendChild(el(_apoioCard(ap, `<button class="btn ghost sm" onclick="excluirApoio('${ap.id}')">🗑 Remover</button>`))));
@@ -260,7 +301,7 @@ VIEWS.apoio=()=>{
   const agendadas=aps.filter(a=>a.status==='agendado');
   v.appendChild(el(`<h3 style="margin:6px 0 10px;font-size:1rem">🔔 Para agendar (${paraAgendar.length})</h3>`));
   if(!paraAgendar.length) v.appendChild(el('<div class="card empty"><div class="big">✅</div><b>Nada para agendar</b><br>Nenhuma indicação aprovada aguardando agendamento.</div>'));
-  paraAgendar.forEach(ap=>v.appendChild(el(_apoioCard(ap, `<button class="btn sm" onclick="abrirAgendarApoio('${ap.id}')">📆 Agendar</button>`))));
+  paraAgendar.forEach(ap=>v.appendChild(el(_apoioCard(ap, `<button class="btn sm" onclick="abrirAgendarApoio('${ap.id}')">📆 Agendar</button><button class="btn ghost sm" style="color:#c2560b" onclick="abrirNaoAgendou('${ap.id}')">⚠️ Não consegui agendar</button>`))));
   v.appendChild(el(`<h3 style="margin:22px 0 10px;font-size:1rem">📆 Agendadas (${agendadas.length})</h3>`));
   if(!agendadas.length) v.appendChild(el('<div class="card"><p class="hint" style="margin:0">Nenhuma aula de apoio agendada ainda.</p></div>'));
   agendadas.forEach(ap=>v.appendChild(el(_apoioCard(ap, `<button class="btn ghost sm" onclick="abrirAgendarApoio('${ap.id}')">✏️ Reagendar</button>`))));
