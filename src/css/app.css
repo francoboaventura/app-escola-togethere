@@ -478,3 +478,6 @@ button:disabled,.btn:disabled,button[disabled],.btn[disabled]{
   .mais-i.active{background:#eaf3ff;color:var(--azul);font-weight:600}
   .mais-i .badge{margin-left:auto;background:var(--vermelho);color:#fff;font-size:.62rem;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:grid;place-items:center;padding:0 5px;font-family:'Poppins'}
 }
+
+/* Avatar pequeno em listas (b109) — chamada e diretório */
+.av-sm{width:34px;height:34px;border-radius:50%;background:#e6edf6;color:var(--azul);display:flex;align-items:center;justify-content:center;font-family:'Poppins';font-weight:700;font-size:.82rem;flex:none;overflow:hidden}
