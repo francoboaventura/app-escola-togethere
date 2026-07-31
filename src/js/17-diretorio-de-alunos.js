@@ -141,10 +141,12 @@ function renderTurmaList(){
     const prof=t.professor?` · Prof. ${t.professor}`:'';
     const hor=t.horario?` · ${t.horario}`:'';
     const freq=` · ${diasTurmaLabel(t)||((t.vezesSemana===1)?'1x/sem':'2x/sem')}${t.vezesSemana===1?' (falta dupla)':''}`;
+    const _col=(typeof planColecaoDe==='function')?(planColecaoDe(t)||''):'';
+    const mat=_col?` · 📘 ${esc(_col)}`:'';
     return `<div class="card" style="cursor:pointer" onclick="abrirTurma('${t.id}')">
       <div style="display:flex;align-items:center;gap:10px">
         <div style="flex:1"><h3 style="margin:0">${t.nome} ${nivelTag(t.nivel)}${t.cefr?` <span class="tag teens">${t.cefr}</span>`:''} ${selo}</h3>
-          <p class="hint" style="margin:4px 0 0">${als.length} aluno(s)${prof}${hor}${freq}</p></div>
+          <p class="hint" style="margin:4px 0 0">${als.length} aluno(s)${prof}${hor}${freq}${mat}</p></div>
         <span style="font-size:1.7rem;color:var(--azul);line-height:1">›</span>
       </div></div>`;
   }).join('');
@@ -233,6 +235,9 @@ function abrirEditarTurma(id){
     </div>
     <div class="field" style="margin-top:10px"><label class="lbl">Professor(a)</label>
       <select id="etProf"><option value="">— sem professor</option>${profs.map(p=>`<option value="${escAttr(p)}" ${t.professor===p?'selected':''}>${esc(p)}</option>`).join('')}</select></div>
+    ${(function(){const cols=(typeof TG_COLECOES_TODAS!=='undefined')?TG_COLECOES_TODAS:[];if(!cols.length)return '';const colAtual=(typeof planColecaoDe==='function')?(planColecaoDe(t)||''):(t.material||'');return `<div class="field" style="margin-top:10px"><label class="lbl">Material / coleção</label>
+      <select id="etMaterial"><option value="">— sem material</option>${cols.map(c=>`<option value="${escAttr(c)}" ${colAtual===c?'selected':''}>${esc(c)}</option>`).join('')}</select>
+      <p class="hint" style="margin:6px 0 0">Define o material usado pela turma. Trocar aqui <b>não apaga</b> o avanço do plano — para reiniciar a linha do tempo, use a tela Planejamento.</p></div>`;})()}
     <div class="field" style="margin-top:10px"><label class="lbl">Dias de aula</label><div style="display:flex;flex-wrap:wrap;gap:6px">
       ${[1,2,3,4,5,6].map(d=>`<label style="display:flex;align-items:center;gap:5px;font-size:.88rem;border:1px solid var(--linha);border-radius:9px;padding:6px 10px;cursor:pointer"><input type="checkbox" class="etDia" value="${d}" ${dias.indexOf(d)>=0?'checked':''}> ${DIAS_SEMANA[d]}</label>`).join('')}
     </div><p class="hint" style="margin:6px 0 0">Mudar os dias afeta só as <b>próximas</b> chamadas e planos — os registros já feitos continuam intactos.</p></div>
@@ -252,6 +257,8 @@ function salvarEdicaoTurma(id){
   t.professor=(document.getElementById('etProf').value||'').trim();
   t.dias=dias; t.vezesSemana=dias.length;
   t.atualizadoEm=Date.now();
+  const _mat=document.getElementById('etMaterial');
+  if(_mat && typeof _planUpsert==='function'){ const mat=_mat.value||''; const rec=_planUpsert(id); if((rec.colecao||'')!==mat){ rec.colecao=mat; rec.atualizadoEm=Date.now(); } }
   save(); fechar(); renderPainelTurma(); montarNav(); toast('Turma atualizada');
 }
 function toggleVerArquivadas(){ _verArquivadas=!_verArquivadas; if(painelTurma) renderPainelTurma(); else VIEWS.turmas(); }

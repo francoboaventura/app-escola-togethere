@@ -8,6 +8,7 @@ VIEWS.alertas=()=>{
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--vermelho)"></span><h2 class="display">Avisos</h2></div>
     <p class="sub">Relatórios de aula para enviar às famílias e alunos que precisam de contato.</p>`;
   { const _pc=renderPendenciasCard(); if(_pc) v.appendChild(el(_pc)); }   // pendências escaladas (direção)
+  { const _vp=(typeof renderPendenciasVipCard==='function')?renderPendenciasVipCard():''; if(_vp) v.appendChild(el(_vp)); }   // aulas VIP previstas sem registro
   renderAvisoRelatorios(v);
   if(escolaEmRecesso()){ v.appendChild(el('<div class="card" style="border-left:4px solid var(--laranja)"><b>🌴 Escola em recesso</b><br>Os alertas de faltas, material e pendências (chamada, plano, relatório) estão <b>pausados</b> durante as férias e voltam sozinhos quando as aulas recomeçarem.</div>')); }
   if(!fa.length&&!ma.length){

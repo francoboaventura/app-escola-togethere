@@ -218,6 +218,7 @@ VIEWS.painel=()=>{
   if(S.perfil==='direcao' && _alunosVisiveis) v.appendChild(el(`<div style="margin:-4px 0 10px"><button class="btn ghost sm" onclick="ocultarAlunos()">🔒 Ocultar total de alunos</button></div>`));
   if(S.perfil==='direcao') v.appendChild(el(renderPainelGestao()));
   { const _pc=renderPendenciasCard(); if(_pc) v.appendChild(el(_pc)); }   // pendências (chamada/plano/relatório)
+  { const _vp=(typeof renderPendenciasVipCard==='function')?renderPendenciasVipCard():''; if(_vp) v.appendChild(el(_vp)); }   // aulas VIP previstas sem registro
   { const _rb=renderBoletinsReprovadosCard(); if(_rb) v.appendChild(el(_rb)); }   // aviso ao professor: boletins reprovados
   { const _na=apoioBadge();
     if(_na){

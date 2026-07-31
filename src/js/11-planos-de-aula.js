@@ -109,7 +109,7 @@ function planoCard(p){
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center">
         ${ro?'':p.realizado?`<button class="btn ghost sm" onclick="reabrirPlano('${p.id}')">↩︎ reabrir</button>`:`<button class="btn sm" onclick="marcarPlanoFeito('${p.id}')">✓ marcar como feito</button> <button class="btn ghost sm" style="color:var(--laranja)" title="A aula conta e as faltas ficam, mas o plano vai para a próxima data — sem relatório nem alerta" onclick="transferirPlanoProximaAula('${p.id}')">↪️ Transferir p/ próxima aula</button>`}
         <button class="btn amarelo sm" onclick="gerarRelatorioDoPlano('${p.id}')">🧾 Gerar relatório</button>
-        ${(ehProfessor()||ro)?'':`<button class="btn ghost sm" style="color:var(--vermelho);margin-left:auto" onclick="delPlano('${p.id}')">🗑 Excluir</button>`}
+        ${(ro || (ehProfessor()&&p.realizado))?'':`<button class="btn ghost sm" style="color:var(--vermelho);margin-left:auto" onclick="delPlano('${p.id}')">🗑 Excluir</button>`}
       </div>
     </div>`:''}
   </div>`;
@@ -158,7 +158,7 @@ function transferirPlanoProximaAula(pid){
 function reabrirPlano(pid){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');const p=S.planos.find(p=>p.id===pid);if(!p)return;p.realizado=false;p.realizadoEm=null;p.atualizadoEm=Date.now();save();renderPlanos();toast('Plano reaberto');}
 function togglePlano(pid,i){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');const p=S.planos.find(p=>p.id===pid);p.itens[i].done=!p.itens[i].done;p.atualizadoEm=Date.now();save();renderPlanos();}
 function setPlanoCampo(pid,campo,val){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');const p=S.planos.find(p=>p.id===pid);p[campo]=val;save();}
-function delPlano(pid){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');if(ehProfessor())return toast('Sem permissão');if(confirm('Excluir este plano?')){S.planos=S.planos.filter(p=>p.id!==pid);marcarExcluido('planos',pid);save();renderPlanos();toast('Plano excluído');}}
+function delPlano(pid){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');const _p=S.planos.find(x=>x.id===pid);if(ehProfessor() && _p && _p.realizado)return toast('Você só pode excluir planos ainda NÃO realizados');if(confirm('Excluir este plano?')){S.planos=S.planos.filter(p=>p.id!==pid);marcarExcluido('planos',pid);save();renderPlanos();toast('Plano excluído');}}
 function editarPlano(id){
   const p=S.planos.find(x=>x.id===id); if(!p)return;
   modal(`<h3>✏️ Editar plano <button class="close" onclick="fechar()">×</button></h3>

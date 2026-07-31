@@ -104,6 +104,84 @@ function _bannerAlertasVip(lista){
   if(!avisos.length) return '';
   return `<div class="card" style="background:#fff1e6;border:1px solid #ffd9bf"><b style="color:#c2560b">⚠️ Pacotes de horas — atenção (${avisos.length})</b>${avisos.map(a=>`<p class="hint" style="margin:6px 0 0"><b>${esc(a.nome)}</b>: ${_vipAlertaTxt(vipAlertaPacote(a.id))}</p>`).join('')}</div>`;
 }
+// =========================================================================
+//  Horários previstos das aulas VIP + alerta de aula não registrada.
+//  Espelha o comportamento das turmas: passada a aula prevista, se +2h sem
+//  registro avisa o professor; após ~24h escala para a direção.
+// =========================================================================
+function vipTemHorario(vip){ return !!(vip && Array.isArray(vip.dias) && vip.dias.length); }
+function vipHorarioLabel(vip){
+  if(!vipTemHorario(vip)) return '';
+  const ds=vip.dias.slice().sort((a,b)=>a-b).map(d=>DIAS_SEMANA[d]).join(', ');
+  return ds + (vip.horaPrev?(' · '+vip.horaPrev):'');
+}
+function _fimAulaVipTs(data, hora){
+  const a=String(data).split('-').map(Number);
+  const m=String(hora||'').match(/(\d{1,2}):(\d{2})/);
+  const h=m?+m[1]:23, mi=m?+m[2]:0;
+  return new Date(a[0], a[1]-1, a[2], h, mi, 0).getTime();
+}
+function _datasPrevistasVip(vip, atras, frente){
+  if(!vipTemHorario(vip)) return [];
+  atras=atras==null?3:atras; frente=frente==null?0:frente;
+  const out=[]; const dias=vip.dias;
+  const a=new Date(); a.setDate(a.getDate()-atras*7);
+  const b=new Date(); b.setDate(b.getDate()+frente*7);
+  for(let d=new Date(a); d<=b; d.setDate(d.getDate()+1)){ if(dias.indexOf(d.getDay())>=0) out.push(ymd(new Date(d))); }
+  return out;
+}
+// conta como "registrada" se há aula VIP na data ou ±1 dia (VIPs remarcam com frequência)
+function _vipTemAulaPerto(vid, data){
+  const alvo=new Date(data+'T12:00:00').getTime();
+  return (S.aulasVip||[]).some(x=>x.vipId===vid && !x.ajusteManual && Math.abs(new Date(x.data+'T12:00:00').getTime()-alvo)<=864e5);
+}
+function pendenciasAulaVip(vid){
+  const vip=(S.vipAlunos||[]).find(v=>v.id===vid); if(!vipTemHorario(vip)) return [];
+  const out=[]; const hojeY=hoje();
+  const c=new Date(); c.setDate(c.getDate()-PEND_JANELA_DIAS); const corteY=ymd(c);
+  _datasPrevistasVip(vip, Math.ceil(PEND_JANELA_DIAS/7)+1, 0).forEach(data=>{
+    if(data<corteY || data>hojeY) return;
+    if(data<PEND_INICIO) return;
+    if((typeof _emRecessoISO==='function' && _emRecessoISO(data)) || (typeof _emFeriasFixas==='function' && _emFeriasFixas(data))) return;
+    if(_vipTemAulaPerto(vid, data)) return;
+    const nivel=_nivelPend(_fimAulaVipTs(data, vip.horaPrev)); if(!nivel) return;
+    out.push({ vipId:vid, nome:vip.nome, data, tipo:'aulavip', nivel, fimTs:_fimAulaVipTs(data, vip.horaPrev) });
+  });
+  return out;
+}
+function _souProfVip(vip){
+  const e=(typeof _meuEnsina==='function')?_meuEnsina():'';
+  const alvo=_normTxt((vip&&vip.professor)||'');
+  return !!alvo && (alvo===_normTxt(e||'') || alvo===_normTxt(S.usuario||''));
+}
+function pendenciasVipParaMim(){
+  // (recesso/férias já são tratados por data em pendenciasAulaVip — mesmo critério das turmas)
+  if(S.perfil==='professor'){
+    let out=[]; (S.vipAlunos||[]).forEach(v=>{ if(!v.arquivado && _souProfVip(v)) out=out.concat(pendenciasAulaVip(v.id)); }); return out;
+  }
+  if(S.perfil==='direcao'){
+    let out=[]; (S.vipAlunos||[]).forEach(v=>{ if(!v.arquivado) out=out.concat(pendenciasAulaVip(v.id).filter(p=>p.nivel==='dir')); }); return out;
+  }
+  return [];   // secretaria não recebe pendência de lançamento de aula
+}
+function renderPendenciasVipCard(){
+  const ps=pendenciasVipParaMim(); if(!ps.length) return '';
+  const temDir=ps.some(p=>p.nivel==='dir');
+  const porVip={}; ps.forEach(p=>{ (porVip[p.vipId]=porVip[p.vipId]||[]).push(p); });
+  const blocos=Object.keys(porVip).map(vid=>{
+    const nome=(porVip[vid][0]||{}).nome||'—';
+    const linhas=porVip[vid].sort((a,b)=>b.fimTs-a.fimTs).map(p=>{
+      const tagDir=(p.nivel==='dir')?' <span class="pill" style="background:#fdeaea;color:var(--vermelho)">⏱ +24h</span>':'';
+      return `<div class="check"><span style="flex:1">${brDate(p.data)} · <b>aula VIP não registrada</b>${tagDir}</span>
+        <button class="btn ghost sm" onclick="abrirFicha('${vid}')">lançar ›</button></div>`;
+    }).join('');
+    return `<div style="margin-top:10px"><div style="font-weight:600">👑 ${esc(nome)}</div>${linhas}</div>`;
+  }).join('');
+  const sub = S.perfil==='professor' ? 'Aula particular prevista sem registro. Lance a aula (ou marque a falta) — após 24h a direção é avisada.'
+            : 'Aulas particulares previstas e ainda não registradas pelo professor (mais de 24h).';
+  return `<div class="card" style="border-left:4px solid ${temDir?'var(--vermelho)':'var(--laranja)'}">
+    <h3>👑 ${ps.length} aula(s) VIP pendente(s)</h3><p class="hint">${sub}</p>${blocos}</div>`;
+}
 VIEWS.vip=()=>{
   const v=document.getElementById('view');
   const ehDir=S.perfil==='direcao';
@@ -132,6 +210,7 @@ VIEWS.vip=()=>{
     ${vipSel&&!ehSec?`<div class="card"><h3>Lançar aula</h3>
       <div class="field"><label class="lbl">Tema</label><input type="text" id="vipTema" placeholder="Ex: Simple Past · entrevista de emprego"></div>
       <div class="field"><label class="lbl">Descrição da aula</label><textarea id="vipDesc" style="min-height:130px" placeholder="Ex: Conversação — entrevista de emprego. Descreva com detalhes o que foi trabalhado na aula."></textarea></div>
+      <div class="field"><label class="lbl">📚 Tema de casa (opcional)</label><input type="text" id="vipTemaCasa" placeholder="Ex: Unit 4 · ex. 3 a 6"></div>
       <div class="row">
         <div class="field"><label class="lbl">Data</label><input type="date" id="vipData" value="${hoje()}"></div>
         <div class="field"><label class="lbl">Duração (min)</label><input type="number" id="vipDur" value="60" min="5" step="5"></div>
@@ -196,12 +275,13 @@ function delVipAluno(id){
 function addAulaVip(){
   const vid=vipSel; if(!vid)return toast('Selecione um aluno VIP');
   const tema=(document.getElementById('vipTema').value||'').trim();
+  const temaCasa=(document.getElementById('vipTemaCasa').value||'').trim();
   const desc=document.getElementById('vipDesc').value.trim(); if(!desc)return toast('Descreva a aula');
   const data=document.getElementById('vipData').value; if(!data)return toast('Escolha a data');
   const dur=+document.getElementById('vipDur').value||0;
   const faltou=!!document.getElementById('vipFaltou').checked;
   const cobrarFalta=faltou && !!((document.getElementById('vipCobrarFalta')||{}).checked);
-  S.aulasVip.push({id:uid(),vipId:vid,data,tema,descricao:desc,duracaoMin:dur,faltou,cobrarFalta,atualizadoEm:Date.now()});
+  S.aulasVip.push({id:uid(),vipId:vid,data,tema,temaCasa,descricao:desc,duracaoMin:dur,faltou,cobrarFalta,atualizadoEm:Date.now()});
   save(); VIEWS.vip();   // re-renderiza p/ atualizar o saldo do pacote
   toast(faltou?(cobrarFalta?'Falta lançada e hora debitada':'Falta lançada (sem débito)'):'Aula lançada');
 }

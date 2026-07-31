@@ -284,12 +284,58 @@ function corpoFichaVip(id){
 }
 function copiarFichaVip(id){ const t=corpoFichaVip(id); if(!t) return; copiarTexto(t,'Ficha copiada! Cole no WhatsApp'); }
 function imprimirFichaVip(id){ const t=corpoFichaVip(id); if(!t) return; const html=`<div style="font-family:Arial,sans-serif;max-width:760px;margin:0 auto;padding:20px"><pre style="white-space:pre-wrap;font-family:Arial,sans-serif;font-size:13px;line-height:1.5">${escAttr(t)}</pre></div>`; if(typeof imprimirDoc==='function') imprimirDoc(html); else toast('Impressão indisponível'); }
+// Acesso dos VIPs ao portal está DESLIGADO por ora (mudar para true reativa tudo).
+const VIP_PORTAL_ATIVO = false;
+// Material em uso do VIP: dropdown com as coleções do app + opção de digitar um material fora da lista.
+function _cardMaterialVip(vip){
+  const cols=(typeof TG_COLECOES_TODAS!=='undefined')?TG_COLECOES_TODAS:[];
+  const isOutro = !!(vip.material && cols.indexOf(vip.material)<0);
+  return `<div class="card" style="margin-top:12px"><h3 style="margin:0 0 8px;font-size:1rem">📘 Material em uso</h3>
+    <select onchange="_vipMaterialSel('${vip.id}',this)">
+      <option value="">— sem material —</option>
+      ${cols.map(c=>`<option value="${escAttr(c)}" ${vip.material===c?'selected':''}>${esc(c)}</option>`).join('')}
+      <option value="__outro__" ${isOutro?'selected':''}>— Outro (digitar) —</option>
+    </select>
+    <input type="text" id="vipMatOutro" value="${isOutro?escAttr(vip.material):''}" placeholder="Digite o material que não está na lista" style="margin-top:8px;display:${isOutro?'block':'none'}" onchange="setVipMaterial('${vip.id}',this.value)">
+  </div>`;
+}
+function _vipMaterialSel(id, sel){
+  const out=document.getElementById('vipMatOutro');
+  if(sel.value==='__outro__'){ if(out){ out.style.display='block'; out.focus(); } return; }
+  if(out) out.style.display='none';
+  setVipMaterial(id, sel.value);
+}
+function setVipMaterial(id, val){
+  const vp=(S.vipAlunos||[]).find(x=>x.id===id); if(!vp) return;
+  vp.material=(val||'').trim(); vp.atualizadoEm=Date.now(); save(); toast('Material atualizado');
+}
+// Horários previstos das aulas VIP — dias da semana + horário. Base do alerta de aula não registrada.
+function _cardHorariosVip(vip){
+  const dias=Array.isArray(vip.dias)?vip.dias:[];
+  const lbl=(typeof vipHorarioLabel==='function')?vipHorarioLabel(vip):'';
+  return `<div class="card" style="margin-top:12px"><h3 style="margin:0 0 8px;font-size:1rem">🕒 Horários previstos das aulas</h3>
+    <p class="hint" style="margin:0 0 8px">Marque os dias e o horário previstos. Passada a aula sem registro, o app avisa o professor e, após 24h, a direção — como nas turmas.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:6px">
+      ${[0,1,2,3,4,5,6].map(d=>`<label style="display:flex;align-items:center;gap:5px;font-size:.88rem;border:1px solid var(--linha);border-radius:9px;padding:6px 10px;cursor:pointer"><input type="checkbox" class="vipDia" value="${d}" ${dias.indexOf(d)>=0?'checked':''} onchange="setVipHorario('${vip.id}')"> ${DIAS_SEMANA[d]}</label>`).join('')}
+    </div>
+    <div class="row" style="margin-top:10px;align-items:flex-end">
+      <div class="field" style="margin:0;max-width:160px"><label class="lbl">Horário previsto</label><input type="time" id="vipHoraPrev" value="${escAttr(vip.horaPrev||'')}" onchange="setVipHorario('${vip.id}')"></div>
+      <span class="hint" style="flex:1">${lbl?('Previsto: <b>'+esc(lbl)+'</b>'):'Nenhum horário definido ainda.'}</span>
+    </div></div>`;
+}
+function setVipHorario(id){
+  const vp=(S.vipAlunos||[]).find(x=>x.id===id); if(!vp) return;
+  const dias=[...document.querySelectorAll('.vipDia:checked')].map(c=>+c.value).sort((a,b)=>a-b);
+  const hp=(document.getElementById('vipHoraPrev')||{}).value||'';
+  vp.dias=dias; vp.horaPrev=hp; vp.atualizadoEm=Date.now(); save(); toast('Horários atualizados');
+}
 // Lançar aula VIP direto da ficha (professor + direção; secretaria não lança).
 function lancarAulaVip(vid){
   if(soLeitura()) return toast('A secretaria não lança aulas VIP');
   modal(`<h3>+ Lançar aula VIP <button class="close" onclick="fechar()">×</button></h3>
     <div class="field"><label class="lbl">Tema</label><input type="text" id="laTema" placeholder="Ex: Simple Past · entrevista de emprego"></div>
     <div class="field"><label class="lbl">Descrição da aula</label><textarea id="laDesc" style="min-height:120px" placeholder="O que foi trabalhado na aula"></textarea></div>
+    <div class="field"><label class="lbl">📚 Tema de casa (opcional)</label><input type="text" id="laTemaCasa" placeholder="Ex: Unit 4 · ex. 3 a 6"></div>
     <div class="row"><div class="field"><label class="lbl">Data</label><input type="date" id="laData" value="${hoje()}"></div>
       <div class="field"><label class="lbl">Duração (min)</label><input type="number" id="laDur" value="60" min="5" step="5"></div></div>
     <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:2px 0 6px"><input type="checkbox" id="laFaltou" onchange="document.getElementById('laCobrarW').style.display=this.checked?'flex':'none'"> ❌ Aluno não compareceu</label>
@@ -302,7 +348,7 @@ function salvarAulaVipFicha(vid){
   const desc=(document.getElementById('laDesc').value||'').trim(); if(!desc) return toast('Descreva a aula');
   const data=document.getElementById('laData').value; if(!data) return toast('Escolha a data');
   const faltou=!!document.getElementById('laFaltou').checked;
-  S.aulasVip.push({ id:uid(), vipId:vid, data, tema:(document.getElementById('laTema').value||'').trim(), descricao:desc,
+  S.aulasVip.push({ id:uid(), vipId:vid, data, tema:(document.getElementById('laTema').value||'').trim(), temaCasa:(document.getElementById('laTemaCasa').value||'').trim(), descricao:desc,
     duracaoMin:+document.getElementById('laDur').value||0, faltou, cobrarFalta: faltou && !!(document.getElementById('laCobrar')||{}).checked, atualizadoEm:Date.now() });
   save(); fechar(); VIEWS.ficha(); toast(faltou?'Falta lançada':'Aula lançada ✅');
 }
@@ -331,7 +377,7 @@ function renderFichaVip(v, vip){
     ${tile(wrs.length,'Writings',wrs.length>0?'#9333c7':'var(--tinta)')}
   </div>
   ${_cardPacoteVip(vip.id)}
-  <div class="card" style="margin-top:12px"><h3 style="margin:0 0 8px">Contato & portal</h3>`;
+  <div class="card" style="margin-top:12px"><h3 style="margin:0 0 8px">Contato${VIP_PORTAL_ATIVO?' & portal':''}</h3>`;
   if(podeEd){
     h+=`<div class="row" style="flex-wrap:wrap">
       <div class="field" style="flex:2;min-width:210px;margin:0"><label class="lbl">E-mail (responsável / aluno)</label><input type="email" value="${escAttr(vip.email||'')}" placeholder="email@exemplo.com" onchange="setVipCampo('${vip.id}','email',this.value)"></div>
@@ -341,11 +387,13 @@ function renderFichaVip(v, vip){
   } else {
     h+=`<p class="hint" style="margin:0">${vip.email?('📧 '+escAttr(vip.email)):'Sem e-mail cadastrado'}${vip.telefone?(' · 📱 '+escAttr(vip.telefone)):''}${idade!=null?(' · 🎂 '+idade+' anos'):''}</p>`;
   }
-  h+=`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
+  h+=`${VIP_PORTAL_ATIVO?`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
       <p class="hint" style="margin:0">🎫 <b>Portal do aluno:</b> <a href="${portalURL}" target="_blank" style="color:var(--azul);word-break:break-all">${escAttr(portalURL.replace(/^https?:\/\//,''))}</a></p>
-    </div>
+    </div>`:''}
   </div>
-  ${_cardAcessoPortal(vip.id)}
+  ${_cardMaterialVip(vip)}
+  ${_cardHorariosVip(vip)}
+  ${VIP_PORTAL_ATIVO?_cardAcessoPortal(vip.id):''}
   ${_cardContratos(vip.id)}
   <div class="card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
     <span class="hint" style="flex:1">Período: <b>${periodoTxt}</b></span>
@@ -353,7 +401,7 @@ function renderFichaVip(v, vip){
     <button class="btn ghost sm" onclick="setFichaPeriodo('tudo')">Tudo</button>
   </div>`;
   h+=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:18px 0 6px"><h3 style="margin:0;flex:1">👑 Aulas VIP (${aulas.length})</h3>${!soLeitura()?`<button class="btn ghost sm" onclick="lancarAulaVip('${vip.id}')">+ Lançar aula</button>`:''}</div>`;
-  h+=aulas.length?aulas.map(a=>`<div class="card" style="padding:10px 12px"><div style="display:flex;gap:8px;flex-wrap:wrap"><b style="flex:1">${brDate(a.data)}</b><span style="color:${a.faltou?'var(--vermelho)':'#1a8a4a'};font-weight:600">${a.faltou?'❌ não compareceu':'✅ '+fmtDur(a.duracaoMin)}</span></div><p class="hint" style="margin:4px 0 0">${a.tema?('<b>'+escAttr(a.tema)+'</b> — '):''}${escAttr(a.descricao||'')}</p></div>`).join(''):'<p class="hint">Nenhuma aula no período.</p>';
+  h+=aulas.length?aulas.map(a=>`<div class="card" style="padding:10px 12px"><div style="display:flex;gap:8px;flex-wrap:wrap"><b style="flex:1">${brDate(a.data)}</b><span style="color:${a.faltou?'var(--vermelho)':'#1a8a4a'};font-weight:600">${a.faltou?'❌ não compareceu':'✅ '+fmtDur(a.duracaoMin)}</span></div><p class="hint" style="margin:4px 0 0">${a.tema?('<b>'+escAttr(a.tema)+'</b> — '):''}${escAttr(a.descricao||'')}</p>${a.temaCasa?`<p class="hint" style="margin:4px 0 0">📚 <b>Tema de casa:</b> ${escAttr(a.temaCasa)}</p>`:''}</div>`).join(''):'<p class="hint">Nenhuma aula no período.</p>';
   h+=`<h3 style="margin:18px 0 6px">📝 Writings (${wrs.length})</h3>`;
   h+=wrs.length?'<div class="card" style="padding:10px 12px">'+wrs.map(w=>{
     const bt=(w.subscales||Object.keys(w.bands||{})).map(k=>`${WR_LBL(k)} <b>${w.bands[k]!=null?w.bands[k]:'—'}</b>`).join(' · ');
