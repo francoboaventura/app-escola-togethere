@@ -36,6 +36,7 @@ function migrar(s){
   s.eventos=s.eventos||[];
   s.aulasVip=s.aulasVip||[];
   s.vipAlunos=s.vipAlunos||[];
+  s.pacotesVip=s.pacotesVip||[];   // pacotes de horas contratadas dos alunos VIP
   s.planejamento=s.planejamento||[];
   s.recessos=s.recessos||[];       // recessos/férias (pausam o ritmo previsto)
   s.alertas=s.alertas||[];

@@ -1,6 +1,81 @@
 /* ===== AULAS VIP (aulas avulsas por aluno) ===== */
 let vipSel=null;
 function fmtDur(min){ min=+min||0; const h=Math.floor(min/60), m=min%60; if(!min)return '0min'; return (h?h+'h':'')+(m?(h?' ':'')+m+'min':''); }
+
+/* ===== Pacotes de horas (VIP) ===== */
+// Consumo: aulas dadas (presente) + faltas em que se optou por debitar (professor disponível).
+function vipConsumoMin(vid){ return (S.aulasVip||[]).filter(a=>a.vipId===vid && (!a.faltou || a.cobrarFalta)).reduce((s,a)=>s+(+a.duracaoMin||0),0); }
+function vipContratadoMin(vid){ return (S.pacotesVip||[]).filter(p=>p.vipId===vid && !p.arquivado).reduce((s,p)=>s+((+p.horas||0)*60),0); }
+function vipSaldoMin(vid){ return vipContratadoMin(vid)-vipConsumoMin(vid); }
+function vipVigenciaFim(vid){ const fs=(S.pacotesVip||[]).filter(p=>p.vipId===vid && !p.arquivado && p.fim).map(p=>p.fim).sort(); return fs.length?fs[fs.length-1]:''; }
+function vipDiasVigencia(vid){ const f=vipVigenciaFim(vid); if(!f) return null; return Math.round((new Date(f+'T23:59:59').getTime()-Date.now())/864e5); }
+function vipAlertaPacote(vid){
+  const pac=(S.pacotesVip||[]).filter(p=>p.vipId===vid && !p.arquivado);
+  if(!pac.length) return null;
+  const saldoMin=vipSaldoMin(vid), saldoH=saldoMin/60, dias=vipDiasVigencia(vid);
+  const esgotado=saldoMin<=0, baixo=saldoMin>0 && saldoH<5, vencendo=dias!=null&&dias<=30&&dias>=0, vencido=dias!=null&&dias<0;
+  if(esgotado||baixo||vencendo||vencido) return {saldoH,saldoMin,dias,esgotado,baixo,vencendo,vencido,fim:vipVigenciaFim(vid)};
+  return null;
+}
+function _vipAlertaTxt(al){
+  const m=[];
+  if(al.esgotado) m.push('saldo esgotado'); else if(al.baixo) m.push('saldo baixo ('+fmtDur(al.saldoMin)+')');
+  if(al.vencido) m.push('vigência vencida'); else if(al.vencendo) m.push('vigência acaba em '+al.dias+' dia'+(al.dias===1?'':'s'));
+  return m.join(' · ');
+}
+function _cardPacoteVip(vid){
+  const ehGestor=(S.perfil==='direcao'||soLeitura());
+  const contr=vipContratadoMin(vid), usado=vipConsumoMin(vid), saldo=contr-usado;
+  const pac=(S.pacotesVip||[]).filter(p=>p.vipId===vid && !p.arquivado).sort((a,b)=>(a.inicio||'').localeCompare(b.inicio||''));
+  const fim=vipVigenciaFim(vid), dias=vipDiasVigencia(vid), al=vipAlertaPacote(vid);
+  const tile=(v,l,c)=>`<div class="fx-tile"><div class="v" style="color:${c}">${v}</div><div class="l">${l}</div></div>`;
+  let h=`<div class="card"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0;flex:1">⏱️ Pacote de horas</h3>${ehGestor?`<button class="btn ghost sm" onclick="addPacoteVip('${vid}')">+ Novo pacote</button>`:''}</div>`;
+  if(!pac.length && !usado){ return h+`<p class="hint" style="margin:8px 0 0">Nenhum pacote cadastrado.${ehGestor?' Clique em “+ Novo pacote” quando o aluno contratar horas.':''}</p></div>`; }
+  h+=`<div class="fx-tiles" style="margin-top:10px">
+    ${tile(fmtDur(contr),'Contratadas','#005EAF')}
+    ${tile(fmtDur(usado),'Utilizadas','#b8860b')}
+    ${tile(fmtDur(Math.max(0,saldo)),'Saldo',saldo<=0?'var(--vermelho)':'var(--ok)')}
+    ${tile(fim?brDate(fim):'—','Válido até',(dias!=null&&dias<=30)?'#c2560b':'var(--tinta)')}
+  </div>`;
+  if(al) h+=`<div class="card" style="background:#fff1e6;border:1px solid #ffd9bf;margin-top:10px;padding:10px 12px"><b style="color:#c2560b">⚠️ Atenção:</b> <span class="hint">${_vipAlertaTxt(al)}. Renovar ou avisar o responsável.</span></div>`;
+  h+=pac.map(p=>{
+    const d=p.fim?Math.round((new Date(p.fim+'T23:59:59').getTime()-Date.now())/864e5):null;
+    return `<div style="border-top:1px solid var(--linha);padding:8px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="flex:1"><b>${(+p.horas||0)}h</b>${p.inicio?(' · de '+brDate(p.inicio)):''}${p.fim?(' até '+brDate(p.fim)):''}${p.obs?(' · '+escAttr(p.obs)):''}${d!=null&&d<0?' <span class="pill" style="background:#fdeaea;color:var(--vermelho)">vencido</span>':''}</span>${ehGestor?`<button class="btn ghost sm" onclick="editarPacoteVip('${p.id}')">✏️</button><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delPacoteVip('${p.id}')">excluir</button>`:''}</div>`;
+  }).join('');
+  return h+`</div>`;
+}
+function addPacoteVip(vid){ if(!(S.perfil==='direcao'||soLeitura())) return toast('Sem permissão'); _modalPacoteVip(vid,null); }
+function editarPacoteVip(id){ const p=(S.pacotesVip||[]).find(x=>x.id===id); if(!p) return; _modalPacoteVip(p.vipId,p); }
+function _modalPacoteVip(vid,p){
+  modal(`<h3>${p?'Editar':'Novo'} pacote de horas <button class="close" onclick="fechar()">×</button></h3>
+    <div class="field"><label class="lbl">Horas contratadas</label><input type="number" id="pkHoras" min="1" step="1" value="${p?(+p.horas||''):''}" placeholder="Ex: 20"></div>
+    <div class="row" style="margin-top:10px"><div class="field" style="flex:1"><label class="lbl">Início da vigência</label><input type="date" id="pkInicio" value="${p?escAttr(p.inicio||''):hoje()}"></div>
+      <div class="field" style="flex:1"><label class="lbl">Fim da vigência</label><input type="date" id="pkFim" value="${p?escAttr(p.fim||''):''}"></div></div>
+    <div class="field" style="margin-top:10px"><label class="lbl">Observação (opcional)</label><input type="text" id="pkObs" value="${p?escAttr(p.obs||''):''}" placeholder="Ex: pago via PIX, contrato #123"></div>
+    <div class="row" style="margin-top:14px;gap:8px"><button class="btn" onclick="salvarPacoteVip('${vid}','${p?p.id:''}')">Salvar</button><button class="btn ghost" onclick="fechar()">Cancelar</button></div>`);
+}
+function salvarPacoteVip(vid,id){
+  if(!(S.perfil==='direcao'||soLeitura())) return toast('Sem permissão');
+  const horas=+document.getElementById('pkHoras').value||0;
+  if(horas<=0) return toast('Informe as horas contratadas');
+  const inicio=document.getElementById('pkInicio').value||'';
+  const fim=document.getElementById('pkFim').value||'';
+  const obs=(document.getElementById('pkObs').value||'').trim();
+  if(id){ const p=(S.pacotesVip||[]).find(x=>x.id===id); if(p){ p.horas=horas; p.inicio=inicio; p.fim=fim; p.obs=obs; p.atualizadoEm=Date.now(); } }
+  else { S.pacotesVip.push({id:uid(), vipId:vid, horas, inicio, fim, obs, criadoEm:Date.now(), atualizadoEm:Date.now()}); }
+  save(); fechar(); VIEWS.vip(); toast('Pacote salvo ✅');
+}
+function delPacoteVip(id){
+  if(!(S.perfil==='direcao'||soLeitura())) return toast('Sem permissão');
+  if(!confirm('Excluir este pacote de horas?')) return;
+  S.pacotesVip=(S.pacotesVip||[]).filter(x=>x.id!==id); marcarExcluido('pacotesVip',id);
+  save(); VIEWS.vip(); toast('Pacote excluído');
+}
+function _bannerAlertasVip(lista){
+  const avisos=(lista||[]).filter(a=>vipAlertaPacote(a.id));
+  if(!avisos.length) return '';
+  return `<div class="card" style="background:#fff1e6;border:1px solid #ffd9bf"><b style="color:#c2560b">⚠️ Pacotes de horas — atenção (${avisos.length})</b>${avisos.map(a=>`<p class="hint" style="margin:6px 0 0"><b>${esc(a.nome)}</b>: ${_vipAlertaTxt(vipAlertaPacote(a.id))}</p>`).join('')}</div>`;
+}
 VIEWS.vip=()=>{
   const v=document.getElementById('view');
   const ehDir=S.perfil==='direcao';
@@ -14,6 +89,7 @@ VIEWS.vip=()=>{
   const vObj=lista.find(a=>a.id===vipSel)||{};
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:#C8A200"></span><h2 class="display">👑 Alunos VIP</h2></div>
     <p class="sub">${ehSec?'Gestão dos alunos particulares — vincule cada um a um professor ou converta para turma.':ehDir?'Aulas particulares, uma a uma. Cadastre o aluno, vincule a um professor e lance cada aula.':'Seus alunos particulares — cadastre, lance cada aula e tire o relatório.'}</p>
+    ${ehGestor?_bannerAlertasVip(lista):''}
     <div class="card"><h3>Alunos VIP</h3>
       ${!ehSec?`<div class="row"><div style="flex:3"><input type="text" id="vipNome" placeholder="Nome do aluno VIP" onkeydown="if(event.key==='Enter')addVipAluno()"></div>
       ${ehDir?`<div style="flex:2"><select id="vipProf"><option value="">— professor…</option>${profs.map(p=>`<option value="${escAttr(p)}">${esc(p)}</option>`).join('')}</select></div>`:''}
@@ -23,6 +99,7 @@ VIEWS.vip=()=>{
         <div style="flex:1"><label class="lbl">Professor(a) responsável</label><select id="vipTrocaProf" onchange="trocarProfVip('${vipSel}',this.value)"><option value="">— sem professor</option>${profs.map(p=>`<option value="${escAttr(p)}" ${vObj.professor===p?'selected':''}>${esc(p)}</option>`).join('')}</select></div>
         <button class="btn ghost sm" onclick="vipParaAluno('${vipSel}')">🎓 Mover para turma</button></div>`:''}
     </div>
+    ${vipSel?_cardPacoteVip(vipSel):''}
     ${vipSel&&!ehSec?`<div class="card"><h3>Lançar aula</h3>
       <div class="field"><label class="lbl">Tema</label><input type="text" id="vipTema" placeholder="Ex: Simple Past · entrevista de emprego"></div>
       <div class="field"><label class="lbl">Descrição da aula</label><textarea id="vipDesc" style="min-height:130px" placeholder="Ex: Conversação — entrevista de emprego. Descreva com detalhes o que foi trabalhado na aula."></textarea></div>
@@ -30,7 +107,8 @@ VIEWS.vip=()=>{
         <div class="field"><label class="lbl">Data</label><input type="date" id="vipData" value="${hoje()}"></div>
         <div class="field"><label class="lbl">Duração (min)</label><input type="number" id="vipDur" value="60" min="5" step="5"></div>
       </div>
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:2px 0 12px"><input type="checkbox" id="vipFaltou"> ❌ Aluno não compareceu</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:2px 0 6px"><input type="checkbox" id="vipFaltou" onchange="document.getElementById('vipCobrarWrap').style.display=this.checked?'flex':'none'"> ❌ Aluno não compareceu</label>
+      <label id="vipCobrarWrap" style="display:none;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:0 0 12px 22px;color:#b8860b"><input type="checkbox" id="vipCobrarFalta"> 💳 Debitar a hora mesmo assim (o professor estava disponível)</label>
       <button class="btn" onclick="addAulaVip()">+ Lançar aula</button></div>
       <div class="card" id="vipBox"></div>`:''}`;
   renderVipLista();
@@ -93,12 +171,10 @@ function addAulaVip(){
   const data=document.getElementById('vipData').value; if(!data)return toast('Escolha a data');
   const dur=+document.getElementById('vipDur').value||0;
   const faltou=!!document.getElementById('vipFaltou').checked;
-  S.aulasVip.push({id:uid(),vipId:vid,data,tema,descricao:desc,duracaoMin:dur,faltou,atualizadoEm:Date.now()});
-  save(); renderVipLista();
-  const t=document.getElementById('vipTema'); if(t)t.value='';
-  const d=document.getElementById('vipDesc'); if(d)d.value='';
-  const f=document.getElementById('vipFaltou'); if(f)f.checked=false;
-  toast(faltou?'Aula lançada (não compareceu)':'Aula lançada');
+  const cobrarFalta=faltou && !!((document.getElementById('vipCobrarFalta')||{}).checked);
+  S.aulasVip.push({id:uid(),vipId:vid,data,tema,descricao:desc,duracaoMin:dur,faltou,cobrarFalta,atualizadoEm:Date.now()});
+  save(); VIEWS.vip();   // re-renderiza p/ atualizar o saldo do pacote
+  toast(faltou?(cobrarFalta?'Falta lançada e hora debitada':'Falta lançada (sem débito)'):'Aula lançada');
 }
 function delAulaVip(id){ if(!confirm('Excluir esta aula VIP?'))return; S.aulasVip=S.aulasVip.filter(x=>x.id!==id); marcarExcluido('aulasVip',id); save(); renderVipLista(); }
 function editarAulaVip(id){
@@ -109,7 +185,8 @@ function editarAulaVip(id){
     <div class="field"><label class="lbl">Descrição da aula</label><textarea id="evDesc" style="min-height:150px" placeholder="O que foi trabalhado na aula">${escAttr(a.descricao||'')}</textarea></div>
     <div class="row"><div class="field"><label class="lbl">Data</label><input type="date" id="evData" value="${escAttr(a.data||'')}"></div>
       <div class="field"><label class="lbl">Duração (min)</label><input type="number" id="evDur" value="${+a.duracaoMin||0}" min="5" step="5"></div></div>
-    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:2px 0 12px"><input type="checkbox" id="evFaltou" ${a.faltou?'checked':''}> ❌ Aluno não compareceu</label>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:2px 0 6px"><input type="checkbox" id="evFaltou" ${a.faltou?'checked':''} onchange="document.getElementById('evCobrarWrap').style.display=this.checked?'flex':'none'"> ❌ Aluno não compareceu</label>
+    <label id="evCobrarWrap" style="display:${a.faltou?'flex':'none'};align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:0 0 12px 22px;color:#b8860b"><input type="checkbox" id="evCobrarFalta" ${a.cobrarFalta?'checked':''}> 💳 Debitar a hora mesmo assim (professor estava disponível)</label>
     <button class="btn block" onclick="salvarEdicaoAulaVip('${id}')">Salvar alterações</button>`);
   setTimeout(()=>{const i=document.getElementById('evDesc'); if(i)i.focus();},60);
 }
@@ -122,8 +199,9 @@ function salvarEdicaoAulaVip(id){
   a.data=document.getElementById('evData').value||a.data;
   a.duracaoMin=+document.getElementById('evDur').value||0;
   a.faltou=!!document.getElementById('evFaltou').checked;
+  a.cobrarFalta=a.faltou && !!((document.getElementById('evCobrarFalta')||{}).checked);
   a.atualizadoEm=Date.now();                 // carimbo para a sincronização entre aparelhos
-  save(); fechar(); renderVipLista(); toast('Aula atualizada');
+  save(); fechar(); VIEWS.vip(); toast('Aula atualizada');
 }
 function renderVipLista(){
   const box=document.getElementById('vipBox'); if(!box)return;
@@ -138,7 +216,7 @@ function renderVipLista(){
     <button class="btn ghost sm" style="color:var(--vermelho)" onclick="delVipAluno('${vid}')">excluir aluno</button></div>`;
   if(!aulas.length){ box.innerHTML=h+'<p class="hint" style="margin:8px 0 0">Nenhuma aula lançada ainda.</p>'; return; }
   h+=`<p class="hint" style="margin:8px 0 10px"><b>${comp.length}</b> aula(s) com presença (${fmtDur(compMin)})${faltas?` · <b>${faltas}</b> falta(s)`:''}</p>`;
-  h+=aulas.map(a=>`<div class="check"><span style="flex:1">${brDate(a.data)} · ${a.tema?`<b>${esc(a.tema)}</b> — `:''}<span style="white-space:pre-wrap">${esc(a.descricao)}</span> <span class="pill">${fmtDur(a.duracaoMin)}</span>${a.faltou?' <span class="pill" style="background:#ffe9e9;color:var(--vermelho)">não compareceu</span>':''}</span><button class="btn ghost sm" onclick="editarAulaVip('${a.id}')">✏️ editar</button><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delAulaVip('${a.id}')">excluir</button></div>`).join('');
+  h+=aulas.map(a=>`<div class="check"><span style="flex:1">${brDate(a.data)} · ${a.tema?`<b>${esc(a.tema)}</b> — `:''}<span style="white-space:pre-wrap">${esc(a.descricao)}</span> <span class="pill">${fmtDur(a.duracaoMin)}</span>${a.faltou?(' <span class="pill" style="background:#ffe9e9;color:var(--vermelho)">não compareceu</span>'+(a.cobrarFalta?' <span class="pill" style="background:#fff3cf;color:#8a6d00">hora debitada</span>':' <span class="pill" style="background:#eef1f6;color:#66788c">sem débito</span>')):''}</span><button class="btn ghost sm" onclick="editarAulaVip('${a.id}')">✏️ editar</button><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delAulaVip('${a.id}')">excluir</button></div>`).join('');
   box.innerHTML=h;
 }
 function corpoRelatorioVip(vid){

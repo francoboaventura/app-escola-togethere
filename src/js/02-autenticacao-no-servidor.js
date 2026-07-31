@@ -77,6 +77,7 @@ function seed(){
     recessos:[],
     exclusoes:[],
     vipAlunos:[],
+    pacotesVip:[],
     aulasVip:[],
     boletins:[],
     alertas:[],

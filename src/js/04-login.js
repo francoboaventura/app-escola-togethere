@@ -96,7 +96,16 @@ function aplicarLogin(u){
   if(u.foto) _md.dataset.foto=u.foto; else { delete _md.dataset.foto; delete _md.dataset.hid; _md.style.backgroundImage=''; }
   document.getElementById('perfilLabel').innerHTML='Conectado como <b>'+escAttr(u.nome)+'</b> · '+meta.nome;
   montarNav(); ir(NAV.find(n=>n.roles.includes(u.perfil)).id);
+  _tickRelogio(); if(!window._relInt) window._relInt=setInterval(_tickRelogio, 15000);
   setTimeout(function(){ mostrarAniversariantes(); }, 600);
+}
+// Relógio (horário tradicional) no cabeçalho
+function _tickRelogio(){
+  const el=document.getElementById('tbRelogio'); if(!el) return;
+  const d=new Date();
+  const dia=d.toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','');
+  const hh=String(d.getHours()).padStart(2,'0'), mm=String(d.getMinutes()).padStart(2,'0');
+  el.innerHTML='<span class="rel-d">'+dia+'</span>'+hh+':'+mm;
 }
 function logout(){
   try{ cloudLogout(); }catch(e){}
