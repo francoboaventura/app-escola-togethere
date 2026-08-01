@@ -26,6 +26,7 @@
     "src/js/23-pwa-registra-o-service-worker.js",
     "src/js/24-planejamento-modulo-consolidado.js",
     "src/js/25-formacao-metodologia-togethere-viva-dent.js",
-    "src/js/26-tutorial-o-que-cada-perfil-consegue-faze.js"
+    "src/js/26-tutorial-o-que-cada-perfil-consegue-faze.js",
+    "src/js/27-relatorios-export.js"
   ]
 }

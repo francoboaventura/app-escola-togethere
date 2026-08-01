@@ -138,6 +138,7 @@ function _cardVisaoHorasVip(lista){
   const mostra=_vipPanoramaAberto?rows:criticos;
   return `<div class="card">
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0;flex:1">📊 Panorama das horas VIP</h3>
+      <button class="btn ghost sm" onclick="exportarHorasVipCSV()">⬇️ Planilha</button>
       <button class="btn ghost sm" onclick="toggleVipPanorama()">${_vipPanoramaAberto?'ver só os que precisam de ação ▲':'ver todos os '+com.length+' pacotes ▼'}</button></div>
     <div class="fx-tiles" style="margin-top:10px">
       ${tile(com.length,'Alunos c/ pacote','#005EAF')}

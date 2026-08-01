@@ -196,6 +196,7 @@ function renderPainelTurma(){
       <button class="btn block" style="background:var(--ok);justify-content:flex-start;text-align:left;margin-bottom:10px;height:auto;padding:14px 16px" onclick="abrirTimelineTurma('${id}')">📅 Linha do tempo do plano<span style="display:block;font-weight:400;font-size:.78rem;opacity:.85;margin-top:2px">onde a turma está no plano do ano · coleção ${planColecaoDe(t)||'a definir'}</span></button>
       ${soLeitura()?'':`<button class="btn block" style="background:var(--rosa);justify-content:flex-start;text-align:left;margin-bottom:10px;height:auto;padding:14px 16px" onclick="temaExtraTurma('${id}')">📩 Tema extra<span style="display:block;font-weight:400;font-size:.78rem;opacity:.85;margin-top:2px">atribuir um tema de casa à turma toda ou a alunos específicos</span></button>`}
       ${btn('var(--vermelho)','relatorio','🧾','Relatório do dia','gerar o resumo da aula para enviar às famílias')}
+      <button class="btn block" style="background:#0A7A3D;justify-content:flex-start;text-align:left;margin-bottom:10px;height:auto;padding:14px 16px" onclick="abrirRelatorioMensal('${id}')">📄 Relatório do mês<span style="display:block;font-weight:400;font-size:.78rem;opacity:.85;margin-top:2px">frequência, material, atrasos e temas do mês — abrir/PDF ou planilha (uma turma ou todas)</span></button>
     </div>
     <div class="card"><h3>Alunos (${als.length})</h3>
       ${podeCadastrar?'<p class="hint" style="margin:0 0 8px">E-mail do responsável (usado para enviar o relatório da aula).</p>':''}
