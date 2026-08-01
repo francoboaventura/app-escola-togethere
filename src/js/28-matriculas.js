@@ -33,6 +33,48 @@ function matParcelas(m){
   const out=[]; for(let i=0;i<n;i++){ const d=new Date(base.getFullYear(), base.getMonth()+i, dia); out.push({n:i+1, venc:ymd(d), valor:val}); }
   return out;
 }
+/* --- pagamentos das parcelas (carnê) — estudo --- */
+function matParcelaStatus(m,p){ if((m.pagos||{})[p.n]) return 'paga'; return (p.venc<hoje())?'atrasada':'aberta'; }
+function matRecebido(m){ const pg=m.pagos||{}; return matParcelas(m).reduce((s,p)=>s+(pg[p.n]?(+pg[p.n].valor||p.valor):0),0); }
+function matAberto(m){ const pg=m.pagos||{}; return matParcelas(m).reduce((s,p)=>s+(pg[p.n]?0:p.valor),0); }
+function matAtrasadoV(m){ const pg=m.pagos||{}; return matParcelas(m).reduce((s,p)=>s+((!pg[p.n]&&p.venc<hoje())?p.valor:0),0); }
+function _matFinScope(){ return (S.matriculas||[]).filter(m=>m.status==='ativa'||m.status==='trancada'||m.status==='concluida'); }
+function matTotalRecebido(){ return _matFinScope().reduce((s,m)=>s+matRecebido(m),0); }
+function matTotalAberto(){ return _matFinScope().reduce((s,m)=>s+matAberto(m),0); }
+function matTotalAtrasado(){ return _matFinScope().reduce((s,m)=>s+matAtrasadoV(m),0); }
+function matInadimplentes(){ return _matFinScope().filter(m=>matAtrasadoV(m)>0).length; }
+function abrirCarne(id){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const m=(S.matriculas||[]).find(x=>x.id===id); if(!m) return;
+  const parc=matParcelas(m);
+  if(!parc.length) return toast('Defina mensalidade e parcelas primeiro');
+  const chipSt={paga:{t:'paga',bg:'#eafaf0',c:'#0A7A3D'},atrasada:{t:'em atraso',bg:'#fdeaea',c:'#E52524'},aberta:{t:'a vencer',bg:'#eef2f8',c:'#5a6b86'}};
+  const linhas=parc.map(p=>{ const st=matParcelaStatus(m,p); const cs=chipSt[st]; const pg=(m.pagos||{})[p.n];
+    return `<div class="check" style="display:block">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <b style="min-width:70px">${p.n}/${parc.length}</b>
+        <span style="flex:1">venc. ${brDate(p.venc)} · ${_moeda(p.valor)}${pg&&pg.em?` <span class="hint">(pago em ${brDate(pg.em)})</span>`:''}</span>
+        <span class="pill" style="background:${cs.bg};color:${cs.c}">${cs.t}</span>
+        <button class="btn ghost sm" onclick="matToggleParcela('${id}',${p.n})">${pg?'desfazer':'✓ marcar paga'}</button>
+      </div></div>`;
+  }).join('');
+  modal(`<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><h3 style="flex:1;margin:0">💳 Carnê — ${esc(matNome(m))}</h3><button class="close" onclick="fechar()">×</button></div>
+    <div class="fx-tiles" style="margin:2px 0 12px">
+      <div class="fx-tile"><div class="v" style="color:#0A7A3D">${_moeda(matRecebido(m))}</div><div class="l">Recebido</div></div>
+      <div class="fx-tile"><div class="v" style="color:#005EAF">${_moeda(matAberto(m))}</div><div class="l">A receber</div></div>
+      <div class="fx-tile"><div class="v" style="color:${matAtrasadoV(m)>0?'var(--vermelho)':'var(--tinta)'}">${_moeda(matAtrasadoV(m))}</div><div class="l">Em atraso</div></div>
+    </div>
+    ${linhas}
+    <p class="hint" style="margin:10px 0 0">Estudo: marcar como paga registra a data de hoje. Ainda sem integração com banco/boleto.</p>`);
+}
+function matToggleParcela(id,n){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const m=(S.matriculas||[]).find(x=>x.id===id); if(!m) return;
+  m.pagos=m.pagos||{};
+  if(m.pagos[n]) delete m.pagos[n];
+  else { const p=matParcelas(m).find(x=>x.n===n); m.pagos[n]={em:hoje(), valor:p?p.valor:0}; }
+  m.atualizadoEm=Date.now(); save(); abrirCarne(id);
+}
 
 /* -------------------- VIEW -------------------- */
 let _matFiltro='', _matBusca='';
@@ -58,6 +100,16 @@ VIEWS.matriculas=()=>{
         ${tile(noMes,'Novas neste mês','var(--tinta)')}
       </div>
       <p class="hint" style="margin:10px 0 0">Receita mensal prevista = soma das mensalidades (já com desconto) das matrículas <b>ativas</b>.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 2px">💳 Situação financeira <span class="hint" style="font-weight:400">(estudo — carnê por matrícula)</span></h3>
+      <div class="fx-tiles" style="margin-top:8px">
+        ${tile(_moeda(matTotalRecebido()),'Recebido','#0A7A3D')}
+        ${tile(_moeda(matTotalAberto()),'A receber (em aberto)','#005EAF')}
+        ${tile(_moeda(matTotalAtrasado()),'Em atraso',matTotalAtrasado()>0?'var(--vermelho)':'var(--tinta)')}
+        ${tile(matInadimplentes(),'Inadimplentes',matInadimplentes()>0?'var(--vermelho)':'var(--tinta)')}
+      </div>
+      <p class="hint" style="margin:10px 0 0">Abra uma matrícula e use <b>💳 Carnê</b> para marcar as parcelas pagas. Considera matrículas ativas, trancadas e concluídas.</p>
     </div>
     <div class="card">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
@@ -141,6 +193,7 @@ function abrirMatricula(id){
     ${id&&!m.alunoId?`<div class="card" style="background:#f4f7fb;padding:10px 12px;margin-bottom:12px"><p class="hint" style="margin:0 0 6px">Este cadastro ainda não está vinculado a um aluno do app. Salve primeiro e, quando quiser, crie o aluno na turma:</p><button class="btn ghost sm" onclick="matCriarAlunoEVincular('${id}')">➕ Criar aluno na turma e vincular</button></div>`:''}
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn" onclick="salvarMatricula('${id||''}')">💾 Salvar</button>
+      ${id?`<button class="btn ghost" onclick="abrirCarne('${id}')">💳 Carnê</button>`:''}
       ${id?`<button class="btn ghost" onclick="verMatricula('${id}')">🖨️ Resumo / PDF</button>`:''}
       ${id?`<button class="btn ghost" style="color:var(--vermelho)" onclick="excluirMatricula('${id}')">🗑 Excluir</button>`:''}
       <button class="btn ghost" onclick="fechar()">Cancelar</button>
@@ -200,7 +253,8 @@ function verMatricula(id){
   const st=MAT_STATUS[m.status]||MAT_STATUS.rascunho;
   const t=m.turmaId?(S.turmas||[]).find(x=>x.id===m.turmaId):null;
   const parc=matParcelas(m);
-  const linhaParc=parc.map(p=>`<tr><td class="c">${p.n}</td><td>${brDate(p.venc)}</td><td class="c">${_moeda(p.valor)}</td></tr>`).join('');
+  const _slbl={paga:'paga',atrasada:'em atraso',aberta:'a vencer'};
+  const linhaParc=parc.map(p=>{ const s=matParcelaStatus(m,p); return `<tr><td class="c">${p.n}</td><td>${brDate(p.venc)}</td><td class="c">${_moeda(p.valor)}</td><td class="c">${_slbl[s]}</td></tr>`; }).join('');
   const linha=(k,val)=> val?`<tr><td class="k">${k}</td><td>${esc(String(val))}</td></tr>`:'';
   const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Matrícula — ${esc(matNome(m))}</title><style>
 @page{margin:14mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact;box-sizing:border-box}
@@ -225,7 +279,7 @@ td.c{text-align:center}
   <tr><td class="k">Parcelas</td><td>${m.parcelas||0}× · vencimento todo dia ${m.diaVencimento||'—'}${m.formaPagamento?(' · '+esc(m.formaPagamento)):''}</td></tr>
   <tr class="tot"><td class="k">Total do curso</td><td>${_moeda(matTotalCurso(m))}</td></tr>
 </table>
-${parc.length?`<h2>Carnê de vencimentos</h2><table><tr><td class="k c">Parcela</td><td class="k">Vencimento</td><td class="k c">Valor</td></tr>${linhaParc}</table>`:''}
+${parc.length?`<h2>Carnê de vencimentos</h2><p style="font-size:12px;color:#5a6b86;margin:0 0 4px">Recebido: <b>${_moeda(matRecebido(m))}</b> · A receber: <b>${_moeda(matAberto(m))}</b>${matAtrasadoV(m)>0?` · Em atraso: <b style="color:#E52524">${_moeda(matAtrasadoV(m))}</b>`:''}</p><table><tr><td class="k c">Parcela</td><td class="k">Vencimento</td><td class="k c">Valor</td><td class="k c">Situação</td></tr>${linhaParc}</table>`:''}
 ${m.observacoes?`<h2>Observações</h2><p style="font-size:12.5px">${esc(m.observacoes)}</p>`:''}
 <p class="foot">Documento de estudo do módulo de matrículas — sem valor fiscal. Togethere · inglês para chegar lá.</p>
 </body></html>`;
