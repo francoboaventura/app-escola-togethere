@@ -79,6 +79,7 @@ function seed(){
     vipAlunos:[],
     pacotesVip:[],
     contratos:[],
+    matriculas:[],
     aulasVip:[],
     boletins:[],
     alertas:[],

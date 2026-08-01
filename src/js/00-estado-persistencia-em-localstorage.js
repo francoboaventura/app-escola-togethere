@@ -46,6 +46,7 @@ function migrar(s){
   s.formacao=s.formacao||[];         // biblioteca da metodologia (tópicos)
   s.formacaoReg=s.formacaoReg||[];   // quem leu/foi treinado em cada tópico
   s.formacaoSessoes=s.formacaoSessoes||[];   // sessões de formação registradas pela direção
+  s.matriculas=s.matriculas||[];     // módulo de matrículas (estudo) — só direção
   if(s.versao<6){ _semearFormacao(s); s.versao=6; }
   if(s.versao<7){ _semearFormacao(s); s.versao=7; }   // b90: tópicos do Pedagogical Guide   // b89: quadro do treinamento vira biblioteca inicial
   (s.aulasVip||[]).forEach(a=>{
