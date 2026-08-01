@@ -30,12 +30,25 @@ const NAV=[
   {id:'matriculas', label:'Matrículas', em:'📝', grp:'Gestão', roles:['direcao']},
   {id:'financeiro', label:'Financeiro', em:'💰', grp:'Gestão', roles:['direcao']},
   {id:'configfin', label:'Config. financeira', em:'⚙️', grp:'Gestão', roles:['direcao']},
+  {id:'permissoes', label:'Permissões', em:'🔐', grp:'Gestão', roles:['direcao']},
   {id:'acessos', label:'Acessos', em:'🔑', grp:'Gestão', roles:['direcao']},
   {id:'cards', label:'Cards de acesso', em:'🖨️', grp:'Gestão', roles:['secretaria','direcao']},
 ];
 function ehProfessor(){ return S.perfil==='professor'; }
 function soLeitura(){ return S.perfil==='secretaria'; }   // secretaria: leitura nas telas de SALA (chamada, testes, temas, planos)
-function podeCadastro(){ return S.perfil==='secretaria' || S.perfil==='direcao'; }   // cadastro de turmas e alunos: secretaria + direção
+function perm(k){   // permissões configuráveis pela direção (🔐 Permissões). Direção sempre pode.
+  if(S.perfil==='direcao') return true;
+  const reg=(S.permissoes||[]).find(x=>x.id==='perm');
+  return !(reg && reg.off && reg.off[k]);
+}
+function _navPermOk(n){   // esconde itens de menu desligados nas Permissões
+  if(S.perfil==='professor'){
+    if(n.id==='writings') return perm('prof_writings');
+    if(n.id==='apoio') return perm('prof_apoio');
+  }
+  return true;
+}
+function podeCadastro(){ return S.perfil==='direcao' || (S.perfil==='secretaria' && perm('sec_cadastro')); }   // cadastro de turmas e alunos
 const PERFIS={
   professor:{nome:'Professor(a)',cor:'var(--azul)',bg:'#eaf3ff'},
   secretaria:{nome:'Secretaria',cor:'var(--vermelho)',bg:'#fdeaea'},

@@ -49,6 +49,7 @@ function migrar(s){
   s.matriculas=s.matriculas||[];     // módulo de matrículas (só cadastro) — só direção
   s.financeiro=s.financeiro||[];     // módulo financeiro (mensalidades/carnê), ligado à matrícula
   s.configFin=s.configFin||[];       // config da direção: tabela de preços + multa/juros
+  s.permissoes=s.permissoes||[];     // permissões configuráveis (🔐, direção)
   (s.matriculas||[]).forEach(m=>{ if(m.status==='rascunho'){ m.status='orcamento'; m.atualizadoEm=Date.now(); } });   // b137: rascunho vira orçamento
   // migração b136: separa o financeiro que ficava dentro da matrícula para a coleção 'financeiro'
   (s.matriculas||[]).forEach(m=>{

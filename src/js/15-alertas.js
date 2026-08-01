@@ -103,6 +103,7 @@ function _apoioOpcoesAluno(turmaId){
   return '<option value="">Selecione o aluno…</option>'+als.map(a=>`<option value="${a.id}">${esc(a.nome)}</option>`).join('');
 }
 function abrirNovoApoio(){
+  if(ehProfessor() && !perm('prof_apoio')) return toast('A direção desativou a indicação de apoio para professores');
   const ts=turmasVisiveis().filter(t=>turmaStatus(t)!=='encerrada').sort((a,b)=>a.nome.localeCompare(b.nome));
   if(!ts.length) return toast('Nenhuma turma disponível');
   const t0=ts[0].id;

@@ -82,6 +82,7 @@ function seed(){
     matriculas:[],
     financeiro:[],
     configFin:[],
+    permissoes:[],
     aulasVip:[],
     boletins:[],
     alertas:[],

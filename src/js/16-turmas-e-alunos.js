@@ -189,7 +189,7 @@ function fichaSetEmail(){
 }
 // Edita os dados cadastrais do aluno direto na ficha (secretaria + direção).
 function fichaSetCampoAluno(id,campo,val){
-  if(ehProfessor()) return toast('Sem permissão para editar os dados do aluno');
+  if(!podeCadastro()) return toast('Sem permissão para editar os dados do aluno');
   const a=(S.alunos||[]).find(x=>x.id===id); if(!a) return;
   val=(val||'').trim();
   if(campo==='nome' && !val){ toast('O nome não pode ficar vazio'); return VIEWS.ficha(); }
@@ -353,6 +353,7 @@ function setVipHorario(id){
 }
 // --- Remanejar uma aula VIP para outro dia/horário (antes ou depois do previsto) ---
 function abrirRemarcarVip(id){
+  if(ehProfessor() && !perm('prof_vip_remanejar')) return toast('A direção desativou o remanejo de aulas para professores');
   const vip=(S.vipAlunos||[]).find(x=>x.id===id); if(!vip) return;
   let opts='<option value="">— (opcional) dia originalmente previsto —</option>';
   if(typeof _datasPrevistasVip==='function'){ try{ const ds=_datasPrevistasVip(vip,2,1).filter(d=>!(typeof _vipRemarcadaDe==='function' && _vipRemarcadaDe(vip,d))); opts+=ds.map(d=>`<option value="${d}">${brDate(d)}</option>`).join(''); }catch(e){} }
@@ -365,6 +366,7 @@ function abrirRemarcarVip(id){
     <button class="btn block" onclick="salvarRemarcarVip('${id}')">Salvar remanejamento</button>`);
 }
 function salvarRemarcarVip(id){
+  if(ehProfessor() && !perm('prof_vip_remanejar')) return toast('Sem permissão');
   const vip=(S.vipAlunos||[]).find(x=>x.id===id); if(!vip) return;
   const data=(document.getElementById('rmData').value||''); if(!data) return toast('Escolha o novo dia');
   const r={ id:uid(), de:(document.getElementById('rmDe').value||''), data, hora:(document.getElementById('rmHora').value||''), motivo:(document.getElementById('rmMotivo').value||'').trim() };
@@ -376,7 +378,7 @@ function delRemarcarVip(id, rid){
 }
 // --- Pausar as aulas do VIP num período (só secretaria/direção) ---
 function abrirPausaVip(id){
-  if(ehProfessor()) return toast('Só a secretaria ou a direção pausa as aulas');
+  if(ehProfessor() || (soLeitura()&&!perm('sec_pausa_vip'))) return toast('Sem permissão para pausar aulas');
   const vip=(S.vipAlunos||[]).find(x=>x.id===id); if(!vip) return;
   modal(`<h3>⏸️ Pausar aulas do aluno <button class="close" onclick="fechar()">×</button></h3>
     <p class="hint" style="margin:0 0 10px">No período de pausa não há alerta de aula não registrada (viagem, recesso do aluno, etc.).</p>
@@ -386,7 +388,7 @@ function abrirPausaVip(id){
     <button class="btn block" onclick="salvarPausaVip('${id}')">Salvar pausa</button>`);
 }
 function salvarPausaVip(id){
-  if(ehProfessor()) return toast('Sem permissão');
+  if(ehProfessor() || (soLeitura()&&!perm('sec_pausa_vip'))) return toast('Sem permissão');
   const vip=(S.vipAlunos||[]).find(x=>x.id===id); if(!vip) return;
   const de=(document.getElementById('pzDe').value||''), ate=(document.getElementById('pzAte').value||'');
   if(!de||!ate) return toast('Preencha as duas datas');
@@ -394,13 +396,14 @@ function salvarPausaVip(id){
   vip.pausas=vip.pausas||[]; vip.pausas.push({ id:uid(), de, ate, motivo:(document.getElementById('pzMotivo').value||'').trim() }); vip.atualizadoEm=Date.now(); save(); fechar(); VIEWS.ficha(); toast('Aulas pausadas nesse período');
 }
 function delPausaVip(id, pid){
-  if(ehProfessor()) return toast('Sem permissão');
+  if(ehProfessor() || (soLeitura()&&!perm('sec_pausa_vip'))) return toast('Sem permissão');
   const vip=(S.vipAlunos||[]).find(x=>x.id===id); if(!vip) return;
   vip.pausas=(vip.pausas||[]).filter(p=>p.id!==pid); vip.atualizadoEm=Date.now(); save(); VIEWS.ficha(); toast('Pausa removida');
 }
 // Lançar aula VIP direto da ficha (professor + direção; secretaria não lança).
 function lancarAulaVip(vid){
   if(soLeitura()) return toast('A secretaria não lança aulas VIP');
+  if(ehProfessor() && !perm('prof_vip_lancar')) return toast('A direção desativou o lançamento de aulas VIP para professores');
   modal(`<h3>+ Lançar aula VIP <button class="close" onclick="fechar()">×</button></h3>
     <div class="field"><label class="lbl">Tema</label><input type="text" id="laTema" placeholder="Ex: Simple Past · entrevista de emprego"></div>
     <div class="field"><label class="lbl">Descrição da aula</label><textarea id="laDesc" style="min-height:120px" placeholder="O que foi trabalhado na aula"></textarea></div>
@@ -414,6 +417,7 @@ function lancarAulaVip(vid){
 }
 function salvarAulaVipFicha(vid){
   if(soLeitura()) return toast('A secretaria não lança aulas VIP');
+  if(ehProfessor() && !perm('prof_vip_lancar')) return toast('Sem permissão');
   const desc=(document.getElementById('laDesc').value||'').trim(); if(!desc) return toast('Descreva a aula');
   const data=document.getElementById('laData').value; if(!data) return toast('Escolha a data');
   const faltou=!!document.getElementById('laFaltou').checked;
@@ -496,7 +500,7 @@ function renderFichaVip(v, vip){
   v.innerHTML=h;
 }
 function setVipCampo(id,campo,val){
-  if(ehProfessor()) return;
+  if(!podeCadastro()) return toast('Sem permissão para editar dados');
   const vp=(S.vipAlunos||[]).find(x=>x.id===id); if(!vp) return;
   vp[campo]=(val||'').trim(); vp.atualizadoEm=Date.now(); save();
   if(campo==='nascimento') VIEWS.ficha(); else toast('Atualizado');
@@ -536,7 +540,7 @@ function _cardAcessoPortal(id){
   </div>`;
 }
 async function acessoNovaSenha(id){
-  if(ehProfessor()) return toast('Sem permissão');
+  if(ehProfessor() || (soLeitura()&&!perm('sec_acessos'))) return toast('Sem permissão');
   const btn=document.getElementById('acNovaSenha'); if(btn){ btn.disabled=true; btn.textContent='Gerando…'; }
   try{
     const { data, error }=await sb.functions.invoke('acesso-aluno', { body:{ alunoId:id, acao:'nova_senha' } });
@@ -553,7 +557,7 @@ async function acessoNovaSenha(id){
   finally{ if(btn){ btn.disabled=false; btn.textContent='🔑 Gerar senha nova'; } }
 }
 async function acessoTrocarUsuario(id){
-  if(ehProfessor()) return toast('Sem permissão');
+  if(ehProfessor() || (soLeitura()&&!perm('sec_acessos'))) return toast('Sem permissão');
   const novo=prompt('Novo nome de usuário do portal (só o começo, sem espaços — ex.: joaosilva). O sistema completa com @tgt.app.');
   if(novo==null) return;
   const v=(novo||'').trim(); if(!v) return toast('Digite o novo nome de usuário');
@@ -567,7 +571,7 @@ async function acessoTrocarUsuario(id){
   }catch(e){ toast('Não consegui: '+((e&&e.message)||e)); }
 }
 async function acessoEnviarReset(id){
-  if(ehProfessor()) return toast('Sem permissão');
+  if(ehProfessor() || (soLeitura()&&!perm('sec_acessos'))) return toast('Sem permissão');
   if(!confirm('Enviar por e-mail (ao responsável) o link para o aluno criar uma nova senha?')) return;
   try{
     const { data, error }=await sb.functions.invoke('acesso-aluno', { body:{ alunoId:id, acao:'enviar_reset' } });
@@ -590,7 +594,7 @@ function _cardContratos(alunoId){
 }
 function _dataContrato(ts){ try{ return new Date(ts).toLocaleDateString('pt-BR'); }catch(e){ return ''; } }
 function subirContrato(alunoId){
-  if(ehProfessor()) return toast('Sem permissão');
+  if(ehProfessor() || (soLeitura()&&!perm('sec_contratos'))) return toast('Sem permissão');
   const inp=document.createElement('input'); inp.type='file'; inp.accept='application/pdf,.pdf';
   inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(!f) return; if(f.type!=='application/pdf' && !/\.pdf$/i.test(f.name||'')) return toast('Envie um arquivo PDF'); _enviarContrato(alunoId,f); };
   inp.click();
@@ -616,7 +620,7 @@ async function verContrato(path){
   }catch(e){ toast('Erro ao abrir o contrato'); }
 }
 function delContrato(id){
-  if(ehProfessor()) return toast('Sem permissão');
+  if(ehProfessor() || (soLeitura()&&!perm('sec_contratos'))) return toast('Sem permissão');
   const c=(S.contratos||[]).find(x=>x.id===id); if(!c) return;
   if(!confirm('Remover este contrato?')) return;
   try{ if(typeof sb!=='undefined' && sb.storage) sb.storage.from('contratos').remove([c.path]); }catch(e){}

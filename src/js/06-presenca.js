@@ -211,7 +211,7 @@ function salvarPres(){if(soLeitura())return toast('Somente leitura — a secreta
   toast('Chamada salva ✓');
   window.scrollTo({top:0,behavior:'smooth'});
 }
-function editarChamada(){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas'); presEditando=true; renderPres(); renderTemaChamada(); toast('Chamada reaberta para edição'); }
+function editarChamada(){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas'); if(ehProfessor()&&!perm('prof_editar_chamada'))return toast('A direção desativou a reabertura de chamada para professores'); presEditando=true; renderPres(); renderTemaChamada(); toast('Chamada reaberta para edição'); }
 function renderTemaChamada(){
   const box=document.getElementById('pTema'); if(!box)return;
   const due=S.temas.filter(t=>t.turmaId===presTurma && t.dataEntrega===presData);

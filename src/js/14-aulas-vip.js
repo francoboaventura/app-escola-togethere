@@ -25,7 +25,7 @@ function _vipAlertaTxt(al){
 }
 function _cardPacoteVip(vid){
   if(ehProfessor()) return '';   // professor VIP só lança aulas/tema; controle de horas é da secretaria/direção
-  const ehGestor=(S.perfil==='direcao'||soLeitura());
+  const ehGestor=(S.perfil==='direcao'||(soLeitura()&&perm('sec_vip_horas')));
   const contr=vipContratadoMin(vid), usado=vipConsumoMin(vid), saldo=contr-usado;
   const pac=(S.pacotesVip||[]).filter(p=>p.vipId===vid && !p.arquivado).sort((a,b)=>(a.inicio||'').localeCompare(b.inicio||''));
   const fim=vipVigenciaFim(vid), dias=vipDiasVigencia(vid), al=vipAlertaPacote(vid);
@@ -81,6 +81,7 @@ function delPacoteVip(id){
 }
 // Secretaria/direção editam as horas contratadas direto na ficha.
 function setVipContratadas(vid, val){
+  if(soLeitura() && !perm('sec_vip_horas')) return toast('A direção desativou a edição de horas para a secretaria');
   if(!(S.perfil==='direcao'||soLeitura())) return toast('Sem permissão');
   const alvoH=Math.max(0, Math.round(parseFloat(String(val||'0').replace(',','.'))||0));
   const pac=(S.pacotesVip||[]).filter(p=>p.vipId===vid && !p.arquivado).sort((a,b)=>(a.inicio||'').localeCompare(b.inicio||''));
@@ -90,6 +91,7 @@ function setVipContratadas(vid, val){
 }
 // Editar "utilizadas": mantém as aulas lançadas e guarda um ajuste único para bater o total.
 function setVipUtilizadas(vid, val){
+  if(soLeitura() && !perm('sec_vip_horas')) return toast('A direção desativou a edição de horas para a secretaria');
   if(!(S.perfil==='direcao'||soLeitura())) return toast('Sem permissão');
   const alvoMin=Math.max(0, Math.round((parseFloat(String(val||'0').replace(',','.'))||0)*60));
   const conta=a=>a.vipId===vid && (!a.faltou || a.cobrarFalta);
@@ -333,6 +335,7 @@ function delVipAluno(id){
   if(vipSel===id)vipSel=null; save(); VIEWS.vip(); toast('Aluno VIP excluído');
 }
 function addAulaVip(){
+  if(ehProfessor() && !perm('prof_vip_lancar')) return toast('A direção desativou o lançamento de aulas VIP para professores');
   const vid=vipSel; if(!vid)return toast('Selecione um aluno VIP');
   const tema=(document.getElementById('vipTema').value||'').trim();
   const temaCasa=(document.getElementById('vipTemaCasa').value||'').trim();

@@ -217,10 +217,10 @@ function setFaltasRetro(id,val){
 }
 function faltasRetroLinha(a){ return ''; }   /* barra manual removida — faltas retroativas vêm do Sponte */
 function toggleArquivarAluno(id){if(ehProfessor())return toast('Sem permissão'); const a=S.alunos.find(x=>x.id===id); if(!a)return; a.arquivado=!a.arquivado; save(); _refreshTurmas(); montarNav(); toast(a.arquivado?'Aluno arquivado':'Aluno reativado'); }
-function toggleArquivarTurma(id){if(ehProfessor())return toast('Sem permissão'); const t=S.turmas.find(x=>x.id===id); if(!t)return; t.arquivada=!t.arquivada; if(t.arquivada && painelTurma===id) painelTurma=null; save(); VIEWS.turmas(); montarNav(); toast(t.arquivada?'Turma arquivada':'Turma reativada'); }
+function toggleArquivarTurma(id){if(!podeCadastro())return toast('Sem permissão'); const t=S.turmas.find(x=>x.id===id); if(!t)return; t.arquivada=!t.arquivada; if(t.arquivada && painelTurma===id) painelTurma=null; save(); VIEWS.turmas(); montarNav(); toast(t.arquivada?'Turma arquivada':'Turma reativada'); }
 // ---- Editar dados de uma turma já existente (só direção) ----
 function abrirEditarTurma(id){
-  if(ehProfessor()) return toast('Sem permissão para editar a turma');
+  if(!podeCadastro()) return toast('Sem permissão para editar a turma');
   const t=S.turmas.find(x=>x.id===id); if(!t) return;
   const cats=['kids','junior','teens','adults','talking'];
   const cefrs=['','A1','A1+','A2','A2+','B1','B1+','B2','B2+','C1','C2'];
@@ -245,7 +245,7 @@ function abrirEditarTurma(id){
     <div class="row" style="margin-top:14px;gap:8px"><button class="btn" onclick="salvarEdicaoTurma('${id}')">Salvar alterações</button><button class="btn ghost" onclick="fechar()">Cancelar</button></div>`);
 }
 function salvarEdicaoTurma(id){
-  if(ehProfessor()) return toast('Sem permissão para editar a turma');
+  if(!podeCadastro()) return toast('Sem permissão para editar a turma');
   const t=S.turmas.find(x=>x.id===id); if(!t) return;
   const nome=(document.getElementById('etNome').value||'').trim();
   if(!nome) return toast('Dê um nome à turma');
@@ -263,13 +263,13 @@ function salvarEdicaoTurma(id){
   save(); fechar(); renderPainelTurma(); montarNav(); toast('Turma atualizada');
 }
 function toggleVerArquivadas(){ _verArquivadas=!_verArquivadas; if(painelTurma) renderPainelTurma(); else VIEWS.turmas(); }
-function addAluno(turmaId){if(ehProfessor())return toast('Sem permissão');
+function addAluno(turmaId){if(!podeCadastro())return toast('Sem permissão');
   const inp=document.getElementById('al_'+turmaId);
   const nome=inp.value.trim();if(!nome)return toast('Digite o nome');
   S.alunos.push({id:uid(),nome,turmaId});save();_refreshTurmas();montarNav();toast('Aluno adicionado');
 }
-function delAluno(id){if(ehProfessor())return toast('Sem permissão');if(confirm('Remover este aluno?')){S.alunos=S.alunos.filter(a=>a.id!==id);marcarExcluido('alunos',id);save();_refreshTurmas();montarNav();}}
-function delTurma(id){if(ehProfessor())return toast('Sem permissão');if(confirm('Excluir turma e seus alunos?')){S.alunos.filter(a=>a.turmaId===id).forEach(a=>marcarExcluido('alunos',a.id));marcarExcluido('turmas',id);S.turmas=S.turmas.filter(t=>t.id!==id);S.alunos=S.alunos.filter(a=>a.turmaId!==id);painelTurma=null;save();VIEWS.turmas();montarNav();toast('Turma excluída');}}
+function delAluno(id){if(!podeCadastro())return toast('Sem permissão');if(confirm('Remover este aluno?')){S.alunos=S.alunos.filter(a=>a.id!==id);marcarExcluido('alunos',id);save();_refreshTurmas();montarNav();}}
+function delTurma(id){if(!podeCadastro())return toast('Sem permissão');if(confirm('Excluir turma e seus alunos?')){S.alunos.filter(a=>a.turmaId===id).forEach(a=>marcarExcluido('alunos',a.id));marcarExcluido('turmas',id);S.turmas=S.turmas.filter(t=>t.id!==id);S.alunos=S.alunos.filter(a=>a.turmaId!==id);painelTurma=null;save();VIEWS.turmas();montarNav();toast('Turma excluída');}}
 function resetarSeguro(){
   modal(`<h3>⚠️ Restaurar dados originais <button class="close" onclick="fechar()">×</button></h3>
     <p class="hint" style="margin-bottom:12px">Isto <b>apaga todos os dados atuais</b> (chamadas, temas, planos, testes, comentários…) e volta à base inicial de turmas. Um <b>backup será baixado automaticamente</b> antes de apagar.</p>
