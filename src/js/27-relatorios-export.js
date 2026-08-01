@@ -180,11 +180,32 @@ function _renderBuscaGlobal(){
 }
 
 // ===================== MODO ESCURO =====================
+const TEMAS_COR={
+  azul:    {n:'Azul clássico', c:'#005EAF'},
+  marinho: {n:'Marinho',       c:'#123A7B'},
+  vermelho:{n:'Vermelho',      c:'#D31F1E'},
+  rosa:    {n:'Rosa',          c:'#DE0055'},
+  roxo:    {n:'Roxo',          c:'#8E2DC4'},
+  verde:   {n:'Verde',         c:'#0E8A63'},
+};
+function _corSalva(){ try{ const c=localStorage.getItem('togethere_cor')||'azul'; return TEMAS_COR[c]?c:'azul'; }catch(e){ return 'azul'; } }
+function _metaTheme(){ try{ const mc=document.querySelector('meta[name=theme-color]'); if(!mc) return; const dark=document.body.classList.contains('dark'); mc.setAttribute('content', dark?'#0f1626':(TEMAS_COR[_corSalva()]||TEMAS_COR.azul).c); }catch(e){} }
+function _aplicarCor(k){
+  if(!TEMAS_COR[k]) k='azul';
+  if(k==='azul') delete document.body.dataset.tema; else document.body.dataset.tema=k;
+  _renderCorDots(); _metaTheme();
+}
+function setCorTema(k){ try{ localStorage.setItem('togethere_cor',k); }catch(e){} _aplicarCor(k); if(typeof toast==='function') toast('Cor do app: '+(TEMAS_COR[k]||TEMAS_COR.azul).n); }
+function _renderCorDots(){
+  const box=document.getElementById('corTemas'); if(!box) return;
+  const cur=_corSalva();
+  box.innerHTML=Object.keys(TEMAS_COR).map(k=>`<button type="button" title="${TEMAS_COR[k].n}" aria-label="${TEMAS_COR[k].n}" onclick="setCorTema('${k}')" style="width:27px;height:27px;border-radius:50%;background:${TEMAS_COR[k].c};border:3px solid ${k===cur?'var(--tinta)':'rgba(0,0,0,.08)'};cursor:pointer;padding:0;box-shadow:${k===cur?'0 0 0 2px var(--card)':'none'}"></button>`).join('');
+}
 function _temaSalvo(){ try{ return localStorage.getItem('togethere_tema')||'claro'; }catch(e){ return 'claro'; } }
 function _aplicarTema(t){
   document.body.classList.toggle('dark', t==='escuro');
   const b=document.getElementById('btnTema'); if(b) b.textContent = (t==='escuro'?'☀️ Modo claro':'🌙 Modo escuro');
-  try{ const mc=document.querySelector('meta[name=theme-color]'); if(mc) mc.setAttribute('content', t==='escuro'?'#0f1626':'#005EAF'); }catch(e){}
+  if(typeof _metaTheme==='function') _metaTheme();
 }
 function toggleTema(){ const novo=(_temaSalvo()==='escuro')?'claro':'escuro'; try{ localStorage.setItem('togethere_tema',novo); }catch(e){} _aplicarTema(novo); if(typeof toast==='function') toast(novo==='escuro'?'Modo escuro ativado':'Modo claro ativado'); }
-try{ _aplicarTema(_temaSalvo()); }catch(e){}
+try{ _aplicarTema(_temaSalvo()); _aplicarCor(_corSalva()); }catch(e){}
