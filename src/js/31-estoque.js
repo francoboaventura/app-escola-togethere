@@ -1,205 +1,154 @@
 /* =====================================================================
-   📚 ESTOQUE DE LIVROS + ENTREGAS (b141) — direção e secretaria
-   Livro-razão de movimentos em S.estoqueMov (append-only; sincroniza):
-   {id, titulo, tipo:'entrada'|'ajuste'|'entrega', qtd(+/-), alunoId?, vip?,
-    por, em, obs, atualizadoEm}. Saldo por título = soma dos movimentos.
-   Entrega = movimento -1 ligado ao aluno (turma ou VIP). Pendências por
-   turma comparam alunos x coleção da turma. Ações da secretaria são
-   controláveis em 🔐 Permissões (sec_estoque).
+   📚 LIVROS — compra, recepção e entrega (b143) · secretaria + direção
+   A escola NÃO mantém estoque: compra conforme as matrículas. Fluxo por
+   aluno: 🛒 PEDIDO (comprado) → 📦 RECEBIDO (chegou na escola) → ✅ ENTREGUE.
+   S.livroPedidos: {id, alunoId, vip, titulo, status, pedidoEm, recebidoEm,
+   entregueEm, por, obs, atualizadoEm}. Ações da secretaria controláveis
+   em 🔐 Permissões (sec_estoque).
    ===================================================================== */
 function _estPode(){ return S.perfil==='direcao' || (S.perfil==='secretaria' && perm('sec_estoque')); }
-function _movs(){ return S.estoqueMov||[]; }
-function titulosEstoque(){
-  const base=(typeof TG_COLECOES_TODAS!=='undefined')?TG_COLECOES_TODAS.slice():[];
-  _movs().forEach(m=>{ if(m.titulo && base.indexOf(m.titulo)<0) base.push(m.titulo); });
-  return base;
-}
-function saldoLivro(t){ return _movs().filter(m=>m.titulo===t).reduce((s,m)=>s+(+m.qtd||0),0); }
-function entregasDoAluno(id){ return _movs().filter(m=>m.tipo==='entrega' && m.alunoId===id); }
-function alunoRecebeu(id,titulo){ return _movs().some(m=>m.tipo==='entrega' && m.alunoId===id && m.titulo===titulo); }
-function _estPush(mov){
-  S.estoqueMov=S.estoqueMov||[];
-  S.estoqueMov.push(Object.assign({id:uid(), por:S.usuario, em:hoje(), atualizadoEm:Date.now()}, mov));
-  save();
+function _lps(){ return S.livroPedidos||[]; }
+function pedidoDoAluno(pid,titulo){ return _lps().find(p=>p.alunoId===pid && p.titulo===titulo && p.status!=='cancelado'); }
+function alunoRecebeu(pid,titulo){ const p=pedidoDoAluno(pid,titulo); return !!(p&&p.status==='entregue'); }
+function entregasDoAluno(pid){ return _lps().filter(p=>p.alunoId===pid && p.status!=='cancelado'); }
+function _lpNome(p){ if(p.vip){ const x=(S.vipAlunos||[]).find(z=>z.id===p.alunoId); return x?x.nome+' 👑':'—'; } const a=(S.alunos||[]).find(z=>z.id===p.alunoId); return a?(a.nome+(a.turmaId?(' ('+turmaNome(a.turmaId)+')'):'')):'—'; }
+// quem precisa de livro e ainda não tem pedido (turmas com coleção + VIPs com material)
+function _livrosAPedir(){
+  const out=[];
+  (S.turmas||[]).filter(t=>!t.arquivada && (typeof turmaStatus!=='function'||turmaStatus(t)!=='encerrada')).forEach(t=>{
+    const col=(typeof planColecaoDe==='function')?planColecaoDe(t):null; if(!col) return;
+    alunosDa(t.id).forEach(a=>{ if(!pedidoDoAluno(a.id,col)) out.push({pid:a.id, nome:a.nome, vip:false, titulo:col, grupo:t.nome}); });
+  });
+  (S.vipAlunos||[]).filter(x=>!x.arquivado && x.material).forEach(x=>{ if(!pedidoDoAluno(x.id,x.material)) out.push({pid:x.id, nome:x.nome+' 👑', vip:true, titulo:x.material, grupo:'Alunos VIP'}); });
+  return out;
 }
 
-/* -------------------- VIEW -------------------- */
 VIEWS.estoque=()=>{
   const v=document.getElementById('view');
-  if(ehProfessor()){ v.innerHTML='<div class="card empty"><div class="big">🔒</div><b>Acesso restrito</b><br>O estoque é gerenciado pela secretaria e direção.</div>'; return; }
-  const tits=titulosEstoque();
-  const total=tits.reduce((s,t)=>s+Math.max(0,saldoLivro(t)),0);
-  const zerados=tits.filter(t=>saldoLivro(t)<=0 && _movs().some(m=>m.titulo===t)).length;
-  const ym=hoje().slice(0,7);
-  const entregasMes=_movs().filter(m=>m.tipo==='entrega' && (m.em||'').slice(0,7)===ym).length;
-  const tile=(val,lbl,cor)=>`<div class="fx-tile"><div class="v" style="color:${cor}">${val}</div><div class="l">${lbl}</div></div>`;
+  if(ehProfessor()){ v.innerHTML='<div class="card empty"><div class="big">🔒</div><b>Acesso restrito</b><br>Os livros são gerenciados pela secretaria e direção.</div>'; return; }
   const podeAgir=_estPode();
-  const linhas=tits.map(t=>{
-    const s=saldoLivro(t); const temMov=_movs().some(m=>m.titulo===t);
-    const cor=s<=0?(temMov?'var(--vermelho)':'var(--tinta-suave)'):(s<3?'#c2560b':'var(--ok)');
-    return `<div class="check"><span style="flex:1">${esc(t)}</span>
-      <b style="min-width:44px;text-align:right;color:${cor}">${s}</b>
-      ${podeAgir?`<button class="btn ghost sm" onclick="abrirEntradaEstoque('${escAttr(t)}')">+ entrada</button>
-      <button class="btn ghost sm" onclick="abrirAjusteEstoque('${escAttr(t)}')">ajuste</button>`:''}
-    </div>`;
-  }).join('');
-  const ultimas=_movs().filter(m=>m.tipo==='entrega').sort((a,b)=>(b.em||'').localeCompare(a.em||'')||((b.atualizadoEm||0)-(a.atualizadoEm||0))).slice(0,12);
-  const nomeEnt=m=>{ if(m.vip){ const x=(S.vipAlunos||[]).find(z=>z.id===m.alunoId); return x?x.nome+' 👑':'—'; } const a=(S.alunos||[]).find(z=>z.id===m.alunoId); return a?(a.nome+(a.turmaId?(' ('+turmaNome(a.turmaId)+')'):'')):'—'; };
-  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:#9333c7"></span><h2 class="display">📚 Estoque de livros</h2></div>
-    <p class="sub">Entradas, saldo por título e o controle de quem já recebeu o livro. Cada entrega baixa 1 do estoque.</p>
+  const aPedir=_livrosAPedir();
+  const pedidos=_lps().filter(p=>p.status==='pedido').sort((a,b)=>(a.pedidoEm||'').localeCompare(b.pedidoEm||''));
+  const recebidos=_lps().filter(p=>p.status==='recebido').sort((a,b)=>(a.recebidoEm||'').localeCompare(b.recebidoEm||''));
+  const ym=hoje().slice(0,7);
+  const entMes=_lps().filter(p=>p.status==='entregue' && (p.entregueEm||'').slice(0,7)===ym).length;
+  const tile=(val,lbl,cor)=>`<div class="fx-tile"><div class="v" style="color:${cor}">${val}</div><div class="l">${lbl}</div></div>`;
+  // A PEDIR agrupado
+  const grupos={}; aPedir.forEach(x=>{ (grupos[x.grupo]=grupos[x.grupo]||[]).push(x); });
+  const blocosPedir=Object.keys(grupos).map(g=>{
+    const xs=grupos[g];
+    return `<div style="margin-top:8px"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b style="flex:1">${esc(g)}</b><span class="pill">${esc(xs[0].titulo)}</span>
+      ${podeAgir&&xs.length>1?`<button class="btn ghost sm" onclick="pedirTodos('${escAttr(g)}')">🛒 pedir todos (${xs.length})</button>`:''}</div>
+      ${xs.map(x=>`<div class="check"><span style="flex:1">${esc(x.nome)}</span>${podeAgir?`<button class="btn ghost sm" onclick="criarPedidoLivro('${x.pid}',${x.vip},'${escAttr(x.titulo)}')">🛒 pedir</button>`:''}</div>`).join('')}
+    </div>`; }).join('');
+  const ultimas=_lps().filter(p=>p.status==='entregue').sort((a,b)=>(b.entregueEm||'').localeCompare(a.entregueEm||'')||((b.atualizadoEm||0)-(a.atualizadoEm||0))).slice(0,12);
+  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:#9333c7"></span><h2 class="display">📚 Livros</h2></div>
+    <p class="sub">Compra sob demanda, do jeito da escola: <b>🛒 pedir → 📦 chegou → ✅ entregue ao aluno</b>. Sem estoque parado.</p>
     <div class="card"><div class="fx-tiles">
-      ${tile(total,'Livros em estoque','#005EAF')}
-      ${tile(entregasMes,'Entregas neste mês','#0A7A3D')}
-      ${tile(zerados,'Títulos zerados',zerados>0?'var(--vermelho)':'var(--tinta)')}
-      ${tile(tits.length,'Títulos','var(--tinta)')}
-    </div></div>
-    ${podeAgir?`<div class="card" style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn" onclick="abrirEntregaLivro()">📦 Registrar entrega</button>
-      <button class="btn ghost" onclick="abrirEntradaEstoque('')">+ Entrada no estoque</button>
-      <button class="btn ghost sm" onclick="exportarEstoqueCSV()">⬇️ Planilha</button>
-    </div>`:'<p class="hint">Somente leitura — a direção desativou suas ações de estoque.</p>'}
-    ${_cardPendenciasLivro()}
-    <div class="card"><h3>📦 Estoque por título</h3>${linhas||'<p class="hint">Nenhum título.</p>'}</div>
-    <div class="card"><h3>🧾 Últimas entregas</h3>
-      ${ultimas.length?ultimas.map(m=>`<div class="check"><span style="flex:1">${brDate(m.em)} · <b>${esc(nomeEnt(m))}</b> — ${esc(m.titulo)}${m.obs?(' · '+esc(m.obs)):''}<span class="hint"> · por ${esc(m.por||'')}</span></span>
-        ${(S.perfil==='direcao'||m.por===S.usuario)&&podeAgir?`<button class="btn ghost sm" style="color:var(--vermelho)" onclick="desfazerMovEstoque('${m.id}')">desfazer</button>`:''}</div>`).join(''):'<p class="hint">Nenhuma entrega registrada ainda.</p>'}
+      ${tile(aPedir.length,'A pedir',aPedir.length?'#c2560b':'var(--ok)')}
+      ${tile(pedidos.length,'Aguardando chegada',pedidos.length?'#005EAF':'var(--tinta)')}
+      ${tile(recebidos.length,'Na escola, a entregar',recebidos.length?'#9333c7':'var(--tinta)')}
+      ${tile(entMes,'Entregues no mês','#0A7A3D')}
+    </div>
+    ${podeAgir?`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px"><button class="btn ghost sm" onclick="abrirPedidoAvulso()">+ Pedido avulso</button><button class="btn ghost sm" onclick="exportarLivrosCSV()">⬇️ Planilha</button></div>`:'<p class="hint" style="margin:10px 0 0">Somente leitura — a direção desativou suas ações de livros.</p>'}
+    </div>
+    <div class="card" style="border-left:4px solid ${aPedir.length?'#c2560b':'var(--ok)'}"><h3 style="margin:0 0 2px">🛒 A pedir (${aPedir.length})</h3>
+      <p class="hint" style="margin:0 0 4px">Alunos cuja turma tem coleção definida (ou VIPs com material) e ainda não têm pedido.</p>
+      ${blocosPedir||'<p class="hint">✅ Ninguém aguardando pedido.</p>'}
+    </div>
+    <div class="card" style="border-left:4px solid #005EAF"><h3 style="margin:0 0 2px">📦 Aguardando chegada (${pedidos.length})</h3>
+      ${pedidos.length?pedidos.map(p=>`<div class="check"><span style="flex:1"><b>${esc(_lpNome(p))}</b> — ${esc(p.titulo)}<span class="hint"> · pedido em ${brDate(p.pedidoEm)}${p.por?(' por '+esc(p.por)):''}</span></span>
+        ${podeAgir?`<button class="btn sm" style="background:#005EAF" onclick="marcarLivroRecebido('${p.id}')">📦 chegou</button>
+        <button class="btn ghost sm" style="color:var(--vermelho)" onclick="cancelarPedidoLivro('${p.id}')">cancelar</button>`:''}</div>`).join(''):'<p class="hint">Nenhum pedido aguardando.</p>'}
+    </div>
+    <div class="card" style="border-left:4px solid #9333c7"><h3 style="margin:0 0 2px">🏫 Na escola, a entregar (${recebidos.length})</h3>
+      ${recebidos.length?recebidos.map(p=>`<div class="check"><span style="flex:1"><b>${esc(_lpNome(p))}</b> — ${esc(p.titulo)}<span class="hint"> · chegou em ${brDate(p.recebidoEm)}</span></span>
+        ${podeAgir?`<button class="btn sm" style="background:#0A7A3D" onclick="marcarLivroEntregue('${p.id}')">✅ entregar</button>`:''}</div>`).join(''):'<p class="hint">Nada aguardando entrega.</p>'}
+    </div>
+    <div class="card"><h3>✅ Últimas entregas</h3>
+      ${ultimas.length?ultimas.map(p=>`<div class="check"><span style="flex:1">${brDate(p.entregueEm)} · <b>${esc(_lpNome(p))}</b> — ${esc(p.titulo)}${p.obs?(' · '+esc(p.obs)):''}<span class="hint"> · por ${esc(p.por||'')}</span></span>
+        ${(S.perfil==='direcao'||p.por===S.usuario)&&podeAgir?`<button class="btn ghost sm" onclick="desfazerEntregaLivro('${p.id}')">desfazer</button>`:''}</div>`).join(''):'<p class="hint">Nenhuma entrega ainda.</p>'}
     </div>`;
 };
-// pendências: por turma ativa com coleção definida, quem ainda não recebeu
-function _cardPendenciasLivro(){
-  const ts=(S.turmas||[]).filter(t=>!t.arquivada && (typeof turmaStatus!=='function'||turmaStatus(t)!=='encerrada'));
-  const blocos=[];
-  ts.forEach(t=>{
-    const col=(typeof planColecaoDe==='function')?planColecaoDe(t):null; if(!col) return;
-    const als=alunosDa(t.id); if(!als.length) return;
-    const falta=als.filter(a=>!alunoRecebeu(a.id,col));
-    blocos.push({t,col,tot:als.length,falta});
-  });
-  if(!blocos.length) return '';
-  const pend=blocos.filter(b=>b.falta.length);
-  const podeAgir=_estPode();
-  return `<div class="card" style="border-left:4px solid ${pend.length?'var(--laranja)':'var(--ok)'}">
-    <h3 style="margin:0 0 4px">📋 Livros por turma</h3>
-    <p class="hint" style="margin:0 0 6px">Compara os alunos de cada turma com a coleção definida no Planejamento.</p>
-    ${blocos.map(b=>{ const ok=b.tot-b.falta.length;
-      return `<div style="margin-top:8px"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <b style="flex:1">${esc(b.t.nome)}</b><span class="pill">${esc(b.col)}</span>
-        <span class="pill" style="background:${b.falta.length?'#fff1e6':'#eafaf0'};color:${b.falta.length?'#c2560b':'#0A7A3D'}">${ok}/${b.tot} entregues</span></div>
-        ${b.falta.length?`<div style="margin-top:4px">${b.falta.map(a=>`<div class="check"><span style="flex:1">${esc(a.nome)}</span>${podeAgir?`<button class="btn ghost sm" onclick="entregarRapido('${a.id}','${escAttr(b.col)}')">✓ entregar</button>`:''}</div>`).join('')}</div>`:''}
-      </div>`; }).join('')}
-  </div>`;
-}
 
-/* -------------------- ações -------------------- */
-function abrirEntradaEstoque(titulo){
-  if(!_estPode()) return toast('Sem permissão no estoque');
-  const opts=titulosEstoque().map(t=>`<option ${t===titulo?'selected':''}>${esc(t)}</option>`).join('');
-  modal(`<h3>+ Entrada no estoque <button class="close" onclick="fechar()">×</button></h3>
-    <div class="field"><label class="lbl">Título</label><select id="ee_titulo">${opts}<option value="__outro__">— Outro (digitar) —</option></select></div>
-    <div class="field" id="ee_outroWrap" style="display:none"><label class="lbl">Novo título</label><input type="text" id="ee_outro" placeholder="Nome do livro/material"></div>
-    <div class="row"><div class="field"><label class="lbl">Quantidade</label><input type="number" id="ee_qtd" value="10" min="1" step="1"></div></div>
-    <div class="field"><label class="lbl">Observação (opcional)</label><input type="text" id="ee_obs" placeholder="Ex: pedido Cambridge jul/26"></div>
-    <button class="btn block" onclick="salvarEntradaEstoque()">Registrar entrada</button>`);
-  const sel=document.getElementById('ee_titulo'); if(sel) sel.onchange=()=>{ document.getElementById('ee_outroWrap').style.display=(sel.value==='__outro__')?'block':'none'; };
-}
-function salvarEntradaEstoque(){
+/* -------------------- ações do fluxo -------------------- */
+function criarPedidoLivro(pid, vip, titulo){
   if(!_estPode()) return toast('Sem permissão');
-  let titulo=(document.getElementById('ee_titulo')||{}).value||'';
-  if(titulo==='__outro__') titulo=((document.getElementById('ee_outro')||{}).value||'').trim();
-  const qtd=parseInt((document.getElementById('ee_qtd')||{}).value)||0;
-  if(!titulo) return toast('Informe o título');
-  if(qtd<1) return toast('Quantidade inválida');
-  _estPush({tipo:'entrada', titulo, qtd, obs:((document.getElementById('ee_obs')||{}).value||'').trim()});
-  fechar(); VIEWS.estoque(); toast(qtd+' × '+titulo+' no estoque ✓');
+  if(pedidoDoAluno(pid,titulo)) return toast('Já existe pedido deste livro para este aluno');
+  S.livroPedidos=S.livroPedidos||[];
+  S.livroPedidos.push({id:uid(), alunoId:pid, vip:!!vip, titulo, status:'pedido', pedidoEm:hoje(), por:S.usuario, atualizadoEm:Date.now()});
+  save(); if(rota==='estoque') VIEWS.estoque(); else if(rota==='ficha'&&VIEWS.ficha) VIEWS.ficha();
+  toast('Pedido registrado 🛒');
 }
-function abrirAjusteEstoque(titulo){
-  if(!_estPode()) return toast('Sem permissão no estoque');
-  modal(`<h3>Ajuste de estoque <button class="close" onclick="fechar()">×</button></h3>
-    <p class="hint" style="margin:0 0 10px"><b>${esc(titulo)}</b> · saldo atual: <b>${saldoLivro(titulo)}</b>. Use positivo para acrescentar e negativo para baixar (inventário, extravio, devolução…).</p>
-    <div class="row"><div class="field"><label class="lbl">Ajuste (+/−)</label><input type="number" id="aj_qtd" value="-1" step="1"></div></div>
-    <div class="field"><label class="lbl">Motivo</label><input type="text" id="aj_obs" placeholder="Ex: inventário; livro danificado"></div>
-    <button class="btn block" onclick="salvarAjusteEstoque('${escAttr(titulo)}')">Registrar ajuste</button>`);
-}
-function salvarAjusteEstoque(titulo){
+function pedirTodos(grupo){
   if(!_estPode()) return toast('Sem permissão');
-  const qtd=parseInt((document.getElementById('aj_qtd')||{}).value)||0;
-  if(!qtd) return toast('Informe um valor diferente de zero');
-  _estPush({tipo:'ajuste', titulo, qtd, obs:((document.getElementById('aj_obs')||{}).value||'').trim()});
-  fechar(); VIEWS.estoque(); toast('Ajuste registrado ('+(qtd>0?'+':'')+qtd+')');
+  const xs=_livrosAPedir().filter(x=>x.grupo===grupo);
+  if(!xs.length) return;
+  if(!confirm('Registrar pedido de '+xs.length+' livro(s) — '+grupo+'?')) return;
+  xs.forEach(x=>{ S.livroPedidos=S.livroPedidos||[]; S.livroPedidos.push({id:uid(), alunoId:x.pid, vip:x.vip, titulo:x.titulo, status:'pedido', pedidoEm:hoje(), por:S.usuario, atualizadoEm:Date.now()}); });
+  save(); VIEWS.estoque(); toast(xs.length+' pedido(s) registrados 🛒');
 }
-function abrirEntregaLivro(pre){
-  if(!_estPode()) return toast('Sem permissão no estoque');
-  pre=pre||{};
+function marcarLivroRecebido(id){
+  if(!_estPode()) return toast('Sem permissão');
+  const p=_lps().find(x=>x.id===id); if(!p) return;
+  p.status='recebido'; p.recebidoEm=hoje(); p.atualizadoEm=Date.now();
+  save(); if(rota==='estoque') VIEWS.estoque(); toast('Livro recebido na escola 📦');
+}
+function marcarLivroEntregue(id){
+  if(!_estPode()) return toast('Sem permissão');
+  const p=_lps().find(x=>x.id===id); if(!p) return;
+  p.status='entregue'; p.entregueEm=hoje(); p.por=S.usuario; p.atualizadoEm=Date.now();
+  // cobrança do material (aluno de turma com plano; só direção decide)
+  if(!p.vip && S.perfil==='direcao'){
+    const f=_finDoAluno(p.alunoId); const preco=_precoMaterialDoAluno(p.alunoId);
+    if(f && preco>0 && !(f.extras||[]).some(e=>e.nome==='Material — '+p.titulo)){
+      if(confirm('Cobrar o material ('+_moeda(preco)+') no financeiro do aluno?')) { addExtraFinanceiro(f.id,'Material — '+p.titulo,preco,'livros'); toast('Material lançado no financeiro'); }
+    }
+  }
+  save(); if(rota==='estoque') VIEWS.estoque(); else if(rota==='ficha'&&VIEWS.ficha) VIEWS.ficha();
+  toast('Entregue ao aluno ✅');
+}
+function cancelarPedidoLivro(id){
+  if(!_estPode()) return toast('Sem permissão');
+  const p=_lps().find(x=>x.id===id); if(!p) return;
+  if(!confirm('Cancelar este pedido?')) return;
+  S.livroPedidos=_lps().filter(x=>x.id!==id); if(typeof marcarExcluido==='function') marcarExcluido('livroPedidos',id);
+  save(); VIEWS.estoque(); toast('Pedido cancelado');
+}
+function desfazerEntregaLivro(id){
+  const p=_lps().find(x=>x.id===id); if(!p) return;
+  if(!(S.perfil==='direcao' || (p.por===S.usuario && _estPode()))) return toast('Sem permissão');
+  p.status='recebido'; delete p.entregueEm; p.atualizadoEm=Date.now();
+  save(); VIEWS.estoque(); toast('Entrega desfeita — livro volta para "a entregar"');
+}
+// pedido avulso (qualquer aluno/título, ex.: reposição)
+function abrirPedidoAvulso(){
+  if(!_estPode()) return toast('Sem permissão');
   const ts=(S.turmas||[]).filter(t=>!t.arquivada);
   let opts='<option value="">— escolha o aluno —</option>';
   ts.forEach(t=>{ const als=alunosDa(t.id); if(!als.length) return;
-    opts+=`<optgroup label="${escAttr(t.nome)}">`+als.map(a=>`<option value="a:${a.id}" ${pre.alunoId===a.id?'selected':''}>${esc(a.nome)}</option>`).join('')+'</optgroup>'; });
+    opts+=`<optgroup label="${escAttr(t.nome)}">`+als.map(a=>`<option value="a:${a.id}">${esc(a.nome)}</option>`).join('')+'</optgroup>'; });
   const vips=(S.vipAlunos||[]).filter(x=>!x.arquivado);
   if(vips.length) opts+='<optgroup label="👑 Alunos VIP">'+vips.map(x=>`<option value="v:${x.id}">${esc(x.nome)}</option>`).join('')+'</optgroup>';
-  const tOpts=titulosEstoque().map(t=>`<option ${pre.titulo===t?'selected':''}>${esc(t)}</option>`).join('');
-  modal(`<h3>📦 Registrar entrega de livro <button class="close" onclick="fechar()">×</button></h3>
-    <div class="field"><label class="lbl">Aluno</label><select id="el_aluno" onchange="_elSugereTitulo();_elAtualizaCobranca()">${opts}</select></div>
-    <div class="field"><label class="lbl">Livro</label><select id="el_titulo">${tOpts}</select></div>
-    <div id="el_cobrarWrap" style="display:none"></div>
-    <div class="field"><label class="lbl">Observação (opcional)</label><input type="text" id="el_obs" placeholder="Ex: pago junto da matrícula"></div>
-    <button class="btn block" onclick="salvarEntregaLivro()">✓ Entregar (baixa 1 do estoque)</button>`);
-  setTimeout(_elAtualizaCobranca,40);
+  const cols=(typeof TG_COLECOES_TODAS!=='undefined')?TG_COLECOES_TODAS:[];
+  modal(`<h3>🛒 Pedido avulso <button class="close" onclick="fechar()">×</button></h3>
+    <div class="field"><label class="lbl">Aluno</label><select id="pa_aluno">${opts}</select></div>
+    <div class="field"><label class="lbl">Livro</label><select id="pa_titulo">${cols.map(c=>`<option>${esc(c)}</option>`).join('')}<option value="__outro__">— Outro (digitar) —</option></select></div>
+    <div class="field" id="pa_outroWrap" style="display:none"><label class="lbl">Título</label><input type="text" id="pa_outro" placeholder="Nome do livro/material"></div>
+    <button class="btn block" onclick="salvarPedidoAvulso()">Registrar pedido</button>`);
+  const sel=document.getElementById('pa_titulo'); if(sel) sel.onchange=()=>{ document.getElementById('pa_outroWrap').style.display=(sel.value==='__outro__')?'block':'none'; };
 }
-function _elSugereTitulo(){
-  const val=(document.getElementById('el_aluno')||{}).value||''; const sel=document.getElementById('el_titulo'); if(!sel||!val) return;
-  let sug='';
-  if(val.startsWith('a:')){ const a=(S.alunos||[]).find(x=>x.id===val.slice(2)); const t=a&&(S.turmas||[]).find(x=>x.id===a.turmaId); if(t&&typeof planColecaoDe==='function') sug=planColecaoDe(t)||''; }
-  else if(val.startsWith('v:')){ const vv=(S.vipAlunos||[]).find(x=>x.id===val.slice(2)); sug=(vv&&vv.material)||''; }
-  if(sug){ [...sel.options].forEach(o=>{ if(o.value===sug||o.textContent===sug) sel.value=o.value||o.textContent; }); }
-}
-function salvarEntregaLivro(){
+function salvarPedidoAvulso(){
   if(!_estPode()) return toast('Sem permissão');
-  const val=(document.getElementById('el_aluno')||{}).value||''; if(!val) return toast('Escolha o aluno');
-  const titulo=(document.getElementById('el_titulo')||{}).value||''; if(!titulo) return toast('Escolha o livro');
-  const vip=val.startsWith('v:'); const alunoId=val.slice(2);
-  if(alunoRecebeu(alunoId,titulo) && !confirm('Este aluno já tem uma entrega deste livro registrada. Registrar outra?')) return;
-  const s=saldoLivro(titulo);
-  if(s<=0 && !confirm('O estoque de "'+titulo+'" está em '+s+'. Registrar a entrega mesmo assim (saldo ficará negativo)?')) return;
-  if(!vip) _cobrarMaterialSePedido(alunoId, titulo);
-  _estPush({tipo:'entrega', titulo, qtd:-1, alunoId, vip, obs:((document.getElementById('el_obs')||{}).value||'').trim()});
-  fechar(); VIEWS.estoque(); toast('Entrega registrada ✓');
-}
-function entregarRapido(alunoId,titulo){
-  if(!_estPode()) return toast('Sem permissão');
-  const a=(S.alunos||[]).find(x=>x.id===alunoId);
-  const s=saldoLivro(titulo);
-  if(!confirm('Entregar "'+titulo+'" para '+(a?a.nome:'o aluno')+'?'+(s<=0?('\n\nAtenção: saldo atual é '+s+' (vai ficar negativo).'):''))) return;
-  _estPush({tipo:'entrega', titulo, qtd:-1, alunoId, vip:false});
-  const f=_finDoAluno(alunoId); const preco=_precoMaterialDoAluno(alunoId);
-  if(f && preco>0 && S.perfil==='direcao' && confirm('Cobrar o material ('+_moeda(preco)+') no financeiro de '+(a?a.nome:'o aluno')+'?')){
-    addExtraFinanceiro(f.id,'Material — '+titulo,preco,'estoque'); toast('Material lançado no financeiro');
-  }
-  if(rota==='ficha'&&VIEWS.ficha) VIEWS.ficha(); else VIEWS.estoque();
-  toast('Entrega registrada ✓');
-}
-function desfazerMovEstoque(id){
-  const m=_movs().find(x=>x.id===id); if(!m) return;
-  if(!(S.perfil==='direcao' || (m.por===S.usuario && _estPode()))) return toast('Sem permissão');
-  if(!confirm('Desfazer este movimento? O saldo volta ao que era.')) return;
-  S.estoqueMov=_movs().filter(x=>x.id!==id); if(typeof marcarExcluido==='function') marcarExcluido('estoqueMov',id);
-  save(); VIEWS.estoque(); toast('Movimento desfeito');
-}
-function exportarEstoqueCSV(){
-  const tits=titulosEstoque().filter(t=>_movs().some(m=>m.titulo===t)||saldoLivro(t)!==0);
-  const rows=[_csvLinha(['Título','Saldo em estoque','Entradas','Entregas','Ajustes'])];
-  titulosEstoque().forEach(t=>{ const ms=_movs().filter(m=>m.titulo===t); if(!ms.length) return;
-    rows.push(_csvLinha([t, saldoLivro(t), ms.filter(m=>m.tipo==='entrada').reduce((s,m)=>s+m.qtd,0), ms.filter(m=>m.tipo==='entrega').length, ms.filter(m=>m.tipo==='ajuste').reduce((s,m)=>s+m.qtd,0)])); });
-  rows.push(_csvLinha([]));
-  rows.push(_csvLinha(['Data','Aluno','Livro','Tipo','Qtd','Por','Obs']));
-  _movs().slice().sort((a,b)=>(b.em||'').localeCompare(a.em||'')).forEach(m=>{
-    const nome=m.alunoId?(((m.vip?(S.vipAlunos||[]):(S.alunos||[])).find(x=>x.id===m.alunoId)||{}).nome||''):'';
-    rows.push(_csvLinha([brDate(m.em), nome, m.titulo, m.tipo, m.qtd, m.por||'', m.obs||''])); });
-  _dlArquivo('estoque-livros-'+hoje()+'.csv', rows.join('\n'));
-  toast('Planilha do estoque baixada');
+  const val=(document.getElementById('pa_aluno')||{}).value||''; if(!val) return toast('Escolha o aluno');
+  let titulo=(document.getElementById('pa_titulo')||{}).value||'';
+  if(titulo==='__outro__') titulo=((document.getElementById('pa_outro')||{}).value||'').trim();
+  if(!titulo) return toast('Informe o livro');
+  criarPedidoLivro(val.slice(2), val.startsWith('v:'), titulo);
+  fechar(); VIEWS.estoque();
 }
 
-/* ---------- integrações (b142): ficha do aluno + cobrança do material ---------- */
-// financeiro ligado a um aluno de turma (via matrícula não-cancelada)
+/* -------------------- integrações -------------------- */
 function _finDoAluno(alunoId){
   const m=(S.matriculas||[]).find(x=>x.alunoId===alunoId && x.status!=='cancelada');
   if(!m) return null;
@@ -211,50 +160,31 @@ function _precoMaterialDoAluno(alunoId){
   if(!t||typeof precosSegmento!=='function') return 0;
   return precosSegmento(t.nivel||'').material||0;
 }
-// card "Livros" para a ficha (aluno de turma e VIP)
+// card "Livros" da ficha (aluno de turma e VIP): mostra o fluxo e a próxima ação
 function _cardLivrosAluno(pid, ehVip){
-  const ents=entregasDoAluno(pid).sort((a,b)=>(b.em||'').localeCompare(a.em||''));
-  let pendente='';
-  if(!ehVip){
-    const a=(S.alunos||[]).find(x=>x.id===pid); const t=a&&(S.turmas||[]).find(x=>x.id===a.turmaId);
-    const col=(t&&typeof planColecaoDe==='function')?planColecaoDe(t):null;
-    if(col && !alunoRecebeu(pid,col)) pendente=`<p class="hint" style="margin:6px 0 0;color:#c2560b">⚠️ Ainda não recebeu <b>${esc(col)}</b> (coleção da turma).${_estPode()?` <button class="btn ghost sm" onclick="entregarRapido('${pid}','${escAttr(col)}')">✓ entregar agora</button>`:''}</p>`;
-  } else {
-    const vv=(S.vipAlunos||[]).find(x=>x.id===pid);
-    if(vv&&vv.material&&!alunoRecebeu(pid,vv.material)) pendente=`<p class="hint" style="margin:6px 0 0;color:#c2560b">⚠️ Ainda não recebeu <b>${esc(vv.material)}</b> (material em uso).${_estPode()?` <button class="btn ghost sm" onclick="entregarLivroVipRapido('${pid}','${escAttr(vv.material)}')">✓ entregar agora</button>`:''}</p>`;
-  }
-  if(!ents.length && !pendente) return '';
+  const regs=entregasDoAluno(pid).sort((a,b)=>(b.atualizadoEm||0)-(a.atualizadoEm||0));
+  // o que este aluno deveria ter
+  let alvo='';
+  if(!ehVip){ const a=(S.alunos||[]).find(x=>x.id===pid); const t=a&&(S.turmas||[]).find(x=>x.id===a.turmaId); alvo=(t&&typeof planColecaoDe==='function')?(planColecaoDe(t)||''):''; }
+  else { const vv=(S.vipAlunos||[]).find(x=>x.id===pid); alvo=(vv&&vv.material)||''; }
+  const reg=alvo?pedidoDoAluno(pid,alvo):null;
+  let acao='';
+  if(alvo && !reg) acao=`<p class="hint" style="margin:6px 0 0;color:#c2560b">⚠️ <b>${esc(alvo)}</b> ainda não foi pedido.${_estPode()?` <button class="btn ghost sm" onclick="criarPedidoLivro('${pid}',${!!ehVip},'${escAttr(alvo)}')">🛒 pedir agora</button>`:''}</p>`;
+  else if(reg && reg.status==='pedido') acao=`<p class="hint" style="margin:6px 0 0;color:#005EAF">🛒 <b>${esc(alvo)}</b> pedido em ${brDate(reg.pedidoEm)} — aguardando chegar.${_estPode()?` <button class="btn ghost sm" onclick="marcarLivroRecebido('${reg.id}')">📦 chegou</button>`:''}</p>`;
+  else if(reg && reg.status==='recebido') acao=`<p class="hint" style="margin:6px 0 0;color:#9333c7">📦 <b>${esc(alvo)}</b> está na escola desde ${brDate(reg.recebidoEm)}.${_estPode()?` <button class="btn ghost sm" onclick="marcarLivroEntregue('${reg.id}')">✅ entregar agora</button>`:''}</p>`;
+  const entregues=regs.filter(r=>r.status==='entregue');
+  if(!entregues.length && !acao) return '';
   return `<div class="card" style="margin-top:12px"><h3 style="margin:0 0 6px;font-size:1rem">📚 Livros</h3>
-    ${ents.length?ents.map(m=>`<p class="hint" style="margin:2px 0 0">✅ <b>${esc(m.titulo)}</b> — entregue em ${brDate(m.em)}${m.por?(' por '+esc(m.por)):''}</p>`).join(''):'<p class="hint" style="margin:0">Nenhum livro entregue ainda.</p>'}
-    ${pendente}
+    ${entregues.map(r=>`<p class="hint" style="margin:2px 0 0">✅ <b>${esc(r.titulo)}</b> — entregue em ${brDate(r.entregueEm)}${r.por?(' por '+esc(r.por)):''}</p>`).join('')}
+    ${acao}
   </div>`;
 }
-function entregarLivroVipRapido(vid,titulo){
-  if(!_estPode()) return toast('Sem permissão');
-  const vv=(S.vipAlunos||[]).find(x=>x.id===vid);
-  const sAtual=saldoLivro(titulo);
-  if(!confirm('Entregar "'+titulo+'" para '+(vv?vv.nome:'o aluno VIP')+'?'+(sAtual<=0?('\n\nAtenção: saldo atual é '+sAtual+'.'):''))) return;
-  _estPush({tipo:'entrega', titulo, qtd:-1, alunoId:vid, vip:true});
-  if(typeof VIEWS!=='undefined'&&rota==='ficha'&&VIEWS.ficha) VIEWS.ficha(); toast('Entrega registrada ✓');
-}
-// cobrança do material ao entregar (aluno de turma com financeiro ligado)
-function _cobrarMaterialSePedido(alunoId, titulo){
-  const chk=document.getElementById('el_cobrar');
-  if(!chk||!chk.checked) return;
-  const f=_finDoAluno(alunoId); if(!f) return;
-  const preco=_precoMaterialDoAluno(alunoId); if(!(preco>0)) return;
-  addExtraFinanceiro(f.id, 'Material — '+titulo, preco, 'estoque');
-  toast('Material lançado no financeiro ('+_moeda(preco)+')');
-}
-function _elAtualizaCobranca(){
-  const box=document.getElementById('el_cobrarWrap'); if(!box) return;
-  const val=(document.getElementById('el_aluno')||{}).value||'';
-  box.style.display='none'; box.innerHTML='';
-  if(!val.startsWith('a:')) return;
-  const alunoId=val.slice(2);
-  const f=_finDoAluno(alunoId); const preco=_precoMaterialDoAluno(alunoId);
-  if(f && preco>0){
-    box.style.display='block';
-    box.innerHTML='<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:2px 0 6px"><input type="checkbox" id="el_cobrar" checked> 💰 Cobrar o material no financeiro do aluno ('+_moeda(preco)+' — tabela do segmento)</label>';
-  }
+function exportarLivrosCSV(){
+  const lista=_lps().slice().sort((a,b)=>(a.pedidoEm||'').localeCompare(b.pedidoEm||''));
+  if(!lista.length) return toast('Nenhum registro de livros ainda');
+  const stl={pedido:'Aguardando chegada',recebido:'Na escola',entregue:'Entregue'};
+  const rows=[_csvLinha(['Aluno','Livro','Situação','Pedido em','Chegou em','Entregue em','Por','Obs'])];
+  lista.forEach(p=>rows.push(_csvLinha([_lpNome(p), p.titulo, stl[p.status]||p.status, p.pedidoEm?brDate(p.pedidoEm):'', p.recebidoEm?brDate(p.recebidoEm):'', p.entregueEm?brDate(p.entregueEm):'', p.por||'', p.obs||''])));
+  _dlArquivo('livros-'+hoje()+'.csv', rows.join('\n'));
+  toast('Planilha de livros baixada');
 }

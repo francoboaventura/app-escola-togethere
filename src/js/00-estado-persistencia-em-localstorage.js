@@ -50,7 +50,14 @@ function migrar(s){
   s.financeiro=s.financeiro||[];     // módulo financeiro (mensalidades/carnê), ligado à matrícula
   s.configFin=s.configFin||[];       // config da direção: tabela de preços + multa/juros
   s.permissoes=s.permissoes||[];     // permissões configuráveis (🔐, direção)
-  s.estoqueMov=s.estoqueMov||[];     // estoque de livros: movimentos (entradas/ajustes/entregas)
+  s.estoqueMov=s.estoqueMov||[];     // (legado b141-142) movimentos de estoque — mantido só como histórico
+  s.livroPedidos=s.livroPedidos||[]; // livros por aluno: pedido → recebido → entregue (b143)
+  (s.estoqueMov||[]).filter(m=>m.tipo==='entrega'&&m.alunoId).forEach(m=>{   // migra entregas antigas
+    const lid='lp_'+m.id;
+    if(!s.livroPedidos.some(x=>x.id===lid || (x.alunoId===m.alunoId&&x.titulo===m.titulo&&x.status==='entregue'))){
+      s.livroPedidos.push({id:lid, alunoId:m.alunoId, vip:!!m.vip, titulo:m.titulo, status:'entregue', pedidoEm:m.em||'', recebidoEm:m.em||'', entregueEm:m.em||'', por:m.por||'', obs:m.obs||'', atualizadoEm:Date.now()});
+    }
+  });
   (s.matriculas||[]).forEach(m=>{ if(m.status==='rascunho'){ m.status='orcamento'; m.atualizadoEm=Date.now(); } });   // b137: rascunho vira orçamento
   // migração b136: separa o financeiro que ficava dentro da matrícula para a coleção 'financeiro'
   (s.matriculas||[]).forEach(m=>{

@@ -84,6 +84,7 @@ function seed(){
     configFin:[],
     permissoes:[],
     estoqueMov:[],
+    livroPedidos:[],
     aulasVip:[],
     boletins:[],
     alertas:[],
