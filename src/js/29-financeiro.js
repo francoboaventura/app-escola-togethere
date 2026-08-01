@@ -260,6 +260,17 @@ function exportarFinanceiroCSV(){
    Guardada em S.configFin=[{id:'fin', ...}] (sincroniza via MERGE_COLS).
    ===================================================================== */
 function _cfgFin(){ return ((S.configFin||[]).find(c=>c.id==='fin'))||{}; }
+const SEGMENTOS_FIN=[['kids','Kids'],['junior','Junior'],['teens','Teens'],['adults','Adults'],['talking','Talking']];
+// preços do segmento, com fallback para os campos antigos (tabela única) se o segmento não estiver preenchido
+function precosSegmento(seg){
+  const c=_cfgFin(); const s=(c.seg||{})[seg]||{};
+  return {
+    taxa:    _matN(s.taxa)    || _matN(c.taxaMatricula),
+    anual:   _matN(s.anual)   || _matN(c.valorAnualCurso),
+    material:_matN(s.material)|| _matN(c.valorMaterial),
+  };
+}
+function _segDaMatricula(m){ if(!m||!m.turmaId) return ''; const t=(S.turmas||[]).find(x=>x.id===m.turmaId); return (t&&t.nivel)||''; }
 function _cfgFinSet(campos){
   S.configFin=S.configFin||[];
   let c=S.configFin.find(x=>x.id==='fin');
@@ -274,14 +285,20 @@ VIEWS.configfin=()=>{
   const linhasDiv=div.map((d,i)=>`<div class="check"><span style="flex:1">${esc(d.nome||'—')} · <b>${_moeda(d.valor)}</b></span><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delCobrancaDiversa(${i})">remover</button></div>`).join('');
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:#b88600"></span><h2 class="display">⚙️ Config. financeira</h2></div>
     <p class="sub">Espaço exclusivo da direção: tabela de preços dos produtos e regras de multa/juros por atraso. Tudo aqui alimenta orçamentos, contratos e o carnê.</p>
-    <div class="card"><h3>📋 Tabela de preços</h3>
-      <div class="row" style="flex-wrap:wrap">
-        <div class="field"><label class="lbl">Taxa de matrícula (R$)</label><input type="number" id="cf_taxa" value="${c.taxaMatricula!=null?c.taxaMatricula:''}" min="0" step="0.01" placeholder="0,00"></div>
-        <div class="field"><label class="lbl">Valor anual do curso (R$)</label><input type="number" id="cf_anual" value="${c.valorAnualCurso!=null?c.valorAnualCurso:''}" min="0" step="0.01" placeholder="0,00"></div>
-        <div class="field"><label class="lbl">Material didático (R$)</label><input type="number" id="cf_material" value="${c.valorMaterial!=null?c.valorMaterial:''}" min="0" step="0.01" placeholder="0,00"></div>
-        <div class="field"><label class="lbl">Hora-aula VIP (R$)</label><input type="number" id="cf_horaVip" value="${c.valorHoraVip!=null?c.valorHoraVip:''}" min="0" step="0.01" placeholder="0,00"></div>
-      </div>
-      <p class="hint" style="margin:4px 0 10px">A mensalidade sugerida sai do valor anual ÷ nº de parcelas (no botão "📋 Usar tabela" do Financeiro).</p>
+    <div class="card"><h3>📋 Tabela de preços por segmento</h3>
+      <p class="hint" style="margin:0 0 8px">Cada segmento tem seus valores. Orçamento, contrato e o botão "📋 Usar tabela" do Financeiro puxam pelo segmento da turma do aluno.</p>
+      <div style="overflow-x:auto"><table style="min-width:520px">
+        <thead><tr><th>Segmento</th><th>Taxa de matrícula (R$)</th><th>Valor anual do curso (R$)</th><th>Material (R$)</th></tr></thead>
+        <tbody>
+        ${SEGMENTOS_FIN.map(([k,lbl])=>{ const sg=(c.seg||{})[k]||{}; return `<tr>
+          <td style="font-weight:700">${lbl}</td>
+          <td><input type="number" id="cf_${k}_taxa" value="${sg.taxa!=null?sg.taxa:''}" min="0" step="0.01" placeholder="${_matN(c.taxaMatricula)||'0,00'}" style="min-width:110px"></td>
+          <td><input type="number" id="cf_${k}_anual" value="${sg.anual!=null?sg.anual:''}" min="0" step="0.01" placeholder="${_matN(c.valorAnualCurso)||'0,00'}" style="min-width:110px"></td>
+          <td><input type="number" id="cf_${k}_material" value="${sg.material!=null?sg.material:''}" min="0" step="0.01" placeholder="${_matN(c.valorMaterial)||'0,00'}" style="min-width:100px"></td>
+        </tr>`; }).join('')}
+        </tbody></table></div>
+      <div class="row" style="margin-top:10px"><div class="field" style="max-width:220px"><label class="lbl">Hora-aula VIP (R$)</label><input type="number" id="cf_horaVip" value="${c.valorHoraVip!=null?c.valorHoraVip:''}" min="0" step="0.01" placeholder="0,00"></div></div>
+      <p class="hint" style="margin:4px 0 10px">Mensalidade sugerida = valor anual do segmento ÷ nº de parcelas. Campo vazio usa o valor geral antigo (se houver).</p>
       <div style="border-top:1px solid var(--linha);padding-top:10px"><b style="font-size:.92rem">Cobranças diversas</b>
         ${linhasDiv||'<p class="hint" style="margin:6px 0 0">Nenhuma. Ex.: taxa de prova, 2ª via de material, evento…</p>'}
         <div class="row" style="margin-top:8px;align-items:flex-end"><div class="field" style="flex:2;margin:0"><label class="lbl">Nome</label><input type="text" id="cf_divNome" placeholder="Ex: Taxa de prova Cambridge"></div>
@@ -301,9 +318,12 @@ VIEWS.configfin=()=>{
 };
 function salvarTabelaPrecos(){
   if(S.perfil!=='direcao') return toast('Sem permissão');
-  const g=id=>_matN((document.getElementById(id)||{}).value);
-  _cfgFinSet({ taxaMatricula:g('cf_taxa'), valorAnualCurso:g('cf_anual'), valorMaterial:g('cf_material'), valorHoraVip:g('cf_horaVip') });
-  toast('Tabela de preços salva ✓');
+  const g=id=>{ const e=document.getElementById(id); if(!e) return null; const v=(e.value||'').trim(); return v===''?null:_matN(v); };
+  const seg={};
+  SEGMENTOS_FIN.forEach(([k])=>{ const o={}; const t=g('cf_'+k+'_taxa'), a=g('cf_'+k+'_anual'), m=g('cf_'+k+'_material');
+    if(t!=null)o.taxa=t; if(a!=null)o.anual=a; if(m!=null)o.material=m; if(Object.keys(o).length)seg[k]=o; });
+  _cfgFinSet({ seg, valorHoraVip:g('cf_horaVip')||0 });
+  toast('Tabela de preços salva ✓ (por segmento)');
 }
 function salvarMultaJuros(){
   if(S.perfil!=='direcao') return toast('Sem permissão');
@@ -326,12 +346,14 @@ function delCobrancaDiversa(i){
 }
 // preenche o plano com a tabela: taxa + mensalidade = anual/parcelas
 function aplicarTabelaPrecos(id){
-  const c=_cfgFin();
-  if(!_matN(c.taxaMatricula)&&!_matN(c.valorAnualCurso)) return toast('Cadastre a tabela primeiro em ⚙️ Config. financeira');
+  const f=(S.financeiro||[]).find(x=>x.id===id);
+  const seg=_segDaMatricula(finMatricula(f));
+  const p=precosSegmento(seg);
+  if(!p.taxa && !p.anual) return toast(seg?('Cadastre os valores do segmento '+seg.toUpperCase()+' em ⚙️ Config. financeira'):'Vincule a matrícula a uma turma (para saber o segmento) ou cadastre a tabela');
   const par=parseInt((document.getElementById('fin_parcelas')||{}).value)||12;
-  const eT=document.getElementById('fin_valorMatricula'); if(eT) eT.value=_matN(c.taxaMatricula)||'';
-  const eM=document.getElementById('fin_valorMensalidade'); if(eM) eM.value=par>0?Math.round(_matN(c.valorAnualCurso)/par*100)/100:'';
-  _finResumo(); toast('Valores da tabela aplicados ('+par+'x)');
+  const eT=document.getElementById('fin_valorMatricula'); if(eT) eT.value=p.taxa||'';
+  const eM=document.getElementById('fin_valorMensalidade'); if(eM) eM.value=par>0?Math.round(p.anual/par*100)/100:'';
+  _finResumo(); toast('Tabela '+(seg?seg.toUpperCase():'geral')+' aplicada ('+par+'x)');
 }
 
 /* ---------- multa/juros sobre parcela atrasada ---------- */

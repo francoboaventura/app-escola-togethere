@@ -226,12 +226,13 @@ function converterOrcamento(id){
 function verOrcamento(id){
   const m=(S.matriculas||[]).find(x=>x.id===id); if(!m) return;
   const t=m.turmaId?(S.turmas||[]).find(x=>x.id===m.turmaId):null;
-  const cfg=(typeof _cfgFin==='function')?_cfgFin():{};
+  const segOrc=(t&&t.nivel)||'';
+  const pSeg=(typeof precosSegmento==='function')?precosSegmento(segOrc):{taxa:0,anual:0,material:0};
   const f=(S.financeiro||[]).find(x=>x.matriculaId===id);
-  const taxa=f?_matN(f.valorMatricula):_matN(cfg.taxaMatricula);
+  const taxa=f?_matN(f.valorMatricula):pSeg.taxa;
   const parcelas=f?(f.parcelas||12):12;
-  const mensal=f?(typeof finMensalLiquida==='function'?finMensalLiquida(f):0):(_matN(cfg.valorAnualCurso)/(parcelas||12));
-  const material=_matN(cfg.valorMaterial);
+  const mensal=f?(typeof finMensalLiquida==='function'?finMensalLiquida(f):0):(pSeg.anual/(parcelas||12));
+  const material=pSeg.material;
   const totalCurso=taxa+mensal*parcelas;
   const linha=(k,val)=>`<tr><td class="k">${k}</td><td>${val}</td></tr>`;
   const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Orçamento — ${esc(matNome(m))}</title><style>
@@ -255,7 +256,7 @@ td{border:1px solid #DCE4EC;padding:6px 9px}td.k{background:#F0F6FC;color:#002B6
   ${material>0?linha('Material didático',_moeda(material)):''}
   <tr class="tot"><td class="k">Total do curso (matrícula + ${parcelas}× mensalidade)</td><td>${_moeda(totalCurso)}${material>0?(' + material '+_moeda(material)):''}</td></tr>
 </table>
-<p class="validade">Proposta válida por 15 dias. Valores da tabela vigente${f?' (condições já personalizadas para este aluno)':''}.</p>
+<p class="validade">Proposta válida por 15 dias. Valores da tabela ${segOrc?('do segmento '+segOrc.toUpperCase()):'vigente'}${f?' (condições já personalizadas para este aluno)':''}.</p>
 <p class="foot">Documento de orçamento — não é contrato nem tem valor fiscal. Togethere · inglês para chegar lá.</p>
 </body></html>`;
   imprimirDoc(html);
@@ -266,9 +267,10 @@ function verContratoExemplo(id){
   const t=m.turmaId?(S.turmas||[]).find(x=>x.id===m.turmaId):null;
   const f=(S.financeiro||[]).find(x=>x.matriculaId===id);
   const cfg=(typeof _cfgFin==='function')?_cfgFin():{};
+  const pSegC=(typeof precosSegmento==='function')?precosSegmento((t&&t.nivel)||''):{taxa:0};
   const mensal=f?(typeof finMensalLiquida==='function'?finMensalLiquida(f):0):0;
   const parcelas=f?(f.parcelas||12):12;
-  const taxa=f?_matN(f.valorMatricula):_matN(cfg.taxaMatricula);
+  const taxa=f?_matN(f.valorMatricula):pSegC.taxa;
   const dado=(v,ph)=> v?esc(String(v)):`<span style="background:#FFF7DA;padding:0 4px">${ph}</span>`;
   const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Contrato — ${esc(matNome(m))}</title><style>
 @page{margin:16mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact;box-sizing:border-box}
