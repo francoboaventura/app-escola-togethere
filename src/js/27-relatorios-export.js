@@ -144,3 +144,37 @@ function gerarRelatorioMensal(turmaId, ym, modo){
   fechar();
   imprimirDoc(_wrapPrintRelMes('Relatório mensal — '+_nomeMes(ym), corpo));
 }
+
+// ===================== BUSCA GLOBAL (aluno / turma / VIP) =====================
+let _buscaGlobalQ='';
+VIEWS.busca=()=>{
+  const v=document.getElementById('view');
+  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">🔎 Buscar</h2></div>
+    <p class="sub">Ache um aluno, turma ou aluno VIP e vá direto pra ficha ou pro painel da turma.</p>
+    <div class="card"><input type="text" id="buscaGlobalInp" placeholder="Digite um nome…" value="${escAttr(_buscaGlobalQ)}" oninput="_buscaGlobal(this.value)" onkeydown="if(event.key==='Escape'){this.value='';_buscaGlobal('');}" autocomplete="off" autocapitalize="off"></div>
+    <div id="buscaGlobalRes"></div>`;
+  setTimeout(()=>{ const i=document.getElementById('buscaGlobalInp'); if(i){ const val=i.value; i.focus(); i.value=''; i.value=val; } }, 60);
+  _renderBuscaGlobal();
+};
+function _buscaGlobal(q){ _buscaGlobalQ=q; _renderBuscaGlobal(); }
+function _renderBuscaGlobal(){
+  const box=document.getElementById('buscaGlobalRes'); if(!box) return;
+  const q=_normTxt(_buscaGlobalQ||'').trim();
+  if(q.length<2){ box.innerHTML='<p class="hint" style="margin:12px 4px">Digite ao menos 2 letras para buscar.</p>'; return; }
+  const ts=(typeof turmasVisiveis==='function')?turmasVisiveis():(S.turmas||[]);
+  const MAX=25;
+  const turmas=ts.filter(t=>_normTxt(t.nome).includes(q) || _normTxt(t.professor||'').includes(q) || _normTxt((t.nivel||'')+' '+(t.cefr||'')).includes(q));
+  const alunos=[]; ts.forEach(t=>alunosDa(t.id).forEach(a=>{ if(_normTxt(a.nome).includes(q)) alunos.push({a,t}); }));
+  alunos.sort((x,y)=>x.a.nome.localeCompare(y.a.nome));
+  const gestor=(S.perfil==='direcao'||S.perfil==='secretaria');
+  const meuEns=(typeof _meuEnsina==='function')?_meuEnsina():'';
+  const vips=(S.vipAlunos||[]).filter(x=>!x.arquivado && (gestor || x.professor===meuEns) && _normTxt(x.nome).includes(q)).sort((a,b)=>a.nome.localeCompare(b.nome));
+  const total=turmas.length+alunos.length+vips.length;
+  if(!total){ box.innerHTML=`<div class="card empty"><div class="big">🔎</div>Nada encontrado para “${esc(_buscaGlobalQ)}”.</div>`; return; }
+  const cap=(arr,fn)=>arr.slice(0,MAX).map(fn).join('')+(arr.length>MAX?`<p class="hint" style="margin:4px 0 0">+${arr.length-MAX} resultado(s)… refine a busca.</p>`:'');
+  let h='';
+  if(alunos.length) h+=`<div class="card"><h3 style="margin:0 0 6px">🧑‍🎓 Alunos (${alunos.length})</h3>${cap(alunos,r=>`<div class="check"><span style="flex:1">${esc(r.a.nome)} <span class="pill">${esc(r.t.nome)}</span></span><button class="btn ghost sm" onclick="abrirFicha('${r.a.id}')">📇 Ficha</button><button class="btn ghost sm" onclick="abrirTurma('${r.t.id}')">🏫 Turma</button></div>`)}</div>`;
+  if(vips.length) h+=`<div class="card"><h3 style="margin:0 0 6px">👑 Alunos VIP (${vips.length})</h3>${cap(vips,v=>`<div class="check"><span style="flex:1">${esc(v.nome)}${v.professor?` <span class="pill">${esc(v.professor)}</span>`:''}</span><button class="btn ghost sm" onclick="abrirFicha('${v.id}')">📇 Ficha</button></div>`)}</div>`;
+  if(turmas.length) h+=`<div class="card"><h3 style="margin:0 0 6px">🏫 Turmas (${turmas.length})</h3>${cap(turmas,t=>`<div class="check"><span style="flex:1">${esc(t.nome)}${t.professor?` <span class="pill">${esc(t.professor)}</span>`:''}${t.arquivada?' <span class="pill" style="background:#eef0f4;color:#7a8798">arquivada</span>':''}</span><button class="btn ghost sm" onclick="abrirTurma('${t.id}')">🏫 Abrir</button></div>`)}</div>`;
+  box.innerHTML=h;
+}
