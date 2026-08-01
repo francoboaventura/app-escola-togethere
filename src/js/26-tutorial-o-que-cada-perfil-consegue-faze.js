@@ -12,6 +12,19 @@ A sua porta de entrada no app: um panorama do dia e caminho rápido para o que v
 - Veja avisos e aniversariantes do dia.
 - Use os atalhos para abrir a chamada, lançar notas ou abrir uma ficha.
 - Disponível para todos os perfis.` },
+  { id:'busca', em:'🔎', titulo:'Buscar', grp:'Início', roles:['professor','secretaria','direcao'],
+    resumo:'Busca global: encontre alunos, turmas e telas pelo nome.',
+    passos:`## Como usar
+- Digite parte do nome de um **aluno**, **turma** ou **tela** do app.
+- Toque no resultado para ir direto (ficha do aluno, turma, etc.).
+- Respeita o seu perfil: só aparece o que você pode ver.` },
+  { id:'aparencia', em:'🎨', titulo:'Aparência (tema e cores)', grp:'Início', roles:['professor','secretaria','direcao'],
+    resumo:'Modo escuro e 6 combinações de cores — cada usuário escolhe a sua.',
+    passos:`## Como usar
+- Abra o **menu da conta** (canto superior direito).
+- **🌙 Modo escuro:** alterna claro/escuro.
+- **🎨 Cor do app:** toque numa das bolinhas para trocar a cor principal (azul, marinho, vermelho, rosa, roxo ou verde — as cores da Togethere).
+- A escolha fica salva **no seu aparelho** e não muda para os colegas.` },
   { id:'presenca', em:'📋', titulo:'Chamada do dia', grp:'Sala de aula', roles:['professor','direcao'],
     resumo:'Fazer a chamada e registrar o que aconteceu com cada aluno.',
     passos:`## Como usar
@@ -69,7 +82,7 @@ O resumo automático da aula, em texto, pronto para as famílias.
     resumo:'Corrigir redações com o motor por nível e revisar a nota.',
     passos:`## Como usar
 - Escolha o **nível** (A1 a C1) e a tarefa.
-- Cole ou transcreva por foto a redação do aluno.
+- Cole o texto ou **transcreva por foto** — dá para **✂️ recortar a foto** antes, deixando só a área do texto (melhora muito a leitura).
 - O motor devolve as bandas e uma nota geral — sempre para **revisão do professor**.
 - Você pode **editar** o relatório e **imprimir**.
 ## Importante
@@ -96,9 +109,11 @@ Professor, secretaria e direção.` },
 - Escolha o aluno para ver os relatórios já gerados e enviados.
 - Útil para a secretaria acompanhar a comunicação com a família.` },
   { id:'relturma', em:'🏫', titulo:'Relatórios por turma', grp:'Acompanhamento', roles:['secretaria','direcao'],
-    resumo:'Relatórios organizados por turma.',
+    resumo:'Relatórios da turma + relatório mensal com estatísticas.',
     passos:`## Como usar
-- Escolha a turma para ver o histórico de relatórios daquela turma.` },
+- Escolha a turma para ver o histórico de relatórios daquela turma.
+- **Relatório mensal:** presença, temas e conteúdos do mês, pronto para **imprimir** ou baixar em **planilha (CSV)**.
+- Também dá para exportar as **horas VIP** do mês em planilha.` },
   { id:'aprovacoes', em:'✅', titulo:'Aprovar boletins', grp:'Acompanhamento', roles:['direcao'],
     resumo:'A direção aprova (ou reprova) os boletins antes de enviar.',
     passos:`## O que é
@@ -114,10 +129,18 @@ Apenas a direção aprova.` },
     passos:`## Como usar
 - Consulte relatórios antigos por aluno, turma ou data.` },
   { id:'vip', em:'👑', titulo:'Alunos VIP', grp:'Acompanhamento', roles:['professor','secretaria','direcao'],
-    resumo:'Marcar alunos que pedem atenção especial.',
-    passos:`## Como usar
-- Cadastre alunos VIP para acompanhamento próximo.
-- Disponível para todos os perfis.` },
+    resumo:'Aulas particulares: lançamentos, pacotes de horas, pausas e remanejamentos.',
+    passos:`## O que é
+Alunos de aulas particulares, fora das turmas regulares.
+## Professor
+- Lança as aulas dadas (data, duração, tema, presença/falta).
+## Secretaria e direção
+- Controlam o **pacote de horas** (contratadas × utilizadas) na ficha do aluno — o aluno **não** vê isso.
+- **⏸️ Pausa:** período sem alertas (férias/recesso do aluno).
+- **🔁 Remanejamento:** troca pontual de dia/horário de uma aula prevista.
+- Horas de **consolidação** (importadas de antes do app) aparecem separadas e **não contam** como aula lançada.
+## Alertas
+Aula prevista sem lançamento há mais de 24h gera **aviso** para a secretaria.` },
   { id:'apoio', em:'🤝', titulo:'Aula de apoio', grp:'Acompanhamento', roles:['professor','secretaria','direcao'],
     resumo:'Indicar e acompanhar alunos para reforço.',
     passos:`## Como usar
@@ -155,7 +178,61 @@ Apenas a direção aprova.` },
     resumo:'Criar turmas novas e mover alunos entre turmas.',
     passos:`## Como usar
 - Crie uma turma nova (trilha, nível, dias).
-- Troque alunos de turma quando necessário.` },
+- Troque alunos de turma quando necessário.
+## Nome automático
+O nome segue o padrão **CEFR + segmento + dias + hora** (ex.: *A2+ JUNIOR SEG/QUA 18h*) e é montado sozinho pelo app.` },
+  { id:'gestaoturmas', em:'🔁', titulo:'Status e sequência de turmas', grp:'Gestão', roles:['direcao'],
+    resumo:'Status da turma (em formação, vigente, encerrada) e criação de sequências.',
+    passos:`## Status
+Cada turma tem um status: **EM FORMAÇÃO** (montando), **VIGENTE** (rodando) e **ENCERRADA** (arquivada).
+## Sequência
+- Na lista de turmas, use **🔁 Sequência** para criar a continuação de uma turma existente.
+- A sequência **herda** dias, horário e professor, e o app **sugere o próximo nível** do CEFR (ex.: A2 → A2+).
+- A turma nova nasce **em formação** com o nome já no padrão.` },
+  { id:'estoque', em:'📚', titulo:'Livros', grp:'Gestão', roles:['secretaria','direcao'],
+    resumo:'Compra sob demanda: pedir → chegou na escola → entregar ao aluno.',
+    passos:`## O que é
+A escola compra os livros conforme as matrículas — sem estoque parado. Cada livro segue o fluxo **🛒 pedido → 📦 recebido → ✅ entregue**.
+## Como usar
+- **A pedir:** o app lista sozinho quem precisa de livro (turmas com coleção + VIPs com material) — "pedir" um a um ou **pedir todos** da turma.
+- Quando o livro chega: **📦 chegou**. Quando vai para a mão do aluno: **✅ entregar**.
+- **Pedido avulso** para reposições; **planilha (CSV)** com tudo.
+- Na **ficha do aluno**, o card 📚 mostra o estágio e a próxima ação.
+## Cobrança
+Ao entregar para aluno de turma, a **direção** pode lançar o material no financeiro pela tabela do segmento (não duplica). Entrega para VIP não cobra.` },
+  { id:'matriculas', em:'📝', titulo:'Matrículas', grp:'Gestão', roles:['direcao'],
+    resumo:'Orçamentos, matrículas e contrato — o cadastro comercial.',
+    passos:`## Só direção
+## Como usar
+- **Orçamento:** monte a proposta (aluno, turma, valores da tabela) e **exporte em PDF** — os orçamentos ficam num atalho próprio para apoiar a venda.
+- **Converter** o orçamento em matrícula quando fechar (cria o aluno e o plano financeiro).
+- Status da matrícula: orçamento, **ativa**, trancada, concluída, cancelada.
+- **Contrato:** por enquanto um modelo de exemplo que já puxa os dados do aluno/turma/valores (o texto oficial entra depois).` },
+  { id:'financeiro', em:'💰', titulo:'Financeiro', grp:'Gestão', roles:['direcao'],
+    resumo:'Carnê de parcelas, descontos, negociação, extras e recebimentos.',
+    passos:`## Só direção
+## Como usar
+- Cada matrícula tem um **plano**: mensalidade, nº de parcelas, vencimento e descontos (em **%** e em **R$**).
+- **Carnê:** receba parcelas manualmente (registra a forma de pagamento); **boleto** e **cartão** por enquanto são **simulação** (as integrações vêm depois).
+- **Negociação de valores:** troca o valor da mensalidade e **exige a senha da direção**.
+- **Cobranças extras** (ex.: material didático) somam nos totais e no PDF.
+- Atraso aplica **multa e juros** conforme a Config. financeira.` },
+  { id:'configfin', em:'⚙️', titulo:'Config. financeira', grp:'Gestão', roles:['direcao'],
+    resumo:'Tabela de preços por segmento, hora VIP, cobranças diversas, multa e juros.',
+    passos:`## Só direção
+## O que se define aqui
+- **Preços por segmento** (Kids, Junior, Teens, Adults, Talking): taxa de matrícula, valor anual do curso e material.
+- **Valor da hora-aula VIP.**
+- **Cobranças diversas** (itens avulsos com nome e valor).
+- **Multa e juros por atraso** — usados no cálculo das parcelas vencidas.` },
+  { id:'permissoes', em:'🔐', titulo:'Permissões', grp:'Gestão', roles:['direcao'],
+    resumo:'Ligar/desligar o que a secretaria e os professores podem fazer.',
+    passos:`## Só direção
+## Como usar
+- Cada chave liga/desliga uma ação de um perfil — ex.: secretaria **cadastrar turmas/alunos**, mexer nas **horas VIP**, **pausar VIP**, gerenciar **livros**; professor **excluir plano**, **lançar aula VIP**, **editar chamada salva**…
+- Desligou, o botão some ou a ação é bloqueada na hora, e o item pode sumir do menu do perfil.
+- **Restaurar padrão** volta tudo ao comportamento original.
+- A direção **sempre** pode tudo.` },
   { id:'acessos', em:'🔑', titulo:'Acessos', grp:'Gestão', roles:['direcao'],
     resumo:'Senhas da equipe, logins do portal, cards, assinatura e backup.',
     passos:`## Só direção
