@@ -35,10 +35,40 @@ function finAtrasadoV(f){ const pg=f.pagos||{}; return finParcelas(f).reduce((s,
 function _finAtiva(f){ return finStatusMat(f)==='ativa'; }
 function _finScope(){ return (S.financeiro||[]).filter(f=>{ const st=finStatusMat(f); return st==='ativa'||st==='trancada'||st==='concluida'; }); }
 function finReceitaMensal(){ return (S.financeiro||[]).filter(_finAtiva).reduce((s,f)=>s+finMensalLiquida(f),0); }
-function finTotalRecebido(){ return _finScope().reduce((s,f)=>s+finRecebido(f),0); }
-function finTotalAberto(){ return _finScope().reduce((s,f)=>s+finAberto(f),0); }
+function finTotalRecebido(){ return _finScope().reduce((s,f)=>s+finRecebido(f)+finExtrasRecebido(f),0); }
+function finTotalAberto(){ return _finScope().reduce((s,f)=>s+finAberto(f)+finExtrasAberto(f),0); }
 function finTotalAtrasado(){ return _finScope().reduce((s,f)=>s+finAtrasadoV(f),0); }
 function finInadimplentes(){ return _finScope().filter(f=>finAtrasadoV(f)>0).length; }
+/* --- cobranças extras (ex.: material didático), ligadas ao plano --- */
+function finExtras(f){ return (f&&f.extras)||[]; }
+function finExtrasAberto(f){ return finExtras(f).filter(e=>!e.pago).reduce((s,e)=>s+_matN(e.valor),0); }
+function finExtrasRecebido(f){ return finExtras(f).filter(e=>e.pago).reduce((s,e)=>s+_matN(e.valor),0); }
+function addExtraFinanceiro(finId, nome, valor, origem){
+  const f=(S.financeiro||[]).find(x=>x.id===finId); if(!f) return null;
+  f.extras=f.extras||[];
+  const e={id:uid(), nome:nome||'Cobrança extra', valor:_matN(valor), em:hoje(), origem:origem||'manual', pago:null};
+  f.extras.push(e); f.atualizadoEm=Date.now(); save(); return e;
+}
+function togglePagoExtra(finId, extraId){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const f=(S.financeiro||[]).find(x=>x.id===finId); if(!f) return;
+  const e=(f.extras||[]).find(x=>x.id===extraId); if(!e) return;
+  e.pago=e.pago?null:{em:hoje(), forma:f.formaPagamento||''};
+  f.atualizadoEm=Date.now(); save(); abrirFinanceiro(finId);
+}
+function removerExtra(finId, extraId){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const f=(S.financeiro||[]).find(x=>x.id===finId); if(!f) return;
+  if(!confirm('Remover esta cobrança extra?')) return;
+  f.extras=(f.extras||[]).filter(x=>x.id!==extraId); f.atualizadoEm=Date.now(); save(); abrirFinanceiro(finId);
+}
+function abrirExtraManual(finId){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const nome=prompt('Nome da cobrança (ex.: Material didático, Taxa de prova):'); if(nome==null||!nome.trim()) return;
+  const v=prompt('Valor (R$):'); if(v==null) return;
+  const val=_matN(v); if(!val) return toast('Valor inválido');
+  addExtraFinanceiro(finId, nome.trim(), val, 'manual'); toast('Cobrança adicionada'); abrirFinanceiro(finId);
+}
 
 /* -------------------- VIEW -------------------- */
 let _finBusca='';
@@ -99,7 +129,7 @@ function _finLinha(f){
       <span class="pill" style="background:${chipMat.bg};color:${chipMat.cor}">${chipMat.lbl}</span>
       ${atras>0?`<span class="pill" style="background:#fdeaea;color:var(--vermelho)">em atraso ${_moeda(atras)}</span>`:''}
     </div>
-    <span class="hint">${t?('🏫 '+esc(t)+' · '):''}mensalidade ${_moeda(finMensalLiquida(f))}${_matN(f.descontoPct)>0?(' (−'+_matN(f.descontoPct)+'%)'):''} · recebido ${_moeda(finRecebido(f))} / total ${_moeda(finTotalCurso(f))}</span>
+    <span class="hint">${t?('🏫 '+esc(t)+' · '):''}mensalidade ${_moeda(finMensalLiquida(f))}${_matN(f.descontoPct)>0?(' (−'+_matN(f.descontoPct)+'%)'):''} · recebido ${_moeda(finRecebido(f)+finExtrasRecebido(f))} / total ${_moeda(finTotalCurso(f)+finExtras(f).reduce((x,e)=>x+_matN(e.valor),0))}${finExtrasAberto(f)>0?` · extras em aberto ${_moeda(finExtrasAberto(f))}`:''}</span>
     <div style="height:6px;background:#eef1f6;border-radius:4px;overflow:hidden;margin-top:5px"><div style="height:100%;width:${finTotalCurso(f)>0?Math.min(100,Math.round(finRecebido(f)/finTotalCurso(f)*100)):0}%;background:${barCor}"></div></div>
   </div>`;
 }
@@ -143,6 +173,13 @@ function abrirFinanceiro(id){
       <button class="btn ghost sm" style="margin-bottom:14px" onclick="aplicarTabelaPrecos('${id}')" title="Preenche com a tabela de preços">📋 Usar tabela</button>
       <div class="field"><label class="lbl">Início da cobrança</label><input type="date" id="fin_dataInicio" value="${escAttr(f.dataInicio||hoje())}" onchange="_finResumo()"></div></div>
     <div class="gen-box" id="fin_resumoBox" style="margin-bottom:12px">—</div>
+    <div class="card" style="background:#f4f7fb;padding:10px 12px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:8px"><b style="flex:1;font-size:.92rem">🧾 Cobranças extras (material, taxas…)</b><button class="btn ghost sm" onclick="abrirExtraManual('${id}')">+ extra</button></div>
+      ${finExtras(f).length?finExtras(f).map(e=>`<div class="check"><span style="flex:1">${esc(e.nome)} · <b>${_moeda(e.valor)}</b><span class="hint"> · ${brDate(e.em)}${e.pago?(' · pago '+brDate(e.pago.em)):''}</span></span>
+        <span class="pill" style="background:${e.pago?'#eafaf0':'#fff1e6'};color:${e.pago?'#0A7A3D':'#c2560b'}">${e.pago?'pago':'em aberto'}</span>
+        <button class="btn ghost sm" onclick="togglePagoExtra('${id}','${e.id}')">${e.pago?'desfazer':'✓ receber'}</button>
+        <button class="btn ghost sm" style="color:var(--vermelho)" onclick="removerExtra('${id}','${e.id}')">×</button></div>`).join(''):'<p class="hint" style="margin:6px 0 0">Nenhuma. A entrega de livro no Estoque pode lançar o material aqui automaticamente.</p>'}
+    </div>
     <div class="field"><label class="lbl">Observações</label><textarea id="fin_obs" style="min-height:56px" placeholder="Combinados de pagamento…">${escAttr(f.observacoes||'')}</textarea></div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn" onclick="salvarFinanceiro('${id}')">💾 Salvar</button>
@@ -238,6 +275,7 @@ td{border:1px solid #DCE4EC;padding:5px 8px}td.k{background:#F0F6FC;color:#002B6
   <tr class="tot"><td class="k">Total do curso</td><td>${_moeda(finTotalCurso(f))}</td></tr>
 </table>
 ${parc.length?`<h2>Carnê de vencimentos</h2><p style="font-size:12px;color:#5a6b86;margin:0 0 4px">Recebido: <b>${_moeda(finRecebido(f))}</b> · A receber: <b>${_moeda(finAberto(f))}</b>${finAtrasadoV(f)>0?` · Em atraso: <b style="color:#E52524">${_moeda(finAtrasadoV(f))}</b>`:''}</p><table><tr><td class="k c">Parcela</td><td class="k">Vencimento</td><td class="k c">Valor</td><td class="k c">Situação</td></tr>${linhaParc}</table>`:''}
+${finExtras(f).length?`<h2>Cobranças extras</h2><table>${finExtras(f).map(e=>`<tr><td>${esc(e.nome)} (${brDate(e.em)})</td><td class="c">${_moeda(e.valor)}</td><td class="c">${e.pago?('pago '+brDate(e.pago.em)):'em aberto'}</td></tr>`).join('')}</table>`:''}
 ${f.observacoes?`<h2>Observações</h2><p style="font-size:12.5px">${esc(f.observacoes)}</p>`:''}
 <p class="foot">Documento de estudo do módulo financeiro — sem valor fiscal. Togethere · inglês para chegar lá.</p>
 </body></html>`;

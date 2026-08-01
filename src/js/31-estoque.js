@@ -138,10 +138,12 @@ function abrirEntregaLivro(pre){
   if(vips.length) opts+='<optgroup label="👑 Alunos VIP">'+vips.map(x=>`<option value="v:${x.id}">${esc(x.nome)}</option>`).join('')+'</optgroup>';
   const tOpts=titulosEstoque().map(t=>`<option ${pre.titulo===t?'selected':''}>${esc(t)}</option>`).join('');
   modal(`<h3>📦 Registrar entrega de livro <button class="close" onclick="fechar()">×</button></h3>
-    <div class="field"><label class="lbl">Aluno</label><select id="el_aluno" onchange="_elSugereTitulo()">${opts}</select></div>
+    <div class="field"><label class="lbl">Aluno</label><select id="el_aluno" onchange="_elSugereTitulo();_elAtualizaCobranca()">${opts}</select></div>
     <div class="field"><label class="lbl">Livro</label><select id="el_titulo">${tOpts}</select></div>
+    <div id="el_cobrarWrap" style="display:none"></div>
     <div class="field"><label class="lbl">Observação (opcional)</label><input type="text" id="el_obs" placeholder="Ex: pago junto da matrícula"></div>
     <button class="btn block" onclick="salvarEntregaLivro()">✓ Entregar (baixa 1 do estoque)</button>`);
+  setTimeout(_elAtualizaCobranca,40);
 }
 function _elSugereTitulo(){
   const val=(document.getElementById('el_aluno')||{}).value||''; const sel=document.getElementById('el_titulo'); if(!sel||!val) return;
@@ -158,6 +160,7 @@ function salvarEntregaLivro(){
   if(alunoRecebeu(alunoId,titulo) && !confirm('Este aluno já tem uma entrega deste livro registrada. Registrar outra?')) return;
   const s=saldoLivro(titulo);
   if(s<=0 && !confirm('O estoque de "'+titulo+'" está em '+s+'. Registrar a entrega mesmo assim (saldo ficará negativo)?')) return;
+  if(!vip) _cobrarMaterialSePedido(alunoId, titulo);
   _estPush({tipo:'entrega', titulo, qtd:-1, alunoId, vip, obs:((document.getElementById('el_obs')||{}).value||'').trim()});
   fechar(); VIEWS.estoque(); toast('Entrega registrada ✓');
 }
@@ -167,7 +170,12 @@ function entregarRapido(alunoId,titulo){
   const s=saldoLivro(titulo);
   if(!confirm('Entregar "'+titulo+'" para '+(a?a.nome:'o aluno')+'?'+(s<=0?('\n\nAtenção: saldo atual é '+s+' (vai ficar negativo).'):''))) return;
   _estPush({tipo:'entrega', titulo, qtd:-1, alunoId, vip:false});
-  VIEWS.estoque(); toast('Entrega registrada ✓');
+  const f=_finDoAluno(alunoId); const preco=_precoMaterialDoAluno(alunoId);
+  if(f && preco>0 && S.perfil==='direcao' && confirm('Cobrar o material ('+_moeda(preco)+') no financeiro de '+(a?a.nome:'o aluno')+'?')){
+    addExtraFinanceiro(f.id,'Material — '+titulo,preco,'estoque'); toast('Material lançado no financeiro');
+  }
+  if(rota==='ficha'&&VIEWS.ficha) VIEWS.ficha(); else VIEWS.estoque();
+  toast('Entrega registrada ✓');
 }
 function desfazerMovEstoque(id){
   const m=_movs().find(x=>x.id===id); if(!m) return;
@@ -188,4 +196,65 @@ function exportarEstoqueCSV(){
     rows.push(_csvLinha([brDate(m.em), nome, m.titulo, m.tipo, m.qtd, m.por||'', m.obs||''])); });
   _dlArquivo('estoque-livros-'+hoje()+'.csv', rows.join('\n'));
   toast('Planilha do estoque baixada');
+}
+
+/* ---------- integrações (b142): ficha do aluno + cobrança do material ---------- */
+// financeiro ligado a um aluno de turma (via matrícula não-cancelada)
+function _finDoAluno(alunoId){
+  const m=(S.matriculas||[]).find(x=>x.alunoId===alunoId && x.status!=='cancelada');
+  if(!m) return null;
+  return (S.financeiro||[]).find(f=>f.matriculaId===m.id)||null;
+}
+function _precoMaterialDoAluno(alunoId){
+  const a=(S.alunos||[]).find(x=>x.id===alunoId); if(!a) return 0;
+  const t=(S.turmas||[]).find(x=>x.id===a.turmaId);
+  if(!t||typeof precosSegmento!=='function') return 0;
+  return precosSegmento(t.nivel||'').material||0;
+}
+// card "Livros" para a ficha (aluno de turma e VIP)
+function _cardLivrosAluno(pid, ehVip){
+  const ents=entregasDoAluno(pid).sort((a,b)=>(b.em||'').localeCompare(a.em||''));
+  let pendente='';
+  if(!ehVip){
+    const a=(S.alunos||[]).find(x=>x.id===pid); const t=a&&(S.turmas||[]).find(x=>x.id===a.turmaId);
+    const col=(t&&typeof planColecaoDe==='function')?planColecaoDe(t):null;
+    if(col && !alunoRecebeu(pid,col)) pendente=`<p class="hint" style="margin:6px 0 0;color:#c2560b">⚠️ Ainda não recebeu <b>${esc(col)}</b> (coleção da turma).${_estPode()?` <button class="btn ghost sm" onclick="entregarRapido('${pid}','${escAttr(col)}')">✓ entregar agora</button>`:''}</p>`;
+  } else {
+    const vv=(S.vipAlunos||[]).find(x=>x.id===pid);
+    if(vv&&vv.material&&!alunoRecebeu(pid,vv.material)) pendente=`<p class="hint" style="margin:6px 0 0;color:#c2560b">⚠️ Ainda não recebeu <b>${esc(vv.material)}</b> (material em uso).${_estPode()?` <button class="btn ghost sm" onclick="entregarLivroVipRapido('${pid}','${escAttr(vv.material)}')">✓ entregar agora</button>`:''}</p>`;
+  }
+  if(!ents.length && !pendente) return '';
+  return `<div class="card" style="margin-top:12px"><h3 style="margin:0 0 6px;font-size:1rem">📚 Livros</h3>
+    ${ents.length?ents.map(m=>`<p class="hint" style="margin:2px 0 0">✅ <b>${esc(m.titulo)}</b> — entregue em ${brDate(m.em)}${m.por?(' por '+esc(m.por)):''}</p>`).join(''):'<p class="hint" style="margin:0">Nenhum livro entregue ainda.</p>'}
+    ${pendente}
+  </div>`;
+}
+function entregarLivroVipRapido(vid,titulo){
+  if(!_estPode()) return toast('Sem permissão');
+  const vv=(S.vipAlunos||[]).find(x=>x.id===vid);
+  const sAtual=saldoLivro(titulo);
+  if(!confirm('Entregar "'+titulo+'" para '+(vv?vv.nome:'o aluno VIP')+'?'+(sAtual<=0?('\n\nAtenção: saldo atual é '+sAtual+'.'):''))) return;
+  _estPush({tipo:'entrega', titulo, qtd:-1, alunoId:vid, vip:true});
+  if(typeof VIEWS!=='undefined'&&rota==='ficha'&&VIEWS.ficha) VIEWS.ficha(); toast('Entrega registrada ✓');
+}
+// cobrança do material ao entregar (aluno de turma com financeiro ligado)
+function _cobrarMaterialSePedido(alunoId, titulo){
+  const chk=document.getElementById('el_cobrar');
+  if(!chk||!chk.checked) return;
+  const f=_finDoAluno(alunoId); if(!f) return;
+  const preco=_precoMaterialDoAluno(alunoId); if(!(preco>0)) return;
+  addExtraFinanceiro(f.id, 'Material — '+titulo, preco, 'estoque');
+  toast('Material lançado no financeiro ('+_moeda(preco)+')');
+}
+function _elAtualizaCobranca(){
+  const box=document.getElementById('el_cobrarWrap'); if(!box) return;
+  const val=(document.getElementById('el_aluno')||{}).value||'';
+  box.style.display='none'; box.innerHTML='';
+  if(!val.startsWith('a:')) return;
+  const alunoId=val.slice(2);
+  const f=_finDoAluno(alunoId); const preco=_precoMaterialDoAluno(alunoId);
+  if(f && preco>0){
+    box.style.display='block';
+    box.innerHTML='<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:2px 0 6px"><input type="checkbox" id="el_cobrar" checked> 💰 Cobrar o material no financeiro do aluno ('+_moeda(preco)+' — tabela do segmento)</label>';
+  }
 }

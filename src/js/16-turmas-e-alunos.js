@@ -471,6 +471,7 @@ function renderFichaVip(v, vip){
   ${_cardMaterialVip(vip)}
   ${_cardHorariosVip(vip)}
   ${VIP_PORTAL_ATIVO?_cardAcessoPortal(vip.id):''}
+  ${(typeof _cardLivrosAluno==='function')?_cardLivrosAluno(vip.id,true):''}
   ${_cardContratos(vip.id)}
   <div class="card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
     <span class="hint" style="flex:1">Período: <b>${periodoTxt}</b></span>
@@ -706,6 +707,7 @@ VIEWS.ficha=()=>{
     </div>
   </div>
   ${_cardAcessoPortal(a.id)}
+  ${(typeof _cardLivrosAluno==='function')?_cardLivrosAluno(a.id,false):''}
   ${_cardContratos(a.id)}
   <div class="fx-tabs">${ABAS.map(x=>`<button class="fx-tab${x.id===_fichaAba?' on':''}" onclick="fichaAba('${x.id}')">${x.label}${x.n!=null?` <span class="n">${x.n}</span>`:''}</button>`).join('')}</div>
   <div>${pane}</div>
