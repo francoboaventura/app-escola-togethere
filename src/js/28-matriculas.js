@@ -7,7 +7,7 @@
    ===================================================================== */
 
 const MAT_STATUS={
-  rascunho:{lbl:'Rascunho',   bg:'#eef0f4', cor:'#5a6b86'},
+  orcamento:{lbl:'Orçamento', bg:'#f4ecff', cor:'#9333c7'},
   ativa:   {lbl:'Ativa',      bg:'#eafaf0', cor:'#0A7A3D'},
   trancada:{lbl:'Trancada',   bg:'#fff1e6', cor:'#c2560b'},
   concluida:{lbl:'Concluída', bg:'#eaf3ff', cor:'#005EAF'},
@@ -41,11 +41,12 @@ VIEWS.matriculas=()=>{
       <div class="fx-tiles">
         ${tile(ativas.length,'Matrículas ativas','#0A7A3D')}
         ${tile(todas.length,'Total de cadastros','var(--tinta)')}
-        ${tile(noMes,'Novas neste mês','#005EAF')}
+        ${tile(todas.filter(x=>x.status==='orcamento').length,'Orçamentos abertos','#9333c7')}
         ${tile(semFin,'Ativas sem financeiro',semFin>0?'#c2560b':'var(--tinta)')}
       </div>
       <p class="hint" style="margin:10px 0 0">Para lançar valores e acompanhar o pagamento, abra a matrícula e toque em <b>💰 Financeiro</b> — ou vá no módulo Financeiro.</p>
     </div>
+    ${_cardOrcamentos()}
     <div class="card">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
         <button class="btn" onclick="abrirMatricula()">+ Nova matrícula</button>
@@ -53,7 +54,7 @@ VIEWS.matriculas=()=>{
         <input type="text" placeholder="Buscar por aluno ou responsável…" value="${escAttr(_matBusca)}" oninput="_matBuscaInput(this.value)" style="flex:1;min-width:180px">
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
-        ${chip('','Todas')}${chip('rascunho','Rascunho')}${chip('ativa','Ativas')}${chip('trancada','Trancadas')}${chip('concluida','Concluídas')}${chip('cancelada','Canceladas')}
+        ${chip('','Todas')}${chip('orcamento','Orçamentos')}${chip('ativa','Ativas')}${chip('trancada','Trancadas')}${chip('concluida','Concluídas')}${chip('cancelada','Canceladas')}
       </div>
       <div id="matListaBox"></div>
     </div>`;
@@ -71,7 +72,7 @@ function _matRenderLista(){
 function _matSetFiltro(id){ _matFiltro=id; VIEWS.matriculas(); }
 function _matBuscaInput(q){ _matBusca=q; clearTimeout(window._matBuscaTO); window._matBuscaTO=setTimeout(_matRenderLista,180); }
 function _matLinha(m){
-  const st=MAT_STATUS[m.status]||MAT_STATUS.rascunho;
+  const st=MAT_STATUS[m.status]||MAT_STATUS.orcamento;
   const t=m.turmaId?turmaNome(m.turmaId):'';
   const vinc=m.alunoId?'🔗 vinculado':'';
   const temFin=matTemFinanceiro(m);
@@ -94,7 +95,7 @@ function abrirMatricula(id){
   const optT=`<option value="">— turma —</option>`+ts.map(t=>`<option value="${t.id}" ${m.turmaId===t.id?'selected':''}>${esc(t.nome)}</option>`).join('');
   const optA=`<option value="">— novo aluno (digitar nome) —</option>`+alunos.map(a=>`<option value="${a.id}" ${m.alunoId===a.id?'selected':''}>${esc(a.nome)}${a.turmaId?(' · '+esc(turmaNome(a.turmaId))):''}</option>`).join('');
   const optP=MAT_PARENTESCO.map(p=>`<option ${m.respParentesco===p?'selected':''}>${p}</option>`).join('');
-  const optS=Object.keys(MAT_STATUS).map(k=>`<option value="${k}" ${((m.status||'rascunho')===k)?'selected':''}>${MAT_STATUS[k].lbl}</option>`).join('');
+  const optS=Object.keys(MAT_STATUS).map(k=>`<option value="${k}" ${((m.status||'orcamento')===k)?'selected':''}>${MAT_STATUS[k].lbl}</option>`).join('');
   modal(`<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><h3 style="flex:1;margin:0">${id?'✏️ Editar matrícula':'📝 Nova matrícula'}</h3><button class="close" onclick="fechar()">×</button></div>
     <div class="field" style="margin-bottom:8px"><label class="lbl">Status</label><select id="mat_status">${optS}</select></div>
 
@@ -122,6 +123,8 @@ function abrirMatricula(id){
       <button class="btn" onclick="salvarMatricula('${id||''}')">💾 Salvar</button>
       ${id?`<button class="btn ghost" onclick="abrirFinanceiroDaMatricula('${id}')">💰 Financeiro</button>`:''}
       ${id?`<button class="btn ghost" onclick="verMatricula('${id}')">🖨️ Ficha / PDF</button>`:''}
+      ${id&&m.status==='orcamento'?`<button class="btn ghost" style="color:#9333c7" onclick="verOrcamento('${id}')">🧾 Orçamento / PDF</button>`:''}
+      ${id?`<button class="btn ghost" onclick="verContratoExemplo('${id}')">📄 Contrato (modelo)</button>`:''}
       ${id?`<button class="btn ghost" style="color:var(--vermelho)" onclick="excluirMatricula('${id}')">🗑 Excluir</button>`:''}
       <button class="btn ghost" onclick="fechar()">Cancelar</button>
     </div>`);
@@ -129,7 +132,7 @@ function abrirMatricula(id){
 function _matAlunoSel(){ const sel=document.getElementById('mat_alunoId'); const w=document.getElementById('mat_nomeWrap'); if(w) w.style.display=(sel&&sel.value)?'none':'block'; }
 function _matLerForm(){
   const g=id=>{ const e=document.getElementById(id); return e?e.value:''; };
-  return { status:g('mat_status')||'rascunho', alunoId:g('mat_alunoId'), alunoNome:g('mat_alunoNome').trim(), nascimento:g('mat_nascimento'), docAluno:g('mat_docAluno').trim(),
+  return { status:g('mat_status')||'orcamento', alunoId:g('mat_alunoId'), alunoNome:g('mat_alunoNome').trim(), nascimento:g('mat_nascimento'), docAluno:g('mat_docAluno').trim(),
     respNome:g('mat_respNome').trim(), respParentesco:g('mat_respParentesco'), telefone:g('mat_telefone').trim(), email:g('mat_email').trim(), respDoc:g('mat_respDoc').trim(),
     turmaId:g('mat_turmaId'), dataInicio:g('mat_dataInicio'), observacoes:g('mat_obs').trim() };
 }
@@ -165,7 +168,7 @@ function matCriarAlunoEVincular(id){
 /* -------------------- FICHA (PDF) — só cadastro -------------------- */
 function verMatricula(id){
   const m=(S.matriculas||[]).find(x=>x.id===id); if(!m) return;
-  const st=MAT_STATUS[m.status]||MAT_STATUS.rascunho;
+  const st=MAT_STATUS[m.status]||MAT_STATUS.orcamento;
   const t=m.turmaId?(S.turmas||[]).find(x=>x.id===m.turmaId):null;
   const linha=(k,val)=> val?`<tr><td class="k">${k}</td><td>${esc(String(val))}</td></tr>`:'';
   const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Matrícula — ${esc(matNome(m))}</title><style>
@@ -197,4 +200,100 @@ function exportarMatriculasCSV(){
   lista.forEach(m=>{ rows.push(_csvLinha([matNome(m),(MAT_STATUS[m.status]||{}).lbl||m.status, m.turmaId?turmaNome(m.turmaId):'', m.respNome||'', m.respParentesco||'', m.telefone||'', m.email||'', m.dataInicio?brDate(m.dataInicio):'', m.alunoId?'sim':'não', matTemFinanceiro(m)?'sim':'não'])); });
   _dlArquivo('matriculas-'+hoje()+'.csv', rows.join('\n'));
   toast('Planilha de matrículas baixada ('+lista.length+')');
+}
+
+/* -------------------- ORÇAMENTOS (atalho de venda) -------------------- */
+function _cardOrcamentos(){
+  const orcs=(S.matriculas||[]).filter(m=>m.status==='orcamento').sort((a,b)=>(b.criadoEm||'').localeCompare(a.criadoEm||''));
+  if(!orcs.length) return '';
+  const linhas=orcs.map(m=>{ const t=m.turmaId?turmaNome(m.turmaId):'';
+    return `<div class="check"><span style="flex:1;cursor:pointer" onclick="abrirMatricula('${m.id}')"><b>${esc(matNome(m))}</b>${t?(' <span class="pill">'+esc(t)+'</span>'):''}${m.respNome?(' · '+esc(m.respNome)):''}</span>
+      <button class="btn ghost sm" onclick="verOrcamento('${m.id}')">🧾 PDF</button>
+      <button class="btn sm" style="background:#0A7A3D" onclick="converterOrcamento('${m.id}')">✓ Fechar venda</button>
+    </div>`; }).join('');
+  return `<div class="card" style="border-left:4px solid #9333c7">
+    <h3 style="margin:0 0 2px">🧾 Orçamentos em aberto (${orcs.length}) <span class="hint" style="font-weight:400">— atalho de venda</span></h3>
+    <p class="hint" style="margin:0 0 4px">Gere o PDF pra apresentar à família; fechou, converta em matrícula ativa.</p>
+    ${linhas}</div>`;
+}
+function converterOrcamento(id){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const m=(S.matriculas||[]).find(x=>x.id===id); if(!m) return;
+  if(!confirm('Fechar a venda e tornar esta matrícula ATIVA?')) return;
+  m.status='ativa'; m.atualizadoEm=Date.now(); save(); VIEWS.matriculas(); toast('Venda fechada — matrícula ativa 🎉');
+}
+// PDF do orçamento: proposta comercial puxando tabela de preços + financeiro (se houver)
+function verOrcamento(id){
+  const m=(S.matriculas||[]).find(x=>x.id===id); if(!m) return;
+  const t=m.turmaId?(S.turmas||[]).find(x=>x.id===m.turmaId):null;
+  const cfg=(typeof _cfgFin==='function')?_cfgFin():{};
+  const f=(S.financeiro||[]).find(x=>x.matriculaId===id);
+  const taxa=f?_matN(f.valorMatricula):_matN(cfg.taxaMatricula);
+  const parcelas=f?(f.parcelas||12):12;
+  const mensal=f?(typeof finMensalLiquida==='function'?finMensalLiquida(f):0):(_matN(cfg.valorAnualCurso)/(parcelas||12));
+  const material=_matN(cfg.valorMaterial);
+  const totalCurso=taxa+mensal*parcelas;
+  const linha=(k,val)=>`<tr><td class="k">${k}</td><td>${val}</td></tr>`;
+  const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Orçamento — ${esc(matNome(m))}</title><style>
+@page{margin:14mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact;box-sizing:border-box}
+body{font-family:'Urbanist',system-ui,Arial,sans-serif;color:#15233b;padding:6px}
+.top{display:flex;align-items:baseline;gap:10px;border-bottom:3px solid #FFC800;padding-bottom:6px;margin-bottom:12px}
+h1{font-family:'Zilla Slab',Georgia,serif;color:#005EAF;font-size:20px;margin:0}.per{margin-left:auto;color:#5a6b86;font-size:12px}
+h2{font-family:'Zilla Slab',Georgia,serif;font-size:14px;color:#002B64;margin:14px 0 5px}
+table{width:100%;border-collapse:collapse;font-size:12.5px;margin-bottom:4px}
+td{border:1px solid #DCE4EC;padding:6px 9px}td.k{background:#F0F6FC;color:#002B64;font-weight:700;width:44%}
+.tot{font-weight:700;background:#f4ecff}.validade{margin-top:10px;font-size:12px;color:#5a6b86}
+.foot{margin-top:14px;color:#8a97a8;font-size:10.5px;border-top:1px solid #DCE4EC;padding-top:6px}
+</style></head><body>
+<div class="top"><h1>Togethere</h1><div style="font-weight:700">Orçamento</div><div class="per">${brDate(hoje())} · por ${esc(S.usuario||'')}</div></div>
+<h2>Proposta para ${esc(matNome(m))}</h2>
+<table>${t?linha('Turma',esc(t.nome)):''}${m.respNome?linha('Responsável',esc(m.respNome)):''}${m.dataInicio?linha('Início previsto',brDate(m.dataInicio)):''}</table>
+<h2>Investimento</h2>
+<table>
+  ${linha('Taxa de matrícula',_moeda(taxa))}
+  ${linha('Mensalidade ('+parcelas+'x)',_moeda(mensal))}
+  ${material>0?linha('Material didático',_moeda(material)):''}
+  <tr class="tot"><td class="k">Total do curso (matrícula + ${parcelas}× mensalidade)</td><td>${_moeda(totalCurso)}${material>0?(' + material '+_moeda(material)):''}</td></tr>
+</table>
+<p class="validade">Proposta válida por 15 dias. Valores da tabela vigente${f?' (condições já personalizadas para este aluno)':''}.</p>
+<p class="foot">Documento de orçamento — não é contrato nem tem valor fiscal. Togethere · inglês para chegar lá.</p>
+</body></html>`;
+  imprimirDoc(html);
+}
+/* -------------------- CONTRATO (modelo de exemplo) -------------------- */
+function verContratoExemplo(id){
+  const m=(S.matriculas||[]).find(x=>x.id===id); if(!m) return;
+  const t=m.turmaId?(S.turmas||[]).find(x=>x.id===m.turmaId):null;
+  const f=(S.financeiro||[]).find(x=>x.matriculaId===id);
+  const cfg=(typeof _cfgFin==='function')?_cfgFin():{};
+  const mensal=f?(typeof finMensalLiquida==='function'?finMensalLiquida(f):0):0;
+  const parcelas=f?(f.parcelas||12):12;
+  const taxa=f?_matN(f.valorMatricula):_matN(cfg.taxaMatricula);
+  const dado=(v,ph)=> v?esc(String(v)):`<span style="background:#FFF7DA;padding:0 4px">${ph}</span>`;
+  const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Contrato — ${esc(matNome(m))}</title><style>
+@page{margin:16mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact;box-sizing:border-box}
+body{font-family:'Urbanist',system-ui,Arial,sans-serif;color:#15233b;padding:6px;font-size:12.5px;line-height:1.55}
+.top{display:flex;align-items:baseline;gap:10px;border-bottom:3px solid #FFC800;padding-bottom:6px;margin-bottom:12px}
+h1{font-family:'Zilla Slab',Georgia,serif;color:#005EAF;font-size:19px;margin:0}.per{margin-left:auto;color:#5a6b86;font-size:11px}
+h2{font-family:'Zilla Slab',Georgia,serif;font-size:13.5px;color:#002B64;margin:14px 0 4px}
+.marca{background:#fdeaea;color:#E52524;font-weight:700;display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;margin-bottom:8px}
+.ass{margin-top:34px;display:flex;gap:30px}.ass div{flex:1;border-top:1px solid #15233b;padding-top:4px;text-align:center;font-size:11px}
+.foot{margin-top:14px;color:#8a97a8;font-size:10px;border-top:1px solid #DCE4EC;padding-top:6px}
+</style></head><body>
+<div class="top"><h1>Togethere</h1><div style="font-weight:700">Contrato de prestação de serviços educacionais</div><div class="per">${brDate(hoje())}</div></div>
+<span class="marca">MODELO DE EXEMPLO — texto oficial será fornecido pela direção</span>
+<h2>1. Partes</h2>
+<p><b>CONTRATADA:</b> TOGETHERE ESCOLA DE IDIOMAS, Gravataí/RS ${dado('','[CNPJ / endereço completo]')}.<br>
+<b>CONTRATANTE:</b> ${dado(m.respNome,'[nome do responsável]')}, ${dado(m.respParentesco,'[parentesco]')} do(a) aluno(a), CPF ${dado(m.respDoc,'[CPF]')}, telefone ${dado(m.telefone,'[telefone]')}, e-mail ${dado(m.email,'[e-mail]')}.<br>
+<b>ALUNO(A):</b> ${esc(matNome(m))}${m.nascimento?(', nascido(a) em '+brDate(m.nascimento)):''}${m.docAluno?(', documento '+esc(m.docAluno)):''}.</p>
+<h2>2. Objeto</h2>
+<p>Curso de língua inglesa na turma <b>${t?esc(t.nome):dado('','[turma]')}</b>${t&&t.horario?(', às '+esc(t.horario)):''}, com início em ${m.dataInicio?brDate(m.dataInicio):dado('','[data de início]')}, conforme metodologia e calendário da CONTRATADA.</p>
+<h2>3. Valores e forma de pagamento</h2>
+<p>Taxa de matrícula de <b>${_moeda(taxa)}</b>; mensalidade de <b>${_moeda(mensal)}</b> em <b>${parcelas}</b> parcelas, com vencimento todo dia ${f?(f.diaVencimento||10):10}${f&&f.formaPagamento?(', via '+esc(f.formaPagamento)):''}. Em caso de atraso incidem multa de ${_matN(cfg.multaPct)||2}% e juros de ${_matN(cfg.jurosMesPct)||1}% ao mês. ${dado('','[demais condições — texto oficial]')}</p>
+<h2>4. Disposições gerais</h2>
+<p>${dado('','[cláusulas de cancelamento, reposição, uso de imagem, LGPD e foro — texto oficial da direção]')}</p>
+<div class="ass"><div>${dado(m.respNome,'[responsável]')}<br>CONTRATANTE</div><div>Togethere Escola de Idiomas<br>CONTRATADA</div></div>
+<p class="foot">MODELO DE EXEMPLO gerado pelo app para estudo — sem validade jurídica até substituição pelo texto oficial. Togethere · inglês para chegar lá.</p>
+</body></html>`;
+  imprimirDoc(html);
 }

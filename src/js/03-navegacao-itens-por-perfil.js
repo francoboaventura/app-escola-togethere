@@ -29,6 +29,7 @@ const NAV=[
   {id:'gestaoturmas', label:'Gestão rápida de turmas', em:'🔁', grp:'Gestão', roles:['direcao'], menu:false},
   {id:'matriculas', label:'Matrículas', em:'📝', grp:'Gestão', roles:['direcao']},
   {id:'financeiro', label:'Financeiro', em:'💰', grp:'Gestão', roles:['direcao']},
+  {id:'configfin', label:'Config. financeira', em:'⚙️', grp:'Gestão', roles:['direcao']},
   {id:'acessos', label:'Acessos', em:'🔑', grp:'Gestão', roles:['direcao']},
   {id:'cards', label:'Cards de acesso', em:'🖨️', grp:'Gestão', roles:['secretaria','direcao']},
 ];

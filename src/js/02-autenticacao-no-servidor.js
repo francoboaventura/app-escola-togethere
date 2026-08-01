@@ -81,6 +81,7 @@ function seed(){
     contratos:[],
     matriculas:[],
     financeiro:[],
+    configFin:[],
     aulasVip:[],
     boletins:[],
     alertas:[],

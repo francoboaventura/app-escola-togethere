@@ -15,7 +15,10 @@ function finNome(f){ const m=finMatricula(f); return m?matNome(m):(f&&f.nomeAvul
 function finTurma(f){ const m=finMatricula(f); return (m&&m.turmaId)?turmaNome(m.turmaId):''; }
 function finStatusMat(f){ const m=finMatricula(f); return m?m.status:'—'; }
 function finInicio(f){ if(f&&f.dataInicio) return f.dataInicio; const m=finMatricula(f); return (m&&m.dataInicio)||hoje(); }
-function finMensalLiquida(f){ return _matN(f.valorMensalidade)*(1-(_matN(f.descontoPct)/100)); }
+function finMensalLiquida(f){
+  if(f && f.negociacao && f.negociacao.mensalidade!=null) return Math.max(0,_matN(f.negociacao.mensalidade));   // valor negociado prevalece
+  return Math.max(0, _matN(f.valorMensalidade)*(1-(_matN(f.descontoPct)/100)) - _matN(f.descontoValor));
+}
 function finTotalCurso(f){ const parc=Math.max(0,parseInt(f.parcelas)||0); return _matN(f.valorMatricula)+finMensalLiquida(f)*parc; }
 function finParcelas(f){
   const n=Math.max(0,parseInt(f.parcelas)||0); if(!n) return [];
@@ -132,9 +135,12 @@ function abrirFinanceiro(id){
     <div class="row"><div class="field"><label class="lbl">Matrícula (R$)</label><input type="number" id="fin_valorMatricula" value="${f.valorMatricula!=null?f.valorMatricula:''}" min="0" step="0.01" placeholder="0,00" oninput="_finResumo()"></div>
       <div class="field"><label class="lbl">Mensalidade (R$)</label><input type="number" id="fin_valorMensalidade" value="${f.valorMensalidade!=null?f.valorMensalidade:''}" min="0" step="0.01" placeholder="0,00" oninput="_finResumo()"></div></div>
     <div class="row"><div class="field"><label class="lbl">Desconto (%)</label><input type="number" id="fin_descontoPct" value="${f.descontoPct!=null?f.descontoPct:''}" min="0" max="100" step="1" placeholder="0" oninput="_finResumo()"></div>
+      <div class="field"><label class="lbl">Desconto (R$)</label><input type="number" id="fin_descontoValor" value="${f.descontoValor!=null?f.descontoValor:''}" min="0" step="0.01" placeholder="0,00" oninput="_finResumo()"></div>
       <div class="field"><label class="lbl">Parcelas (nº)</label><input type="number" id="fin_parcelas" value="${f.parcelas!=null?f.parcelas:12}" min="0" max="48" step="1" oninput="_finResumo()"></div>
       <div class="field"><label class="lbl">Vencimento (dia)</label><input type="number" id="fin_diaVencimento" value="${f.diaVencimento!=null?f.diaVencimento:10}" min="1" max="28" step="1" oninput="_finResumo()"></div></div>
-    <div class="row"><div class="field" style="flex:2"><label class="lbl">Forma de pagamento</label><select id="fin_formaPagamento">${optPg}</select></div>
+    ${f.negociacao?`<div class="card" style="background:#fff8e0;padding:10px 12px;margin-bottom:10px"><b style="color:#b88600">🤝 Valor negociado:</b> <span class="hint">mensalidade ${_moeda(f.negociacao.mensalidade)} · por ${escAttr(f.negociacao.por||'')} em ${brDate(f.negociacao.em||hoje())}${f.negociacao.obs?(' · '+escAttr(f.negociacao.obs)):''} <button class="btn ghost sm" style="color:var(--vermelho)" onclick="removerNegociacao('${f.id}')">remover</button></span></div>`:''}
+    <div class="row" style="align-items:flex-end"><div class="field" style="flex:2"><label class="lbl">Forma de pagamento</label><select id="fin_formaPagamento">${optPg}</select></div>
+      <button class="btn ghost sm" style="margin-bottom:14px" onclick="aplicarTabelaPrecos('${id}')" title="Preenche com a tabela de preços">📋 Usar tabela</button>
       <div class="field"><label class="lbl">Início da cobrança</label><input type="date" id="fin_dataInicio" value="${escAttr(f.dataInicio||hoje())}" onchange="_finResumo()"></div></div>
     <div class="gen-box" id="fin_resumoBox" style="margin-bottom:12px">—</div>
     <div class="field"><label class="lbl">Observações</label><textarea id="fin_obs" style="min-height:56px" placeholder="Combinados de pagamento…">${escAttr(f.observacoes||'')}</textarea></div>
@@ -142,6 +148,7 @@ function abrirFinanceiro(id){
       <button class="btn" onclick="salvarFinanceiro('${id}')">💾 Salvar</button>
       <button class="btn ghost" onclick="abrirCarne('${id}')">💳 Carnê</button>
       <button class="btn ghost" onclick="verFinanceiro('${id}')">🖨️ PDF</button>
+      <button class="btn ghost" style="color:#b88600" onclick="abrirNegociacao('${id}')">🤝 Negociar</button>
       <button class="btn ghost" style="color:var(--vermelho)" onclick="excluirFinanceiro('${id}')">🗑 Excluir</button>
       <button class="btn ghost" onclick="fechar()">Fechar</button>
     </div>`);
@@ -149,12 +156,12 @@ function abrirFinanceiro(id){
 }
 function _finLerForm(f){
   const g=id=>{ const e=document.getElementById(id); return e?e.value:''; };
-  return Object.assign({}, f, { valorMatricula:_matN(g('fin_valorMatricula')), valorMensalidade:_matN(g('fin_valorMensalidade')), descontoPct:_matN(g('fin_descontoPct')), parcelas:parseInt(g('fin_parcelas'))||0, diaVencimento:parseInt(g('fin_diaVencimento'))||10, formaPagamento:g('fin_formaPagamento'), dataInicio:g('fin_dataInicio')||f.dataInicio, observacoes:g('fin_obs').trim() });
+  return Object.assign({}, f, { valorMatricula:_matN(g('fin_valorMatricula')), valorMensalidade:_matN(g('fin_valorMensalidade')), descontoPct:_matN(g('fin_descontoPct')), descontoValor:_matN(g('fin_descontoValor')), parcelas:parseInt(g('fin_parcelas'))||0, diaVencimento:parseInt(g('fin_diaVencimento'))||10, formaPagamento:g('fin_formaPagamento'), dataInicio:g('fin_dataInicio')||f.dataInicio, observacoes:g('fin_obs').trim() });
 }
 function _finResumo(){
   const el=document.getElementById('fin_resumoBox'); if(!el) return;
   const f=_finLerForm({}); const liq=finMensalLiquida(f); const total=finTotalCurso(f); const parc=finParcelas(f);
-  el.innerHTML=`<b>Mensalidade líquida:</b> ${_moeda(liq)}${_matN(f.descontoPct)>0?` <span class="hint">(de ${_moeda(_matN(f.valorMensalidade))}, −${_matN(f.descontoPct)}%)</span>`:''} · <b>Matrícula:</b> ${_moeda(f.valorMatricula)}
+  el.innerHTML=`<b>Mensalidade líquida:</b> ${_moeda(liq)}${(_matN(f.descontoPct)>0||_matN(f.descontoValor)>0)?` <span class="hint">(de ${_moeda(_matN(f.valorMensalidade))}${_matN(f.descontoPct)>0?', −'+_matN(f.descontoPct)+'%':''}${_matN(f.descontoValor)>0?', −'+_moeda(_matN(f.descontoValor)):''})</span>`:''} · <b>Matrícula:</b> ${_moeda(f.valorMatricula)}
     <br><b>Total do curso</b> (matrícula + ${f.parcelas||0}× mensalidade): <b>${_moeda(total)}</b>
     ${parc.length?`<br><span class="hint">${parc.length} parcela(s), venc. dia ${f.diaVencimento}, começando ${brDate(parc[0].venc)}</span>`:''}`;
 }
@@ -179,11 +186,14 @@ function abrirCarne(id){
   if(!parc.length) return toast('Defina mensalidade e parcelas primeiro');
   const chipSt={paga:{t:'paga',bg:'#eafaf0',c:'#0A7A3D'},atrasada:{t:'em atraso',bg:'#fdeaea',c:'#E52524'},aberta:{t:'a vencer',bg:'#eef2f8',c:'#5a6b86'}};
   const linhas=parc.map(p=>{ const st=finParcelaStatus(f,p); const cs=chipSt[st]; const pg=(f.pagos||{})[p.n];
+    const atualizado=(st==='atrasada')?finValorAtualizado(p):null;
     return `<div class="check" style="display:block"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
       <b style="min-width:66px">${p.n}/${parc.length}</b>
-      <span style="flex:1">venc. ${brDate(p.venc)} · ${_moeda(p.valor)}${pg&&pg.em?` <span class="hint">(pago ${brDate(pg.em)})</span>`:''}</span>
+      <span style="flex:1">venc. ${brDate(p.venc)} · ${_moeda(p.valor)}${atualizado&&atualizado.total>p.valor?` <b style="color:var(--vermelho)">→ ${_moeda(atualizado.total)}</b> <span class="hint">(multa+juros)</span>`:''}${pg&&pg.em?` <span class="hint">(pago ${brDate(pg.em)}${pg.forma?(' · '+escAttr(pg.forma)):''})</span>`:''}</span>
       <span class="pill" style="background:${cs.bg};color:${cs.c}">${cs.t}</span>
-      <button class="btn ghost sm" onclick="finToggleParcela('${id}',${p.n})">${pg?'desfazer':'✓ marcar paga'}</button>
+      ${!pg?`<button class="btn ghost sm" title="Boleto (simulação)" onclick="gerarBoletoSim('${id}',${p.n})">🧾</button>
+      <button class="btn ghost sm" title="Cartão de crédito" onclick="pagarCartaoStub('${id}',${p.n})">💳</button>`:''}
+      <button class="btn ghost sm" onclick="finToggleParcela('${id}',${p.n})">${pg?'desfazer':'✓ receber'}</button>
     </div></div>`;
   }).join('');
   modal(`<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><h3 style="flex:1;margin:0">💳 Carnê — ${esc(finNome(f))}</h3><button class="close" onclick="fechar()">×</button></div>
@@ -199,7 +209,7 @@ function finToggleParcela(id,n){
   const f=(S.financeiro||[]).find(x=>x.id===id); if(!f) return;
   f.pagos=f.pagos||{};
   if(f.pagos[n]) delete f.pagos[n];
-  else { const p=finParcelas(f).find(x=>x.n===n); f.pagos[n]={em:hoje(), valor:p?p.valor:0}; }
+  else { const p=finParcelas(f).find(x=>x.n===n); f.pagos[n]={em:hoje(), valor:p?p.valor:0, forma:f.formaPagamento||''}; }
   f.atualizadoEm=Date.now(); save(); abrirCarne(id);
 }
 
@@ -243,4 +253,175 @@ function exportarFinanceiroCSV(){
   lista.forEach(f=>{ rows.push(_csvLinha([finNome(f), finTurma(f), (MAT_STATUS[finStatusMat(f)]||{}).lbl||finStatusMat(f), _m(f.valorMatricula), _m(f.valorMensalidade), _matN(f.descontoPct), _m(finMensalLiquida(f)), f.parcelas||0, f.diaVencimento||'', _m(finTotalCurso(f)), _m(finRecebido(f)), _m(finAberto(f)), _m(finAtrasadoV(f)), brDate(finInicio(f))])); });
   _dlArquivo('financeiro-'+hoje()+'.csv', rows.join('\n'));
   toast('Planilha financeira baixada ('+lista.length+')');
+}
+
+/* =====================================================================
+   CONFIG FINANCEIRA (direção): tabela de preços + multa/juros por atraso
+   Guardada em S.configFin=[{id:'fin', ...}] (sincroniza via MERGE_COLS).
+   ===================================================================== */
+function _cfgFin(){ return ((S.configFin||[]).find(c=>c.id==='fin'))||{}; }
+function _cfgFinSet(campos){
+  S.configFin=S.configFin||[];
+  let c=S.configFin.find(x=>x.id==='fin');
+  if(!c){ c={id:'fin'}; S.configFin.push(c); }
+  Object.assign(c,campos); c.atualizadoEm=Date.now(); save();
+}
+VIEWS.configfin=()=>{
+  const v=document.getElementById('view');
+  if(S.perfil!=='direcao'){ v.innerHTML='<div class="card empty"><div class="big">🔒</div><b>Acesso restrito</b><br>Configuração financeira é exclusiva da direção.</div>'; return; }
+  const c=_cfgFin();
+  const div=(c.diversos||[]);
+  const linhasDiv=div.map((d,i)=>`<div class="check"><span style="flex:1">${esc(d.nome||'—')} · <b>${_moeda(d.valor)}</b></span><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delCobrancaDiversa(${i})">remover</button></div>`).join('');
+  v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:#b88600"></span><h2 class="display">⚙️ Config. financeira</h2></div>
+    <p class="sub">Espaço exclusivo da direção: tabela de preços dos produtos e regras de multa/juros por atraso. Tudo aqui alimenta orçamentos, contratos e o carnê.</p>
+    <div class="card"><h3>📋 Tabela de preços</h3>
+      <div class="row" style="flex-wrap:wrap">
+        <div class="field"><label class="lbl">Taxa de matrícula (R$)</label><input type="number" id="cf_taxa" value="${c.taxaMatricula!=null?c.taxaMatricula:''}" min="0" step="0.01" placeholder="0,00"></div>
+        <div class="field"><label class="lbl">Valor anual do curso (R$)</label><input type="number" id="cf_anual" value="${c.valorAnualCurso!=null?c.valorAnualCurso:''}" min="0" step="0.01" placeholder="0,00"></div>
+        <div class="field"><label class="lbl">Material didático (R$)</label><input type="number" id="cf_material" value="${c.valorMaterial!=null?c.valorMaterial:''}" min="0" step="0.01" placeholder="0,00"></div>
+        <div class="field"><label class="lbl">Hora-aula VIP (R$)</label><input type="number" id="cf_horaVip" value="${c.valorHoraVip!=null?c.valorHoraVip:''}" min="0" step="0.01" placeholder="0,00"></div>
+      </div>
+      <p class="hint" style="margin:4px 0 10px">A mensalidade sugerida sai do valor anual ÷ nº de parcelas (no botão "📋 Usar tabela" do Financeiro).</p>
+      <div style="border-top:1px solid var(--linha);padding-top:10px"><b style="font-size:.92rem">Cobranças diversas</b>
+        ${linhasDiv||'<p class="hint" style="margin:6px 0 0">Nenhuma. Ex.: taxa de prova, 2ª via de material, evento…</p>'}
+        <div class="row" style="margin-top:8px;align-items:flex-end"><div class="field" style="flex:2;margin:0"><label class="lbl">Nome</label><input type="text" id="cf_divNome" placeholder="Ex: Taxa de prova Cambridge"></div>
+          <div class="field" style="margin:0"><label class="lbl">Valor (R$)</label><input type="number" id="cf_divValor" min="0" step="0.01" placeholder="0,00"></div>
+          <button class="btn ghost sm" style="margin-bottom:2px" onclick="addCobrancaDiversa()">+ Adicionar</button></div>
+      </div>
+      <button class="btn" style="margin-top:14px" onclick="salvarTabelaPrecos()">💾 Salvar tabela</button>
+    </div>
+    <div class="card"><h3>⏰ Multa e juros por atraso</h3>
+      <div class="row">
+        <div class="field"><label class="lbl">Multa (% sobre a parcela)</label><input type="number" id="cf_multa" value="${c.multaPct!=null?c.multaPct:2}" min="0" max="20" step="0.5"></div>
+        <div class="field"><label class="lbl">Juros (% ao mês)</label><input type="number" id="cf_juros" value="${c.jurosMesPct!=null?c.jurosMesPct:1}" min="0" max="20" step="0.1"></div>
+      </div>
+      <p class="hint" style="margin:0 0 10px">Aplicados sobre parcelas em atraso no carnê: multa fixa + juros proporcionais aos dias (base 30 dias). Padrão do mercado: 2% + 1% a.m.</p>
+      <button class="btn" onclick="salvarMultaJuros()">💾 Salvar multa/juros</button>
+    </div>`;
+};
+function salvarTabelaPrecos(){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const g=id=>_matN((document.getElementById(id)||{}).value);
+  _cfgFinSet({ taxaMatricula:g('cf_taxa'), valorAnualCurso:g('cf_anual'), valorMaterial:g('cf_material'), valorHoraVip:g('cf_horaVip') });
+  toast('Tabela de preços salva ✓');
+}
+function salvarMultaJuros(){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const g=id=>_matN((document.getElementById(id)||{}).value);
+  _cfgFinSet({ multaPct:g('cf_multa'), jurosMesPct:g('cf_juros') });
+  toast('Multa e juros salvos ✓');
+}
+function addCobrancaDiversa(){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const nome=((document.getElementById('cf_divNome')||{}).value||'').trim();
+  const valor=_matN((document.getElementById('cf_divValor')||{}).value);
+  if(!nome) return toast('Dê um nome à cobrança');
+  const c=_cfgFin(); const div=(c.diversos||[]).slice(); div.push({nome,valor});
+  _cfgFinSet({diversos:div}); VIEWS.configfin(); toast('Cobrança adicionada');
+}
+function delCobrancaDiversa(i){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const c=_cfgFin(); const div=(c.diversos||[]).slice(); div.splice(i,1);
+  _cfgFinSet({diversos:div}); VIEWS.configfin(); toast('Cobrança removida');
+}
+// preenche o plano com a tabela: taxa + mensalidade = anual/parcelas
+function aplicarTabelaPrecos(id){
+  const c=_cfgFin();
+  if(!_matN(c.taxaMatricula)&&!_matN(c.valorAnualCurso)) return toast('Cadastre a tabela primeiro em ⚙️ Config. financeira');
+  const par=parseInt((document.getElementById('fin_parcelas')||{}).value)||12;
+  const eT=document.getElementById('fin_valorMatricula'); if(eT) eT.value=_matN(c.taxaMatricula)||'';
+  const eM=document.getElementById('fin_valorMensalidade'); if(eM) eM.value=par>0?Math.round(_matN(c.valorAnualCurso)/par*100)/100:'';
+  _finResumo(); toast('Valores da tabela aplicados ('+par+'x)');
+}
+
+/* ---------- multa/juros sobre parcela atrasada ---------- */
+function finValorAtualizado(p){
+  const c=_cfgFin();
+  const multaPct=(c.multaPct!=null)?_matN(c.multaPct):2;
+  const jurosMes=(c.jurosMesPct!=null)?_matN(c.jurosMesPct):1;
+  const dias=Math.max(0,Math.round((new Date(hoje()+'T12:00:00')-new Date(p.venc+'T12:00:00'))/864e5));
+  if(dias<=0) return {total:p.valor,dias:0,multa:0,juros:0};
+  const multa=p.valor*multaPct/100;
+  const juros=p.valor*(jurosMes/100)*(dias/30);
+  return { total: Math.round((p.valor+multa+juros)*100)/100, dias, multa, juros };
+}
+
+/* ---------- boleto (SIMULAÇÃO) e cartão (stub) ---------- */
+function gerarBoletoSim(id,n){
+  const f=(S.financeiro||[]).find(x=>x.id===id); if(!f) return;
+  const p=finParcelas(f).find(x=>x.n===n); if(!p) return;
+  const at=finParcelaStatus(f,p)==='atrasada'?finValorAtualizado(p):null;
+  const valor=at?at.total:p.valor;
+  const linhaDigitavel='00000.00000 00000.000000 00000.000000 0 '+String(p.venc.replace(/-/g,''))+String(Math.round(valor*100)).padStart(10,'0');
+  const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Boleto (simulação)</title><style>
+@page{margin:12mm}body{font-family:'Urbanist',system-ui,Arial,sans-serif;color:#15233b;padding:6px;font-size:12.5px}
+.sim{background:#fdeaea;color:#E52524;font-weight:800;text-align:center;padding:8px;border:2px dashed #E52524;border-radius:8px;margin-bottom:12px;font-size:14px}
+.bol{border:1px solid #15233b;border-radius:6px;padding:14px}
+.bol .l{display:flex;justify-content:space-between;border-bottom:1px dashed #ccc;padding:7px 0}
+.dig{font-family:monospace;font-size:13px;letter-spacing:.5px;margin:10px 0;text-align:center;background:#f4f6fb;padding:8px;border-radius:6px}
+.barra{height:52px;background:repeating-linear-gradient(90deg,#000 0 2px,#fff 2px 5px,#000 5px 6px,#fff 6px 10px);margin-top:10px;border-radius:2px}
+.foot{margin-top:10px;color:#8a97a8;font-size:10px}</style></head><body>
+<div class="sim">⚠️ SIMULAÇÃO — SEM REGISTRO BANCÁRIO · NÃO PAGÁVEL</div>
+<div class="bol">
+  <div class="l"><span><b>Beneficiário:</b> Togethere Escola de Idiomas</span><span><b>Vencimento:</b> ${brDate(p.venc)}</span></div>
+  <div class="l"><span><b>Pagador:</b> ${esc(finNome(f))}</span><span><b>Parcela:</b> ${p.n}/${f.parcelas}</span></div>
+  <div class="l"><span><b>Valor do documento:</b> ${_moeda(p.valor)}</span><span>${at&&at.total>p.valor?('<b>Valor c/ multa e juros:</b> '+_moeda(at.total)+' ('+at.dias+'d)'):''}</span></div>
+  <div class="dig">${linhaDigitavel}</div>
+  <div class="barra"></div>
+</div>
+<p class="foot">Documento de teste do módulo financeiro. A geração de boletos reais depende da integração bancária (API), a ser contratada.</p>
+</body></html>`;
+  imprimirDoc(html);
+}
+function pagarCartaoStub(id,n){
+  const f=(S.financeiro||[]).find(x=>x.id===id); if(!f) return;
+  const p=finParcelas(f).find(x=>x.n===n); if(!p) return;
+  modal(`<h3>💳 Cartão de crédito <button class="close" onclick="fechar()">×</button></h3>
+    <p class="hint" style="margin:0 0 10px">A cobrança automática por cartão depende de integração com uma operadora (API) — <b>ainda não contratada</b>. Por enquanto, se a família pagou no cartão pela maquininha/link externo, registre aqui:</p>
+    <div class="card" style="background:#f4f7fb;padding:10px 12px"><b>${esc(finNome(f))}</b> · parcela ${p.n}/${f.parcelas} · ${_moeda(p.valor)} · venc. ${brDate(p.venc)}</div>
+    <button class="btn block" onclick="registrarPagoCartao('${id}',${n})">✓ Registrar como pago no cartão</button>
+    <button class="btn ghost block" style="margin-top:8px" onclick="fechar()">Cancelar</button>`);
+}
+function registrarPagoCartao(id,n){
+  const f=(S.financeiro||[]).find(x=>x.id===id); if(!f) return;
+  const p=finParcelas(f).find(x=>x.n===n);
+  f.pagos=f.pagos||{}; f.pagos[n]={em:hoje(), valor:p?p.valor:0, forma:'Cartão de crédito'};
+  f.atualizadoEm=Date.now(); save(); abrirCarne(id); toast('Parcela registrada como paga no cartão ✓');
+}
+
+/* ---------- negociação de valores (exige senha da direção) ---------- */
+function abrirNegociacao(id){
+  if(S.perfil!=='direcao') return toast('Só a direção negocia valores');
+  const f=(S.financeiro||[]).find(x=>x.id===id); if(!f) return;
+  modal(`<h3>🤝 Negociação de valores <button class="close" onclick="fechar()">×</button></h3>
+    <p class="hint" style="margin:0 0 10px">Define uma <b>mensalidade negociada</b> que passa por cima da tabela e dos descontos. Exige a senha de um(a) diretor(a) e fica registrado quem negociou.</p>
+    <div class="card" style="background:#f4f7fb;padding:10px 12px;margin-bottom:10px"><b>${esc(finNome(f))}</b> · mensalidade atual: <b>${_moeda(finMensalLiquida(f))}</b></div>
+    <div class="row"><div class="field"><label class="lbl">Mensalidade negociada (R$)</label><input type="number" id="ng_valor" min="0" step="0.01" value="${f.negociacao?f.negociacao.mensalidade:''}" placeholder="0,00"></div></div>
+    <div class="field"><label class="lbl">Justificativa</label><input type="text" id="ng_obs" value="${escAttr((f.negociacao&&f.negociacao.obs)||'')}" placeholder="Ex: 2 irmãos na escola; acordo anual à vista"></div>
+    <div class="field"><label class="lbl">Senha da direção</label><input type="password" id="ng_senha" placeholder="sua senha"></div>
+    <button class="btn block" onclick="salvarNegociacao('${id}')">Confirmar negociação</button>`);
+  setTimeout(()=>{const i=document.getElementById('ng_valor'); if(i)i.focus();},60);
+}
+async function salvarNegociacao(id){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const f=(S.financeiro||[]).find(x=>x.id===id); if(!f) return;
+  const valor=_matN((document.getElementById('ng_valor')||{}).value);
+  const obs=((document.getElementById('ng_obs')||{}).value||'').trim();
+  const senha=((document.getElementById('ng_senha')||{}).value||'');
+  if(!valor) return toast('Informe o valor negociado');
+  if(!senha) return toast('Digite a senha da direção');
+  const b=document.querySelector('#modal .btn.block'); if(b){ b.disabled=true; b.textContent='Verificando senha…'; }
+  let ok=false;
+  try{ const chk=await cloudLogin(S.usuario, senha); ok=!!(chk&&chk.ok===true); }catch(e){ ok=false; }
+  if(!ok){ if(b){ b.disabled=false; b.textContent='Confirmar negociação'; } return toast('Senha incorreta'); }
+  f.negociacao={ mensalidade:valor, obs, por:S.usuario, em:hoje() };
+  f.atualizadoEm=Date.now(); save(); fechar();
+  if(rota==='financeiro') VIEWS.financeiro();
+  toast('Negociação registrada — mensalidade '+_moeda(valor));
+}
+function removerNegociacao(id){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const f=(S.financeiro||[]).find(x=>x.id===id); if(!f) return;
+  if(!confirm('Remover o valor negociado? Volta a valer tabela + descontos.')) return;
+  delete f.negociacao; f.atualizadoEm=Date.now(); save(); fechar(); abrirFinanceiro(id); toast('Negociação removida');
 }

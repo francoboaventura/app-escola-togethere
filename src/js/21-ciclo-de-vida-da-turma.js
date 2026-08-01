@@ -1,9 +1,66 @@
 /* ===== Ciclo de vida da turma (b45) ===== */
-const TSTATUS={aberta:{lbl:'ABERTA',cor:'#1a8a4a',bg:'#eafaf0'},formacao:{lbl:'EM FORMAÇÃO',cor:'#b88600',bg:'#fff8e0'},encerrada:{lbl:'ENCERRADA',cor:'#888',bg:'#eeeeee'}};
+const TSTATUS={aberta:{lbl:'VIGENTE',cor:'#1a8a4a',bg:'#eafaf0'},formacao:{lbl:'EM FORMAÇÃO',cor:'#b88600',bg:'#fff8e0'},encerrada:{lbl:'ENCERRADA',cor:'#888',bg:'#eeeeee'}};
 let _amBusca='';
 function turmaStatus(t){ if(!t) return 'aberta'; return t.status || (t.arquivada?'encerrada':'aberta'); }
 function turmaTrancada(tid){ const t=(S.turmas||[]).find(x=>x.id===tid); return turmaStatus(t)==='encerrada'; }
 function statusPill(t){ const s=TSTATUS[turmaStatus(t)]||TSTATUS.aberta; return `<span class="pill" style="background:${s.bg};color:${s.cor}">${s.lbl}</span>`; }
+
+// ---- Nome automático da turma: CEFR + SEGMENTO + DIAS + HORA (ex.: A2+ JUNIOR SEG/QUA 18h) ----
+const CEFR_ORDEM=['A1','A1+','A2','A2+','B1','B1+','B2','B2+','C1','C2'];
+function proximoCefr(c){ const i=CEFR_ORDEM.indexOf((c||'').trim()); return (i>=0&&i<CEFR_ORDEM.length-1)?CEFR_ORDEM[i+1]:(c||''); }
+function _diasSigla(dias){ const S7=['DOM','SEG','TER','QUA','QUI','SEX','SAB']; return (dias||[]).slice().sort((a,b)=>a-b).map(d=>S7[d]||'').filter(Boolean).join('/'); }
+function _horaSigla(horario){ const m=String(horario||'').match(/(\d{1,2}):(\d{2})/); if(!m) return ''; return (+m[1])+'h'+(m[2]!=='00'?m[2]:''); }
+function nomeTurmaAuto(cefr,nivel,dias,horario){
+  const seg=String(nivel||'').toUpperCase();
+  return [ (cefr||'').trim(), seg, _diasSigla(dias), _horaSigla(horario) ].filter(Boolean).join(' ');
+}
+function _cpAtualizaNome(){
+  const el=document.getElementById('cpNome'); if(!el||el.dataset.manual==='1') return;
+  const trilhaSel=document.getElementById('cpTrilha'); const nivel = trilhaSel ? (trilhaSel.value==='avancado'?'adults':trilhaSel.value) : '';
+  const cefr=(document.getElementById('cpNivel')||{}).value||'';
+  const dias=[...document.querySelectorAll('.cpDia:checked')].map(c=>+c.value);
+  const hor=(document.getElementById('cpHor')||{}).value||'';
+  el.value=nomeTurmaAuto(cefr,nivel,dias,hor);
+}
+// ---- Criar SEQUÊNCIA de uma turma existente: herda segmento/dias/horário/professor, sugere o próximo CEFR ----
+function abrirCriarSequencia(tid){
+  if(ehProfessor())return toast('Sem permissão');
+  const t=(S.turmas||[]).find(x=>x.id===tid); if(!t) return;
+  const cefrProx=proximoCefr(t.cefr||'');
+  const cefrs=CEFR_ORDEM.map(c=>`<option value="${c}" ${c===cefrProx?'selected':''}>${c}</option>`).join('');
+  modal(`<h3>🔁 Criar sequência de ${escAttr(t.nome)} <button class="close" onclick="fechar()">×</button></h3>
+    <p class="hint" style="margin:0 0 10px">A sequência nasce <b>vazia</b> e <b>EM FORMAÇÃO</b>, herdando segmento, dias, horário e professor. Os alunos entram conforme se matriculam. Nome gerado automaticamente (pode editar).</p>
+    <div class="row"><div class="field"><label class="lbl">Nível CEFR</label><select id="sqCefr" onchange="_sqAtualizaNome('${tid}')">${cefrs}</select></div>
+      <div class="field"><label class="lbl">Horário</label><input type="text" id="sqHor" value="${escAttr(t.horario||'')}" oninput="_sqAtualizaNome('${tid}')"></div></div>
+    <div class="field"><label class="lbl">Dias de aula</label><div style="display:flex;flex-wrap:wrap;gap:6px">${[0,1,2,3,4,5,6].map(d=>`<label style="display:flex;align-items:center;gap:5px;font-size:.88rem;border:1px solid var(--linha);border-radius:9px;padding:6px 10px;cursor:pointer"><input type="checkbox" class="sqDia" value="${d}" ${(t.dias||[]).indexOf(d)>=0?'checked':''} onchange="_sqAtualizaNome('${tid}')"> ${DIAS_SEMANA[d]}</label>`).join('')}</div></div>
+    <div class="field"><label class="lbl">Nome da turma (automático)</label><input type="text" id="sqNome" oninput="this.dataset.manual='1'"></div>
+    <button class="btn block" onclick="criarSequenciaTurma('${tid}')">Criar sequência (EM FORMAÇÃO)</button>`);
+  setTimeout(()=>_sqAtualizaNome(tid),40);
+}
+function _sqAtualizaNome(tid){
+  const t=(S.turmas||[]).find(x=>x.id===tid); if(!t) return;
+  const el=document.getElementById('sqNome'); if(!el||el.dataset.manual==='1') return;
+  const cefr=(document.getElementById('sqCefr')||{}).value||'';
+  const dias=[...document.querySelectorAll('.sqDia:checked')].map(c=>+c.value);
+  const hor=(document.getElementById('sqHor')||{}).value||'';
+  el.value=nomeTurmaAuto(cefr,t.nivel,dias,hor);
+}
+function criarSequenciaTurma(tid){
+  if(ehProfessor())return toast('Sem permissão');
+  const t=(S.turmas||[]).find(x=>x.id===tid); if(!t) return;
+  const cefr=(document.getElementById('sqCefr')||{}).value||'';
+  const hor=(document.getElementById('sqHor')||{}).value||'';
+  const dias=[...document.querySelectorAll('.sqDia:checked')].map(c=>+c.value).sort((a,b)=>a-b);
+  if(!dias.length) return toast('Selecione ao menos um dia');
+  const nome=((document.getElementById('sqNome')||{}).value||'').trim()||nomeTurmaAuto(cefr,t.nivel,dias,hor);
+  const novo={id:uid(),nome,nivel:t.nivel,cefr,horario:hor,dias,vezesSemana:dias.length,arquivada:false,status:'formacao',sequenciaDe:t.id,atualizadoEm:Date.now()};
+  if(t.professor) novo.professor=t.professor;
+  S.turmas.push(novo);
+  save(); fechar(); montarNav();
+  if(rota==='gturmas') VIEWS.gturmas();
+  toast('Sequência criada (EM FORMAÇÃO): '+nome);
+}
+
 function encerrarTurma(id){
   if(ehProfessor()) return toast('Sem permissão');
   const t=(S.turmas||[]).find(x=>x.id===id); if(!t) return;
@@ -93,7 +150,8 @@ VIEWS.gturmas=()=>{
     const st=turmaStatus(t), n=(S.alunos||[]).filter(a=>a.turmaId===t.id && !a.arquivado).length;
     return `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px solid var(--linha);padding:8px 0">
       <div style="flex:1;min-width:150px"><b>${escAttr(t.nome)}</b> ${statusPill(t)}<br><span class="hint">${escAttr(t.horario||'')} · ${n} aluno(s)</span></div>
-      ${st==='formacao'?`<button class="btn ghost sm" style="color:var(--azul)" onclick="iniciarTurma('${t.id}')">Abrir turma</button>`:''}
+      ${st==='formacao'?`<button class="btn ghost sm" style="color:var(--azul)" onclick="iniciarTurma('${t.id}')">Tornar vigente</button>`:''}
+      <button class="btn ghost sm" onclick="abrirCriarSequencia('${t.id}')">🔁 Sequência</button>
       <button class="btn ghost sm" style="color:var(--vermelho)" onclick="encerrarTurma('${t.id}')">Encerrar</button>
     </div>`;
   }).join('')||'<p class="hint">Nenhuma turma ativa.</p>';
@@ -104,7 +162,7 @@ VIEWS.gturmas=()=>{
       <button class="btn" onclick="abrirCriarProxima()">Criar próxima turma</button>
     </div>
     <div class="card"><h3>🏫 Turmas ativas</h3>
-      <p class="hint" style="margin:0 0 4px">EM FORMAÇÃO vira ABERTA quando você inicia. Encerrar manda para o arquivo morto (travada).</p>
+      <p class="hint" style="margin:0 0 4px">EM FORMAÇÃO vira VIGENTE quando você inicia. Encerrar manda para o arquivo morto (travada).</p>
       ${linhasAtivas}
     </div>
     <div class="card"><h3>🔄 Trocar aluno de turma</h3>
@@ -141,16 +199,16 @@ function abrirCriarProxima(){
   if(ehProfessor())return toast('Sem permissão');
   const ts=turmasVisiveis().slice().sort((a,b)=>a.nome.localeCompare(b.nome));
   modal(`<h3>➕ Criar próxima turma <button class="close" onclick="fechar()">×</button></h3>
-    <div class="field"><label class="lbl">Trilha</label><select id="cpTrilha" onchange="_cpNiveis()">${Object.keys(TRILHAS).map(k=>`<option value="${k}">${TRILHAS[k].label}</option>`).join('')}</select></div>
+    <div class="field"><label class="lbl">Trilha</label><select id="cpTrilha" onchange="_cpNiveis();_cpAtualizaNome()">${Object.keys(TRILHAS).map(k=>`<option value="${k}">${TRILHAS[k].label}</option>`).join('')}</select></div>
     <div class="field"><label class="lbl">Nível</label><select id="cpNivel"></select></div>
-    <div class="field"><label class="lbl">Nome da turma</label><input type="text" id="cpNome" placeholder="Ex: A2 JUNIOR TARDINHA (2026)"></div>
+    <div class="field"><label class="lbl">Nome da turma (automático — pode editar)</label><input type="text" id="cpNome" placeholder="Ex: A2+ JUNIOR SEG/QUA 18h" oninput="this.dataset.manual='1'"></div>
     <div class="row"><div style="flex:2"><label class="lbl">Professor (opcional)</label><input type="text" id="cpProf" placeholder="Nome do professor"></div>
-      <div style="flex:1"><label class="lbl">Horário</label><input type="text" id="cpHor" placeholder="18:15–19:30"></div></div>
-    <div class="field" style="margin-top:8px"><label class="lbl">Dias de aula</label><div style="display:flex;flex-wrap:wrap;gap:6px">${[1,2,3,4,5,6].map(d=>`<label style="display:flex;align-items:center;gap:5px;font-size:.88rem;border:1px solid var(--linha);border-radius:9px;padding:6px 10px;cursor:pointer"><input type="checkbox" class="cpDia" value="${d}"> ${DIAS_SEMANA[d]}</label>`).join('')}</div></div>
+      <div style="flex:1"><label class="lbl">Horário</label><input type="text" id="cpHor" placeholder="18:15–19:30" oninput="_cpAtualizaNome()"></div></div>
+    <div class="field" style="margin-top:8px"><label class="lbl">Dias de aula</label><div style="display:flex;flex-wrap:wrap;gap:6px">${[1,2,3,4,5,6].map(d=>`<label style="display:flex;align-items:center;gap:5px;font-size:.88rem;border:1px solid var(--linha);border-radius:9px;padding:6px 10px;cursor:pointer"><input type="checkbox" class="cpDia" value="${d}" onchange="_cpAtualizaNome()"> ${DIAS_SEMANA[d]}</label>`).join('')}</div></div>
     <button class="btn block" onclick="criarProximaTurma()" style="margin-top:12px">Criar turma</button>`);
   _cpNiveis();
 }
-function _cpNiveis(){ const k=document.getElementById('cpTrilha').value; const sel=document.getElementById('cpNivel'); if(sel) sel.innerHTML=TRILHAS[k].niveis.map(n=>`<option value="${n}">${n}</option>`).join(''); }
+function _cpNiveis(){ const k=document.getElementById('cpTrilha').value; const sel=document.getElementById('cpNivel'); if(sel){ sel.innerHTML=TRILHAS[k].niveis.map(n=>`<option value="${n}">${n}</option>`).join(''); sel.onchange=_cpAtualizaNome; } }
 function criarProximaTurma(){
   if(ehProfessor())return toast('Sem permissão');
   const trilha=document.getElementById('cpTrilha').value;
