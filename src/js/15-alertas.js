@@ -307,3 +307,69 @@ VIEWS.apoio=()=>{
   if(!agendadas.length) v.appendChild(el('<div class="card"><p class="hint" style="margin:0">Nenhuma aula de apoio agendada ainda.</p></div>'));
   agendadas.forEach(ap=>v.appendChild(el(_apoioCard(ap, `<button class="btn ghost sm" onclick="abrirAgendarApoio('${ap.id}')">✏️ Reagendar</button>`))));
 };
+
+// ===================== RESUMO DA SEMANA (direção) =====================
+function _semanaLabel(){
+  const now=new Date(); const dow=(now.getDay()+6)%7;      // 0 = segunda
+  const ini=new Date(now); ini.setDate(now.getDate()-dow);
+  const fim=new Date(ini); fim.setDate(ini.getDate()+6);
+  return brDate(ymd(ini))+' a '+brDate(ymd(fim));
+}
+function _nmTurma(id){ const a=(S.alunos||[]).find(x=>x.id===id); return a?(a.nome+(a.turmaId?(' ('+turmaNome(a.turmaId)+')'):'')):'—'; }
+function _dadosResumoSemana(){
+  const fa=(typeof alertasFaltas==='function')?alertasFaltas():[];
+  const ma=(typeof alertasMaterial==='function')?alertasMaterial():[];
+  const vipPac=(S.vipAlunos||[]).filter(v=>!v.arquivado && typeof vipAlertaPacote==='function' && vipAlertaPacote(v.id));
+  const pend=(typeof todasMinhasPendencias==='function')?todasMinhasPendencias():[];
+  const pendAula=pend.filter(p=>p.tipo!=='enviar');
+  const pendVip=(typeof pendenciasVipParaMim==='function')?pendenciasVipParaMim():[];
+  const relEnviar=(S.relatorios||[]).filter(r=>!r.enviado && !((typeof _emRecessoISO==='function'&&_emRecessoISO(r.data))||(typeof _emFeriasFixas==='function'&&_emFeriasFixas(r.data))));
+  const total=fa.length+ma.length+vipPac.length+pendAula.length+pendVip.length+relEnviar.length;
+  return {fa,ma,vipPac,pendAula,pendVip,relEnviar,total};
+}
+function renderResumoSemana(){
+  if(S.perfil!=='direcao') return '';
+  const d=_dadosResumoSemana();
+  const head=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0;flex:1">📅 Resumo da semana</h3><span class="hint">${_semanaLabel()}</span></div>`;
+  if(!d.total){ return `<div class="card" style="border-left:4px solid var(--ok)">${head}<p class="hint" style="margin:6px 0 0">✅ Tudo em dia — sem faltas, material, pacotes VIP ou aulas/relatórios pendentes.</p></div>`; }
+  const cap=(arr,fn,max)=>{ max=max||4; return arr.slice(0,max).map(fn).join('')+(arr.length>max?`<p class="hint" style="margin:3px 0 0">+${arr.length-max} outro(s)…</p>`:''); };
+  const linha=(txt,btn)=>`<div class="check"><span style="flex:1">${txt}</span>${btn||''}</div>`;
+  let b='';
+  if(d.fa.length) b+=`<div style="margin-top:10px"><b>🚨 Faltas — contatar (${d.fa.length})</b>${cap(d.fa,o=>linha(esc(_nmTurma(o.alunoId))+' — '+esc(o.motivo),`<button class="btn ghost sm" onclick="marcarContato('${o.alunoId}','falta')">✓ contatei</button>`))}</div>`;
+  if(d.ma.length) b+=`<div style="margin-top:10px"><b>🎒 Material — contatar (${d.ma.length})</b>${cap(d.ma,o=>linha(esc(_nmTurma(o.alunoId))+' — '+esc(o.motivo),`<button class="btn ghost sm" onclick="marcarContato('${o.alunoId}','material')">✓ contatei</button>`))}</div>`;
+  if(d.vipPac.length) b+=`<div style="margin-top:10px"><b>⏱️ Pacotes VIP — atenção (${d.vipPac.length})</b>${cap(d.vipPac,v=>linha(esc(v.nome)+' — '+esc(_vipAlertaTxt(vipAlertaPacote(v.id))),`<button class="btn ghost sm" onclick="abrirFicha('${v.id}')">abrir ›</button>`))}</div>`;
+  if(d.pendAula.length) b+=`<div style="margin-top:10px"><b>📋 Aulas/planos/relatórios pendentes (${d.pendAula.length})</b>${cap(d.pendAula,p=>linha(brDate(p.data)+' · '+esc(turmaNome(p.turmaId))+' · '+(PEND_ROTULO[p.tipo]||p.tipo),`<button class="btn ghost sm" onclick="irPendencia('${p.turmaId}','${p.data}','${p.tipo}')">resolver ›</button>`))}</div>`;
+  if(d.pendVip.length) b+=`<div style="margin-top:10px"><b>👑 Aulas VIP não lançadas (${d.pendVip.length})</b>${cap(d.pendVip,p=>linha(brDate(p.data)+' · '+esc(p.nome),`<button class="btn ghost sm" onclick="abrirFicha('${p.vipId}')">lançar ›</button>`))}</div>`;
+  if(d.relEnviar.length) b+=`<div style="margin-top:10px"><b>🧾 Relatórios p/ enviar às famílias (${d.relEnviar.length})</b>${cap(d.relEnviar,r=>linha(brDate(r.data)+' · '+esc(turmaNome(r.turmaId))))}</div>`;
+  return `<div class="card" style="border-left:4px solid var(--laranja)">${head}
+    <p class="hint" style="margin:6px 0 2px"><b>${d.total}</b> ponto(s) de atenção esta semana.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 2px"><button class="btn ghost sm" onclick="copiarResumoSemana()">📋 Copiar (WhatsApp)</button><button class="btn ghost sm" onclick="imprimirResumoSemana()">🖨️ Imprimir</button></div>
+    ${b}</div>`;
+}
+function textoResumoSemana(){
+  const d=_dadosResumoSemana();
+  let t=`📅 Resumo da semana — Togethere\n${_semanaLabel()}\n`;
+  if(!d.total) return t+'\n✅ Tudo em dia.';
+  const sec=(e,tit,arr,fn)=> arr.length?`\n${e} ${tit} (${arr.length}):\n`+arr.map(x=>'• '+fn(x)).join('\n')+'\n':'';
+  t+=sec('🚨','Faltas — contatar',d.fa,o=>_nmTurma(o.alunoId)+' — '+o.motivo);
+  t+=sec('🎒','Material — contatar',d.ma,o=>_nmTurma(o.alunoId)+' — '+o.motivo);
+  t+=sec('⏱️','Pacotes VIP',d.vipPac,v=>v.nome+' — '+_vipAlertaTxt(vipAlertaPacote(v.id)));
+  t+=sec('📋','Aulas/planos/relatórios pendentes',d.pendAula,p=>brDate(p.data)+' · '+turmaNome(p.turmaId)+' · '+(PEND_ROTULO[p.tipo]||p.tipo));
+  t+=sec('👑','Aulas VIP não lançadas',d.pendVip,p=>brDate(p.data)+' · '+p.nome);
+  t+=sec('🧾','Relatórios p/ enviar',d.relEnviar,r=>brDate(r.data)+' · '+turmaNome(r.turmaId));
+  return t.trim();
+}
+function copiarResumoSemana(){ const t=textoResumoSemana(); if(typeof copiarTexto==='function') copiarTexto(t,'Resumo da semana copiado ✓'); else toast('Copiado'); }
+function imprimirResumoSemana(){
+  const d=_dadosResumoSemana();
+  const sec=(e,tit,arr,fn)=> arr.length?`<h2>${e} ${tit} (${arr.length})</h2><ul>${arr.map(x=>`<li>${fn(x)}</li>`).join('')}</ul>`:'';
+  const corpo = d.total ? (
+    sec('🚨','Faltas — contatar',d.fa,o=>esc(_nmTurma(o.alunoId))+' — '+esc(o.motivo))+
+    sec('🎒','Material — contatar',d.ma,o=>esc(_nmTurma(o.alunoId))+' — '+esc(o.motivo))+
+    sec('⏱️','Pacotes VIP',d.vipPac,v=>esc(v.nome)+' — '+esc(_vipAlertaTxt(vipAlertaPacote(v.id))))+
+    sec('📋','Aulas/planos/relatórios pendentes',d.pendAula,p=>brDate(p.data)+' · '+esc(turmaNome(p.turmaId))+' · '+esc(PEND_ROTULO[p.tipo]||p.tipo))+
+    sec('👑','Aulas VIP não lançadas',d.pendVip,p=>brDate(p.data)+' · '+esc(p.nome))+
+    sec('🧾','Relatórios p/ enviar',d.relEnviar,r=>brDate(r.data)+' · '+esc(turmaNome(r.turmaId)))
+  ) : '<p>✅ Tudo em dia.</p>';
+  imprimirDoc(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Resumo da semana</title><style>@page{margin:14mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact}body{font-family:'Urbanist',system-ui,Arial,sans-serif;color:#15233b;padding:6px}.top{display:flex;align-items:baseline;gap:10px;border-bottom:3px solid #FFC800;padding-bottom:6px;margin-bottom:12px}h1{font-family:'Zilla Slab',Georgia,serif;color:#005EAF;font-size:20px;margin:0}.per{margin-left:auto;color:#5a6b86;font-size:12px}h2{font-family:'Zilla Slab',Georgia,serif;font-size:14px;color:#002B64;margin:14px 0 4px}ul{margin:0 0 6px;padding-left:20px}li{font-size:12.5px;margin:2px 0}</style></head><body><div class="top"><h1>Togethere</h1><div style="font-weight:700">Resumo da semana</div><div class="per">${_semanaLabel()} · ${brDate(hoje())}</div></div>${corpo}</body></html>`);
+}

@@ -217,8 +217,9 @@ VIEWS.painel=()=>{
     </div>`;
   if(S.perfil==='direcao' && _alunosVisiveis) v.appendChild(el(`<div style="margin:-4px 0 10px"><button class="btn ghost sm" onclick="ocultarAlunos()">🔒 Ocultar total de alunos</button></div>`));
   if(S.perfil==='direcao') v.appendChild(el(renderPainelGestao()));
-  { const _pc=renderPendenciasCard(); if(_pc) v.appendChild(el(_pc)); }   // pendências (chamada/plano/relatório)
-  { const _vp=(typeof renderPendenciasVipCard==='function')?renderPendenciasVipCard():''; if(_vp) v.appendChild(el(_vp)); }   // aulas VIP previstas sem registro
+  if(S.perfil==='direcao'){ const _rs=(typeof renderResumoSemana==='function')?renderResumoSemana():''; if(_rs) v.appendChild(el(_rs)); }   // resumo da semana (consolida faltas/material/VIP/pendências)
+  { const _pc=(S.perfil!=='direcao')?renderPendenciasCard():''; if(_pc) v.appendChild(el(_pc)); }   // pendências (chamada/plano/relatório) — direção vê no resumo
+  { const _vp=(S.perfil!=='direcao' && typeof renderPendenciasVipCard==='function')?renderPendenciasVipCard():''; if(_vp) v.appendChild(el(_vp)); }   // aulas VIP previstas sem registro — direção vê no resumo
   { const _rb=renderBoletinsReprovadosCard(); if(_rb) v.appendChild(el(_rb)); }   // aviso ao professor: boletins reprovados
   { const _na=apoioBadge();
     if(_na){
