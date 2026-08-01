@@ -83,6 +83,7 @@ function seed(){
     financeiro:[],
     configFin:[],
     permissoes:[],
+    estoqueMov:[],
     aulasVip:[],
     boletins:[],
     alertas:[],

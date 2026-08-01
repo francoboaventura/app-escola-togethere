@@ -30,6 +30,7 @@
     "src/js/27-relatorios-export.js",
     "src/js/28-matriculas.js",
     "src/js/29-financeiro.js",
-    "src/js/30-permissoes.js"
+    "src/js/30-permissoes.js",
+    "src/js/31-estoque.js"
   ]
 }

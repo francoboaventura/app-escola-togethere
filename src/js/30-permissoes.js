@@ -12,6 +12,7 @@ const PERMS_DEF={
     {k:'sec_contratos',  t:'Contratos (PDF)',                   d:'Subir e remover o contrato assinado na ficha do aluno.'},
     {k:'sec_acessos',    t:'Acesso ao portal do aluno',         d:'Gerar senha nova, trocar usuário e enviar link de troca de senha.'},
     {k:'sec_pausa_vip',  t:'Pausar aulas de VIPs',              d:'Definir períodos de pausa (sem alerta de aula não lançada).'},
+    {k:'sec_estoque',    t:'Estoque de livros',                 d:'Registrar entradas, ajustes e entregas de livros aos alunos.'},
   ],
   professor:[
     {k:'prof_del_plano',      t:'Excluir planos não realizados', d:'Apagar planos de aula ainda não dados nas suas turmas.'},
