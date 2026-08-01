@@ -528,3 +528,31 @@ body.dark .empty{ color:var(--tinta-suave); }
 body.dark .burger,body.dark .tb-burger{ color:var(--tinta); }
 /* sombras mais discretas no escuro */
 body.dark .card,body.dark .tbar,body.dark .modal{ box-shadow:0 2px 14px rgba(0,0,0,.35); }
+
+/* ===================== ERGONOMIA NO CELULAR (b133) ===================== */
+@media(max-width:640px){
+  /* iOS não dá zoom ao focar o campo quando a fonte é >= 16px */
+  input,textarea,select{ font-size:16px; }
+}
+@media(max-width:560px){
+  .content{ padding:16px 13px calc(80px + env(safe-area-inset-bottom)); }
+  .card{ padding:16px 15px; }
+  /* botões pequenos com alvo de toque decente */
+  .btn.sm{ padding:9px 13px; font-size:.85rem; min-height:38px; }
+  /* listas: botões respiram e quebram linha em vez de espremer */
+  .check{ flex-wrap:wrap; gap:8px; padding:11px 0; }
+  .check > span{ min-width:0; }
+  .check .btn{ min-height:38px; }
+  /* KPIs e tiles: no máximo 2 colunas (nunca 4 apertadas) */
+  .g4{ grid-template-columns:repeat(2,1fr); }
+  .fx-tiles{ grid-template-columns:repeat(2,1fr); gap:8px; }
+  .fx-tile{ padding:12px 6px; }
+  .fx-tile .v{ font-size:1.35rem; }
+  /* modal mais folgado na telinha */
+  .modal{ padding:18px 16px; width:min(520px,94vw); }
+  /* tabelas largas rolam na horizontal em vez de estourar a tela */
+  .card table{ display:block; overflow-x:auto; white-space:nowrap; -webkit-overflow-scrolling:touch; }
+  /* títulos proporcionais */
+  .section-title h2, .display{ font-size:1.2rem; }
+  #pageTitle{ font-size:1.2rem; }
+}
