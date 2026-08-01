@@ -178,3 +178,13 @@ function _renderBuscaGlobal(){
   if(turmas.length) h+=`<div class="card"><h3 style="margin:0 0 6px">🏫 Turmas (${turmas.length})</h3>${cap(turmas,t=>`<div class="check"><span style="flex:1">${esc(t.nome)}${t.professor?` <span class="pill">${esc(t.professor)}</span>`:''}${t.arquivada?' <span class="pill" style="background:#eef0f4;color:#7a8798">arquivada</span>':''}</span><button class="btn ghost sm" onclick="abrirTurma('${t.id}')">🏫 Abrir</button></div>`)}</div>`;
   box.innerHTML=h;
 }
+
+// ===================== MODO ESCURO =====================
+function _temaSalvo(){ try{ return localStorage.getItem('togethere_tema')||'claro'; }catch(e){ return 'claro'; } }
+function _aplicarTema(t){
+  document.body.classList.toggle('dark', t==='escuro');
+  const b=document.getElementById('btnTema'); if(b) b.textContent = (t==='escuro'?'☀️ Modo claro':'🌙 Modo escuro');
+  try{ const mc=document.querySelector('meta[name=theme-color]'); if(mc) mc.setAttribute('content', t==='escuro'?'#0f1626':'#005EAF'); }catch(e){}
+}
+function toggleTema(){ const novo=(_temaSalvo()==='escuro')?'claro':'escuro'; try{ localStorage.setItem('togethere_tema',novo); }catch(e){} _aplicarTema(novo); if(typeof toast==='function') toast(novo==='escuro'?'Modo escuro ativado':'Modo claro ativado'); }
+try{ _aplicarTema(_temaSalvo()); }catch(e){}

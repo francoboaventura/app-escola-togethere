@@ -494,3 +494,37 @@ button:disabled,.btn:disabled,button[disabled],.btn[disabled]{
 .gq-f span{font-family:'Poppins';font-weight:500;font-size:.8rem;color:var(--tinta-suave)}
 .gq-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;flex-wrap:wrap}
 @media(max-width:860px){ .gq-grid{grid-template-columns:1fr} }
+
+/* ===================== MODO ESCURO (b132) ===================== */
+body.dark{
+  --bg:#0f1626; --card:#182238; --tinta:#e8edf6; --tinta-suave:#9fb2cc; --linha:#2c3a56;
+}
+body.dark .tbar,
+body.dark .tnav-dd,
+body.dark .tb-perfil,
+body.dark .modal,
+body.dark .alert-card,
+body.dark .quad,
+body.dark .fx-tile,
+body.dark .pa-card,
+body.dark .fx-ar-h,
+body.dark .bnav,
+body.dark .mais-sheet,
+body.dark .mais-head,
+body.dark .tnav{ background:var(--card); }
+body.dark input,body.dark textarea,body.dark select{ background:#1b2740; color:var(--tinta); border-color:var(--linha); }
+body.dark .btn.ghost{ background:#1b2740; color:#7fb4ee; border-color:var(--linha); }
+body.dark .btn.ghost:hover{ background:#22314c; border-color:#7fb4ee; }
+body.dark .task,body.dark .gen-box{ background:#1b2740; }
+body.dark .pill,body.dark .seg,body.dark .fx-sk-bar,body.dark .wr-track,body.dark .av-sm{ background:#26324c; }
+body.dark .dash-grid .stat{ background:#1b2740; border-color:#2c3a56; }
+body.dark .dash-grid .stat .n{ color:#5aa2ea; }
+body.dark .tnav-item:hover,body.dark .tnav-top:hover,body.dark .tnav-di:hover,body.dark .mais-i:active{ background:#212e46; color:var(--tinta); }
+body.dark .tnav-item.active,body.dark .tnav-di.active,body.dark .mais-i.active,body.dark .tnav-grp.open .tnav-top,body.dark .tnav-grp:has(.active) .tnav-top{ background:#1e3a5f; color:#7fb4ee; }
+body.dark .tb-me:hover{ background:#212e46; }
+body.dark .wr-resumo,body.dark .task.agenda{ background:#2a2513; }
+body.dark .calhcell.hoje{ background:#1e3a5f; }
+body.dark .empty{ color:var(--tinta-suave); }
+body.dark .burger,body.dark .tb-burger{ color:var(--tinta); }
+/* sombras mais discretas no escuro */
+body.dark .card,body.dark .tbar,body.dark .modal{ box-shadow:0 2px 14px rgba(0,0,0,.35); }
