@@ -28,6 +28,7 @@
     "src/js/25-formacao-metodologia-togethere-viva-dent.js",
     "src/js/26-tutorial-o-que-cada-perfil-consegue-faze.js",
     "src/js/27-relatorios-export.js",
-    "src/js/28-matriculas.js"
+    "src/js/28-matriculas.js",
+    "src/js/29-financeiro.js"
   ]
 }

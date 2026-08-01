@@ -46,7 +46,23 @@ function migrar(s){
   s.formacao=s.formacao||[];         // biblioteca da metodologia (tópicos)
   s.formacaoReg=s.formacaoReg||[];   // quem leu/foi treinado em cada tópico
   s.formacaoSessoes=s.formacaoSessoes||[];   // sessões de formação registradas pela direção
-  s.matriculas=s.matriculas||[];     // módulo de matrículas (estudo) — só direção
+  s.matriculas=s.matriculas||[];     // módulo de matrículas (só cadastro) — só direção
+  s.financeiro=s.financeiro||[];     // módulo financeiro (mensalidades/carnê), ligado à matrícula
+  // migração b136: separa o financeiro que ficava dentro da matrícula para a coleção 'financeiro'
+  (s.matriculas||[]).forEach(m=>{
+    const temFin = (m.valorMensalidade!=null||m.valorMatricula!=null||m.parcelas!=null||m.diaVencimento!=null||m.formaPagamento||m.pagos);
+    if(!temFin) return;
+    const fid='fin_'+m.id;
+    if(!s.financeiro.some(f=>f.id===fid || f.matriculaId===m.id)){
+      s.financeiro.push({ id:fid, matriculaId:m.id, criadoEm:m.criadoEm||'', criadoPor:m.criadoPor||'', atualizadoEm:Date.now(),
+        valorMatricula:m.valorMatricula||0, valorMensalidade:m.valorMensalidade||0, descontoPct:m.descontoPct||0,
+        parcelas:(m.parcelas!=null?m.parcelas:12), diaVencimento:(m.diaVencimento!=null?m.diaVencimento:10), formaPagamento:m.formaPagamento||'',
+        dataInicio:m.dataInicio||'', pagos:m.pagos||{}, observacoes:'' });
+    }
+    // limpa os campos financeiros da matrícula (agora vivem no financeiro)
+    delete m.valorMatricula; delete m.valorMensalidade; delete m.descontoPct; delete m.parcelas; delete m.diaVencimento; delete m.formaPagamento; delete m.pagos;
+    m.atualizadoEm=Date.now();
+  });
   if(s.versao<6){ _semearFormacao(s); s.versao=6; }
   if(s.versao<7){ _semearFormacao(s); s.versao=7; }   // b90: tópicos do Pedagogical Guide   // b89: quadro do treinamento vira biblioteca inicial
   (s.aulasVip||[]).forEach(a=>{

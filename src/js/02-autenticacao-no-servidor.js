@@ -80,6 +80,7 @@ function seed(){
     pacotesVip:[],
     contratos:[],
     matriculas:[],
+    financeiro:[],
     aulasVip:[],
     boletins:[],
     alertas:[],
