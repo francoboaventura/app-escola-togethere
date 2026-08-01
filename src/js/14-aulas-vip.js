@@ -106,6 +106,49 @@ function _bannerAlertasVip(lista){
   if(!avisos.length) return '';
   return `<div class="card" style="background:#fff1e6;border:1px solid #ffd9bf"><b style="color:#c2560b">⚠️ Pacotes de horas — atenção (${avisos.length})</b>${avisos.map(a=>`<p class="hint" style="margin:6px 0 0"><b>${esc(a.nome)}</b>: ${_vipAlertaTxt(vipAlertaPacote(a.id))}</p>`).join('')}</div>`;
 }
+// Panorama de horas de todos os VIPs (secretaria/direção): saldos, % consumido e o que precisa de ação.
+let _vipPanoramaAberto=false;
+function toggleVipPanorama(){ _vipPanoramaAberto=!_vipPanoramaAberto; if(VIEWS.vip) VIEWS.vip(); }
+function _cardVisaoHorasVip(lista){
+  const com=(lista||[]).filter(v=>vipContratadoMin(v.id)>0 || vipConsumoMin(v.id)>0);
+  if(!com.length) return '';
+  const totC=com.reduce((s,v)=>s+vipContratadoMin(v.id),0);
+  const totU=com.reduce((s,v)=>s+vipConsumoMin(v.id),0);
+  const totS=totC-totU;
+  const nAt=com.filter(v=>vipAlertaPacote(v.id)).length;
+  const rows=com.map(v=>{
+    const c=vipContratadoMin(v.id), u=vipConsumoMin(v.id), s=c-u;
+    const pct=c>0?Math.min(100,Math.round(u/c*100)):(u>0?100:0);
+    const al=vipAlertaPacote(v.id); const fim=vipVigenciaFim(v.id);
+    let barCor='var(--ok)'; if(al&&(al.esgotado||al.vencido))barCor='var(--vermelho)'; else if(al&&(al.baixo||al.vencendo))barCor='var(--laranja)'; else if(pct>=80)barCor='#c2560b';
+    const urg = al?(al.esgotado||al.vencido?3:(al.baixo?2:1)):0;
+    return {v,c,u,s,pct,al,fim,barCor,urg};
+  }).sort((a,b)=> b.urg-a.urg || a.s-b.s);
+  const tile=(val,lbl,cor)=>`<div class="fx-tile"><div class="v" style="color:${cor}">${val}</div><div class="l">${lbl}</div></div>`;
+  const linha=r=>{
+    const chip = r.al?`<span class="pill" style="background:${(r.al.esgotado||r.al.vencido)?'#fdeaea':'#fff3e0'};color:${(r.al.esgotado||r.al.vencido)?'var(--vermelho)':'#c2560b'}">${_vipAlertaTxt(r.al)}</span>`:'';
+    const sCor = r.s<=0?'var(--vermelho)':(r.al&&r.al.baixo?'var(--laranja)':'var(--ok)');
+    return `<div class="check" style="cursor:pointer;display:block" onclick="abrirFicha('${r.v.id}')">
+      <div style="display:flex;gap:6px;align-items:baseline;flex-wrap:wrap"><b style="flex:1">${esc(r.v.nome)}</b>${chip}</div>
+      <div style="height:6px;background:#eef1f6;border-radius:4px;overflow:hidden;margin:5px 0 3px"><div style="height:100%;width:${r.pct}%;background:${r.barCor}"></div></div>
+      <span class="hint">${fmtDur(r.u)} de ${fmtDur(r.c)} (${r.pct}%) · saldo <b style="color:${sCor}">${fmtDur(Math.max(0,r.s))}</b>${r.v.professor?(' · '+esc(r.v.professor)):''}${r.fim?(' · até '+brDate(r.fim)):''}</span>
+    </div>`;
+  };
+  const criticos=rows.filter(r=>r.urg>0);
+  const mostra=_vipPanoramaAberto?rows:criticos;
+  return `<div class="card">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0;flex:1">📊 Panorama das horas VIP</h3>
+      <button class="btn ghost sm" onclick="toggleVipPanorama()">${_vipPanoramaAberto?'ver só os que precisam de ação ▲':'ver todos os '+com.length+' pacotes ▼'}</button></div>
+    <div class="fx-tiles" style="margin-top:10px">
+      ${tile(com.length,'Alunos c/ pacote','#005EAF')}
+      ${tile(fmtDur(totC),'Contratadas','var(--tinta)')}
+      ${tile(fmtDur(totU),'Utilizadas','#b8860b')}
+      ${tile(fmtDur(Math.max(0,totS)),'Saldo total',totS<=0?'var(--vermelho)':'var(--ok)')}
+    </div>
+    ${mostra.length?`<div style="margin-top:10px">${!_vipPanoramaAberto?`<p class="hint" style="margin:0 0 6px"><b>${criticos.length}</b> precisa(m) de atenção:</p>`:''}${mostra.map(linha).join('')}</div>`
+      :`<p class="hint" style="margin:10px 0 0">✅ Nenhum pacote precisando de atenção agora. Toque em "ver todos" para o panorama completo.</p>`}
+  </div>`;
+}
 // =========================================================================
 //  Horários previstos das aulas VIP + alerta de aula não registrada.
 //  Espelha o comportamento das turmas: passada a aula prevista, se +2h sem
@@ -211,7 +254,7 @@ VIEWS.vip=()=>{
   const vObj=lista.find(a=>a.id===vipSel)||{};
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:#C8A200"></span><h2 class="display">👑 Alunos VIP</h2></div>
     <p class="sub">${ehSec?'Gestão dos alunos particulares — vincule cada um a um professor ou converta para turma.':ehDir?'Aulas particulares, uma a uma. Cadastre o aluno, vincule a um professor e lance cada aula.':'Seus alunos particulares — cadastre, lance cada aula e tire o relatório.'}</p>
-    ${ehGestor?_bannerAlertasVip(lista):''}
+    ${ehGestor?_cardVisaoHorasVip(lista):''}
     <div class="card"><h3>Alunos VIP</h3>
       ${!ehSec?`<div class="row"><div style="flex:3"><input type="text" id="vipNome" placeholder="Nome do aluno VIP" onkeydown="if(event.key==='Enter')addVipAluno()"></div>
       ${ehDir?`<div style="flex:2"><select id="vipProf"><option value="">— professor…</option>${profs.map(p=>`<option value="${escAttr(p)}">${esc(p)}</option>`).join('')}</select></div>`:''}
