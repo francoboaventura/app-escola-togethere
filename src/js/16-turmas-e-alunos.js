@@ -289,7 +289,7 @@ function imprimirFichaVip(id){ const t=corpoFichaVip(id); if(!t) return; const h
 const VIP_PORTAL_ATIVO = false;
 // Material em uso do VIP: dropdown com as coleções do app + opção de digitar um material fora da lista.
 function _cardMaterialVip(vip){
-  const cols=(typeof TG_COLECOES_TODAS!=='undefined')?TG_COLECOES_TODAS:[];
+  const cols=(typeof colecoesTodas==='function')?colecoesTodas():((typeof TG_COLECOES_TODAS!=='undefined')?TG_COLECOES_TODAS:[]);
   const isOutro = !!(vip.material && cols.indexOf(vip.material)<0);
   return `<div class="card" style="margin-top:12px"><h3 style="margin:0 0 8px;font-size:1rem">📘 Material em uso</h3>
     <select onchange="_vipMaterialSel('${vip.id}',this)">
@@ -331,7 +331,12 @@ function _cardHorariosVip(vip){
       <div class="field" style="margin:0;flex:0 0 auto;width:130px"><label class="lbl">Hora</label><input type="time" value="" onchange="novoVipHorario('${vip.id}','hora',this.value)"></div>
       <span class="hint" style="margin-bottom:6px">← preencha para criar o 1º horário</span>
     </div>`;
+  const linkOk=(vip.linkAula||'').trim();
   let h=`<div class="card" style="margin-top:12px"><h3 style="margin:0 0 8px;font-size:1rem">🕒 Horários previstos das aulas</h3>
+    <div style="display:flex;gap:8px;align-items:flex-end;margin:0 0 10px;flex-wrap:wrap">
+      <div class="field" style="margin:0;flex:1;min-width:220px"><label class="lbl">🎥 Link da aula online (Meet/Zoom — opcional)</label><input type="url" value="${escAttr(vip.linkAula||'')}" placeholder="https://meet.google.com/…" onchange="setVipLinkAula('${vip.id}',this.value)"></div>
+      ${linkOk?`<a class="btn sm" style="background:#0A7A3D;text-decoration:none;margin-bottom:2px" href="${escAttr(linkOk)}" target="_blank" rel="noopener noreferrer">🎥 Entrar na aula</a>`:''}
+    </div>
     <p class="hint" style="margin:0 0 4px">Cada linha é um dia com o SEU horário (os horários podem variar por dia). Passada a aula sem registro, o app avisa o professor e, após 24h, a direção.</p>
     ${hs.length?hs.map(linhaH).join(''):linhaNova}
     <div style="display:flex;gap:10px;margin-top:10px;align-items:center;flex-wrap:wrap">
@@ -355,6 +360,14 @@ function _cardHorariosVip(vip){
     h+=`<div style="margin-top:12px;border-top:1px solid var(--linha);padding-top:10px"><b style="font-size:.92rem">⏸️ Pausas</b>${pausas.map(p=>`<p class="hint" style="margin:6px 0 0">${brDate(p.de)} a ${brDate(p.ate)}${p.motivo?(' · '+esc(p.motivo)):''}</p>`).join('')}<p class="hint" style="margin:6px 0 0">Só a secretaria/direção altera as pausas.</p></div>`;
   }
   return h+`</div>`;
+}
+function setVipLinkAula(id, url){
+  const vp=(S.vipAlunos||[]).find(x=>x.id===id); if(!vp) return;
+  url=(url||'').trim();
+  if(url && !/^https?:\/\//i.test(url)) url='https://'+url;   // aceita colar sem o https
+  if(url && !/^https?:\/\/[^\s]+\.[^\s]{2,}/i.test(url)) return toast('Link inválido — cole o endereço da sala (Meet, Zoom…)');
+  vp.linkAula=url; vp.atualizadoEm=Date.now(); save();
+  toast(url?'Link da aula online salvo 🎥':'Link removido'); VIEWS.ficha&&VIEWS.ficha();
 }
 function _vipGravarHorarios(vp, hs){
   vp.horarios=hs;

@@ -141,6 +141,8 @@ Alunos de aulas particulares, fora das turmas regulares.
 - **⏸️ Pausa:** período sem alertas (férias/recesso do aluno).
 - **🔁 Remanejamento:** troca pontual de dia/horário de uma aula prevista.
 - Horas de **consolidação** (importadas de antes do app) aparecem separadas e **não contam** como aula lançada.
+- **📊 Panorama:** escolha o período (este mês, mês passado, este ano) para ver as horas utilizadas no período — contratadas e saldo são sempre do total.
+- **🎥 Aula online:** cole o link (Meet/Zoom) na ficha do VIP — o botão "Entrar na aula" fica ali para todos.
 ## Alertas
 Aula prevista sem lançamento há mais de 24h gera **aviso** para a secretaria.` },
   { id:'apoio', em:'🤝', titulo:'Aula de apoio', grp:'Acompanhamento', roles:['professor','secretaria','direcao'],
@@ -228,6 +230,7 @@ Ao entregar para aluno de turma, a **direção** pode lançar o material no fina
 - **Preços por segmento** (Kids, Junior, Teens, Adults, Talking): taxa de matrícula, valor anual do curso e material.
 - **Valor da hora-aula VIP** — individual e **👥 em dupla** (valor por aluno).
 - **Cobranças diversas** (itens avulsos com nome e valor).
+- **🧩 Produtos:** cadastre segmentos novos (ex.: Conversation Club), níveis (ex.: PRE-A1) e materiais/coleções — eles aparecem na tabela de preços, no cadastro de turmas e nos pedidos de livros.
 - **Multa e juros por atraso** — usados no cálculo das parcelas vencidas.` },
   { id:'tarefas', em:'🎯', titulo:'Tarefas internas', grp:'Gestão', roles:['professor','secretaria','direcao'],
     resumo:'Matriz de Eisenhower da equipe — com Standby no lugar de "delegar".',

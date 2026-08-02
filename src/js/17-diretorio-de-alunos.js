@@ -222,7 +222,7 @@ function toggleArquivarTurma(id){if(!podeCadastro())return toast('Sem permissão
 function abrirEditarTurma(id){
   if(!podeCadastro()) return toast('Sem permissão para editar a turma');
   const t=S.turmas.find(x=>x.id===id); if(!t) return;
-  const cats=['kids','junior','teens','adults','talking'];
+  const cats=(typeof segmentosFin==='function')?segmentosFin().map(x=>x[0]):['kids','junior','teens','adults','talking'];
   const cefrs=['','A1','A1+','A2','A2+','B1','B1+','B2','B2+','C1','C2'];
   const profs=[...new Set((S.usuarios||[]).filter(u=>u.ensina).map(u=>u.ensina).filter(Boolean))];
   if(t.professor && profs.indexOf(t.professor)<0) profs.push(t.professor);   // preserva nome legado
@@ -236,7 +236,7 @@ function abrirEditarTurma(id){
     </div>
     <div class="field" style="margin-top:10px"><label class="lbl">Professor(a)</label>
       <select id="etProf"><option value="">— sem professor</option>${profs.map(p=>`<option value="${escAttr(p)}" ${t.professor===p?'selected':''}>${esc(p)}</option>`).join('')}</select></div>
-    ${(function(){const cols=(typeof TG_COLECOES_TODAS!=='undefined')?TG_COLECOES_TODAS:[];if(!cols.length)return '';const colAtual=(typeof planColecaoDe==='function')?(planColecaoDe(t)||''):(t.material||'');return `<div class="field" style="margin-top:10px"><label class="lbl">Material / coleção</label>
+    ${(function(){const cols=(typeof colecoesTodas==='function')?colecoesTodas():((typeof TG_COLECOES_TODAS!=='undefined')?TG_COLECOES_TODAS:[]);if(!cols.length)return '';const colAtual=(typeof planColecaoDe==='function')?(planColecaoDe(t)||''):(t.material||'');return `<div class="field" style="margin-top:10px"><label class="lbl">Material / coleção</label>
       <select id="etMaterial"><option value="">— sem material</option>${cols.map(c=>`<option value="${escAttr(c)}" ${colAtual===c?'selected':''}>${esc(c)}</option>`).join('')}</select>
       <p class="hint" style="margin:6px 0 0">Define o material usado pela turma. Trocar aqui <b>não apaga</b> o avanço do plano — para reiniciar a linha do tempo, use a tela Planejamento.</p></div>`;})()}
     <div class="field" style="margin-top:10px"><label class="lbl">Dias de aula</label><div style="display:flex;flex-wrap:wrap;gap:6px">

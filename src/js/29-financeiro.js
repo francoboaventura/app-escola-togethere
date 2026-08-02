@@ -319,6 +319,11 @@ function exportarFinanceiroCSV(){
    ===================================================================== */
 function _cfgFin(){ return ((S.configFin||[]).find(c=>c.id==='fin'))||{}; }
 const SEGMENTOS_FIN=[['kids','Kids'],['junior','Junior'],['teens','Teens'],['adults','Adults'],['talking','Talking']];
+function _slugSeg(nome){ return (nome||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'').slice(0,24); }
+function segmentosFin(){ const c=_cfgFin(); const ex=(c.segExtra||[]).map(s=>[s.key, s.nome]); return SEGMENTOS_FIN.concat(ex); }   // base + cadastrados pela direção
+function segmentoLabel(k){ const p=segmentosFin().find(x=>x[0]===k); return p?p[1]:(k||''); }
+function cefrTodos(){ const c=_cfgFin(); return CEFR_ORDEM.concat((c.cefrExtra||[]).filter(x=>CEFR_ORDEM.indexOf(x)<0)); }
+function colecoesTodas(){ const c=_cfgFin(); const base=(typeof TG_COLECOES_TODAS!=='undefined')?TG_COLECOES_TODAS:[]; return base.concat((c.materiais||[]).filter(x=>base.indexOf(x)<0)); }
 // preços do segmento, com fallback para os campos antigos (tabela única) se o segmento não estiver preenchido
 function precosSegmento(seg){
   const c=_cfgFin(); const s=(c.seg||{})[seg]||{};
@@ -348,8 +353,8 @@ VIEWS.configfin=()=>{
       <div style="overflow-x:auto"><table style="min-width:520px">
         <thead><tr><th>Segmento</th><th>Taxa de matrícula (R$)</th><th>Valor anual do curso (R$)</th><th>Material (R$)</th></tr></thead>
         <tbody>
-        ${SEGMENTOS_FIN.map(([k,lbl])=>{ const sg=(c.seg||{})[k]||{}; return `<tr>
-          <td style="font-weight:700">${lbl}</td>
+        ${segmentosFin().map(([k,lbl])=>{ const sg=(c.seg||{})[k]||{}; return `<tr>
+          <td style="font-weight:700">${esc(lbl)}${SEGMENTOS_FIN.some(x=>x[0]===k)?'':` <button class="btn ghost sm" style="color:var(--vermelho)" title="Remover segmento" onclick="delSegmento('${k}')">×</button>`}</td>
           <td><input type="number" id="cf_${k}_taxa" value="${sg.taxa!=null?sg.taxa:''}" min="0" step="0.01" placeholder="${_matN(c.taxaMatricula)||'0,00'}" style="min-width:110px"></td>
           <td><input type="number" id="cf_${k}_anual" value="${sg.anual!=null?sg.anual:''}" min="0" step="0.01" placeholder="${_matN(c.valorAnualCurso)||'0,00'}" style="min-width:110px"></td>
           <td><input type="number" id="cf_${k}_material" value="${sg.material!=null?sg.material:''}" min="0" step="0.01" placeholder="${_matN(c.valorMaterial)||'0,00'}" style="min-width:100px"></td>
@@ -367,6 +372,24 @@ VIEWS.configfin=()=>{
       </div>
       <button class="btn" style="margin-top:14px" onclick="salvarTabelaPrecos()">💾 Salvar tabela</button>
     </div>
+    <div class="card"><h3>🧩 Produtos — segmentos, níveis e materiais</h3>
+      <p class="hint" style="margin:0 0 8px">Cadastre aqui produtos novos: eles passam a aparecer na tabela de preços, no cadastro de turmas e nos pedidos de livros.</p>
+      <div style="border-top:1px solid var(--linha);padding-top:8px"><b style="font-size:.92rem">Segmentos</b>
+        <p class="hint" style="margin:2px 0 6px">Padrão: ${SEGMENTOS_FIN.map(s=>s[1]).join(', ')}.${(c.segExtra||[]).length?' Cadastrados: '+(c.segExtra||[]).map(s=>esc(s.nome)).join(', ')+'.':''}</p>
+        <div class="row" style="align-items:flex-end"><div class="field" style="flex:2;margin:0"><label class="lbl">Novo segmento</label><input type="text" id="cf_novoSeg" placeholder="Ex: Conversation Club, In-Company"></div>
+          <button class="btn ghost sm" style="margin-bottom:2px" onclick="addSegmento()">+ Adicionar</button></div>
+      </div>
+      <div style="border-top:1px solid var(--linha);padding-top:8px;margin-top:10px"><b style="font-size:.92rem">Níveis (CEFR)</b>
+        <p class="hint" style="margin:2px 0 6px">Padrão: ${CEFR_ORDEM.join(', ')}.${(c.cefrExtra||[]).length?' Cadastrados: '+(c.cefrExtra||[]).map(x=>`${esc(x)} <button class="btn ghost sm" style="color:var(--vermelho)" onclick="delNivelExtra('${escAttr(escJs(x))}')">×</button>`).join(' '):''}</p>
+        <div class="row" style="align-items:flex-end"><div class="field" style="flex:2;margin:0"><label class="lbl">Novo nível</label><input type="text" id="cf_novoCefr" placeholder="Ex: PRE-A1, PROF"></div>
+          <button class="btn ghost sm" style="margin-bottom:2px" onclick="addNivelExtra()">+ Adicionar</button></div>
+      </div>
+      <div style="border-top:1px solid var(--linha);padding-top:8px;margin-top:10px"><b style="font-size:.92rem">Materiais / coleções</b>
+        <p class="hint" style="margin:2px 0 6px">${(c.materiais||[]).length?('Cadastrados: '+(c.materiais||[]).map(x=>`${esc(x)} <button class="btn ghost sm" style="color:var(--vermelho)" onclick="delMaterialExtra('${escAttr(escJs(x))}')">×</button>`).join(' ')):'Nenhum além da lista padrão das coleções.'}</p>
+        <div class="row" style="align-items:flex-end"><div class="field" style="flex:2;margin:0"><label class="lbl">Novo material</label><input type="text" id="cf_novoMat" placeholder="Ex: Evolve 1, apostila própria"></div>
+          <button class="btn ghost sm" style="margin-bottom:2px" onclick="addMaterialExtra()">+ Adicionar</button></div>
+      </div>
+    </div>
     <div class="card"><h3>⏰ Multa e juros por atraso</h3>
       <div class="row">
         <div class="field"><label class="lbl">Multa (% sobre a parcela)</label><input type="number" id="cf_multa" value="${c.multaPct!=null?c.multaPct:2}" min="0" max="20" step="0.5"></div>
@@ -380,7 +403,7 @@ function salvarTabelaPrecos(){
   if(S.perfil!=='direcao') return toast('Sem permissão');
   const g=id=>{ const e=document.getElementById(id); if(!e) return null; const v=(e.value||'').trim(); return v===''?null:_matN(v); };
   const seg={};
-  SEGMENTOS_FIN.forEach(([k])=>{ const o={}; const t=g('cf_'+k+'_taxa'), a=g('cf_'+k+'_anual'), m=g('cf_'+k+'_material');
+  segmentosFin().forEach(([k])=>{ const o={}; const t=g('cf_'+k+'_taxa'), a=g('cf_'+k+'_anual'), m=g('cf_'+k+'_material');
     if(t!=null)o.taxa=t; if(a!=null)o.anual=a; if(m!=null)o.material=m; if(Object.keys(o).length)seg[k]=o; });
   _cfgFinSet({ seg, valorHoraVip:g('cf_horaVip')||0, valorHoraVipDupla:g('cf_horaVipDupla')||0 });
   toast('Tabela de preços salva ✓ (por segmento)');
@@ -403,6 +426,42 @@ function delCobrancaDiversa(i){
   if(S.perfil!=='direcao') return toast('Sem permissão');
   const c=_cfgFin(); const div=(c.diversos||[]).slice(); div.splice(i,1);
   _cfgFinSet({diversos:div}); VIEWS.configfin(); toast('Cobrança removida');
+}
+function addSegmento(){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const nome=((document.getElementById('cf_novoSeg')||{}).value||'').trim(); if(!nome) return toast('Dê um nome ao segmento');
+  const key=_slugSeg(nome); if(!key) return toast('Nome inválido');
+  if(segmentosFin().some(([k])=>k===key)) return toast('Já existe um segmento com esse nome');
+  const c=_cfgFin(); const ex=(c.segExtra||[]).slice(); ex.push({key,nome});
+  _cfgFinSet({segExtra:ex}); VIEWS.configfin(); toast('Segmento "'+nome+'" criado — preencha os preços dele na tabela');
+}
+function delSegmento(key){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  if((S.turmas||[]).some(t=>t.nivel===key && !t.arquivada)) return toast('Há turmas ativas usando este segmento — mude o segmento delas antes');
+  if(!confirm('Remover este segmento da lista? (os preços dele também saem da tabela)')) return;
+  const c=_cfgFin(); const seg=Object.assign({},c.seg||{}); delete seg[key];
+  _cfgFinSet({segExtra:(c.segExtra||[]).filter(s=>s.key!==key), seg}); VIEWS.configfin(); toast('Segmento removido');
+}
+function addNivelExtra(){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const v=((document.getElementById('cf_novoCefr')||{}).value||'').trim().toUpperCase(); if(!v) return toast('Informe o nível');
+  if(cefrTodos().indexOf(v)>=0) return toast('Esse nível já existe');
+  const c=_cfgFin(); _cfgFinSet({cefrExtra:(c.cefrExtra||[]).concat([v])}); VIEWS.configfin(); toast('Nível '+v+' criado');
+}
+function delNivelExtra(v){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  if((S.turmas||[]).some(t=>t.cefr===v && !t.arquivada)) return toast('Há turmas ativas usando este nível');
+  const c=_cfgFin(); _cfgFinSet({cefrExtra:(c.cefrExtra||[]).filter(x=>x!==v)}); VIEWS.configfin(); toast('Nível removido');
+}
+function addMaterialExtra(){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const v=((document.getElementById('cf_novoMat')||{}).value||'').trim(); if(!v) return toast('Informe o material');
+  if(colecoesTodas().indexOf(v)>=0) return toast('Esse material já existe');
+  const c=_cfgFin(); _cfgFinSet({materiais:(c.materiais||[]).concat([v])}); VIEWS.configfin(); toast('Material "'+v+'" criado');
+}
+function delMaterialExtra(v){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const c=_cfgFin(); _cfgFinSet({materiais:(c.materiais||[]).filter(x=>x!==v)}); VIEWS.configfin(); toast('Material removido');
 }
 // preenche o plano com a tabela: taxa + mensalidade = anual/parcelas
 function aplicarTabelaPrecos(id){

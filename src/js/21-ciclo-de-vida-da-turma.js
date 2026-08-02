@@ -27,7 +27,8 @@ function abrirCriarSequencia(tid){
   if(ehProfessor())return toast('Sem permissão');
   const t=(S.turmas||[]).find(x=>x.id===tid); if(!t) return;
   const cefrProx=proximoCefr(t.cefr||'');
-  const cefrs=CEFR_ORDEM.map(c=>`<option value="${c}" ${c===cefrProx?'selected':''}>${c}</option>`).join('');
+  const lst=(typeof cefrTodos==='function')?cefrTodos():CEFR_ORDEM;
+  const cefrs=lst.map(c=>`<option value="${c}" ${c===cefrProx?'selected':''}>${esc(c)}</option>`).join('');
   modal(`<h3>🔁 Criar sequência de ${escAttr(t.nome)} <button class="close" onclick="fechar()">×</button></h3>
     <p class="hint" style="margin:0 0 10px">A sequência nasce <b>vazia</b> e <b>EM FORMAÇÃO</b>, herdando segmento, dias, horário e professor. Os alunos entram conforme se matriculam. Nome gerado automaticamente (pode editar).</p>
     <div class="row"><div class="field"><label class="lbl">Nível CEFR</label><select id="sqCefr" onchange="_sqAtualizaNome('${tid}')">${cefrs}</select></div>
@@ -233,7 +234,7 @@ function criarProximaTurma(){
    CEFR e atualiza o material (coleção do planejamento), zerando o progresso.
    ===================================================================== */
 const _GT_CEFR=['A1','A1+','A2','A2+','B1','B1+','B2','B2+','C1','C1+','C2'];
-const _GT_CATS=['kids','junior','teens','adults','talking'];
+function _gtCats(){ return (typeof segmentosFin==='function')?segmentosFin().map(x=>x[0]):['kids','junior','teens','adults','talking']; }
 VIEWS.gestaoturmas=()=>{
   const v=document.getElementById('view');
   if(S.perfil!=='direcao'){ v.innerHTML='<div class="card empty"><div class="big">🔒</div>Só a direção acessa a gestão rápida de turmas.</div>'; return; }
@@ -244,7 +245,7 @@ VIEWS.gestaoturmas=()=>{
   if(!ts.length){ h+='<div class="card empty"><div class="big">🏫</div>Nenhuma turma ativa.</div>'; v.innerHTML=h; return; }
   h+=ts.map(t=>{
     const profOpts=`<option value="">— sem professor —</option>`+profs.map(p=>`<option value="${escAttr(p)}" ${t.professor===p?'selected':''}>${escAttr(p)}</option>`).join('');
-    const catOpts=_GT_CATS.map(c=>`<option value="${c}" ${((t.nivel||'')===c)?'selected':''}>${c}</option>`).join('');
+    const catOpts=_gtCats().map(c=>`<option value="${c}" ${((t.nivel||'')===c)?'selected':''}>${esc((typeof segmentoLabel==='function')?segmentoLabel(c):c)}</option>`).join('');
     const cefrOpts=`<option value="">—</option>`+_GT_CEFR.map(c=>`<option value="${c}" ${((t.cefr||'').toUpperCase()===c)?'selected':''}>${c}</option>`).join('');
     const mat=(typeof planColecaoDe==='function' && planColecaoDe(t))||'—';
     const noTopo=(_GT_CEFR.indexOf((t.cefr||'').toUpperCase())>=_GT_CEFR.length-1);

@@ -10,7 +10,7 @@ IA, **matrículas e financeiro**, **livros sob demanda**, **permissões configur
 celular/tablet/computador) publicado como um único `index.html`, mas **desenvolvido em módulos**
 (pasta `src/`) com build automático.
 
-> **Versão atual: `2026.08.02 · b152 (Supabase)`.**
+> **Versão atual: `2026.08.02 · b153 (Supabase)`.**
 > O app roda sobre **PostgreSQL no Supabase** (migração do Google Sheets em 25/07).
 > Confira a versão em uso no **rodapé** do app — ele avisa sozinho quando há atualização.
 
@@ -66,7 +66,8 @@ obrigatória no 1º acesso.
   comentários), card **📚 Livros** com o estágio do material, contratos e envio por e-mail.
 - **Alunos VIP** — aulas particulares com **pacotes de horas** (contratadas × utilizadas,
   visíveis só para secretaria/direção), **aulas em dupla** com hora-aula própria (valor por
-  aluno), horários previstos POR DIA (cada dia com hora E duração próprias), **pausas** (períodos sem alerta),
+  aluno), horários previstos POR DIA (cada dia com hora E duração próprias), **pausas** (períodos sem alerta), **panorama com filtro de período** (mês/ano),
+  **link de aula online** (Meet/Zoom) na ficha,
   **remanejamentos** de aula e alerta de aula prevista **não lançada em 24h**. Horas de
   **consolidação** (pré-app) ficam separadas e não contam como aula lançada.
 - **Avisos automáticos** — 3 faltas consecutivas; sem material 3 seguidas ou 5 alternadas;
@@ -89,7 +90,9 @@ obrigatória no 1º acesso.
   R$, carnê com recebimento manual, **negociação com senha da direção**, cobranças extras,
   multa/juros por atraso. Boleto e cartão por enquanto **simulados** (APIs depois).
 - **⚙️ Config. financeira** (direção) — tabela de preços **por segmento** (Kids, Junior,
-  Teens, Adults, Talking), hora-aula VIP, cobranças diversas, multa e juros.
+  Teens, Adults, Talking **+ segmentos cadastráveis**), hora-aula VIP (individual e dupla),
+  cobranças diversas, multa e juros, e **🧩 Produtos** (cadastrar segmentos, níveis CEFR e
+  materiais novos — alimentam turmas, preços e livros).
 - **🔐 Permissões** (direção) — liga/desliga ações da secretaria e dos professores.
 - **🎯 Tarefas internas** — matriz de Eisenhower da equipe com **Standby** no lugar de
   "delegar": Fazer agora / Agendar / Standby / Eliminar, com responsável e prazo.

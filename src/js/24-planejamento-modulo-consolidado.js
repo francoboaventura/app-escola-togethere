@@ -207,7 +207,7 @@ function renderPlanejamento(){
   const cards=ts.map(function(t){
     const col=planColecaoDe(t); const sug=planColecaoSugerida(t); const les=_plLessons(col); const pub=!!les;
     const rec=_planRec(t.id); const temPos=!!(rec&&rec.dadas&&Object.keys(rec.dadas).length);
-    const opts=['<option value="">— escolher coleção —</option>'].concat(TG_COLECOES_TODAS.map(function(c){
+    const opts=['<option value="">— escolher coleção —</option>'].concat(((typeof colecoesTodas==='function')?colecoesTodas():TG_COLECOES_TODAS).map(function(c){
       const has=TG_COLECOES_PUBLICADAS.indexOf(c)>=0; return '<option value="'+c+'" '+(c===col?'selected':'')+'>'+c+(has?'':' (em breve)')+'</option>'; })).join('');
     let corpo='';
     if(!col){ corpo='<p class="hint">Sem coleção definida.'+(sug?(' Sugestão pelo nível: <b>'+sug+'</b>.'):'')+'</p>'; }

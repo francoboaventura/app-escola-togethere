@@ -173,7 +173,7 @@ function abrirPedidoAvulso(){
     opts+=`<optgroup label="${escAttr(t.nome)}">`+als.map(a=>`<option value="a:${a.id}">${esc(a.nome)}</option>`).join('')+'</optgroup>'; });
   const vips=(S.vipAlunos||[]).filter(x=>!x.arquivado);
   if(vips.length) opts+='<optgroup label="👑 Alunos VIP">'+vips.map(x=>`<option value="v:${x.id}">${esc(x.nome)}</option>`).join('')+'</optgroup>';
-  const cols=(typeof TG_COLECOES_TODAS!=='undefined')?TG_COLECOES_TODAS:[];
+  const cols=(typeof colecoesTodas==='function')?colecoesTodas():((typeof TG_COLECOES_TODAS!=='undefined')?TG_COLECOES_TODAS:[]);
   modal(`<h3>🛒 Pedido avulso <button class="close" onclick="fechar()">×</button></h3>
     <div class="field"><label class="lbl">Aluno</label><select id="pa_aluno">${opts}</select></div>
     <div class="field"><label class="lbl">Livro</label><select id="pa_titulo">${cols.map(c=>`<option>${esc(c)}</option>`).join('')}<option value="__outro__">— Outro (digitar) —</option></select></div>

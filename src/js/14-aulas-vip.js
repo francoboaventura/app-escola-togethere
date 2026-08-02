@@ -125,22 +125,36 @@ function _bannerAlertasVip(lista){
   return `<div class="card" style="background:#fff1e6;border:1px solid #ffd9bf"><b style="color:#c2560b">⚠️ Pacotes de horas — atenção (${avisos.length})</b>${avisos.map(a=>`<p class="hint" style="margin:6px 0 0"><b>${esc(a.nome)}</b>: ${_vipAlertaTxt(vipAlertaPacote(a.id))}</p>`).join('')}</div>`;
 }
 // Panorama de horas de todos os VIPs (secretaria/direção): saldos, % consumido e o que precisa de ação.
-let _vipPanoramaAberto=false;
+let _vipPanoramaAberto=false, _vipPanoramaPer='tudo';
 function toggleVipPanorama(){ _vipPanoramaAberto=!_vipPanoramaAberto; if(VIEWS.vip) VIEWS.vip(); }
+function setVipPanoramaPer(p){ _vipPanoramaPer=p||'tudo'; if(VIEWS.vip) VIEWS.vip(); }
+function _vipPerRange(p){   // [de, ate] em YYYY-MM-DD, ou null = tudo
+  const d=new Date(); const y=d.getFullYear(), m=d.getMonth();
+  if(p==='mes')     return [ymd(new Date(y,m,1)),   ymd(new Date(y,m+1,0))];
+  if(p==='mespass') return [ymd(new Date(y,m-1,1)), ymd(new Date(y,m,0))];
+  if(p==='ano')     return [y+'-01-01', y+'-12-31'];
+  return null;
+}
+function vipConsumoMinPer(vid, per){
+  const r=_vipPerRange(per); if(!r) return vipConsumoMin(vid);
+  return (S.aulasVip||[]).filter(a=>a.vipId===vid && (!a.faltou||a.cobrarFalta) && a.data>=r[0] && a.data<=r[1]).reduce((s,a)=>s+(+a.duracaoMin||0),0);
+}
 function _cardVisaoHorasVip(lista){
   const com=(lista||[]).filter(v=>vipContratadoMin(v.id)>0 || vipConsumoMin(v.id)>0);
   if(!com.length) return '';
+  const per=_vipPanoramaPer, temPer=(per!=='tudo');
   const totC=com.reduce((s,v)=>s+vipContratadoMin(v.id),0);
   const totU=com.reduce((s,v)=>s+vipConsumoMin(v.id),0);
+  const totUPer=temPer?com.reduce((s,v)=>s+vipConsumoMinPer(v.id,per),0):totU;
   const totS=totC-totU;
   const nAt=com.filter(v=>vipAlertaPacote(v.id)).length;
   const rows=com.map(v=>{
-    const c=vipContratadoMin(v.id), u=vipConsumoMin(v.id), s=c-u;
+    const c=vipContratadoMin(v.id), u=vipConsumoMin(v.id), s=c-u, uPer=temPer?vipConsumoMinPer(v.id,per):u;
     const pct=c>0?Math.min(100,Math.round(u/c*100)):(u>0?100:0);
     const al=vipAlertaPacote(v.id); const fim=vipVigenciaFim(v.id);
     let barCor='var(--ok)'; if(al&&(al.esgotado||al.vencido))barCor='var(--vermelho)'; else if(al&&(al.baixo||al.vencendo))barCor='var(--laranja)'; else if(pct>=80)barCor='#c2560b';
     const urg = al?(al.esgotado||al.vencido?3:(al.baixo?2:1)):0;
-    return {v,c,u,s,pct,al,fim,barCor,urg};
+    return {v,c,u,s,uPer,pct,al,fim,barCor,urg};
   }).sort((a,b)=> b.urg-a.urg || a.s-b.s);
   const tile=(val,lbl,cor)=>`<div class="fx-tile"><div class="v" style="color:${cor}">${val}</div><div class="l">${lbl}</div></div>`;
   const linha=r=>{
@@ -149,21 +163,28 @@ function _cardVisaoHorasVip(lista){
     return `<div class="check" style="cursor:pointer;display:block" onclick="abrirFicha('${r.v.id}')">
       <div style="display:flex;gap:6px;align-items:baseline;flex-wrap:wrap"><b style="flex:1">${esc(r.v.nome)}</b>${chip}</div>
       <div style="height:6px;background:#eef1f6;border-radius:4px;overflow:hidden;margin:5px 0 3px"><div style="height:100%;width:${r.pct}%;background:${r.barCor}"></div></div>
-      <span class="hint">${fmtDur(r.u)} de ${fmtDur(r.c)} (${r.pct}%) · saldo <b style="color:${sCor}">${fmtDur(Math.max(0,r.s))}</b>${r.v.professor?(' · '+esc(r.v.professor)):''}${r.fim?(' · até '+brDate(r.fim)):''}</span>
+      <span class="hint">${temPer?`<b style="color:#b8860b">${fmtDur(r.uPer)} no período</b> · `:''}${fmtDur(r.u)} de ${fmtDur(r.c)} (${r.pct}%) · saldo <b style="color:${sCor}">${fmtDur(Math.max(0,r.s))}</b>${r.v.professor?(' · '+esc(r.v.professor)):''}${r.fim?(' · até '+brDate(r.fim)):''}</span>
     </div>`;
   };
   const criticos=rows.filter(r=>r.urg>0);
   const mostra=_vipPanoramaAberto?rows:criticos;
   return `<div class="card">
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0;flex:1">📊 Panorama das horas VIP</h3>
+      <select onchange="setVipPanoramaPer(this.value)" style="max-width:150px">
+        <option value="tudo" ${per==='tudo'?'selected':''}>Desde o início</option>
+        <option value="mes" ${per==='mes'?'selected':''}>Este mês</option>
+        <option value="mespass" ${per==='mespass'?'selected':''}>Mês passado</option>
+        <option value="ano" ${per==='ano'?'selected':''}>Este ano</option>
+      </select>
       <button class="btn ghost sm" onclick="exportarHorasVipCSV()">⬇️ Planilha</button>
       <button class="btn ghost sm" onclick="toggleVipPanorama()">${_vipPanoramaAberto?'ver só os que precisam de ação ▲':'ver todos os '+com.length+' pacotes ▼'}</button></div>
     <div class="fx-tiles" style="margin-top:10px">
       ${tile(com.length,'Alunos c/ pacote','#005EAF')}
       ${tile(fmtDur(totC),'Contratadas','var(--tinta)')}
-      ${tile(fmtDur(totU),'Utilizadas','#b8860b')}
+      ${temPer?tile(fmtDur(totUPer),'Utilizadas no período','#b8860b'):tile(fmtDur(totU),'Utilizadas','#b8860b')}
       ${tile(fmtDur(Math.max(0,totS)),'Saldo total',totS<=0?'var(--vermelho)':'var(--ok)')}
     </div>
+    ${temPer?`<p class="hint" style="margin:6px 0 0">Período: <b>${per==='mes'?'este mês':per==='mespass'?'mês passado':'este ano'}</b> — "no período" em cada linha. Contratadas e saldo são sempre do total do pacote.</p>`:''}
     ${mostra.length?`<div style="margin-top:10px">${!_vipPanoramaAberto?`<p class="hint" style="margin:0 0 6px"><b>${criticos.length}</b> precisa(m) de atenção:</p>`:''}${mostra.map(linha).join('')}</div>`
       :`<p class="hint" style="margin:10px 0 0">✅ Nenhum pacote precisando de atenção agora. Toque em "ver todos" para o panorama completo.</p>`}
   </div>`;
