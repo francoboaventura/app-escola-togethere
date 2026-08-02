@@ -22,7 +22,7 @@ function mostrarAniversariantes(){
   const lista=aniversariantesSemana(); if(!lista.length) return;
   modal(`<h3>🎂 Aniversariantes da semana <button class="close" onclick="fechar()">×</button></h3>
     <p class="hint" style="margin-bottom:10px">Alunos que fazem aniversário nos próximos 7 dias:</p>
-    ${lista.map(o=>`<div class="check"><span>🎉 <b>${o.nome}</b> — ${brDate(ymd(o.dia))} (${DIAS_SEMANA[o.dia.getDay()]})${(o.faz>0&&o.faz<130)?` · faz ${o.faz}`:''} <span class="pill">${o.turma}</span></span></div>`).join('')}
+    ${lista.map(o=>`<div class="check"><span>🎉 <b>${esc(o.nome)}</b> — ${brDate(ymd(o.dia))} (${DIAS_SEMANA[o.dia.getDay()]})${(o.faz>0&&o.faz<130)?` · faz ${o.faz}`:''} <span class="pill">${esc(o.turma)}</span></span></div>`).join('')}
     <button class="btn block" onclick="fechar()" style="margin-top:12px">Fechar</button>`);
 }
 

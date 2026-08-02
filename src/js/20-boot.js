@@ -12,7 +12,7 @@ const TRILHAS={
   adults:{label:'ADULTS', niveis:['Pré A1','A1','A2','B1','B1+']},
   avancado:{label:'Sem faixa etária', niveis:['B2','C1','C1+','C2']}
 };
-function _selTurmasOpts(sel){ return turmasVisiveis().slice().sort((a,b)=>a.nome.localeCompare(b.nome)).map(t=>`<option value="${t.id}" ${t.id===sel?'selected':''}>${t.nome}</option>`).join(''); }
+function _selTurmasOpts(sel){ return turmasVisiveis().slice().sort((a,b)=>a.nome.localeCompare(b.nome)).map(t=>`<option value="${t.id}" ${t.id===sel?'selected':''}>${esc(t.nome)}</option>`).join(''); }
 /* ===== Varredura de duplicidades (b44) ===== */
 function _normTxt(s){ return (s||'').toString().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim(); }
 function _normNomeAluno(s){ return _normTxt(s); }

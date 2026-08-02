@@ -21,11 +21,17 @@ async function cloudTrocarSenha(nova){
 async function cloudResetarSenha(alvo, nova){
   if(!CLOUD_TOKEN) return {ok:false, erro:'sessao'};
   try{
-    const r=await fetch(CLOUD_URL+'?action=resetarSenha',{
-      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body:JSON.stringify({token:CLOUD_TOKEN, alvo, nova})
-    });
-    return await r.json();
+    const { data, error }=await sb.functions.invoke('admin-equipe', { body:{ acao:'senha', alvo, nova } });
+    if(error) return {ok:false, erro:'rede'};
+    return data||{ok:false, erro:'rede'};
+  }catch(e){ return {ok:false, erro:'rede'}; }
+}
+// cria a CONTA de login (Supabase Auth) de um usuário novo da equipe — usada pelo Acessos
+async function cloudCriarContaEquipe(nome, senha, papel){
+  try{
+    const { data, error }=await sb.functions.invoke('admin-equipe', { body:{ acao:'criar', alvo:nome, nova:senha, papel:papel||'professor' } });
+    if(error) return {ok:false, erro:'rede'};
+    return data||{ok:false, erro:'rede'};
   }catch(e){ return {ok:false, erro:'rede'}; }
 }
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}

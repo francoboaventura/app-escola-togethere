@@ -128,8 +128,9 @@ function verRelArquivo(id){
   const aviso=r.corpoEnviado?'':'<p class="hint" style="margin:0 0 8px">Relatório anterior à atualização — mostrando o texto atual (sem cópia congelada).</p>';
   modal(`<h3>${esc(t.nome||'—')} · ${brDate(r.data)} <button class="close" onclick="fechar()">×</button></h3>
     <p class="hint" style="margin:0 0 8px">🧾 Relatório de aula · enviado${r.enviadoEm?' em '+brDate(r.enviadoEm):''}</p>${aviso}
-    <div class="gen-box">${escAttr(corpo)}</div>
-    <div class="row" style="margin-top:10px;gap:8px"><button class="btn amarelo" onclick="copiarTexto(${JSON.stringify(corpo)},'Copiado!')">📋 Copiar</button></div>`);
+    <div class="gen-box">${esc(corpo)}</div>
+    <div class="row" style="margin-top:10px;gap:8px"><button class="btn amarelo" onclick="copiarTexto(window.__arqCorpo,'Copiado!')">📋 Copiar</button></div>`);
+  window.__arqCorpo=corpo;
 }
 function verRelAlunoArquivo(alunoId, ts){
   const a=(S.alunos||[]).find(x=>x.id===alunoId); if(!a)return;
@@ -140,9 +141,10 @@ function verRelAlunoArquivo(alunoId, ts){
   const aviso=corpo?'':'<p class="hint" style="margin:0 0 8px">Sem cópia congelada deste envio — use “Abrir ficha atual”.</p>';
   modal(`<h3>${esc(a.nome)} <button class="close" onclick="fechar()">×</button></h3>
     <p class="hint" style="margin:0 0 8px">📄 Relatório por aluno${t.nome?' · '+esc(t.nome):''} · enviado em ${brDate(reg.em)}${viaTxt?' ('+viaTxt+')':''}</p>${aviso}
-    ${corpo?`<div class="gen-box">${escAttr(corpo)}</div>`:''}
-    <div class="row" style="margin-top:10px;gap:8px">${corpo?`<button class="btn amarelo" onclick="copiarTexto(${JSON.stringify(corpo)},'Copiado!')">📋 Copiar</button>`:''}
+    ${corpo?`<div class="gen-box">${esc(corpo)}</div>`:''}
+    <div class="row" style="margin-top:10px;gap:8px">${corpo?`<button class="btn amarelo" onclick="copiarTexto(window.__arqCorpo,'Copiado!')">📋 Copiar</button>`:''}
     <button class="btn ghost" onclick="fechar();abrirFicha('${alunoId}')">📇 Abrir ficha atual</button></div>`);
+  window.__arqCorpo=corpo;
 }
 function alunosSelect(id,turmaId,sel){
   const als=alunosDa(turmaId);

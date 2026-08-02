@@ -17,13 +17,13 @@ VIEWS.alertas=()=>{
     if(fa.length){
       v.appendChild(el(`<h3 style="margin:6px 0 12px;font-size:1rem">🚨 Faltas consecutivas (${fa.length})</h3>`));
       fa.forEach(o=>v.appendChild(el(`<div class="alert-card"><div class="ic falta">📋</div>
-        <div class="info"><b>${nome(o.alunoId)}</b> <span class="pill">${turmaDe(o.alunoId)}</span><p>${o.motivo} — contatar responsável.</p></div>
+        <div class="info"><b>${esc(nome(o.alunoId))}</b> <span class="pill">${esc(turmaDe(o.alunoId))}</span><p>${esc(o.motivo)} — contatar responsável.</p></div>
         <div class="acts"><button class="btn red sm" onclick="marcarContato('${o.alunoId}','falta')">✓ Contatei</button></div></div>`)));
     }
     if(ma.length){
       v.appendChild(el(`<h3 style="margin:18px 0 12px;font-size:1rem">🎒 Material (${ma.length})</h3>`));
       ma.forEach(o=>v.appendChild(el(`<div class="alert-card mat"><div class="ic mat">🎒</div>
-        <div class="info"><b>${nome(o.alunoId)}</b> <span class="pill">${turmaDe(o.alunoId)}</span><p>${o.motivo} — contatar responsável.</p></div>
+        <div class="info"><b>${esc(nome(o.alunoId))}</b> <span class="pill">${esc(turmaDe(o.alunoId))}</span><p>${esc(o.motivo)} — contatar responsável.</p></div>
         <div class="acts"><button class="btn sm" style="background:var(--laranja)" onclick="marcarContato('${o.alunoId}','material')">✓ Contatei</button></div></div>`)));
     }
   }
@@ -31,7 +31,7 @@ VIEWS.alertas=()=>{
   if(S.perfil==='direcao'){
     const rf=registroGeral('falta'), rm=registroGeral('material'), rt=registroGeral('tema');
     const linhas=(arr)=>arr.length
-      ? arr.map(o=>`<tr><td>${nome(o.alunoId)}</td><td><span class="pill">${turmaDe(o.alunoId)}</span></td><td>${brDate(o.data)}</td></tr>`).join('')
+      ? arr.map(o=>`<tr><td>${esc(nome(o.alunoId))}</td><td><span class="pill">${esc(turmaDe(o.alunoId))}</span></td><td>${brDate(o.data)}</td></tr>`).join('')
       : '<tr><td colspan=3 style="color:var(--tinta-suave)">Nenhum registro.</td></tr>';
     v.appendChild(el(`<div class="card" style="margin-top:28px;border-top:3px solid var(--marinho)">
       <h3>📊 Registro completo da escola</h3><p class="hint">Visão da direção: todas as ocorrências registradas pelos professores.</p>

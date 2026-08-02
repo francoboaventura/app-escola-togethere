@@ -494,7 +494,7 @@ async function salvarNegociacao(id){
   if(!senha) return toast('Digite a senha da direção');
   const b=document.querySelector('#modal .btn.block'); if(b){ b.disabled=true; b.textContent='Verificando senha…'; }
   let ok=false;
-  try{ const chk=await cloudLogin(S.usuario, senha); ok=!!(chk&&chk.ok===true); }catch(e){ ok=false; }
+  try{ ok=await verificarSenha(S.usuario, senha); }catch(e){ ok=false; }
   if(!ok){ if(b){ b.disabled=false; b.textContent='Confirmar negociação'; } return toast('Senha incorreta'); }
   f.negociacao={ mensalidade:valor, obs, por:S.usuario, em:hoje() };
   f.atualizadoEm=Date.now(); save(); fechar();

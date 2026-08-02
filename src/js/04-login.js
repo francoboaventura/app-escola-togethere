@@ -47,9 +47,15 @@ async function fazerLogin(){
   // puxa o estado da nuvem já com o token recém-obtido
   const res=await cloudGet(8000);
   if(res.ok && res.state && res.state.usuarios && res.state.usuarios.length){
-    S=migrar(res.state); S.usuario=resp.usuario; S.perfil=resp.perfil;
+    let nova=migrar(res.state);
+    let temPend=false; try{ temPend=!!localStorage.getItem(PEND_KEY); }catch(e){}
+    if(temPend){   // edições offline não enviadas → mescla (igual ao boot), não descarta
+      let loc=null; try{ loc=JSON.parse(localStorage.getItem(KEY)); }catch(e){}
+      if(loc){ nova=mergeEstados(nova, migrar(loc)); _pendenteSync=true; }
+    }
+    S=nova; S.usuario=resp.usuario; S.perfil=resp.perfil;
     try{ localStorage.setItem(KEY,JSON.stringify(S)); }catch(e){}
-    marcarSync('ok');
+    marcarSync(_pendenteSync?'...':'ok');
   } else if(res.ok && !res.state){
     marcarSync('ok');   // nuvem vazia: mantém a base local; save/boot cuidam de enviar
   } else {
@@ -107,8 +113,8 @@ function _tickRelogio(){
   const hh=String(d.getHours()).padStart(2,'0'), mm=String(d.getMinutes()).padStart(2,'0');
   el.innerHTML='<span class="rel-d">'+dia+'</span>'+hh+':'+mm;
 }
-function logout(){
-  try{ cloudLogout(); }catch(e){}
+async function logout(){
+  try{ await Promise.race([cloudLogout(), new Promise(r=>setTimeout(r,2500))]); }catch(e){}   // garante o signOut antes de recarregar
   try{ localStorage.removeItem(TKEY); localStorage.removeItem(UKEY); localStorage.removeItem(PKEY); }catch(e){}
   CLOUD_TOKEN=null;
   location.reload();
@@ -229,6 +235,6 @@ function idadeDe(nasc){ if(!nasc) return null; const p=String(nasc).split('-').m
 function brDate(d){if(!d)return'';const[y,m,dd]=d.split('-');return`${dd}/${m}/${y}`;}
 function selectTurma(id,sel){
   const ts=turmasVisiveis();
-  return `<select id="${id}">${ts.map(t=>`<option value="${t.id}" ${t.id===sel?'selected':''}>${t.nome}</option>`).join('')}</select>`;
+  return `<select id="${id}">${ts.map(t=>`<option value="${t.id}" ${t.id===sel?'selected':''}>${esc(t.nome)}</option>`).join('')}</select>`;
 }
 function primeiraTurma(){return (turmasVisiveis()[0]||{}).id;}

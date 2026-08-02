@@ -12,6 +12,12 @@ function load(){
 }
 function migrar(s){
   s.versao=s.versao||1;
+  // Higiene anti-XSS: nomes nunca têm <> — remove tags de nomes vindos de qualquer fonte
+  const _semTags=v=>typeof v==='string'?v.replace(/[<>]/g,''):v;
+  (s.turmas||[]).forEach(t=>{ t.nome=_semTags(t.nome); t.professor=_semTags(t.professor); });
+  (s.alunos||[]).forEach(a=>{ a.nome=_semTags(a.nome); });
+  (s.vipAlunos||[]).forEach(v=>{ v.nome=_semTags(v.nome); v.professor=_semTags(v.professor); v.material=_semTags(v.material); });
+  (s.usuarios||[]).forEach(u=>{ u.nome=_semTags(u.nome); u.ensina=_semTags(u.ensina); });
   if(s.versao<2){                 // (legado) não mexe mais em senhas
     s.versao=2;
   }

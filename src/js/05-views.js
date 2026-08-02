@@ -156,7 +156,7 @@ async function confirmarRevelarAlunos(){
   if(!cloudOn()) return toast('Sem conexão para validar a senha');
   const diretores=(S.usuarios||[]).filter(u=>u.perfil==='direcao');
   let ok=false;
-  for(const d of diretores){ const r=await cloudLogin(d.nome, senha); if(r && r.ok && r.perfil==='direcao'){ ok=true; break; } }
+  for(const d of diretores){ if(await verificarSenha(d.nome, senha)){ ok=true; break; } }
   if(!ok) return toast('Senha de diretor(a) incorreta');
   _alunosVisiveis=true; fechar(); toast('Número de alunos revelado nesta sessão');
   _reRenderAtual();
@@ -209,7 +209,7 @@ VIEWS.painel=()=>{
   ].filter(c=>!c.dir || S.perfil==='direcao');   // total de alunos só para a direção
   const paHtml=(typeof renderProximasAulas==='function')?renderProximasAulas():'';   // trilho "próximas aulas" (b104)
   v.innerHTML=`
-    <div class="section-title"><span class="feijao fj" style="background:var(--amarelo)"></span><h2 class="display">Olá, ${S.usuario}!</h2></div>
+    <div class="section-title"><span class="feijao fj" style="background:var(--amarelo)"></span><h2 class="display">Olá, ${esc(S.usuario)}!</h2></div>
     <p class="sub">Resumo rápido — ${brDate(hoje())}</p>
     ${paHtml}
     <div class="grid g4" style="margin-bottom:8px">

@@ -84,7 +84,7 @@ function renderTemas(){
     const parcial=alvos.filter(aid=>t.entregas[aid]==='parcial').length;
     const alvoLabel=(totalTurma>0 && alvos.length>=totalTurma)?'Turma toda':alvos.length+' aluno(s)';
     const badge=t.origem==='plano'?'<span class="pill" style="background:#e6f0fb;color:var(--azul)">do plano</span>':'<span class="pill">extra</span>';
-    return `<div class="card"><div style="display:flex;align-items:flex-start;gap:8px"><div style="flex:1"><h3 style="margin:0">${t.descricao}</h3>
+    return `<div class="card"><div style="display:flex;align-items:flex-start;gap:8px"><div style="flex:1"><h3 style="margin:0">${esc(t.descricao)}</h3>
       <p class="hint" style="margin:4px 0 0">${t.origem==='plano'?'Aula':'Criado'} ${brDate(t.data)}${t.dataEntrega?` · 📅 entrega ${brDate(t.dataEntrega)}`:''} · ${alvoLabel} · ${naoFeito} não feito${parcial?` · ${parcial} parcial`:''} &nbsp;${badge}</p></div>
       <button class="btn ghost sm" onclick="trocarEntregaTema('${t.id}')">📅 entrega</button><button class="btn ghost sm" onclick="editarTema('${t.id}')">✏️ editar</button></div>
       <p class="hint" style="margin:8px 0 8px">Padrão: <b>feito</b>. Marque quem fez <b>parcialmente</b> ou <b>não fez</b>.</p>

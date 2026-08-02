@@ -9,7 +9,7 @@ VIEWS.acessos=()=>{
     <div class="card"><h3>Usuários</h3><p class="hint">Digite uma nova senha (mín. 4 caracteres) e toque em <b>Salvar</b>. Use isto também para liberar quem ainda não tem senha.</p>
     <table><thead><tr><th>Usuário</th><th>Perfil</th><th>Nova senha</th><th></th></tr></thead><tbody>
     ${S.usuarios.map((u,i)=>`<tr>
-      <td><b>${u.nome}</b></td>
+      <td><b>${esc(u.nome)}</b></td>
       <td><span class="pill">${rotulo[u.perfil]}</span></td>
       <td><input type="text" id="sn_${i}" placeholder="nova senha" style="max-width:160px"></td>
       <td style="text-align:right;white-space:nowrap">
@@ -57,6 +57,7 @@ function salvarConfig(){
   S.config=S.config||{};
   S.config.escolaEmail=(document.getElementById('cfgEmail').value||'').trim();
   S.config.assinatura=document.getElementById('cfgAssin').value;
+  S.config.atualizadoEm=Date.now();
   save(); toast('Assinatura salva');
 }
 function exportarBackup(){
@@ -105,9 +106,9 @@ function addUsuario(){
   const ensina=document.getElementById('nuEnsina').value.trim()||null;
   S.usuarios.push({nome,perfil,ensina,atualizadoEm:Date.now()});
   save();
-  cloudResetarSenha(nome, senha).then(r=>{
-    if(r && r.ok) toast('Usuário criado e senha definida');
-    else toast('Usuário criado, mas defina a senha pela linha dele (botão Salvar)');
+  cloudCriarContaEquipe(nome, senha, perfil).then(r=>{
+    if(r && r.ok) toast('Usuário criado e senha definida ✓ (já pode logar)');
+    else toast('Usuário salvo no app, mas a CONTA de login não foi criada — tente de novo pela linha dele');
     VIEWS.acessos();
   });
 }

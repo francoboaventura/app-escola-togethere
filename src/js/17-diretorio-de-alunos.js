@@ -126,7 +126,7 @@ function renderTurmaList(){
     ts.forEach(t=>alunosDa(t.id).forEach(a=>{ if(_normTxt(a.nome).includes(f)) res.push({a,t}); }));
     list.innerHTML = bar + (res.length
       ? `<div class="card"><h3>${res.length} aluno(s) encontrado(s)</h3>`+
-        res.map(r=>`<div class="check"><span style="flex:1">${r.a.nome} <span class="pill">${r.t.nome}</span></span>
+        res.map(r=>`<div class="check"><span style="flex:1">${esc(r.a.nome)} <span class="pill">${esc(r.t.nome)}</span></span>
           <button class="btn ghost sm" onclick="abrirTurma('${r.t.id}')">🏫 Turma</button>
           <button class="btn ghost sm" onclick="abrirFicha('${r.a.id}')">📇 Ficha</button>
           ${podeCadastro()?`<button class="btn ghost sm" style="color:var(--vermelho)" onclick="delAluno('${r.a.id}')">remover</button>`:''}</div>`).join('')+`</div>`
@@ -145,7 +145,7 @@ function renderTurmaList(){
     const mat=_col?` · 📘 ${esc(_col)}`:'';
     return `<div class="card" style="cursor:pointer" onclick="abrirTurma('${t.id}')">
       <div style="display:flex;align-items:center;gap:10px">
-        <div style="flex:1"><h3 style="margin:0">${t.nome} ${nivelTag(t.nivel)}${t.cefr?` <span class="tag teens">${t.cefr}</span>`:''} ${selo}</h3>
+        <div style="flex:1"><h3 style="margin:0">${esc(t.nome)} ${nivelTag(t.nivel)}${t.cefr?` <span class="tag teens">${esc(t.cefr)}</span>`:''} ${selo}</h3>
           <p class="hint" style="margin:4px 0 0">${als.length} aluno(s)${prof}${hor}${freq}${mat}</p></div>
         <span style="font-size:1.7rem;color:var(--azul);line-height:1">›</span>
       </div></div>`;
@@ -200,7 +200,7 @@ function renderPainelTurma(){
     </div>
     <div class="card"><h3>Alunos (${als.length})</h3>
       ${podeCadastrar?'<p class="hint" style="margin:0 0 8px">E-mail do responsável (usado para enviar o relatório da aula).</p>':''}
-      ${als.map(a=>`<div style="padding:8px 0;border-bottom:1px dashed var(--linha)"><div style="display:flex;align-items:center;gap:8px">${avatarFoto('av-sm', a.foto, ((a.nome||'·').trim()[0]||'·').toUpperCase(), '')}<span style="flex:1;cursor:pointer;color:var(--azul)" onclick="abrirFicha('${a.id}')" title="Abrir ficha do aluno">${a.nome}${idadeDe(a.nascimento)!=null?` <span class="pill">${idadeDe(a.nascimento)} anos</span>`:''}${a.arquivado?' <span class="pill" style="background:#eee;color:#888">arquivado</span>':''}</span><button class="btn ghost sm" onclick="abrirFicha('${a.id}')">📇 Ficha</button>${!ehProfessor()?`<button class="btn ghost sm" onclick="abrirTrocarTurma('${a.id}')">🔄 Turma</button><button class="btn ghost sm" onclick="alunoParaVip('${a.id}')">⭐ VIP</button>`:''}${podeCadastrar?`<button class="btn ghost sm" onclick="toggleArquivarAluno('${a.id}')">${a.arquivado?'reativar':'arquivar'}</button><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delAluno('${a.id}')">remover</button>`:''}</div>
+      ${als.map(a=>`<div style="padding:8px 0;border-bottom:1px dashed var(--linha)"><div style="display:flex;align-items:center;gap:8px">${avatarFoto('av-sm', a.foto, ((a.nome||'·').trim()[0]||'·').toUpperCase(), '')}<span style="flex:1;cursor:pointer;color:var(--azul)" onclick="abrirFicha('${a.id}')" title="Abrir ficha do aluno">${esc(a.nome)}${idadeDe(a.nascimento)!=null?` <span class="pill">${idadeDe(a.nascimento)} anos</span>`:''}${a.arquivado?' <span class="pill" style="background:#eee;color:#888">arquivado</span>':''}</span><button class="btn ghost sm" onclick="abrirFicha('${a.id}')">📇 Ficha</button>${!ehProfessor()?`<button class="btn ghost sm" onclick="abrirTrocarTurma('${a.id}')">🔄 Turma</button><button class="btn ghost sm" onclick="alunoParaVip('${a.id}')">⭐ VIP</button>`:''}${podeCadastrar?`<button class="btn ghost sm" onclick="toggleArquivarAluno('${a.id}')">${a.arquivado?'reativar':'arquivar'}</button><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delAluno('${a.id}')">remover</button>`:''}</div>
         ${a.saldo?`<p class="hint" style="margin:4px 0 0">saldo inicial: ${a.saldo.dadas} aula(s) · ${a.saldo.presencas} presença(s) · ${a.saldo.faltas} falta(s)</p>`:''}
         ${podeCadastrar?`<div class="row" style="margin-top:6px"><div style="flex:2"><label style="font-size:.68rem;color:#64748b;display:block;margin-bottom:2px">📧 E-mail do responsável</label><input type="email" value="${escAttr(a.email||'')}" placeholder="email.responsavel@exemplo.com" style="font-size:.85rem" onchange="setAlunoEmail('${a.id}',this.value)"></div><div><label style="font-size:.68rem;color:#64748b;display:block;margin-bottom:2px">🎂 Nascimento</label><input type="date" value="${escAttr(a.nascimento||'')}" title="Data de nascimento" style="font-size:.85rem" onchange="setAlunoNascimento('${a.id}',this.value)"></div></div>`:''}${faltasRetroLinha(a)}</div>`).join('')||'<p class="hint">Sem alunos ainda.</p>'}
       ${podeCadastrar?`<button class="btn ghost" style="margin-top:12px" onclick="abrirAddAluno('${id}')">+ Aluno</button>`:''}</div>
@@ -280,8 +280,8 @@ function resetarSeguro(){
 async function confirmarReset(){
   const senha=(document.getElementById('resetSenha').value||'');
   if(!senha){ toast('Digite sua senha'); return; }
-  const chk=await cloudLogin(S.usuario, senha);   // confirma a senha de quem está logado (direção)
-  if(!chk || chk.ok!==true){ toast('Senha incorreta'); return; }
+  const ok=await verificarSenha(S.usuario, senha);   // confirma a senha SEM trocar a sessão do app
+  if(!ok){ toast('Senha incorreta'); return; }
   exportarBackup();                        // baixa o estado atual antes de apagar
   S=seed(); S.usuario=null; S.perfil=null;
   try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){}
