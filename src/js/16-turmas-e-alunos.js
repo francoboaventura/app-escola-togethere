@@ -331,12 +331,7 @@ function _cardHorariosVip(vip){
       <div class="field" style="margin:0;flex:0 0 auto;width:130px"><label class="lbl">Hora</label><input type="time" value="" onchange="novoVipHorario('${vip.id}','hora',this.value)"></div>
       <span class="hint" style="margin-bottom:6px">← preencha para criar o 1º horário</span>
     </div>`;
-  const linkOk=(vip.linkAula||'').trim();
   let h=`<div class="card" style="margin-top:12px"><h3 style="margin:0 0 8px;font-size:1rem">🕒 Horários previstos das aulas</h3>
-    <div style="display:flex;gap:8px;align-items:flex-end;margin:0 0 10px;flex-wrap:wrap">
-      <div class="field" style="margin:0;flex:1;min-width:220px"><label class="lbl">🎥 Link da aula online (Meet/Zoom — opcional)</label><input type="url" value="${escAttr(vip.linkAula||'')}" placeholder="https://meet.google.com/…" onchange="setVipLinkAula('${vip.id}',this.value)"></div>
-      ${linkOk?`<a class="btn sm" style="background:#0A7A3D;text-decoration:none;margin-bottom:2px" href="${escAttr(linkOk)}" target="_blank" rel="noopener noreferrer">🎥 Entrar na aula</a>`:''}
-    </div>
     <p class="hint" style="margin:0 0 4px">Cada linha é um dia com o SEU horário (os horários podem variar por dia). Passada a aula sem registro, o app avisa o professor e, após 24h, a direção.</p>
     ${hs.length?hs.map(linhaH).join(''):linhaNova}
     <div style="display:flex;gap:10px;margin-top:10px;align-items:center;flex-wrap:wrap">
@@ -360,6 +355,26 @@ function _cardHorariosVip(vip){
     h+=`<div style="margin-top:12px;border-top:1px solid var(--linha);padding-top:10px"><b style="font-size:.92rem">⏸️ Pausas</b>${pausas.map(p=>`<p class="hint" style="margin:6px 0 0">${brDate(p.de)} a ${brDate(p.ate)}${p.motivo?(' · '+esc(p.motivo)):''}</p>`).join('')}<p class="hint" style="margin:6px 0 0">Só a secretaria/direção altera as pausas.</p></div>`;
   }
   return h+`</div>`;
+}
+// Seção destacada da AULA ONLINE (link Meet/Zoom) — botão grande, impossível de não ver
+function _cardAulaOnlineVip(vip){
+  const link=(vip.linkAula||'').trim();
+  const podeEditar=true;   // professor cola o próprio link; secretaria/direção também
+  if(!link && !podeEditar) return '';
+  return `<div class="card" style="margin-top:12px;border-left:5px solid #0A7A3D;background:linear-gradient(135deg,rgba(10,122,61,.07),transparent 60%)">
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <div style="font-size:1.9rem;line-height:1">🎥</div>
+      <div style="flex:1;min-width:200px">
+        <h3 style="margin:0;font-size:1.02rem">Aula online</h3>
+        <p class="hint" style="margin:2px 0 0">${link?'Sala fixa deste aluno — um toque para entrar.':'Cole o link da sala (Meet/Zoom) e ele fica fixo aqui para todo mundo.'}</p>
+      </div>
+      ${link?`<a class="btn" style="background:#0A7A3D;text-decoration:none;font-size:1.02rem;padding:12px 22px" href="${escAttr(link)}" target="_blank" rel="noopener noreferrer">🎥 Entrar na aula</a>`:''}
+    </div>
+    ${podeEditar?`<div style="display:flex;gap:8px;align-items:flex-end;margin-top:10px;flex-wrap:wrap">
+      <div class="field" style="margin:0;flex:1;min-width:220px"><label class="lbl">Link da sala (Meet/Zoom)</label><input type="url" value="${escAttr(vip.linkAula||'')}" placeholder="https://meet.google.com/…" onchange="setVipLinkAula('${vip.id}',this.value)"></div>
+      ${link?`<button class="btn ghost sm" style="color:var(--vermelho);margin-bottom:2px" onclick="setVipLinkAula('${vip.id}','')">remover</button>`:''}
+    </div>`:''}
+  </div>`;
 }
 function setVipLinkAula(id, url){
   const vp=(S.vipAlunos||[]).find(x=>x.id===id); if(!vp) return;
@@ -505,6 +520,7 @@ function renderFichaVip(v, vip){
     ${tile(wrs.length,'Writings',wrs.length>0?'#9333c7':'var(--tinta)')}
   </div>
   ${consolMin>0?`<p class="hint" style="margin:8px 0 0">🕓 Fora as aulas com presença acima, há <b>${fmtDur(consolMin)}</b> de <b>aulas anteriores</b> (consolidação da importação). Elas somam no pacote de horas, mas <b>não contam</b> como aulas com presença aqui.</p>`:''}
+  ${(typeof _cardAulaOnlineVip==='function')?_cardAulaOnlineVip(vip):''}
   ${_cardPacoteVip(vip.id)}
   <div class="card" style="margin-top:12px"><h3 style="margin:0 0 8px">Contato${VIP_PORTAL_ATIVO?' & portal':''}</h3>`;
   if(podeEd){
