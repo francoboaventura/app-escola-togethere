@@ -4,7 +4,7 @@
    ========================================================================= */
 let _tutPerfil='todos';
 // telas que têm print gerado (public/tutorial/<id>.png) — regerar os prints a cada mudança visual grande
-const _TUT_IMGS={painel:1,presenca:1,temas:1,material:1,testes:1,planos:1,relatorio:1,ficha:1,vip:1,formacao:1,alertas:1,turmas:1,estoque:1,matriculas:1,financeiro:1,configfin:1,permissoes:1,tarefas:1,relturma:1,resumo:1};
+const _TUT_IMGS={painel:1,busca:1,aparencia:1,presenca:1,temas:1,material:1,testes:1,planos:1,relatorio:1,planejamento:1,writings:1,formacao:1,ficha:1,resumo:1,relturma:1,aprovacoes:1,arquivo:1,vip:1,apoio:1,alertas:1,comunicados:1,turmas:1,alunos:1,dupes:1,gturmas:1,gestaoturmas:1,estoque:1,matriculas:1,financeiro:1,configfin:1,permissoes:1,tarefas:1,acessos:1,cards:1,portal:1};
 function _tutImg(t){ return _TUT_IMGS[t.id]?('tutorial/'+t.id+'.png'):null; }
 // O tutorial se ADAPTA: professor/secretaria veem só o que é deles, e itens
 // desligados em 🔐 Permissões somem do guia (mesma regra do menu).
@@ -44,14 +44,20 @@ A sua porta de entrada no app: um panorama do dia e caminho rápido para o que v
 - **🎨 Cor do app:** toque numa das bolinhas para trocar a cor principal (azul, marinho, vermelho, rosa, roxo ou verde — as cores da Togethere).
 - A escolha fica salva **no seu aparelho** e não muda para os colegas.` },
   { id:'presenca', em:'📋', titulo:'Chamada do dia', grp:'Sala de aula', roles:['professor','direcao'],
-    resumo:'Fazer a chamada e registrar o que aconteceu com cada aluno.',
+    resumo:'Presença, material e tema da aula — tudo numa tela só.',
     passos:`## Como usar
-- Escolha a turma e a data da aula.
-- Marque **presente** ou **falta** para cada aluno.
-- Registre também **atraso**, **saiu cedo** e **sem material** quando for o caso.
-- Se a aula não aconteceu, marque como **cancelada** ou **transferida**.
-## Por que importa
-Faltas e "sem material" alimentam os **Avisos** automáticos da secretaria.` },
+1. Escolha a **turma** e a **data** — só aparecem os dias em que a turma tem aula.
+2. Toque em **Presente/Falta** para cada aluno; marque também **atraso**, **saiu mais cedo** e **🎒 sem material** quando for o caso.
+3. Se houver tema com entrega hoje, a **conferência do tema** aparece na mesma tela.
+4. Toque em **Salvar chamada e material** — a chamada fica **travada** (Editar chamada reabre).
+## Se a aula não aconteceu
+Marque **Cancelada** ou **Transferida** — a aula não conta, as pendências não cobram e os temas com entrega no dia **pulam para a próxima aula** sozinhos.
+## O que acontece por trás
+- **3 faltas consecutivas** → aviso automático para a secretaria contatar a família.
+- Sem material **3 aulas seguidas** (ou 5 alternadas) → mesmo caminho.
+- Aula prevista sem chamada gera lembrete para você e, após 24h, avisa a direção.
+## Dica
+Passou da hora e esqueceu? Use **Buscar chamada anterior por data** no fim da tela.` },
   { id:'temas', em:'📚', titulo:'Temas de casa', grp:'Sala de aula', roles:['professor','direcao'],
     resumo:'Registrar os temas e marcar quem fez, fez parcial ou não fez.',
     passos:`## Como usar
@@ -66,36 +72,52 @@ Os temas não feitos aparecem na ficha do aluno e no portal da família.` },
 - Marque os alunos que não trouxeram material.
 ## Por que importa
 3 aulas seguidas ou 5 alternadas sem material geram um **aviso** para a secretaria contatar a família.` },
-  { id:'testes', em:'✏️', titulo:'Testes', grp:'Sala de aula', roles:['professor','direcao'],
-    resumo:'Lançar as notas por habilidade e gerar o boletim.',
+  { id:'testes', em:'✏️', titulo:'Testes e boletim', grp:'Sala de aula', roles:['professor','direcao'],
+    resumo:'Notas por habilidade, faixas Cambridge e o boletim do aluno.',
     passos:`## Como usar
-- Escolha a turma e o número do teste.
-- Lance a nota de cada habilidade: **Grammar, Vocabulary, Listening, Reading, Writing, Speaking**.
-- A média é calculada sozinha.
-- Use **Gerar boletim** para montar o boletim do aluno a partir das notas.
-## Dica
-Um campo de nota deixado em branco num teste já realizado conta como **zero** na média.` },
+1. Escolha a **turma** e o **número do teste** (KIDS não tem teste formal; B2/C1 fazem 2 no ano; os demais, 3).
+2. Lance a nota (0–100) de cada habilidade: **Grammar, Vocabulary, Listening, Reading, Writing, Speaking** — a média sai sozinha, com as cores das faixas.
+## Faixas (padrão Cambridge)
+0–59 *in need of improvement* · 60–89 **pass** · 90–100 **merit** · ★ **Distinction** (selo, sem nota).
+## Boletim
+- **Gerar boletim completo** monta o documento e envia para **✅ Aprovar boletins** (direção).
+- Só depois de **aprovado** ele pode ser impresso, enviado por e-mail e aparecer no Portal do Aluno.
+- **Mudou uma nota depois?** A aprovação é cancelada na hora e o boletim volta para reaprovação — o que a família recebe é sempre a versão aprovada.
+## Regras da média
+- Nota em branco num teste que o aluno FEZ conta **zero**.
+- Teste que o aluno **não fez** (entrou depois, por exemplo) **não** conta contra ele.` },
   { id:'planos', em:'🗒️', titulo:'Planos de aula', grp:'Sala de aula', roles:['professor','direcao'],
-    resumo:'Montar o plano da aula com checklist e anotações.',
+    resumo:'Checklist da aula, anotações e a ponte para o relatório às famílias.',
     passos:`## Como usar
-- Crie o plano com os itens que pretende trabalhar.
-- Marque os itens conforme forem **feitos** (checklist).
-- Use o espaço de **anotações** para observações da aula.
-## Ligação
-Os itens trabalhados podem entrar no **Relatório do dia** enviado às famílias.` },
+1. Crie o plano com **um item por linha** (o que pretende trabalhar na aula).
+2. Durante/depois da aula, **marque os itens feitos** — o que ficou aberto você pode **↪️ transferir para a próxima aula**.
+3. Use as **anotações** para registrar como a turma respondeu.
+4. **✓ Marcar como feito** fecha o plano.
+## Superpoderes do plano
+- **📩 tema**: transforma qualquer item do plano em tema de casa com data de entrega (e dá para desfazer).
+- **Gerar relatório da aula**: o plano vira o texto do **Relatório do dia** que a secretaria envia às famílias.
+- Temas com entrega na data da aula aparecem dentro do plano para conferência.` },
   { id:'relatorio', em:'🧾', titulo:'Relatório do dia', grp:'Sala de aula', roles:['professor','direcao'],
-    resumo:'Gerar o texto-resumo da aula para enviar aos pais.',
+    resumo:'O texto-resumo da aula, pronto para as famílias.',
     passos:`## O que é
-O resumo automático da aula, em texto, pronto para as famílias.
+O app escreve sozinho um resumo da aula — conteúdos do plano, tema de casa passado, presenças — em texto pronto para os pais.
 ## Como usar
-- Escolha a turma e a data.
-- O app monta um resumo com o que foi trabalhado.
-- Revise, ajuste se quiser e disponibilize para a secretaria enviar (em **Avisos**).` },
+1. Escolha a turma e a data.
+2. Revise o texto gerado (dá para **editar** antes).
+3. O relatório cai nos **Avisos** da secretaria, que copia para o grupo de WhatsApp da turma e marca como **enviado**.
+## Boas práticas
+- Gere no mesmo dia da aula — a família sente a escola presente.
+- Detalhes pessoais de um aluno específico vão na **Ficha** (comentários), não no relatório coletivo.` },
   { id:'planejamento', em:'📅', titulo:'Planejamento', grp:'Sala de aula', roles:['professor','direcao'],
-    resumo:'Planejar as próximas aulas e o andamento do conteúdo.',
-    passos:`## Como usar
-- Organize o que será dado nas próximas aulas.
-- Acompanhe o progresso do conteúdo ao longo do período.` },
+    resumo:'A coleção da turma, unidade por unidade, com o ritmo do ano.',
+    passos:`## O que é
+O mapa do conteúdo da turma: a **coleção/material** definido para ela, as unidades e o que já foi dado.
+## Como usar
+1. Escolha a turma — a coleção vem do cadastro da turma (a direção define; materiais novos são cadastrados em ⚙️ Config. financeira → Produtos).
+2. Marque as unidades/lições conforme forem **dadas** — a barra de progresso mostra o ritmo real × previsto.
+3. Recessos cadastrados pausam a previsão (o app não cobra ritmo em semana de férias).
+## Por que importa
+É daqui que o app sabe **qual livro cada aluno precisa** (módulo 📚 Livros) e se a turma está adiantada ou atrasada no ano.` },
   { id:'writings', em:'📝', titulo:'Correção de writings', grp:'Sala de aula', roles:['professor','direcao'],
     resumo:'Corrigir redações com o motor por nível e revisar a nota.',
     passos:`## Como usar
@@ -114,13 +136,18 @@ A metodologia Togethere sempre à mão, para consulta e treinamento.
 - **Direção:** cria/edita tópicos e registra as **sessões de formação**.
 - Cada tópico volta para revisão depois do prazo definido.` },
   { id:'ficha', em:'📇', titulo:'Ficha do aluno', grp:'Acompanhamento', roles:['professor','secretaria','direcao'],
-    resumo:'Ver tudo do aluno num lugar e enviar por e-mail.',
-    passos:`## Como usar
-- Busque o aluno.
-- Veja presenças/faltas, temas, testes, writings e comentários.
-- Gere o **boletim** e envie a ficha por **e-mail** à família.
-## Acesso
-Professor, secretaria e direção.` },
+    resumo:'Tudo do aluno numa tela: aulas, notas, temas, livros e comentários.',
+    passos:`## O que tem nela
+- **Topo**: foto, turma, idade, e-mail do responsável e os tiles Presenças/Faltas/Temas/Material.
+- **Abas**: Aulas (cada aula expansível), Testes (médias com barras), Writings (relatório completo), Temas, Material e Comentários.
+- **📚 Livros**: o estágio do material do aluno (pedir → chegou → entregue).
+- Para **alunos VIP**, a ficha ainda traz 🎥 Aula online, ⏱️ Pacote de horas, 🕒 Horários, remanejamentos e pausas.
+## Ações
+- **Comentários**: registre observações individuais (aparecem no portal da família).
+- **Gerar boletim**, **enviar a ficha por e-mail**, imprimir e copiar.
+- Período ajustável (mês, ano, tudo) para os números.
+## Dica
+Chega nela voando: 🔎 **Buscar** pelo nome do aluno, de qualquer tela.` },
   { id:'resumo', em:'📄', titulo:'Relatórios por aluno', grp:'Acompanhamento', roles:['secretaria','direcao'],
     resumo:'Histórico dos relatórios gerados/enviados por aluno.',
     passos:`## Como usar
@@ -143,9 +170,12 @@ O controle de qualidade dos boletins.
 ## Só direção
 Apenas a direção aprova.` },
   { id:'arquivo', em:'🗄️', titulo:'Arquivo de relatórios', grp:'Acompanhamento', roles:['secretaria','direcao'],
-    resumo:'Arquivo histórico de todos os relatórios.',
+    resumo:'O histórico do que já foi enviado às famílias.',
     passos:`## Como usar
-- Consulte relatórios antigos por aluno, turma ou data.` },
+- Consulte relatórios de aula e relatórios por aluno já **enviados**, por turma e data.
+- Abra qualquer um para ver o **texto exatamente como foi enviado** (cópia congelada) e use **📋 Copiar** para reenviar se a família pedir.
+## Por que importa
+É a memória da comunicação com as famílias — útil em qualquer conversa sobre "a escola nunca me avisou".` },
   { id:'vip', em:'👑', titulo:'Alunos VIP', grp:'Acompanhamento', roles:['professor','secretaria','direcao'],
     resumo:'Aulas particulares: lançamentos, pacotes de horas, pausas e remanejamentos.',
     passos:`## O que é
@@ -164,22 +194,35 @@ Alunos de aulas particulares, fora das turmas regulares.
 ## Alertas
 Aula prevista sem lançamento há mais de 24h gera **aviso** para a secretaria.` },
   { id:'apoio', em:'🤝', titulo:'Aula de apoio', grp:'Acompanhamento', roles:['professor','secretaria','direcao'],
-    resumo:'Indicar e acompanhar alunos para reforço.',
-    passos:`## Como usar
-- Indique alunos que precisam de aula de apoio.
-- Acompanhe as indicações em aberto.` },
-  { id:'alertas', em:'🔔', titulo:'Avisos', grp:'Acompanhamento', roles:['secretaria','direcao'],
-    resumo:'Alertas automáticos para a secretaria contatar as famílias.',
-    passos:`## O que gera aviso
-- **3 faltas** consecutivas.
-- **3 aulas seguidas** sem material, ou **5 alternadas**.
+    resumo:'Do professor à secretaria: indicação, aprovação e agendamento do reforço.',
+    passos:`## O fluxo
+1. **Professor** indica o aluno com o motivo (ex.: dificuldade com um conteúdo).
+2. **Direção** aprova a indicação.
+3. **Secretaria** combina com a família e agenda a aula de apoio.
 ## Como usar
-- A secretaria vê a lista, contata a família e **registra o contato**.
-- Aqui também saem os relatórios prontos para envio às famílias.` },
+- Acompanhe na tela o status de cada indicação (indicado → aprovado → agendado → realizado).
+- O badge no menu mostra quantas indicações esperam a sua ação.` },
+  { id:'alertas', em:'🔔', titulo:'Avisos', grp:'Acompanhamento', roles:['secretaria','direcao'],
+    resumo:'A central da secretaria: alertas automáticos + relatórios a enviar.',
+    passos:`## O que gera aviso (sozinho)
+- **3 faltas consecutivas** de um aluno.
+- Sem material em **3 aulas seguidas** ou **5 alternadas**.
+- Aula **VIP prevista** sem lançamento há mais de 24h.
+## Como usar
+1. Contate a família e toque em **✓ Contatei** — o aviso some.
+2. O contato vale para a **sequência atual**: se o aluno voltar a faltar 3x mais adiante, o aviso **volta a aparecer** (é assim mesmo).
+3. Na mesma tela ficam os **relatórios de aula prontos**: copie para o grupo de WhatsApp da turma e marque **enviado**.
+## Pausas
+Em recesso/férias cadastrados, os alertas de falta/material param sozinhos.` },
   { id:'comunicados', em:'📣', titulo:'Comunicados', grp:'Acompanhamento', roles:['secretaria','direcao'],
-    resumo:'Enviar comunicados às famílias ou à equipe.',
+    resumo:'Avisos gerais para as famílias — reunião de pais, recesso, eventos.',
     passos:`## Como usar
-- Monte o comunicado e envie para o público desejado.` },
+1. Escreva o **título** e o **texto** do comunicado.
+2. Escolha o público: **todas as turmas** ou turmas específicas.
+3. O comunicado fica registrado com data e autor — copie para o WhatsApp dos grupos.
+## Boas práticas
+- Um comunicado por assunto, texto curto.
+- Datas importantes (reunião, recesso) também entram em **Recessos** quando pausam as aulas.` },
   { id:'turmas', em:'🏫', titulo:'Turmas', grp:'Gestão', roles:['professor','secretaria','direcao'],
     resumo:'Ver as turmas, horários e alunos.',
     passos:`## Como usar
@@ -187,22 +230,30 @@ Aula prevista sem lançamento há mais de 24h gera **aviso** para a secretaria.`
 - Professores veem as **suas** turmas; secretaria e direção veem todas.
 - A secretaria tem acesso **somente leitura** às turmas.` },
   { id:'alunos', em:'🧑‍🎓', titulo:'Alunos', grp:'Gestão', roles:['professor','secretaria','direcao'],
-    resumo:'Cadastro e dados dos alunos.',
+    resumo:'O diretório de todos os alunos, com busca e dados de contato.',
     passos:`## Como usar
-- Consulte e edite os dados dos alunos.
-- Veja a qual turma cada um pertence.` },
+- **Busque** por nome — o resultado mostra a turma e atalhos para a 🏫 turma e a 📇 ficha.
+- Secretaria/direção editam **e-mail do responsável** e **nascimento** direto na lista.
+- **Arquivar** tira o aluno das turmas e alertas sem apagar o histórico (reativável).
+## Ligações
+- Trocar de turma: botão 🔄 (ou em Trocar/criar turma).
+- Virar VIP: botão ⭐ (o histórico fica preservado).` },
   { id:'dupes', em:'🧹', titulo:'Limpar duplicidades', grp:'Gestão', roles:['secretaria','direcao'],
-    resumo:'Encontrar e resolver alunos/turmas repetidos.',
+    resumo:'Faxina segura: encontra alunos e turmas repetidos.',
     passos:`## Como usar
-- Rode a varredura de duplicidades.
-- Junte ou remova registros repetidos com cuidado.` },
+1. A varredura roda sozinha ao abrir a tela e lista possíveis repetidos (nomes muito parecidos).
+2. Confira caso a caso antes de juntar/remover — **um dos registros pode ter histórico** (chamadas, notas).
+## Dica
+Duplicidade costuma nascer no "+ Aluno" com nome digitado diferente. O app avisa quando você tenta criar um nome que já existe — prefira **reaproveitar** o cadastro existente.` },
   { id:'gturmas', em:'🔄', titulo:'Trocar / criar turma', grp:'Gestão', roles:['secretaria','direcao'],
     resumo:'Criar turmas novas e mover alunos entre turmas.',
-    passos:`## Como usar
-- Crie uma turma nova (trilha, nível, dias).
-- Troque alunos de turma quando necessário.
-## Nome automático
-O nome segue o padrão **CEFR + segmento + dias + hora** (ex.: *A2+ JUNIOR SEG/QUA 18h*) e é montado sozinho pelo app.` },
+    passos:`## Criar turma
+- Informe segmento, nível CEFR, dias e horário — o **nome sai sozinho** no padrão \`CEFR + SEGMENTO + DIAS + HORA\` (ex.: *A2+ JUNIOR SEG/QUA 18h*).
+- Segmentos e níveis novos? A direção cadastra em ⚙️ Config. financeira → **🧩 Produtos** e eles aparecem aqui.
+## Mover aluno
+- Escolha o aluno, a turma de origem e a de destino — o histórico vai junto.
+## Veja também
+**🔁 Status e sequência de turmas** (direção): em formação/vigente/encerrada e criação da turma continuação com o próximo nível sugerido.` },
   { id:'gestaoturmas', em:'🔁', titulo:'Status e sequência de turmas', grp:'Gestão', roles:['direcao'],
     resumo:'Status da turma (em formação, vigente, encerrada) e criação de sequências.',
     passos:`## Status
@@ -265,27 +316,38 @@ Ao entregar para aluno de turma, a **direção** pode lançar o material no fina
 - Desligou, o botão some ou a ação é bloqueada na hora, e o item pode sumir do menu do perfil.
 - **Restaurar padrão** volta tudo ao comportamento original.
 - A direção **sempre** pode tudo.` },
+  { id:'cards', em:'🖨️', titulo:'Cards de acesso', grp:'Gestão', roles:['secretaria','direcao'],
+    resumo:'Cartõezinhos com QR + login + senha do portal, prontos para imprimir.',
+    passos:`## Como usar
+1. Escolha o escopo: **uma turma**, **um aluno** ou **todas as turmas**.
+2. **Gerar cards** abre a folha agrupada por turma, pronta para imprimir ou salvar em PDF.
+3. Entregue o cartão ao aluno (vale colar no livro) — nele vão o QR do portal, o login e a senha inicial.
+## Bom saber
+- Gerar os cards também **conserta logins antigos** para o formato único (nome+sobrenome).
+- No 1º acesso o aluno é obrigado a **criar uma senha nova** — a do card deixa de valer.` },
   { id:'acessos', em:'🔑', titulo:'Acessos', grp:'Gestão', roles:['direcao'],
-    resumo:'Senhas da equipe, logins do portal, cards, assinatura e backup.',
+    resumo:'Senhas da equipe, logins do portal, assinatura e backup.',
     passos:`## Só direção
 O centro de administração do app.
 ## O que dá para fazer
-- **Senhas da equipe:** definir/trocar senha e criar novos usuários (professor, secretaria, direção).
-- **Logins do portal do aluno:** criar em lote os acessos de uma turma (login + senha); quem já tem é pulado.
-- **Cards de acesso:** gerar cartõezinhos com QR + login + senha para imprimir e colar nos livros.
-- **Assinatura e e-mail da escola:** usados nos relatórios às famílias.
-- **Backup:** baixar/restaurar uma cópia de todos os dados.` },
+- **Senhas da equipe:** trocar a senha de qualquer usuário e **criar usuários novos** (a conta de login é criada na hora — a pessoa já entra).
+- **Logins do portal do aluno:** criar em lote os acessos de uma turma (quem já tem é pulado).
+- **Assinatura e e-mail da escola:** aparecem nos relatórios às famílias.
+- **Backup:** baixar uma cópia de todos os dados ou restaurar de um arquivo. Além disso, o servidor guarda **backups automáticos a cada 6h** e o histórico das últimas versões.
+## Veja também
+**🖨️ Cards de acesso** para imprimir login+senha dos alunos.` },
   { id:'portal', em:'👨‍👩‍👧', titulo:'Portal do Aluno (famílias)', grp:'Famílias', roles:['professor','secretaria','direcao'],
     resumo:'O que a família vê no portal, com o próprio login.',
     passos:`## O que é
-Uma página separada onde o aluno/família entra com o próprio login.
+Uma página separada (portal-aluno) onde o aluno/família entra com o próprio login e vê **as informações dele, ao vivo** — a escola não precisa publicar nada.
 ## O que a família vê
-- Aulas, faltas, temas pendentes, testes, writings e comentários.
-- O **boletim** só aparece depois que a direção **aprova**.
+- Aulas (com o que foi trabalhado), faltas, temas pendentes, testes, writings com o relatório completo e comentários do professor.
+- O **boletim** aparece com cadeado até a direção **aprovar** — depois, liberado.
+- Botão **Baixar ficha em PDF**.
+## Segurança
+Cada login só enxerga os dados do próprio aluno (LGPD) — a ponte é feita no servidor.
 ## Primeiro acesso
-No primeiro login, o aluno precisa **criar uma senha nova**.
-## Como o acesso chega
-O login é criado pela direção em **Acessos** e entregue pelos **cards** (QR + login + senha).` },
+Login no formato nome+sobrenome (ex.: sofiamartins@tgt.app), senha do card e **troca obrigatória de senha** na 1ª entrada. Alunos VIP ainda não têm portal.` },
 ];
 function tutFiltro(p){ _tutPerfil=p; VIEWS.tutorial(); }
 VIEWS.tutorial=()=>{

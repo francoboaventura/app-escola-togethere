@@ -50,6 +50,10 @@ let chromium; try{ ({chromium}=require('playwright')); }catch(e){ ({chromium}=re
     S.financeiro=[{id:'f1',matriculaId:'m1',valorMatricula:200,valorMensalidade:420,descontoPct:5,parcelas:12,diaVencimento:10,formaPagamento:'Pix',dataInicio:'2026-02-10',pagos:{1:{em:'2026-02-10',valor:399},2:{em:'2026-03-10',valor:399}},extras:[{id:'e1',nome:'Material — Own It 2',valor:350,em:'2026-07-22',origem:'livros',pago:null}],atualizadoEm:1}];
     S.configFin=[{id:'fin',seg:{kids:{taxa:150,anual:3900,material:280},junior:{taxa:180,anual:4400,material:320},teens:{taxa:200,anual:4800,material:350},adults:{taxa:200,anual:5200,material:380},talking:{taxa:0,anual:2400,material:0}},valorHoraVip:120,valorHoraVipDupla:80,multaPct:2,jurosMesPct:1,diversos:[{nome:'Taxa de prova Cambridge',valor:250}]}];
     S.permissoes=[]; S.exclusoes=[]; S.contatos=[]; S.recessos=[]; S.alertas=[]; S.comentarios=[]; S.relatorios=[]; S.apoios=[]; S.writings=[]; S.boletins=[]; S.comunicados=[]; S.eventos=[];
+    S.boletins=[{id:'b1',turmaId:'t1',alunoId:'a1',ano:2026,gerado:true,aprovado:false,conceitos:{Grammar:'85',Vocabulary:'90'},distincao:{},parecer:'Sofia evoluiu muito na produção oral neste semestre.',criadoPor:'Franco',atualizadoEm:1}];
+    S.apoios=[{id:'ap1',alunoId:'a2',turmaId:'t1',motivo:'Dificuldade com past simple',status:'indicado',por:'Franco',em:H,atualizadoEm:1}];
+    S.comunicados=[{id:'cm1',titulo:'Reunião de pais — agosto',corpo:'Encontro dia 20/08 às 19h, na escola.',publico:'todas',criadoPor:'Reginaldo',em:H,atualizadoEm:1}];
+    S.relatorios=[{id:'r1',turmaId:'t1',data:H,corpo:'Hoje trabalhamos o Past Simple com jogos em duplas. Tema: workbook p. 34.',enviado:true,enviadoEm:H,enviadoTs:2,atualizadoEm:1}];
     // 3 faltas seguidas do Théo → alerta real
     ['-7','-5','-2'].forEach((off,i)=>{ const d=new Date(); d.setDate(d.getDate()+parseInt(off)); S.presencas.push({id:'pf'+i,turmaId:'t1',data:ymd(d),fechada:true,registros:{a1:'presente',a2:'falta',a3:'presente'},atualizadoEm:1}); });
     document.getElementById('login').style.display='none'; document.getElementById('app').style.display='block'; document.body.style.background='var(--bg)';
@@ -76,6 +80,19 @@ let chromium; try{ ({chromium}=require('playwright')); }catch(e){ ({chromium}=re
     ['tarefas','direcao','tarefas',''],
     ['relturma','secretaria','relturma',''],
     ['resumo','secretaria','resumo',''],
+    ['busca','professor','busca','_buscaGlobalQ="sofia";'],
+    ['planejamento','professor','planejamento',''],
+    ['writings','professor','writings',''],
+    ['aprovacoes','direcao','aprovacoes',''],
+    ['arquivo','secretaria','arquivo',''],
+    ['apoio','professor','apoio',''],
+    ['comunicados','secretaria','comunicados',''],
+    ['alunos','secretaria','alunos',''],
+    ['dupes','secretaria','dupes',''],
+    ['gturmas','secretaria','gturmas',''],
+    ['gestaoturmas','direcao','gestaoturmas',''],
+    ['acessos','direcao','acessos',''],
+    ['cards','secretaria','cards',''],
   ];
   const ok=[], fail=[];
   for(const [id,perfil,rota,setup] of shots){
@@ -97,6 +114,32 @@ let chromium; try{ ({chromium}=require('playwright')); }catch(e){ ({chromium}=re
       ok.push(id);
     }catch(e){ fail.push(id+': '+e.message.slice(0,80)); }
   }
+  // aparencia: abre o menu da conta e fotografa a área do tema/cores
+  try{
+    await page.evaluate(()=>{ S.perfil='professor'; window.rota='painel'; VIEWS.painel();
+      const dd=document.querySelector('.tb-perfil, #contaDrop, .tnav-dd'); });
+    const okAp=await page.evaluate(()=>{
+      const bt=document.getElementById('btnTema'); if(!bt) return false;
+      let el=bt.parentElement; el.style.display='block'; el.style.position='static'; el.style.opacity='1'; el.style.visibility='visible';
+      let p=el; for(let i=0;i<4&&p;i++){ p.style.display=p.style.display==='none'?'block':p.style.display; p=p.parentElement; }
+      if(typeof _renderCorDots==='function') try{_renderCorDots();}catch(e){}
+      bt.scrollIntoView({block:'center'});
+      const r=el.getBoundingClientRect();
+      window.__apBox={x:Math.max(0,r.x-10),y:Math.max(0,r.y-10),width:Math.min(1000,r.width+20),height:Math.min(600,r.height+20)};
+      return r.width>50 && r.height>50;
+    });
+    if(okAp){ const box=await page.evaluate(()=>window.__apBox);
+      await page.screenshot({path:ROOT+'/public/tutorial/aparencia.png', clip:box}); ok.push('aparencia'); }
+    else fail.push('aparencia: menu não localizado');
+  }catch(e){ fail.push('aparencia: '+e.message.slice(0,60)); }
+  // portal do aluno (página separada — tela de login)
+  try{
+    const p2=await ctx.newPage();
+    await p2.goto('file://'+ROOT+'/dist/portal-aluno.html',{waitUntil:'load'});
+    await p2.waitForTimeout(500);
+    await p2.screenshot({path:ROOT+'/public/tutorial/portal.png', clip:{x:0,y:0,width:1000,height:900}});
+    await p2.close(); ok.push('portal');
+  }catch(e){ fail.push('portal: '+e.message.slice(0,60)); }
   console.log('OK:',ok.join(','));
   console.log('FALHOU:',fail.join(' | ')||'nenhum');
   await b.close();
