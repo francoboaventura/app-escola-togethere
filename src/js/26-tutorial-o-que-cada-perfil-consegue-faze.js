@@ -197,6 +197,7 @@ A escola compra os livros conforme as matrículas — sem estoque parado. Cada l
 ## Como usar
 - **A pedir:** o app lista sozinho quem precisa de livro (turmas com coleção + VIPs com material) — "pedir" um a um ou **pedir todos** da turma.
 - Quando o livro chega: **📦 chegou**. Quando vai para a mão do aluno: **✅ entregar**.
+- Em lote: **📦 chegou tudo** e **✅ entregar todos** fazem a etapa inteira de uma vez (a cobrança dos materiais pode ser lançada junta ou ficar pendente no Financeiro).
 - **Pedido avulso** para reposições; **planilha (CSV)** com tudo.
 - Na **ficha do aluno**, o card 📚 mostra o estágio e a próxima ação.
 ## Cobrança

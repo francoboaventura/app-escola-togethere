@@ -56,12 +56,12 @@ VIEWS.estoque=()=>{
       <p class="hint" style="margin:0 0 4px">Alunos cuja turma tem coleção definida (ou VIPs com material) e ainda não têm pedido.</p>
       ${blocosPedir||'<p class="hint">✅ Ninguém aguardando pedido.</p>'}
     </div>
-    <div class="card" style="border-left:4px solid #005EAF"><h3 style="margin:0 0 2px">📦 Aguardando chegada (${pedidos.length})</h3>
+    <div class="card" style="border-left:4px solid #005EAF"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0 0 2px;flex:1">📦 Aguardando chegada (${pedidos.length})</h3>${podeAgir&&pedidos.length>1?`<button class="btn sm" style="background:#005EAF" onclick="marcarTodosRecebidos()">📦 chegou tudo (${pedidos.length})</button>`:''}</div>
       ${pedidos.length?pedidos.map(p=>`<div class="check"><span style="flex:1"><b>${esc(_lpNome(p))}</b> — ${esc(p.titulo)}<span class="hint"> · pedido em ${brDate(p.pedidoEm)}${p.por?(' por '+esc(p.por)):''}</span></span>
         ${podeAgir?`<button class="btn sm" style="background:#005EAF" onclick="marcarLivroRecebido('${p.id}')">📦 chegou</button>
         <button class="btn ghost sm" style="color:var(--vermelho)" onclick="cancelarPedidoLivro('${p.id}')">cancelar</button>`:''}</div>`).join(''):'<p class="hint">Nenhum pedido aguardando.</p>'}
     </div>
-    <div class="card" style="border-left:4px solid #9333c7"><h3 style="margin:0 0 2px">🏫 Na escola, a entregar (${recebidos.length})</h3>
+    <div class="card" style="border-left:4px solid #9333c7"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0 0 2px;flex:1">🏫 Na escola, a entregar (${recebidos.length})</h3>${podeAgir&&recebidos.length>1?`<button class="btn sm" style="background:#0A7A3D" onclick="entregarTodosLivros()">✅ entregar todos (${recebidos.length})</button>`:''}</div>
       ${recebidos.length?recebidos.map(p=>`<div class="check"><span style="flex:1"><b>${esc(_lpNome(p))}</b> — ${esc(p.titulo)}<span class="hint"> · chegou em ${brDate(p.recebidoEm)}</span></span>
         ${podeAgir?`<button class="btn sm" style="background:#0A7A3D" onclick="marcarLivroEntregue('${p.id}')">✅ entregar</button>`:''}</div>`).join(''):'<p class="hint">Nada aguardando entrega.</p>'}
     </div>
@@ -111,6 +111,39 @@ function marcarLivroEntregue(id){
   }
   save(); if(rota==='estoque') VIEWS.estoque(); else if(rota==='ficha'&&VIEWS.ficha) VIEWS.ficha();
   toast('Entregue ao aluno ✅');
+}
+function marcarTodosRecebidos(){
+  if(!_estPode()) return toast('Sem permissão');
+  const xs=_lps().filter(p=>p.status==='pedido');
+  if(!xs.length) return;
+  if(!confirm('Marcar '+xs.length+' livro(s) como recebidos na escola?')) return;
+  xs.forEach(p=>{ p.status='recebido'; p.recebidoEm=hoje(); p.atualizadoEm=Date.now(); });
+  save(); VIEWS.estoque(); toast(xs.length+' livro(s) recebidos 📦');
+}
+function entregarTodosLivros(){
+  if(!_estPode()) return toast('Sem permissão');
+  const xs=_lps().filter(p=>p.status==='recebido');
+  if(!xs.length) return;
+  if(!confirm('Entregar '+xs.length+' livro(s) aos alunos?')) return;
+  const cobraveis=[];
+  xs.forEach(p=>{
+    p.status='entregue'; p.entregueEm=hoje(); p.por=S.usuario; p.atualizadoEm=Date.now();
+    if(!p.vip){
+      const f=_finDoAluno(p.alunoId); const preco=_precoMaterialDoAluno(p.alunoId);
+      const jaCobrado=f&&(f.extras||[]).some(e=>e.nome==='Material — '+p.titulo);
+      if(f && preco>0 && !jaCobrado) cobraveis.push({p,f,preco});
+    }
+  });
+  if(cobraveis.length){
+    if(S.perfil==='direcao' && confirm('Cobrar o material de '+cobraveis.length+' aluno(s) no financeiro (total '+_moeda(cobraveis.reduce((s,c)=>s+c.preco,0))+')?')){
+      cobraveis.forEach(c=>addExtraFinanceiro(c.f.id,'Material — '+c.p.titulo,c.preco,'livros'));
+      toast(cobraveis.length+' material(is) lançado(s) no financeiro');
+    } else {
+      cobraveis.forEach(c=>{ c.p.cobrancaPendente=true; });   // fica no card do Financeiro p/ decidir um a um
+      toast('Cobranças ficaram pendentes no Financeiro ('+cobraveis.length+')');
+    }
+  }
+  save(); VIEWS.estoque(); toast(xs.length+' livro(s) entregues ✅');
 }
 function cancelarPedidoLivro(id){
   if(!_estPode()) return toast('Sem permissão');

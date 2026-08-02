@@ -10,7 +10,7 @@ IA, **matrículas e financeiro**, **livros sob demanda**, **permissões configur
 celular/tablet/computador) publicado como um único `index.html`, mas **desenvolvido em módulos**
 (pasta `src/`) com build automático.
 
-> **Versão atual: `2026.08.02 · b149 (Supabase)`.**
+> **Versão atual: `2026.08.02 · b150 (Supabase)`.**
 > O app roda sobre **PostgreSQL no Supabase** (migração do Google Sheets em 25/07).
 > Confira a versão em uso no **rodapé** do app — ele avisa sozinho quando há atualização.
 
@@ -81,7 +81,7 @@ obrigatória no 1º acesso.
   no padrão `CEFR + SEGMENTO + DIAS + HORA` (ex.: `A2+ JUNIOR SEG/QUA 18h`).
 - **📚 Livros** — a escola **não mantém estoque**: fluxo por aluno
   **🛒 pedido → 📦 recebido → ✅ entregue**, com lista automática de quem precisa de livro,
-  pedidos em lote, pedido avulso, CSV e cobrança do material no financeiro na entrega.
+  pedidos, recebimentos e entregas EM LOTE, pedido avulso, CSV e cobrança do material no financeiro na entrega.
 - **📝 Matrículas** (direção) — **orçamentos** exportáveis em PDF (atalho de venda), conversão
   em matrícula, **✖ não fechou** (registra o motivo da venda perdida, com reabrir) e exclusão
   de orçamentos; contrato-modelo que puxa os dados (texto oficial entra depois).
