@@ -3,6 +3,24 @@
    Mesmo modelo visual da aba Formação: cards que abrem um modal com o passo a passo.
    ========================================================================= */
 let _tutPerfil='todos';
+// telas que têm print gerado (public/tutorial/<id>.png) — regerar os prints a cada mudança visual grande
+const _TUT_IMGS={painel:1,presenca:1,temas:1,material:1,testes:1,planos:1,relatorio:1,ficha:1,vip:1,formacao:1,alertas:1,turmas:1,estoque:1,matriculas:1,financeiro:1,configfin:1,permissoes:1,tarefas:1,relturma:1,resumo:1};
+function _tutImg(t){ return _TUT_IMGS[t.id]?('tutorial/'+t.id+'.png'):null; }
+// O tutorial se ADAPTA: professor/secretaria veem só o que é deles, e itens
+// desligados em 🔐 Permissões somem do guia (mesma regra do menu).
+function _tutPerfilAtivo(){ return (S.perfil==='professor'||S.perfil==='secretaria')?S.perfil:_tutPerfil; }
+function _tutVisivel(t){
+  const p=_tutPerfilAtivo();
+  if(p!=='todos' && t.roles.indexOf(p)<0) return false;
+  if(S.perfil==='professor'){
+    if(t.id==='writings' && !perm('prof_writings')) return false;
+    if(t.id==='apoio' && !perm('prof_apoio')) return false;
+  }
+  if(S.perfil==='secretaria'){
+    if(t.id==='estoque' && !perm('sec_estoque')) return false;
+  }
+  return true;
+}
 const TUTORIAL=[
   { id:'painel', em:'📊', titulo:'Painel', grp:'Início', roles:['professor','secretaria','direcao'],
     resumo:'Tela inicial com o resumo do dia e atalhos rápidos.',
@@ -272,49 +290,50 @@ O login é criado pela direção em **Acessos** e entregue pelos **cards** (QR +
 function tutFiltro(p){ _tutPerfil=p; VIEWS.tutorial(); }
 VIEWS.tutorial=()=>{
   const v=document.getElementById('view');
+  const ehDir=(S.perfil==='direcao');
   const chips=[['todos','Todos'],['professor','Professor'],['secretaria','Secretaria'],['direcao','Direção']];
+  const meu=PERFIS[S.perfil]||PERFIS.professor;
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Tutorial</h2></div>
-    <p class="sub">O que cada perfil consegue fazer no app — guia de consulta rápida. Toque em um item para ver o passo a passo.</p>
-    <div class="card" style="padding:14px 16px">
-      <p class="hint" style="margin:0 0 8px">Perfis de acesso do app:</p>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <span class="tag" style="background:${PERFIS.professor.bg};color:${PERFIS.professor.cor}">👩‍🏫 Professor(a)</span>
-        <span class="tag" style="background:${PERFIS.secretaria.bg};color:${PERFIS.secretaria.cor}">🗂️ Secretaria</span>
-        <span class="tag" style="background:${PERFIS.direcao.bg};color:${PERFIS.direcao.cor}">🎓 Direção</span>
-      </div>
-    </div>
-    <div style="display:flex;gap:7px;flex-wrap:wrap;margin:14px 0 4px">
+    <p class="sub">${ehDir?'Guia ilustrado de todas as telas. Toque em um item para ver o print e o passo a passo.':'O seu guia ilustrado do app — só o que faz parte do <b>seu</b> dia a dia. Toque em um item para ver o print e o passo a passo.'}</p>
+    ${ehDir?'':`<div class="card" style="padding:12px 16px"><p class="hint" style="margin:0">Você está vendo o tutorial de <span class="tag" style="background:${meu.bg};color:${meu.cor}">${meu.nome}</span> — ele se ajusta sozinho quando a direção muda as suas permissões.</p></div>`}
+    ${ehDir?`<div style="display:flex;gap:7px;flex-wrap:wrap;margin:14px 0 4px">
       ${chips.map(([k,l])=>`<button class="btn ${_tutPerfil===k?'':'ghost'} sm" onclick="tutFiltro('${k}')">${l}</button>`).join('')}
-    </div>
+    </div>`:''}
     <div id="tutBox"></div>`;
   _tutRender(document.getElementById('tutBox'));
 };
 function _tutRender(box){
   const grupos=['Início','Sala de aula','Acompanhamento','Gestão','Famílias'];
-  const itens=TUTORIAL.filter(t=>_tutPerfil==='todos'||t.roles.indexOf(_tutPerfil)>=0);
+  const itens=TUTORIAL.filter(_tutVisivel);
   if(!itens.length){ box.appendChild(el('<div class="card empty"><div class="big">🔍</div><b>Nada para este perfil</b></div>')); return; }
+  const mostraTags=(S.perfil==='direcao');
   grupos.forEach(g=>{
     const gi=itens.filter(t=>t.grp===g); if(!gi.length) return;
     box.appendChild(el(`<h3 style="margin:18px 0 10px;font-size:1rem">${esc(g)}</h3>`));
     gi.forEach(t=>{
+      const img=_tutImg(t);
       box.appendChild(el(`<div class="card" style="cursor:pointer;padding:16px" onclick="tutAbrir('${t.id}')">
         <div style="display:flex;align-items:flex-start;gap:12px">
           <div style="font-size:1.7rem;line-height:1">${t.em}</div>
           <div style="flex:1;min-width:0">
             <b style="font-size:1.02rem">${esc(t.titulo)}</b>
             <p class="hint" style="margin:4px 0 8px">${esc(t.resumo)}</p>
-            <div style="display:flex;gap:5px;flex-wrap:wrap">${t.roles.map(r=>`<span class="tag" style="background:${PERFIS[r].bg};color:${PERFIS[r].cor};font-size:.7rem">${PERFIS[r].nome}</span>`).join('')}</div>
+            ${mostraTags?`<div style="display:flex;gap:5px;flex-wrap:wrap">${t.roles.map(r=>`<span class="tag" style="background:${PERFIS[r].bg};color:${PERFIS[r].cor};font-size:.7rem">${PERFIS[r].nome}</span>`).join('')}</div>`:''}
           </div>
-          <div style="color:var(--tinta-suave);font-size:1.2rem">›</div>
+          ${img?`<img src="${img}" loading="lazy" alt="" style="width:118px;height:74px;object-fit:cover;object-position:top;border-radius:9px;border:1px solid var(--linha);flex:none">`:`<div style="color:var(--tinta-suave);font-size:1.2rem">›</div>`}
         </div></div>`));
     });
   });
 }
 function tutAbrir(id){
   const t=TUTORIAL.find(x=>x.id===id); if(!t) return;
+  const img=_tutImg(t);
   modal(`<h3 style="margin-bottom:6px">${t.em} ${esc(t.titulo)} <button class="close" onclick="fechar()">×</button></h3>
-    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px">${t.roles.map(r=>`<span class="tag" style="background:${PERFIS[r].bg};color:${PERFIS[r].cor}">${PERFIS[r].nome}</span>`).join('')}</div>
-    <div style="max-height:56vh;overflow:auto;padding-right:4px">${_fmFmt(t.passos)}</div>
+    ${S.perfil==='direcao'?`<div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px">${t.roles.map(r=>`<span class="tag" style="background:${PERFIS[r].bg};color:${PERFIS[r].cor}">${PERFIS[r].nome}</span>`).join('')}</div>`:''}
+    <div style="max-height:62vh;overflow:auto;padding-right:4px">
+      ${img?`<img src="${img}" loading="lazy" alt="Print da tela ${escAttr(t.titulo)}" style="width:100%;border-radius:10px;border:1px solid var(--linha);margin-bottom:12px;box-shadow:0 2px 10px rgba(0,0,0,.08)">`:''}
+      ${_fmFmt(t.passos)}
+    </div>
     <div class="row" style="margin-top:16px;justify-content:flex-end"><button class="btn sm" onclick="fechar()">Fechar</button></div>`);
 }
 

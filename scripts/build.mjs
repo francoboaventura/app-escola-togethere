@@ -51,10 +51,8 @@ const portalHtml = assemble(read('src/portal/index.template.html'), {
 
 // --------- Escreve dist/ ---------
 fs.mkdirSync(path.join(ROOT, 'dist'), { recursive: true });
-// 1) copia os estáticos de public/ ...
-for (const f of fs.readdirSync(path.join(ROOT, 'public'))) {
-  fs.copyFileSync(path.join(ROOT, 'public', f), path.join(ROOT, 'dist', f));
-}
+// 1) copia os estáticos de public/ (recursivo — inclui tutorial/ com os prints) ...
+fs.cpSync(path.join(ROOT, 'public'), path.join(ROOT, 'dist'), { recursive: true });
 // 2) ... e depois grava as páginas montadas (vencem qualquer cópia estática).
 fs.writeFileSync(path.join(ROOT, 'dist/index.html'), appHtml);
 fs.writeFileSync(path.join(ROOT, 'dist/portal-aluno.html'), portalHtml);

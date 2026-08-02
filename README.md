@@ -10,7 +10,7 @@ IA, **matrículas e financeiro**, **livros sob demanda**, **permissões configur
 celular/tablet/computador) publicado como um único `index.html`, mas **desenvolvido em módulos**
 (pasta `src/`) com build automático.
 
-> **Versão atual: `2026.08.02 · b154 (Supabase)`.**
+> **Versão atual: `2026.08.02 · b155 (Supabase)`.**
 > O app roda sobre **PostgreSQL no Supabase** (migração do Google Sheets em 25/07).
 > Confira a versão em uso no **rodapé** do app — ele avisa sozinho quando há atualização.
 
@@ -105,7 +105,11 @@ obrigatória no 1º acesso.
 - **Ergonomia de celular** revisada (alvos de toque, tabelas roláveis, modais).
 
 ### Tutorial no app
-A aba **📖 Tutorial** explica cada tela por perfil.
+A aba **📖 Tutorial** é um guia **ilustrado com prints reais** de cada tela. Professor e
+secretaria veem **só o que é do seu dia a dia** (sem filtros para escolher); a direção vê
+tudo, com filtro por perfil. O guia **se adapta às Permissões**: item desligado pela direção
+some do tutorial daquele perfil. Prints em `public/tutorial/` — regerar com
+`node scripts/tutorial-prints.cjs` após mudanças visuais grandes.
 **Regra da casa: toda mudança publicada atualiza o Tutorial e este README.**
 
 ---
