@@ -98,11 +98,15 @@ function marcarLivroEntregue(id){
   if(!_estPode()) return toast('Sem permissão');
   const p=_lps().find(x=>x.id===id); if(!p) return;
   p.status='entregue'; p.entregueEm=hoje(); p.por=S.usuario; p.atualizadoEm=Date.now();
-  // cobrança do material (aluno de turma com plano; só direção decide)
-  if(!p.vip && S.perfil==='direcao'){
+  // cobrança do material (aluno de turma com plano)
+  if(!p.vip){
     const f=_finDoAluno(p.alunoId); const preco=_precoMaterialDoAluno(p.alunoId);
-    if(f && preco>0 && !(f.extras||[]).some(e=>e.nome==='Material — '+p.titulo)){
-      if(confirm('Cobrar o material ('+_moeda(preco)+') no financeiro do aluno?')) { addExtraFinanceiro(f.id,'Material — '+p.titulo,preco,'livros'); toast('Material lançado no financeiro'); }
+    const jaCobrado=f&&(f.extras||[]).some(e=>e.nome==='Material — '+p.titulo);
+    if(f && preco>0 && !jaCobrado){
+      if(S.perfil==='direcao'){
+        if(confirm('Cobrar o material ('+_moeda(preco)+') no financeiro do aluno?')) { addExtraFinanceiro(f.id,'Material — '+p.titulo,preco,'livros'); toast('Material lançado no financeiro'); }
+        else p.cobrancaDispensada=true;
+      } else { p.cobrancaPendente=true; toast('Entregue — a cobrança do material ficou pendente para a direção'); }
     }
   }
   save(); if(rota==='estoque') VIEWS.estoque(); else if(rota==='ficha'&&VIEWS.ficha) VIEWS.ficha();
@@ -118,6 +122,12 @@ function cancelarPedidoLivro(id){
 function desfazerEntregaLivro(id){
   const p=_lps().find(x=>x.id===id); if(!p) return;
   if(!(S.perfil==='direcao' || (p.por===S.usuario && _estPode()))) return toast('Sem permissão');
+  if(!p.vip && S.perfil==='direcao'){   // estorno do extra ainda não pago
+    const f=_finDoAluno(p.alunoId);
+    const e=f&&(f.extras||[]).find(x=>x.nome==='Material — '+p.titulo && !x.pago);
+    if(e && confirm('Remover também a cobrança do material ('+_moeda(e.valor)+') que estava em aberto no financeiro?')){ f.extras=f.extras.filter(x=>x.id!==e.id); f.atualizadoEm=Date.now(); }
+  }
+  delete p.cobrancaPendente; delete p.cobrancaDispensada;
   p.status='recebido'; delete p.entregueEm; p.atualizadoEm=Date.now();
   save(); VIEWS.estoque(); toast('Entrega desfeita — livro volta para "a entregar"');
 }
@@ -149,8 +159,29 @@ function salvarPedidoAvulso(){
 }
 
 /* -------------------- integrações -------------------- */
+// materiais entregues pela secretaria ainda sem cobrança (a direção fatura no Financeiro)
+function livrosCobrancaPendente(){
+  return _lps().filter(p=>p.status==='entregue' && !p.vip && p.cobrancaPendente && !p.cobrancaDispensada)
+    .filter(p=>{ const f=_finDoAluno(p.alunoId); return f && !(f.extras||[]).some(e=>e.nome==='Material — '+p.titulo); });
+}
+function faturarLivroPendente(id){
+  if(S.perfil!=='direcao') return toast('Só a direção fatura');
+  const p=_lps().find(x=>x.id===id); if(!p) return;
+  const f=_finDoAluno(p.alunoId); const preco=_precoMaterialDoAluno(p.alunoId);
+  if(!f || !(preco>0)) return toast('Aluno sem plano financeiro ou segmento sem preço de material');
+  if(!(f.extras||[]).some(e=>e.nome==='Material — '+p.titulo)) addExtraFinanceiro(f.id,'Material — '+p.titulo,preco,'livros');
+  delete p.cobrancaPendente; p.atualizadoEm=Date.now(); save();
+  if(rota==='financeiro') VIEWS.financeiro(); toast('Material lançado no financeiro ✓');
+}
+function dispensarCobrancaLivro(id){
+  if(S.perfil!=='direcao') return toast('Só a direção');
+  const p=_lps().find(x=>x.id===id); if(!p) return;
+  p.cobrancaDispensada=true; delete p.cobrancaPendente; p.atualizadoEm=Date.now(); save();
+  if(rota==='financeiro') VIEWS.financeiro(); toast('Cobrança dispensada');
+}
 function _finDoAluno(alunoId){
-  const m=(S.matriculas||[]).find(x=>x.alunoId===alunoId && x.status!=='cancelada');
+  const ms=(S.matriculas||[]).filter(x=>x.alunoId===alunoId);
+  const m=ms.find(x=>x.status==='ativa')||ms.find(x=>x.status==='trancada')||ms.find(x=>x.status==='concluida');   // nunca orçamento
   if(!m) return null;
   return (S.financeiro||[]).find(f=>f.matriculaId===m.id)||null;
 }

@@ -15,7 +15,8 @@ function _dlArquivo(nome, conteudo, tipo){
   document.body.appendChild(a); a.click();
   setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); }, 200);
 }
-function _csvLinha(cols){ return cols.map(c=>{ let s=(c==null?'':String(c)); if(/[";\n]/.test(s)) s='"'+s.replace(/"/g,'""')+'"'; return s; }).join(';'); }
+function _csvLinha(cols){ return cols.map(c=>{ let s=(c==null?'':String(c)); if(typeof c==='string' && /^[=+@]/.test(s)) s="'"+s;   // evita injeção de fórmula no Excel
+  if(/[";\n]/.test(s)) s='"'+s.replace(/"/g,'""')+'"'; return s; }).join(';'); }
 function _hnum(min){ return (Math.round(((+min||0)/60)*100)/100).toString().replace('.',','); }   // minutos -> horas com vírgula decimal
 const _MESES_PT=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
 function _nomeMes(ym){ const [y,m]=ym.split('-').map(Number); return (_MESES_PT[m-1]||'')+' / '+y; }

@@ -25,20 +25,26 @@ function finParcelas(f){
   const val=finMensalLiquida(f);
   const base=new Date(finInicio(f)+'T12:00:00');
   const dia=Math.min(28,Math.max(1,parseInt(f.diaVencimento)||10));
-  const out=[]; for(let i=0;i<n;i++){ const d=new Date(base.getFullYear(), base.getMonth()+i, dia); out.push({n:i+1, venc:ymd(d), valor:val}); }
+  const shift=(dia<base.getDate())?1:0;   // 1ª parcela não nasce vencida: se o dia já passou no mês de início, começa no mês seguinte
+  const out=[]; for(let i=0;i<n;i++){ const d=new Date(base.getFullYear(), base.getMonth()+i+shift, dia); out.push({n:i+1, venc:ymd(d), valor:val}); }
   return out;
 }
-function finParcelaStatus(f,p){ if((f.pagos||{})[p.n]) return 'paga'; return (p.venc<hoje())?'atrasada':'aberta'; }
-function finRecebido(f){ const pg=f.pagos||{}; return finParcelas(f).reduce((s,p)=>s+(pg[p.n]?(+pg[p.n].valor||p.valor):0),0); }
+function finParcelaStatus(f,p){ if((f.pagos||{})[p.n]) return 'paga'; if(finStatusMat(f)==='trancada') return 'aberta'; return (p.venc<hoje())?'atrasada':'aberta'; }   // trancada não entra em atraso
+// Recebido = o que foi REGISTRADO como pago (snapshot), mesmo que as parcelas mudem depois
+function finRecebido(f){ const pg=f.pagos||{}; const parc=finParcelas(f);
+  return Object.keys(pg).reduce((s,n)=>{ const e=pg[n]; if(!e) return s;
+    const v=(e&&e.valor!=null)?_matN(e.valor):(((parc.find(p=>p.n==+n)||{}).valor)||finMensalLiquida(f));
+    return s+v; },0);
+}
 function finAberto(f){ const pg=f.pagos||{}; return finParcelas(f).reduce((s,p)=>s+(pg[p.n]?0:p.valor),0); }
 function finAtrasadoV(f){ const pg=f.pagos||{}; return finParcelas(f).reduce((s,p)=>s+((!pg[p.n]&&p.venc<hoje())?p.valor:0),0); }
 function _finAtiva(f){ return finStatusMat(f)==='ativa'; }
 function _finScope(){ return (S.financeiro||[]).filter(f=>{ const st=finStatusMat(f); return st==='ativa'||st==='trancada'||st==='concluida'; }); }
 function finReceitaMensal(){ return (S.financeiro||[]).filter(_finAtiva).reduce((s,f)=>s+finMensalLiquida(f),0); }
-function finTotalRecebido(){ return _finScope().reduce((s,f)=>s+finRecebido(f)+finExtrasRecebido(f),0); }
+function finTotalRecebido(){ return (S.financeiro||[]).reduce((s,f)=>s+finRecebido(f)+finExtrasRecebido(f),0); }   // dinheiro recebido não some ao cancelar/editar
 function finTotalAberto(){ return _finScope().reduce((s,f)=>s+finAberto(f)+finExtrasAberto(f),0); }
-function finTotalAtrasado(){ return _finScope().reduce((s,f)=>s+finAtrasadoV(f),0); }
-function finInadimplentes(){ return _finScope().filter(f=>finAtrasadoV(f)>0).length; }
+function finTotalAtrasado(){ return _finScope().filter(f=>finStatusMat(f)!=='trancada').reduce((s,f)=>s+finAtrasadoV(f),0); }
+function finInadimplentes(){ return _finScope().filter(f=>finStatusMat(f)!=='trancada' && finAtrasadoV(f)>0).length; }
 /* --- cobranças extras (ex.: material didático), ligadas ao plano --- */
 function finExtras(f){ return (f&&f.extras)||[]; }
 function finExtrasAberto(f){ return finExtras(f).filter(e=>!e.pago).reduce((s,e)=>s+_matN(e.valor),0); }
@@ -79,6 +85,8 @@ VIEWS.financeiro=()=>{
   const ticket=ativas.length?finReceitaMensal()/ativas.length:0;
   const tile=(val,lbl,cor)=>`<div class="fx-tile"><div class="v" style="color:${cor}">${val}</div><div class="l">${lbl}</div></div>`;
   const semMat=(S.matriculas||[]).filter(m=>m.status!=='cancelada' && !(S.financeiro||[]).some(f=>f.matriculaId===m.id));
+  const _pendLiv=(typeof livrosCobrancaPendente==='function')?livrosCobrancaPendente():[];
+  const pendLivCard=_pendLiv.length?('<div class="card" style="border-left:4px solid #c2560b"><h3 style="margin:0 0 2px">\ud83d\udcda Materiais entregues sem cobran\u00e7a ('+_pendLiv.length+')</h3><p class="hint" style="margin:0 0 4px">Entregues pela secretaria \u2014 decida se cobra no plano do aluno.</p>'+_pendLiv.map(p=>'<div class="check"><span style="flex:1"><b>'+esc(_lpNome(p))+'</b> \u2014 '+esc(p.titulo)+'<span class="hint"> \u00b7 entregue em '+brDate(p.entregueEm)+'</span></span><button class="btn sm" onclick="faturarLivroPendente(\''+p.id+'\')">\u2713 cobrar</button><button class="btn ghost sm" onclick="dispensarCobrancaLivro(\''+p.id+'\')">dispensar</button></div>').join('')+'</div>'):'';
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:#005EAF"></span><h2 class="display">💰 Financeiro</h2></div>
     <p class="sub">Mensalidades e pagamentos, ligados às matrículas. <b>Protótipo</b>: baixa manual das parcelas, sem integração com banco/boleto.</p>
     <div class="card">
@@ -99,6 +107,7 @@ VIEWS.financeiro=()=>{
         ${tile(finInadimplentes(),'Inadimplentes',finInadimplentes()>0?'var(--vermelho)':'var(--tinta)')}
       </div>
     </div>
+    ${pendLivCard}
     <div class="card">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
         <button class="btn" onclick="novoFinanceiro()">+ Novo lançamento</button>
@@ -135,6 +144,8 @@ function _finLinha(f){
 }
 
 /* -------------------- criar / abrir -------------------- */
+let _finDraft=null, _finAbertoId=null;   // rascunho em memória: só entra em S.financeiro no 1º Salvar
+function _finById(id){ return (S.financeiro||[]).find(x=>x.id===id) || ((_finDraft&&_finDraft.id===id)?_finDraft:null); }
 function novoFinanceiro(){
   if(S.perfil!=='direcao') return toast('Sem permissão');
   const elig=(S.matriculas||[]).filter(m=>m.status!=='cancelada' && !(S.financeiro||[]).some(f=>f.matriculaId===m.id)).sort((a,b)=>_normTxt(matNome(a)).localeCompare(_normTxt(matNome(b))));
@@ -152,12 +163,13 @@ function abrirFinanceiroDaMatricula(matId){
   const m=(S.matriculas||[]).find(x=>x.id===matId); if(!m) return toast('Matrícula não encontrada');
   let f=(S.financeiro||[]).find(x=>x.matriculaId===matId);
   if(!f){ f={ id:uid(), matriculaId:matId, criadoEm:hoje(), criadoPor:S.usuario, atualizadoEm:Date.now(), valorMatricula:0, valorMensalidade:0, descontoPct:0, parcelas:12, diaVencimento:10, formaPagamento:'', dataInicio:m.dataInicio||hoje(), pagos:{}, observacoes:'' };
-    S.financeiro=S.financeiro||[]; S.financeiro.push(f); save(); }
+    _finDraft=f; }   // NÃO grava ainda — fechar sem salvar não cria plano zerado
   abrirFinanceiro(f.id);
 }
 function abrirFinanceiro(id){
   if(S.perfil!=='direcao') return toast('Sem permissão');
-  const f=(S.financeiro||[]).find(x=>x.id===id); if(!f) return;
+  const f=_finById(id); if(!f) return;
+  _finAbertoId=id;
   const optPg=`<option value="">—</option>`+FIN_PAGAMENTO.map(p=>`<option ${f.formaPagamento===p?'selected':''}>${p}</option>`).join('');
   const t=finTurma(f);
   modal(`<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><h3 style="flex:1;margin:0">💰 Financeiro — ${esc(finNome(f))}</h3><button class="close" onclick="fechar()">×</button></div>
@@ -197,19 +209,25 @@ function _finLerForm(f){
 }
 function _finResumo(){
   const el=document.getElementById('fin_resumoBox'); if(!el) return;
-  const f=_finLerForm({}); const liq=finMensalLiquida(f); const total=finTotalCurso(f); const parc=finParcelas(f);
+  const f=_finLerForm(_finById(_finAbertoId)||{});   // inclui negociação no resumo ao vivo
+  const liq=finMensalLiquida(f); const total=finTotalCurso(f); const parc=finParcelas(f);
   el.innerHTML=`<b>Mensalidade líquida:</b> ${_moeda(liq)}${(_matN(f.descontoPct)>0||_matN(f.descontoValor)>0)?` <span class="hint">(de ${_moeda(_matN(f.valorMensalidade))}${_matN(f.descontoPct)>0?', −'+_matN(f.descontoPct)+'%':''}${_matN(f.descontoValor)>0?', −'+_moeda(_matN(f.descontoValor)):''})</span>`:''} · <b>Matrícula:</b> ${_moeda(f.valorMatricula)}
     <br><b>Total do curso</b> (matrícula + ${f.parcelas||0}× mensalidade): <b>${_moeda(total)}</b>
     ${parc.length?`<br><span class="hint">${parc.length} parcela(s), venc. dia ${f.diaVencimento}, começando ${brDate(parc[0].venc)}</span>`:''}`;
 }
 function salvarFinanceiro(id){
   if(S.perfil!=='direcao') return toast('Sem permissão');
-  const ex=(S.financeiro||[]).find(x=>x.id===id); if(!ex) return;
+  const ex=_finById(id); if(!ex) return;
+  const novo=(_finDraft && _finDraft.id===id);
   Object.assign(ex, _finLerForm(ex)); ex.atualizadoEm=Date.now();
+  if(novo){ S.financeiro=S.financeiro||[]; S.financeiro.push(ex); _finDraft=null; }
   save(); fechar(); if(rota==='financeiro') VIEWS.financeiro(); else if(rota==='matriculas') VIEWS.matriculas(); toast('Financeiro salvo ✓');
 }
 function excluirFinanceiro(id){
   if(S.perfil!=='direcao') return toast('Sem permissão');
+  if(_finDraft && _finDraft.id===id){ _finDraft=null; fechar(); return; }   // rascunho não salvo: só descarta
+  const _f=(S.financeiro||[]).find(x=>x.id===id);
+  if(_f && (finRecebido(_f)>0 || finExtrasRecebido(_f)>0)) return toast('Este plano tem pagamentos recebidos — use o status da matrícula (ex.: cancelada) em vez de excluir');
   if(!confirm('Excluir este lançamento financeiro? (a matrícula continua)')) return;
   S.financeiro=(S.financeiro||[]).filter(x=>x.id!==id); if(typeof marcarExcluido==='function') marcarExcluido('financeiro',id);
   save(); fechar(); if(rota==='financeiro') VIEWS.financeiro(); else if(rota==='matriculas') VIEWS.matriculas(); toast('Lançamento excluído');
@@ -246,13 +264,15 @@ function finToggleParcela(id,n){
   const f=(S.financeiro||[]).find(x=>x.id===id); if(!f) return;
   f.pagos=f.pagos||{};
   if(f.pagos[n]) delete f.pagos[n];
-  else { const p=finParcelas(f).find(x=>x.n===n); f.pagos[n]={em:hoje(), valor:p?p.valor:0, forma:f.formaPagamento||''}; }
+  else { const p=finParcelas(f).find(x=>x.n===n);
+    const at=(p&&finParcelaStatus(f,p)==='atrasada')?finValorAtualizado(p):null;   // recebe COM multa/juros quando atrasada
+    f.pagos[n]={em:hoje(), valor:at?at.total:(p?p.valor:0), forma:f.formaPagamento||''}; }
   f.atualizadoEm=Date.now(); save(); abrirCarne(id);
 }
 
 /* -------------------- PDF -------------------- */
 function verFinanceiro(id){
-  const f=(S.financeiro||[]).find(x=>x.id===id); if(!f) return;
+  const f=_finById(id); if(!f) return;
   const m=finMatricula(f); const t=finTurma(f);
   const parc=finParcelas(f); const _slbl={paga:'paga',atrasada:'em atraso',aberta:'a vencer'};
   const linhaParc=parc.map(p=>{ const s=finParcelaStatus(f,p); return `<tr><td class="c">${p.n}</td><td>${brDate(p.venc)}</td><td class="c">${_moeda(p.valor)}</td><td class="c">${_slbl[s]}</td></tr>`; }).join('');
@@ -287,8 +307,8 @@ function exportarFinanceiroCSV(){
   const lista=(S.financeiro||[]).slice().sort((a,b)=>_normTxt(finNome(a)).localeCompare(_normTxt(finNome(b))));
   if(!lista.length) return toast('Nenhum lançamento para exportar');
   const _m=v=>(Math.round((+v||0)*100)/100).toString().replace('.',',');
-  const rows=[_csvLinha(['Aluno','Turma','Status matrícula','Matrícula (R$)','Mensalidade (R$)','Desconto (%)','Mensalidade líquida (R$)','Parcelas','Dia venc.','Total curso (R$)','Recebido (R$)','A receber (R$)','Em atraso (R$)','Início'])];
-  lista.forEach(f=>{ rows.push(_csvLinha([finNome(f), finTurma(f), (MAT_STATUS[finStatusMat(f)]||{}).lbl||finStatusMat(f), _m(f.valorMatricula), _m(f.valorMensalidade), _matN(f.descontoPct), _m(finMensalLiquida(f)), f.parcelas||0, f.diaVencimento||'', _m(finTotalCurso(f)), _m(finRecebido(f)), _m(finAberto(f)), _m(finAtrasadoV(f)), brDate(finInicio(f))])); });
+  const rows=[_csvLinha(['Aluno','Turma','Status matrícula','Matrícula (R$)','Mensalidade (R$)','Desconto (%)','Desconto (R$)','Negociada (R$)','Mensalidade líquida (R$)','Parcelas','Dia venc.','Total curso (R$)','Recebido (R$)','A receber (R$)','Em atraso (R$)','Extras recebidos (R$)','Extras em aberto (R$)','Início'])];
+  lista.forEach(f=>{ rows.push(_csvLinha([finNome(f), finTurma(f), (MAT_STATUS[finStatusMat(f)]||{}).lbl||finStatusMat(f), _m(f.valorMatricula), _m(f.valorMensalidade), _matN(f.descontoPct), _m(f.descontoValor), f.negociacao?_m(f.negociacao.mensalidade):'', _m(finMensalLiquida(f)), f.parcelas||0, f.diaVencimento||'', _m(finTotalCurso(f)), _m(finRecebido(f)), _m(finAberto(f)), _m(finAtrasadoV(f)), _m(finExtrasRecebido(f)), _m(finExtrasAberto(f)), brDate(finInicio(f))])); });
   _dlArquivo('financeiro-'+hoje()+'.csv', rows.join('\n'));
   toast('Planilha financeira baixada ('+lista.length+')');
 }
@@ -384,7 +404,7 @@ function delCobrancaDiversa(i){
 }
 // preenche o plano com a tabela: taxa + mensalidade = anual/parcelas
 function aplicarTabelaPrecos(id){
-  const f=(S.financeiro||[]).find(x=>x.id===id);
+  const f=_finById(id);
   const seg=_segDaMatricula(finMatricula(f));
   const p=precosSegmento(seg);
   if(!p.taxa && !p.anual) return toast(seg?('Cadastre os valores do segmento '+seg.toUpperCase()+' em ⚙️ Config. financeira'):'Vincule a matrícula a uma turma (para saber o segmento) ou cadastre a tabela');
@@ -445,7 +465,9 @@ function pagarCartaoStub(id,n){
 function registrarPagoCartao(id,n){
   const f=(S.financeiro||[]).find(x=>x.id===id); if(!f) return;
   const p=finParcelas(f).find(x=>x.n===n);
-  f.pagos=f.pagos||{}; f.pagos[n]={em:hoje(), valor:p?p.valor:0, forma:'Cartão de crédito'};
+  f.pagos=f.pagos||{};
+  { const at=(p&&finParcelaStatus(f,p)==='atrasada')?finValorAtualizado(p):null;
+    f.pagos[n]={em:hoje(), valor:at?at.total:(p?p.valor:0), forma:'Cartão de crédito'}; }
   f.atualizadoEm=Date.now(); save(); abrirCarne(id); toast('Parcela registrada como paga no cartão ✓');
 }
 

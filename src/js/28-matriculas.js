@@ -147,7 +147,9 @@ function salvarMatricula(id){
 }
 function excluirMatricula(id){
   if(S.perfil!=='direcao') return toast('Sem permissão');
-  const temFin=(S.financeiro||[]).some(f=>f.matriculaId===id);
+  const fins=(S.financeiro||[]).filter(f=>f.matriculaId===id);
+  if(fins.some(f=>finRecebido(f)>0 || finExtrasRecebido(f)>0)) return toast('Esta matrícula tem pagamentos recebidos — mude o status para "cancelada" em vez de excluir');
+  const temFin=fins.length>0;
   if(!confirm('Excluir esta matrícula?'+(temFin?' O financeiro ligado a ela também será removido.':'')+' (não mexe no cadastro do aluno)')) return;
   S.matriculas=(S.matriculas||[]).filter(x=>x.id!==id); if(typeof marcarExcluido==='function') marcarExcluido('matriculas',id);
   (S.financeiro||[]).filter(f=>f.matriculaId===id).forEach(f=>{ if(typeof marcarExcluido==='function') marcarExcluido('financeiro',f.id); });
@@ -229,10 +231,16 @@ function verOrcamento(id){
   const segOrc=(t&&t.nivel)||'';
   const pSeg=(typeof precosSegmento==='function')?precosSegmento(segOrc):{taxa:0,anual:0,material:0};
   const f=(S.financeiro||[]).find(x=>x.matriculaId===id);
-  const taxa=f?_matN(f.valorMatricula):pSeg.taxa;
-  const parcelas=f?(f.parcelas||12):12;
-  const mensal=f?(typeof finMensalLiquida==='function'?finMensalLiquida(f):0):(pSeg.anual/(parcelas||12));
-  const material=pSeg.material;
+  const temFinReal=!!(f && (finMensalLiquida(f)>0 || _matN(f.valorMatricula)>0));   // plano zerado não vale como personalização
+  let taxa=temFinReal?_matN(f.valorMatricula):pSeg.taxa;
+  let parcelas=f?(f.parcelas||12):12;
+  let mensal=temFinReal?finMensalLiquida(f):(parcelas>0?pSeg.anual/parcelas:0);
+  let material=pSeg.material;
+  // proposta em aberto não muda sozinha: congela os valores na 1ª geração (refeito se personalizar o financeiro)
+  if(m.status==='orcamento'){
+    if(temFinReal || !m.orcSnap){ m.orcSnap={taxa, mensal:Math.round(mensal*100)/100, material, parcelas, em:hoje()}; m.atualizadoEm=Date.now(); save(); }
+    taxa=m.orcSnap.taxa; mensal=m.orcSnap.mensal; material=m.orcSnap.material; parcelas=m.orcSnap.parcelas;
+  }
   const totalCurso=taxa+mensal*parcelas;
   const linha=(k,val)=>`<tr><td class="k">${k}</td><td>${val}</td></tr>`;
   const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Orçamento — ${esc(matNome(m))}</title><style>
@@ -267,10 +275,11 @@ function verContratoExemplo(id){
   const t=m.turmaId?(S.turmas||[]).find(x=>x.id===m.turmaId):null;
   const f=(S.financeiro||[]).find(x=>x.matriculaId===id);
   const cfg=(typeof _cfgFin==='function')?_cfgFin():{};
-  const pSegC=(typeof precosSegmento==='function')?precosSegmento((t&&t.nivel)||''):{taxa:0};
-  const mensal=f?(typeof finMensalLiquida==='function'?finMensalLiquida(f):0):0;
+  const pSegC=(typeof precosSegmento==='function')?precosSegmento((t&&t.nivel)||''):{taxa:0,anual:0};
   const parcelas=f?(f.parcelas||12):12;
-  const taxa=f?_matN(f.valorMatricula):pSegC.taxa;
+  const temFinRealC=!!(f && (finMensalLiquida(f)>0 || _matN(f.valorMatricula)>0));
+  const mensal=temFinRealC?finMensalLiquida(f):(parcelas>0?_matN(pSegC.anual)/parcelas:0);   // sem plano: usa a tabela do segmento (não sai R$ 0,00)
+  const taxa=temFinRealC?_matN(f.valorMatricula):pSegC.taxa;
   const dado=(v,ph)=> v?esc(String(v)):`<span style="background:#FFF7DA;padding:0 4px">${ph}</span>`;
   const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Contrato — ${esc(matNome(m))}</title><style>
 @page{margin:16mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact;box-sizing:border-box}
