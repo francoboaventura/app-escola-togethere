@@ -173,11 +173,19 @@ function _cardVisaoHorasVip(lista){
 //  Espelha o comportamento das turmas: passada a aula prevista, se +2h sem
 //  registro avisa o professor; após ~24h escala para a direção.
 // =========================================================================
-function vipTemHorario(vip){ return !!(vip && Array.isArray(vip.dias) && vip.dias.length); }
+// Horários do VIP: novo formato [{dia,hora}] (cada dia com a sua hora); deriva do formato antigo (dias[]+horaPrev) se preciso
+function vipHorarios(vip){
+  if(!vip) return [];
+  if(Array.isArray(vip.horarios)) return vip.horarios.filter(h=>h && h.dia!=null);
+  if(Array.isArray(vip.dias)&&vip.dias.length) return vip.dias.map(d=>({dia:+d, hora:vip.horaPrev||''}));
+  return [];
+}
+function vipHoraDoDia(vip,dow){ const hs=vipHorarios(vip).filter(h=>+h.dia===+dow).map(h=>h.hora||'').sort(); return hs[0]||vip.horaPrev||''; }
+function vipTemHorario(vip){ return vipHorarios(vip).length>0; }
 function vipHorarioLabel(vip){
-  if(!vipTemHorario(vip)) return '';
-  const ds=vip.dias.slice().sort((a,b)=>a-b).map(d=>DIAS_SEMANA[d]).join(', ');
-  return ds + (vip.horaPrev?(' · '+vip.horaPrev):'');
+  const hs=vipHorarios(vip).slice().sort((a,b)=>(+a.dia)-(+b.dia)||String(a.hora||'').localeCompare(String(b.hora||'')));
+  if(!hs.length) return '';
+  return hs.map(h=>DIAS_SEMANA[+h.dia]+(h.hora?(' '+h.hora):'')).join(', ');
 }
 function _fimAulaVipTs(data, hora){
   const a=String(data).split('-').map(Number);
@@ -188,7 +196,7 @@ function _fimAulaVipTs(data, hora){
 function _datasPrevistasVip(vip, atras, frente){
   if(!vipTemHorario(vip)) return [];
   atras=atras==null?3:atras; frente=frente==null?0:frente;
-  const out=[]; const dias=vip.dias;
+  const out=[]; const dias=[...new Set(vipHorarios(vip).map(h=>+h.dia))];
   const a=new Date(); a.setDate(a.getDate()-atras*7);
   const b=new Date(); b.setDate(b.getDate()+frente*7);
   for(let d=new Date(a); d<=b; d.setDate(d.getDate()+1)){ if(dias.indexOf(d.getDay())>=0) out.push(ymd(new Date(d))); }
@@ -228,9 +236,9 @@ function pendenciasAulaVip(vid){
   // junta todas as ocorrências candidatas primeiro (previstas + remanejadas)…
   const cand=[];
   if(vipTemHorario(vip)){
-    _datasPrevistasVip(vip, Math.ceil(PEND_JANELA_DIAS/7)+1, 0).forEach(data=>{ if(!_vipRemarcadaDe(vip,data)) cand.push({data, hora:vip.horaPrev}); });
+    _datasPrevistasVip(vip, Math.ceil(PEND_JANELA_DIAS/7)+1, 0).forEach(data=>{ if(!_vipRemarcadaDe(vip,data)) cand.push({data, hora:vipHoraDoDia(vip, weekdayOf(data))}); });
   }
-  (vip.remarcacoes||[]).forEach(r=>{ if(r.data) cand.push({data:r.data, hora:r.hora||vip.horaPrev}); });
+  (vip.remarcacoes||[]).forEach(r=>{ if(r.data) cand.push({data:r.data, hora:r.hora||vipHoraDoDia(vip, weekdayOf(r.data))}); });
   cand.sort((a,b)=>a.data.localeCompare(b.data));
   // …e casa cada aula lançada com uma única ocorrência (±1 dia)
   const cobertas=_vipDatasCobertas(vid, cand.map(c=>c.data));

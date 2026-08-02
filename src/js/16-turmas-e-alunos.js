@@ -318,14 +318,24 @@ function _cardHorariosVip(vip){
   const rem=(vip.remarcacoes||[]).slice().sort((a,b)=>(a.data||'').localeCompare(b.data||''));
   const pausas=(vip.pausas||[]).slice().sort((a,b)=>(a.de||'').localeCompare(b.de||''));
   const pausaAtiva=(typeof vipPausaAtual==='function')?vipPausaAtual(vip):null;
+  const hs=(typeof vipHorarios==='function')?vipHorarios(vip):[];
+  const selDia=(v,oc)=>`<select onchange="${oc}" style="max-width:110px">${[1,2,3,4,5,6,0].map(d=>`<option value="${d}" ${+v===d?'selected':''}>${DIAS_SEMANA[d]}</option>`).join('')}</select>`;
+  const linhaH=(hh,i)=>`<div style="display:flex;gap:8px;align-items:flex-end;margin-top:6px;flex-wrap:wrap">
+      <div class="field" style="margin:0;flex:0 0 auto"><label class="lbl">Dia</label>${selDia(hh.dia,`setVipHorarioLinha('${vip.id}',${i},'dia',this.value)`)}</div>
+      <div class="field" style="margin:0;flex:0 0 auto;width:130px"><label class="lbl">Hora</label><input type="time" value="${escAttr(hh.hora||'')}" onchange="setVipHorarioLinha('${vip.id}',${i},'hora',this.value)"></div>
+      <button class="btn ghost sm" style="color:var(--vermelho);margin-bottom:2px" title="Remover este horário" onclick="delVipHorario('${vip.id}',${i})">×</button>
+    </div>`;
+  const linhaNova=`<div style="display:flex;gap:8px;align-items:flex-end;margin-top:6px;flex-wrap:wrap">
+      <div class="field" style="margin:0;flex:0 0 auto"><label class="lbl">Dia</label>${selDia(1,`novoVipHorario('${vip.id}','dia',this.value)`)}</div>
+      <div class="field" style="margin:0;flex:0 0 auto;width:130px"><label class="lbl">Hora</label><input type="time" value="" onchange="novoVipHorario('${vip.id}','hora',this.value)"></div>
+      <span class="hint" style="margin-bottom:6px">← preencha para criar o 1º horário</span>
+    </div>`;
   let h=`<div class="card" style="margin-top:12px"><h3 style="margin:0 0 8px;font-size:1rem">🕒 Horários previstos das aulas</h3>
-    <p class="hint" style="margin:0 0 8px">Marque os dias e o horário previstos. Passada a aula sem registro, o app avisa o professor e, após 24h, a direção — como nas turmas.</p>
-    <div style="display:flex;flex-wrap:wrap;gap:6px">
-      ${[0,1,2,3,4,5,6].map(d=>`<label style="display:flex;align-items:center;gap:5px;font-size:.88rem;border:1px solid var(--linha);border-radius:9px;padding:6px 10px;cursor:pointer"><input type="checkbox" class="vipDia" value="${d}" ${dias.indexOf(d)>=0?'checked':''} onchange="setVipHorario('${vip.id}')"> ${DIAS_SEMANA[d]}</label>`).join('')}
-    </div>
-    <div class="row" style="margin-top:10px;align-items:flex-end">
-      <div class="field" style="margin:0;max-width:160px"><label class="lbl">Horário previsto</label><input type="time" id="vipHoraPrev" value="${escAttr(vip.horaPrev||'')}" onchange="setVipHorario('${vip.id}')"></div>
-      <span class="hint" style="flex:1">${lbl?('Previsto: <b>'+esc(lbl)+'</b>'):'Nenhum horário definido ainda.'}</span>
+    <p class="hint" style="margin:0 0 4px">Cada linha é um dia com o SEU horário (os horários podem variar por dia). Passada a aula sem registro, o app avisa o professor e, após 24h, a direção.</p>
+    ${hs.length?hs.map(linhaH).join(''):linhaNova}
+    <div style="display:flex;gap:10px;margin-top:10px;align-items:center;flex-wrap:wrap">
+      ${hs.length?`<button class="btn ghost sm" onclick="addVipHorario('${vip.id}')">＋ Adicionar horário</button>`:''}
+      <span class="hint" style="flex:1">${lbl?('Previsto: <b>'+esc(lbl)+'</b>'):''}</span>
     </div>`;
   if(pausaAtiva) h+=`<p class="hint" style="margin:10px 0 0;color:#c2560b">⏸️ <b>Aulas pausadas</b> de ${brDate(pausaAtiva.de)} a ${brDate(pausaAtiva.ate)}${pausaAtiva.motivo?(' · '+esc(pausaAtiva.motivo)):''} — sem alertas nesse período.</p>`;
   // Remanejamentos (qualquer perfil que abre a ficha)
@@ -345,11 +355,33 @@ function _cardHorariosVip(vip){
   }
   return h+`</div>`;
 }
-function setVipHorario(id){
+function _vipGravarHorarios(vp, hs){
+  vp.horarios=hs;
+  vp.dias=[...new Set(hs.map(x=>+x.dia))].sort((a,b)=>a-b);      // compat com o formato antigo
+  vp.horaPrev=(hs[0]&&hs[0].hora)||'';
+  vp.atualizadoEm=Date.now(); save();
+}
+function addVipHorario(id){
   const vp=(S.vipAlunos||[]).find(x=>x.id===id); if(!vp) return;
-  const dias=[...document.querySelectorAll('.vipDia:checked')].map(c=>+c.value).sort((a,b)=>a-b);
-  const hp=(document.getElementById('vipHoraPrev')||{}).value||'';
-  vp.dias=dias; vp.horaPrev=hp; vp.atualizadoEm=Date.now(); save(); toast('Horários atualizados');
+  const hs=vipHorarios(vp).slice(); hs.push({dia:1, hora:''});
+  _vipGravarHorarios(vp, hs); VIEWS.ficha(); toast('Linha adicionada — escolha o dia e a hora');
+}
+function novoVipHorario(id, campo, val){   // 1ª linha (quando ainda não há nenhum horário)
+  const vp=(S.vipAlunos||[]).find(x=>x.id===id); if(!vp) return;
+  const h={dia:1, hora:''}; if(campo==='dia') h.dia=+val; else h.hora=val||'';
+  _vipGravarHorarios(vp, [h]); VIEWS.ficha(); toast('Horário criado');
+}
+function setVipHorarioLinha(id, i, campo, val){
+  const vp=(S.vipAlunos||[]).find(x=>x.id===id); if(!vp) return;
+  const hs=vipHorarios(vp).slice(); if(!hs[i]) return;
+  if(campo==='dia') hs[i]={dia:+val, hora:hs[i].hora||''}; else hs[i]={dia:+hs[i].dia, hora:val||''};
+  _vipGravarHorarios(vp, hs); VIEWS.ficha(); toast('Horários atualizados');
+}
+function delVipHorario(id, i){
+  const vp=(S.vipAlunos||[]).find(x=>x.id===id); if(!vp) return;
+  const hs=vipHorarios(vp).slice(); if(!hs[i]) return;
+  hs.splice(i,1);
+  _vipGravarHorarios(vp, hs); VIEWS.ficha(); toast(hs.length?'Horário removido':'Sem horários previstos — os alertas de aula param');
 }
 // --- Remanejar uma aula VIP para outro dia/horário (antes ou depois do previsto) ---
 function abrirRemarcarVip(id){

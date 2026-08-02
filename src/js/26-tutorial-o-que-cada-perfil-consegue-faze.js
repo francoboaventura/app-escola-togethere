@@ -137,6 +137,7 @@ Alunos de aulas particulares, fora das turmas regulares.
 ## Secretaria e direção
 - Controlam o **pacote de horas** (contratadas × utilizadas) na ficha do aluno — o aluno **não** vê isso.
 - **👥 Aula em dupla:** marque na ficha do VIP; o app passa a usar a hora-aula de dupla da tabela (valor por aluno) e mostra o valor estimado do pacote.
+- **🕒 Horários:** cada linha é um dia com a SUA hora (ex.: Seg 10h e Qua 15h30) — use **＋ Adicionar horário** para mais dias; o alerta de aula não lançada segue cada horário.
 - **⏸️ Pausa:** período sem alertas (férias/recesso do aluno).
 - **🔁 Remanejamento:** troca pontual de dia/horário de uma aula prevista.
 - Horas de **consolidação** (importadas de antes do app) aparecem separadas e **não contam** como aula lançada.
