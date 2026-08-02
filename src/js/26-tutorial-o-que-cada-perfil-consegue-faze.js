@@ -136,6 +136,7 @@ Alunos de aulas particulares, fora das turmas regulares.
 - Lança as aulas dadas (data, duração, tema, presença/falta).
 ## Secretaria e direção
 - Controlam o **pacote de horas** (contratadas × utilizadas) na ficha do aluno — o aluno **não** vê isso.
+- **👥 Aula em dupla:** marque na ficha do VIP; o app passa a usar a hora-aula de dupla da tabela (valor por aluno) e mostra o valor estimado do pacote.
 - **⏸️ Pausa:** período sem alertas (férias/recesso do aluno).
 - **🔁 Remanejamento:** troca pontual de dia/horário de uma aula prevista.
 - Horas de **consolidação** (importadas de antes do app) aparecem separadas e **não contam** como aula lançada.
@@ -206,6 +207,7 @@ Ao entregar para aluno de turma, a **direção** pode lançar o material no fina
 ## Como usar
 - **Orçamento:** monte a proposta (aluno, turma, valores da tabela) e **exporte em PDF** — os orçamentos ficam num atalho próprio para apoiar a venda.
 - **Converter** o orçamento em matrícula quando fechar (cria o aluno e o plano financeiro).
+- Venda não fechou? **✖ não fechou** registra o **motivo** (vira aprendizado comercial; dá para reabrir). Orçamentos também podem ser **🗑 excluídos**.
 - Status da matrícula: orçamento, **ativa**, trancada, concluída, cancelada.
 - **Contrato:** por enquanto um modelo de exemplo que já puxa os dados do aluno/turma/valores (o texto oficial entra depois).` },
   { id:'financeiro', em:'💰', titulo:'Financeiro', grp:'Gestão', roles:['direcao'],
@@ -222,7 +224,7 @@ Ao entregar para aluno de turma, a **direção** pode lançar o material no fina
     passos:`## Só direção
 ## O que se define aqui
 - **Preços por segmento** (Kids, Junior, Teens, Adults, Talking): taxa de matrícula, valor anual do curso e material.
-- **Valor da hora-aula VIP.**
+- **Valor da hora-aula VIP** — individual e **👥 em dupla** (valor por aluno).
 - **Cobranças diversas** (itens avulsos com nome e valor).
 - **Multa e juros por atraso** — usados no cálculo das parcelas vencidas.` },
   { id:'tarefas', em:'🎯', titulo:'Tarefas internas', grp:'Gestão', roles:['professor','secretaria','direcao'],

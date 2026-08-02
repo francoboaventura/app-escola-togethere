@@ -12,6 +12,7 @@ const MAT_STATUS={
   trancada:{lbl:'Trancada',   bg:'#fff1e6', cor:'#c2560b'},
   concluida:{lbl:'Concluída', bg:'#eaf3ff', cor:'#005EAF'},
   cancelada:{lbl:'Cancelada', bg:'#fdeaea', cor:'#E52524'},
+  negada:  {lbl:'Não fechou', bg:'#eef0f4', cor:'#5a6b86'},
 };
 const MAT_PARENTESCO=['Mãe','Pai','Responsável legal','Avó/Avô','O próprio aluno','Outro'];
 
@@ -198,25 +199,71 @@ ${m.observacoes?`<h2>Observações</h2><p style="font-size:12.5px">${esc(m.obser
 function exportarMatriculasCSV(){
   const lista=(S.matriculas||[]).slice().sort((a,b)=>_normTxt(matNome(a)).localeCompare(_normTxt(matNome(b))));
   if(!lista.length) return toast('Nenhuma matrícula para exportar');
-  const rows=[_csvLinha(['Aluno','Status','Turma','Responsável','Parentesco','Telefone','E-mail','Início','Vinculado','Tem financeiro'])];
-  lista.forEach(m=>{ rows.push(_csvLinha([matNome(m),(MAT_STATUS[m.status]||{}).lbl||m.status, m.turmaId?turmaNome(m.turmaId):'', m.respNome||'', m.respParentesco||'', m.telefone||'', m.email||'', m.dataInicio?brDate(m.dataInicio):'', m.alunoId?'sim':'não', matTemFinanceiro(m)?'sim':'não'])); });
+  const rows=[_csvLinha(['Aluno','Status','Turma','Responsável','Parentesco','Telefone','E-mail','Início','Vinculado','Tem financeiro','Motivo (não fechou)'])];
+  lista.forEach(m=>{ rows.push(_csvLinha([matNome(m),(MAT_STATUS[m.status]||{}).lbl||m.status, m.turmaId?turmaNome(m.turmaId):'', m.respNome||'', m.respParentesco||'', m.telefone||'', m.email||'', m.dataInicio?brDate(m.dataInicio):'', m.alunoId?'sim':'não', matTemFinanceiro(m)?'sim':'não', (m.negada&&m.negada.motivo)||''])); });
   _dlArquivo('matriculas-'+hoje()+'.csv', rows.join('\n'));
   toast('Planilha de matrículas baixada ('+lista.length+')');
 }
 
 /* -------------------- ORÇAMENTOS (atalho de venda) -------------------- */
+let _negVerLista=false;
 function _cardOrcamentos(){
   const orcs=(S.matriculas||[]).filter(m=>m.status==='orcamento').sort((a,b)=>(b.criadoEm||'').localeCompare(a.criadoEm||''));
-  if(!orcs.length) return '';
+  const negs=(S.matriculas||[]).filter(m=>m.status==='negada').sort((a,b)=>((b.negada&&b.negada.em)||'').localeCompare((a.negada&&a.negada.em)||''));
+  if(!orcs.length && !negs.length) return '';
   const linhas=orcs.map(m=>{ const t=m.turmaId?turmaNome(m.turmaId):'';
     return `<div class="check"><span style="flex:1;cursor:pointer" onclick="abrirMatricula('${m.id}')"><b>${esc(matNome(m))}</b>${t?(' <span class="pill">'+esc(t)+'</span>'):''}${m.respNome?(' · '+esc(m.respNome)):''}</span>
       <button class="btn ghost sm" onclick="verOrcamento('${m.id}')">🧾 PDF</button>
       <button class="btn sm" style="background:#0A7A3D" onclick="converterOrcamento('${m.id}')">✓ Fechar venda</button>
+      <button class="btn ghost sm" style="color:#5a6b86" title="Venda não realizada — registra o motivo" onclick="abrirNegarOrcamento('${m.id}')">✖ não fechou</button>
+      <button class="btn ghost sm" style="color:var(--vermelho)" title="Excluir orçamento" onclick="excluirOrcamento('${m.id}')">🗑</button>
+    </div>`; }).join('');
+  const linhasNeg=negs.map(m=>{ const t=m.turmaId?turmaNome(m.turmaId):''; const n=m.negada||{};
+    return `<div class="check"><span style="flex:1"><b>${esc(matNome(m))}</b>${t?(' <span class="pill">'+esc(t)+'</span>'):''}<br><span class="hint">✖ ${esc(n.motivo||'sem motivo registrado')} · ${n.em?brDate(n.em):''}${n.por?(' · por '+esc(n.por)):''}</span></span>
+      <button class="btn ghost sm" title="Voltar para orçamento em aberto" onclick="reabrirOrcamento('${m.id}')">↩︎ reabrir</button>
+      <button class="btn ghost sm" style="color:var(--vermelho)" onclick="excluirOrcamento('${m.id}')">🗑</button>
     </div>`; }).join('');
   return `<div class="card" style="border-left:4px solid #9333c7">
     <h3 style="margin:0 0 2px">🧾 Orçamentos em aberto (${orcs.length}) <span class="hint" style="font-weight:400">— atalho de venda</span></h3>
-    <p class="hint" style="margin:0 0 4px">Gere o PDF pra apresentar à família; fechou, converta em matrícula ativa.</p>
-    ${linhas}</div>`;
+    <p class="hint" style="margin:0 0 4px">Gere o PDF pra apresentar à família; fechou, converta em matrícula ativa. Não fechou? Registre o motivo — vira aprendizado comercial.</p>
+    ${linhas||'<p class="hint">Nenhum orçamento em aberto.</p>'}
+    ${negs.length?`<div style="border-top:1px solid var(--linha);margin-top:10px;padding-top:8px"><div style="display:flex;align-items:center;gap:8px"><b style="flex:1;font-size:.92rem">✖ Vendas não fechadas (${negs.length})</b><button class="btn ghost sm" onclick="_negVerLista=!_negVerLista;VIEWS.matriculas()">${_negVerLista?'esconder':'ver motivos'}</button></div>${_negVerLista?linhasNeg:''}</div>`:''}
+  </div>`;
+}
+function abrirNegarOrcamento(id){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const m=(S.matriculas||[]).find(x=>x.id===id); if(!m) return;
+  modal(`<h3>✖ Venda não fechada <button class="close" onclick="fechar()">×</button></h3>
+    <p class="hint" style="margin:0 0 10px"><b>${esc(matNome(m))}</b> — o orçamento sai da lista de abertos e o motivo fica registrado (dá para reabrir depois).</p>
+    <div class="field"><label class="lbl">Motivo (obrigatório)</label><input type="text" id="ng_motivo" placeholder="Ex: achou caro; escolheu outra escola; horário não fechou"></div>
+    <button class="btn block" onclick="negarOrcamento('${id}')">Registrar</button>`);
+  setTimeout(()=>{const i=document.getElementById('ng_motivo'); if(i)i.focus();},60);
+}
+function negarOrcamento(id){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const m=(S.matriculas||[]).find(x=>x.id===id); if(!m) return;
+  const motivo=((document.getElementById('ng_motivo')||{}).value||'').trim();
+  if(!motivo) return toast('Informe o motivo — é ele que ensina a próxima venda');
+  m.status='negada'; m.negada={motivo, por:S.usuario||'', em:hoje()}; m.atualizadoEm=Date.now();
+  save(); fechar(); VIEWS.matriculas(); toast('Registrado — venda não fechada');
+}
+function reabrirOrcamento(id){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const m=(S.matriculas||[]).find(x=>x.id===id); if(!m) return;
+  m.status='orcamento'; delete m.negada; m.atualizadoEm=Date.now();
+  save(); VIEWS.matriculas(); toast('Orçamento reaberto');
+}
+function excluirOrcamento(id){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const m=(S.matriculas||[]).find(x=>x.id===id); if(!m) return;
+  if(m.status!=='orcamento' && m.status!=='negada') return toast('Só orçamentos (abertos ou não fechados) podem ser excluídos por aqui');
+  const fins=(S.financeiro||[]).filter(f=>f.matriculaId===id);
+  if(fins.some(f=>finRecebido(f)>0 || finExtrasRecebido(f)>0)) return toast('Há pagamentos recebidos neste orçamento — não dá para excluir');
+  if(!confirm('Excluir o orçamento de '+matNome(m)+'? Isso remove também o rascunho financeiro ligado a ele.')) return;
+  S.matriculas=(S.matriculas||[]).filter(x=>x.id!==id); if(typeof marcarExcluido==='function') marcarExcluido('matriculas',id);
+  fins.forEach(f=>{ if(typeof marcarExcluido==='function') marcarExcluido('financeiro',f.id); });
+  S.financeiro=(S.financeiro||[]).filter(f=>f.matriculaId!==id);
+  save(); VIEWS.matriculas(); toast('Orçamento excluído');
 }
 function converterOrcamento(id){
   if(S.perfil!=='direcao') return toast('Sem permissão');

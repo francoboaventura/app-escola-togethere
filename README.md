@@ -10,7 +10,7 @@ IA, **matrículas e financeiro**, **livros sob demanda**, **permissões configur
 celular/tablet/computador) publicado como um único `index.html`, mas **desenvolvido em módulos**
 (pasta `src/`) com build automático.
 
-> **Versão atual: `2026.08.02 · b148 (Supabase)`.**
+> **Versão atual: `2026.08.02 · b149 (Supabase)`.**
 > O app roda sobre **PostgreSQL no Supabase** (migração do Google Sheets em 25/07).
 > Confira a versão em uso no **rodapé** do app — ele avisa sozinho quando há atualização.
 
@@ -65,7 +65,8 @@ obrigatória no 1º acesso.
 - **Ficha do aluno** — hero, tiles, abas (aulas, testes, writings, temas, material,
   comentários), card **📚 Livros** com o estágio do material, contratos e envio por e-mail.
 - **Alunos VIP** — aulas particulares com **pacotes de horas** (contratadas × utilizadas,
-  visíveis só para secretaria/direção), horários previstos, **pausas** (períodos sem alerta),
+  visíveis só para secretaria/direção), **aulas em dupla** com hora-aula própria (valor por
+  aluno), horários previstos, **pausas** (períodos sem alerta),
   **remanejamentos** de aula e alerta de aula prevista **não lançada em 24h**. Horas de
   **consolidação** (pré-app) ficam separadas e não contam como aula lançada.
 - **Avisos automáticos** — 3 faltas consecutivas; sem material 3 seguidas ou 5 alternadas;
@@ -82,7 +83,8 @@ obrigatória no 1º acesso.
   **🛒 pedido → 📦 recebido → ✅ entregue**, com lista automática de quem precisa de livro,
   pedidos em lote, pedido avulso, CSV e cobrança do material no financeiro na entrega.
 - **📝 Matrículas** (direção) — **orçamentos** exportáveis em PDF (atalho de venda), conversão
-  em matrícula, contrato-modelo que puxa os dados (texto oficial entra depois).
+  em matrícula, **✖ não fechou** (registra o motivo da venda perdida, com reabrir) e exclusão
+  de orçamentos; contrato-modelo que puxa os dados (texto oficial entra depois).
 - **💰 Financeiro** (direção) — plano por matrícula: mensalidade, parcelas, descontos em % e
   R$, carnê com recebimento manual, **negociação com senha da direção**, cobranças extras,
   multa/juros por atraso. Boleto e cartão por enquanto **simulados** (APIs depois).

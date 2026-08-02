@@ -4,6 +4,17 @@ function fmtDur(min){ min=+min||0; const h=Math.floor(min/60), m=min%60; if(!min
 
 /* ===== Pacotes de horas (VIP) ===== */
 // Consumo: aulas dadas (presente) + faltas em que se optou por debitar (professor disponível).
+function vipValorHora(vip){   // R$ da hora deste VIP: dupla tem tabela própria (por aluno)
+  const c=(typeof _cfgFin==='function')?_cfgFin():{};
+  if(vip&&vip.dupla) return _matN(c.valorHoraVipDupla)||_matN(c.valorHoraVip)||0;
+  return _matN(c.valorHoraVip)||0;
+}
+function setVipDupla(vid, on){
+  if(!(S.perfil==='direcao'||(soLeitura()&&perm('sec_vip_horas')))) return toast('Sem permissão');
+  const v=(S.vipAlunos||[]).find(x=>x.id===vid); if(!v) return;
+  v.dupla=!!on; v.atualizadoEm=Date.now(); save(); VIEWS.ficha&&VIEWS.ficha();
+  toast(on?'Marcado como aula em dupla 👥':'Voltou para aula individual');
+}
 function vipConsumoMin(vid){ return (S.aulasVip||[]).filter(a=>a.vipId===vid && (!a.faltou || a.cobrarFalta)).reduce((s,a)=>s+(+a.duracaoMin||0),0); }
 function vipContratadoMin(vid){ return (S.pacotesVip||[]).filter(p=>p.vipId===vid && !p.arquivado).reduce((s,p)=>s+((+p.horas||0)*60),0); }
 function vipSaldoMin(vid){ return vipContratadoMin(vid)-vipConsumoMin(vid); }
@@ -27,10 +38,14 @@ function _cardPacoteVip(vid){
   if(ehProfessor()) return '';   // professor VIP só lança aulas/tema; controle de horas é da secretaria/direção
   const ehGestor=(S.perfil==='direcao'||(soLeitura()&&perm('sec_vip_horas')));
   const contr=vipContratadoMin(vid), usado=vipConsumoMin(vid), saldo=contr-usado;
+  const vipObj=(S.vipAlunos||[]).find(x=>x.id===vid)||{};
+  const vHora=vipValorHora(vipObj);
   const pac=(S.pacotesVip||[]).filter(p=>p.vipId===vid && !p.arquivado).sort((a,b)=>(a.inicio||'').localeCompare(b.inicio||''));
   const fim=vipVigenciaFim(vid), dias=vipDiasVigencia(vid), al=vipAlertaPacote(vid);
   const tile=(v,l,c)=>`<div class="fx-tile"><div class="v" style="color:${c}">${v}</div><div class="l">${l}</div></div>`;
-  let h=`<div class="card"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0;flex:1">⏱️ Pacote de horas</h3>${ehGestor?`<button class="btn ghost sm" onclick="addPacoteVip('${vid}')">+ Novo pacote</button>`:''}</div>`;
+  let h=`<div class="card"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h3 style="margin:0;flex:1">⏱️ Pacote de horas${vipObj.dupla?' <span class="pill" style="background:#e6f0fb;color:#005EAF">👥 em dupla</span>':''}</h3>${ehGestor?`<button class="btn ghost sm" onclick="addPacoteVip('${vid}')">+ Novo pacote</button>`:''}</div>`;
+  if(ehGestor) h+=`<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.88rem;margin:8px 0 0"><input type="checkbox" ${vipObj.dupla?'checked':''} onchange="setVipDupla('${vid}',this.checked)"> 👥 Aula em dupla <span class="hint">(usa a hora-aula de dupla da tabela${vHora?(' — '+_moeda(vHora)+'/h por aluno'):''})</span></label>`;
+  else if(vipObj.dupla) h+=`<p class="hint" style="margin:8px 0 0">👥 Aula em dupla.</p>`;
   if(!pac.length && !usado){ return h+`<p class="hint" style="margin:8px 0 0">Nenhum pacote cadastrado.${ehGestor?' Clique em “+ Novo pacote” quando o aluno contratar horas.':''}</p></div>`; }
   h+=`<div class="fx-tiles" style="margin-top:10px">
     ${tile(fmtDur(contr),'Contratadas','#005EAF')}
@@ -38,6 +53,7 @@ function _cardPacoteVip(vid){
     ${tile(fmtDur(Math.max(0,saldo)),'Saldo',saldo<=0?'var(--vermelho)':'var(--ok)')}
     ${tile(fim?brDate(fim):'—','Válido até',(dias!=null&&dias<=30)?'#c2560b':'var(--tinta)')}
   </div>`;
+  if(ehGestor && vHora>0){ h+=`<p class="hint" style="margin:8px 0 0">💰 Hora-aula: <b>${_moeda(vHora)}</b>${vipObj.dupla?' por aluno (dupla)':''} · contratado ≈ <b>${_moeda(vHora*contr/60)}</b> · saldo ≈ <b>${_moeda(vHora*Math.max(0,saldo)/60)}</b></p>`; }
   { const impMin=(S.aulasVip||[]).filter(a=>a.vipId===vid && a.tema==='Importação' && (!a.faltou||a.cobrarFalta)).reduce((s,a)=>s+(+a.duracaoMin||0),0);
     if(impMin>0) h+=`<p class="hint" style="margin:8px 0 0">Das <b>${fmtDur(usado)}</b> utilizadas: <b>${fmtDur(impMin)}</b> de <b>aulas anteriores</b> (consolidadas na importação da planilha) + <b>${fmtDur(usado-impMin)}</b> lançadas no app.</p>`; }
   if(ehGestor) h+=`<div class="row" style="flex-wrap:wrap;margin-top:10px">
