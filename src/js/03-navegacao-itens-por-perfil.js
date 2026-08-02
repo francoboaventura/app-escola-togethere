@@ -24,6 +24,7 @@ const NAV=[
   {id:'comunicados', label:'Comunicados', em:'📣', grp:'Acompanhamento', roles:['secretaria','direcao']},
   {id:'turmas', label:'Turmas', em:'🏫', grp:'Gestão', roles:['professor','secretaria','direcao']},
   {id:'alunos', label:'Alunos', em:'🧑\u200d🎓', grp:'Gestão', roles:['professor','secretaria','direcao']},
+  {id:'tarefas', label:'Tarefas internas', em:'🎯', grp:'Gestão', roles:['professor','secretaria','direcao']},
   {id:'dupes', label:'Limpar duplicidades', em:'🧹', grp:'Gestão', roles:['secretaria','direcao']},
   {id:'gturmas', label:'Trocar / criar turma', em:'🔄', grp:'Gestão', roles:['secretaria','direcao']},
   {id:'gestaoturmas', label:'Gestão rápida de turmas', em:'🔁', grp:'Gestão', roles:['direcao'], menu:false},

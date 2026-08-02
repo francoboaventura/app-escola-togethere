@@ -180,12 +180,12 @@ function abrirFinanceiro(id){
       <div class="field"><label class="lbl">Desconto (R$)</label><input type="number" id="fin_descontoValor" value="${f.descontoValor!=null?f.descontoValor:''}" min="0" step="0.01" placeholder="0,00" oninput="_finResumo()"></div>
       <div class="field"><label class="lbl">Parcelas (nº)</label><input type="number" id="fin_parcelas" value="${f.parcelas!=null?f.parcelas:12}" min="0" max="48" step="1" oninput="_finResumo()"></div>
       <div class="field"><label class="lbl">Vencimento (dia)</label><input type="number" id="fin_diaVencimento" value="${f.diaVencimento!=null?f.diaVencimento:10}" min="1" max="28" step="1" oninput="_finResumo()"></div></div>
-    ${f.negociacao?`<div class="card" style="background:#fff8e0;padding:10px 12px;margin-bottom:10px"><b style="color:#b88600">🤝 Valor negociado:</b> <span class="hint">mensalidade ${_moeda(f.negociacao.mensalidade)} · por ${escAttr(f.negociacao.por||'')} em ${brDate(f.negociacao.em||hoje())}${f.negociacao.obs?(' · '+escAttr(f.negociacao.obs)):''} <button class="btn ghost sm" style="color:var(--vermelho)" onclick="removerNegociacao('${f.id}')">remover</button></span></div>`:''}
+    ${f.negociacao?`<div class="card box-amarela" style="margin-bottom:10px"><b style="color:#b88600">🤝 Valor negociado:</b> <span class="hint">mensalidade ${_moeda(f.negociacao.mensalidade)} · por ${escAttr(f.negociacao.por||'')} em ${brDate(f.negociacao.em||hoje())}${f.negociacao.obs?(' · '+escAttr(f.negociacao.obs)):''} <button class="btn ghost sm" style="color:var(--vermelho)" onclick="removerNegociacao('${f.id}')">remover</button></span></div>`:''}
     <div class="row" style="align-items:flex-end"><div class="field" style="flex:2"><label class="lbl">Forma de pagamento</label><select id="fin_formaPagamento">${optPg}</select></div>
       <button class="btn ghost sm" style="margin-bottom:14px" onclick="aplicarTabelaPrecos('${id}')" title="Preenche com a tabela de preços">📋 Usar tabela</button>
       <div class="field"><label class="lbl">Início da cobrança</label><input type="date" id="fin_dataInicio" value="${escAttr(f.dataInicio||hoje())}" onchange="_finResumo()"></div></div>
     <div class="gen-box" id="fin_resumoBox" style="margin-bottom:12px">—</div>
-    <div class="card" style="background:#f4f7fb;padding:10px 12px;margin-bottom:12px">
+    <div class="card box-suave" style="margin-bottom:12px">
       <div style="display:flex;align-items:center;gap:8px"><b style="flex:1;font-size:.92rem">🧾 Cobranças extras (material, taxas…)</b><button class="btn ghost sm" onclick="abrirExtraManual('${id}')">+ extra</button></div>
       ${finExtras(f).length?finExtras(f).map(e=>`<div class="check"><span style="flex:1">${esc(e.nome)} · <b>${_moeda(e.valor)}</b><span class="hint"> · ${brDate(e.em)}${e.pago?(' · pago '+brDate(e.pago.em)):''}</span></span>
         <span class="pill" style="background:${e.pago?'#eafaf0':'#fff1e6'};color:${e.pago?'#0A7A3D':'#c2560b'}">${e.pago?'pago':'em aberto'}</span>
@@ -458,7 +458,7 @@ function pagarCartaoStub(id,n){
   const p=finParcelas(f).find(x=>x.n===n); if(!p) return;
   modal(`<h3>💳 Cartão de crédito <button class="close" onclick="fechar()">×</button></h3>
     <p class="hint" style="margin:0 0 10px">A cobrança automática por cartão depende de integração com uma operadora (API) — <b>ainda não contratada</b>. Por enquanto, se a família pagou no cartão pela maquininha/link externo, registre aqui:</p>
-    <div class="card" style="background:#f4f7fb;padding:10px 12px"><b>${esc(finNome(f))}</b> · parcela ${p.n}/${f.parcelas} · ${_moeda(p.valor)} · venc. ${brDate(p.venc)}</div>
+    <div class="card box-suave"><b>${esc(finNome(f))}</b> · parcela ${p.n}/${f.parcelas} · ${_moeda(p.valor)} · venc. ${brDate(p.venc)}</div>
     <button class="btn block" onclick="registrarPagoCartao('${id}',${n})">✓ Registrar como pago no cartão</button>
     <button class="btn ghost block" style="margin-top:8px" onclick="fechar()">Cancelar</button>`);
 }
@@ -477,7 +477,7 @@ function abrirNegociacao(id){
   const f=(S.financeiro||[]).find(x=>x.id===id); if(!f) return;
   modal(`<h3>🤝 Negociação de valores <button class="close" onclick="fechar()">×</button></h3>
     <p class="hint" style="margin:0 0 10px">Define uma <b>mensalidade negociada</b> que passa por cima da tabela e dos descontos. Exige a senha de um(a) diretor(a) e fica registrado quem negociou.</p>
-    <div class="card" style="background:#f4f7fb;padding:10px 12px;margin-bottom:10px"><b>${esc(finNome(f))}</b> · mensalidade atual: <b>${_moeda(finMensalLiquida(f))}</b></div>
+    <div class="card box-suave" style="margin-bottom:10px"><b>${esc(finNome(f))}</b> · mensalidade atual: <b>${_moeda(finMensalLiquida(f))}</b></div>
     <div class="row"><div class="field"><label class="lbl">Mensalidade negociada (R$)</label><input type="number" id="ng_valor" min="0" step="0.01" value="${f.negociacao?f.negociacao.mensalidade:''}" placeholder="0,00"></div></div>
     <div class="field"><label class="lbl">Justificativa</label><input type="text" id="ng_obs" value="${escAttr((f.negociacao&&f.negociacao.obs)||'')}" placeholder="Ex: 2 irmãos na escola; acordo anual à vista"></div>
     <div class="field"><label class="lbl">Senha da direção</label><input type="password" id="ng_senha" placeholder="sua senha"></div>

@@ -225,6 +225,13 @@ Ao entregar para aluno de turma, a **direção** pode lançar o material no fina
 - **Valor da hora-aula VIP.**
 - **Cobranças diversas** (itens avulsos com nome e valor).
 - **Multa e juros por atraso** — usados no cálculo das parcelas vencidas.` },
+  { id:'tarefas', em:'🎯', titulo:'Tarefas internas', grp:'Gestão', roles:['professor','secretaria','direcao'],
+    resumo:'Matriz de Eisenhower da equipe — com Standby no lugar de "delegar".',
+    passos:`## Como usar
+- Crie tarefas no quadrante certo: **✅ Fazer agora** (urgente e importante), **📅 Agendar** (importante, sem pressa), **⏸️ Standby** (urgente, mas não importante — fica aguardando) e **🗑️ Eliminar** (nem um, nem outro).
+- Defina **responsável** e **prazo**; tarefa vencida fica marcada em vermelho.
+- Marque a caixinha para **concluir** (e reabra se precisar).
+- Excluir: só a direção ou quem criou a tarefa.` },
   { id:'permissoes', em:'🔐', titulo:'Permissões', grp:'Gestão', roles:['direcao'],
     resumo:'Ligar/desligar o que a secretaria e os professores podem fazer.',
     passos:`## Só direção

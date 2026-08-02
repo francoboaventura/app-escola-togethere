@@ -60,6 +60,11 @@ function setStatusAula(status){
   if(status==='normal'){ delete rec.statusAula; delete rec.transfData; delete rec.transfHora; }
   else { rec.statusAula=status; }
   rec.fechada=true; rec.atualizadoEm=Date.now();
+  // aula cancelada/transferida: temas com ENTREGA neste dia vão para a próxima aula (senão nunca mais aparecem)
+  if(status==='cancelada'||status==='transferida'){
+    const movidos=(S.temas||[]).filter(t=>t.turmaId===presTurma && (t.dataEntrega||t.data)===presData);
+    if(movidos.length){ const nova=proximaEntrega(presTurma,presData); movidos.forEach(t=>{ t.dataEntrega=nova; t.atualizadoEm=Date.now(); }); toast(movidos.length+' tema(s) movido(s) para '+brDate(nova)); }
+  }
   save(); montarNav(); renderPres();
   if(status==='cancelada') toast('Aula marcada como cancelada');
 }

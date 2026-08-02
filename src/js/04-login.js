@@ -233,6 +233,7 @@ function nivelTag(n){return `<span class="tag ${n}">${n}</span>`;}
 function alunosDa(turmaId){return S.alunos.filter(a=>a.turmaId===turmaId && (_verArquivadas || !a.arquivado));}
 function idadeDe(nasc){ if(!nasc) return null; const p=String(nasc).split('-').map(Number); if(p.length<3||!p[0]) return null; const [y,m,d]=p; const h=new Date(); let a=h.getFullYear()-y; if((h.getMonth()+1)<m || ((h.getMonth()+1)===m && h.getDate()<d)) a--; return (a>=0&&a<130)?a:null; }
 function brDate(d){if(!d)return'';const[y,m,dd]=d.split('-');return`${dd}/${m}/${y}`;}
+function _navItemDe(rid){ return NAV.find(n=>n.id===rid)||null; }
 function selectTurma(id,sel){
   const ts=turmasVisiveis();
   return `<select id="${id}">${ts.map(t=>`<option value="${t.id}" ${t.id===sel?'selected':''}>${esc(t.nome)}</option>`).join('')}</select>`;

@@ -44,7 +44,9 @@ async function enviarBoletimEmail(){
   if(!confirm('Enviar o boletim de '+(a.nome||'')+' para '+email+'?')) return;
   toast('Enviando…');
   const assunto='Boletim '+(new Date().getFullYear())+' — '+(a.nome||'')+' · Togethere';
-  const res=await cloudEmail([email], assunto, _boletimTxt, _boletimHTML);
+  const bAp=(S.boletins||[]).find(x=>x.turmaId===testeTurma&&x.alunoId===boletimAluno);
+  const txtEnv=(bAp&&bAp.aprovado&&bAp.txtAprovado)||_boletimTxt, htmlEnv=(bAp&&bAp.aprovado&&bAp.htmlAprovado)||_boletimHTML;   // envia a versão APROVADA
+  const res=await cloudEmail([email], assunto, txtEnv, htmlEnv);
   if(res && res.ok) toast('Boletim enviado por e-mail.');
   else toast('Não enviei: '+((res&&res.erro)||'erro')+'. Use Imprimir/PDF ou Copiar.');
 }
@@ -74,7 +76,8 @@ function publicarBoletimPortal(){
   if(!_boletimHTML) return toast('Gere o boletim primeiro');
   if(!_boletimAprovadoOuAvisa()) return;
   const a=(S.alunos||[]).find(x=>x.id===boletimAluno)||{};
-  publicarNoPortal(boletimAluno, 'boletim', 'Boletim '+(new Date().getFullYear())+' — '+(a.nome||''), _boletimHTML, _boletimTxt);
+  const bAp2=(S.boletins||[]).find(x=>x.turmaId===testeTurma&&x.alunoId===boletimAluno);
+  publicarNoPortal(boletimAluno, 'boletim', 'Boletim '+(new Date().getFullYear())+' — '+(a.nome||''), (bAp2&&bAp2.aprovado&&bAp2.htmlAprovado)||_boletimHTML, (bAp2&&bAp2.aprovado&&bAp2.txtAprovado)||_boletimTxt);
 }
 function publicarFichaPortal(aid){
   const doc=montarFichaHTML(aid,_fichaDe,_fichaAte);

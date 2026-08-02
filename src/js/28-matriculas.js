@@ -118,7 +118,7 @@ function abrirMatricula(id){
 
     <div class="field" style="margin-top:8px"><label class="lbl">Observações</label><textarea id="mat_obs" style="min-height:60px" placeholder="Combinados, condições especiais…">${escAttr(m.observacoes||'')}</textarea></div>
 
-    ${id&&!m.alunoId?`<div class="card" style="background:#f4f7fb;padding:10px 12px;margin-bottom:12px"><p class="hint" style="margin:0 0 6px">Este cadastro ainda não está vinculado a um aluno do app. Salve primeiro e, quando quiser, crie o aluno na turma:</p><button class="btn ghost sm" onclick="matCriarAlunoEVincular('${id}')">➕ Criar aluno na turma e vincular</button></div>`:''}
+    ${id&&!m.alunoId?`<div class="card box-suave" style="margin-bottom:12px"><p class="hint" style="margin:0 0 6px">Este cadastro ainda não está vinculado a um aluno do app. Salve primeiro e, quando quiser, crie o aluno na turma:</p><button class="btn ghost sm" onclick="matCriarAlunoEVincular('${id}')">➕ Criar aluno na turma e vincular</button></div>`:''}
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn" onclick="salvarMatricula('${id||''}')">💾 Salvar</button>
       ${id?`<button class="btn ghost" onclick="abrirFinanceiroDaMatricula('${id}')">💰 Financeiro</button>`:''}

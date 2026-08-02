@@ -569,3 +569,12 @@ body[data-tema="vermelho"]{ --azul:#D31F1E; --marinho:#7c0f0f; --az-hover:#b51a1
 body[data-tema="rosa"]{ --azul:#DE0055; --marinho:#8f0038; --az-hover:#c2004a; --az-suave:#ffe9f2; --az-suave2:#fff2f7; --az-dark-suave:#4d1129; --az-dark-texto:#ff8ab5; }
 body[data-tema="roxo"]{ --azul:#8E2DC4; --marinho:#4d1670; --az-hover:#7b26ab; --az-suave:#f4ecff; --az-suave2:#f9f4ff; --az-dark-suave:#3a2153; --az-dark-texto:#d9a1f5; }
 body[data-tema="verde"]{ --azul:#0E8A63; --marinho:#06503a; --az-hover:#0c7454; --az-suave:#e6f6f0; --az-suave2:#f0faf6; --az-dark-suave:#143f31; --az-dark-texto:#6fd6b4; }
+
+/* ===== caixas suaves reutilizáveis (respeitam o modo escuro) — b148 ===== */
+.box-suave{background:#f4f7fb;padding:10px 12px;border-radius:10px}
+.box-amarela{background:#fff8e0;padding:10px 12px;border-radius:10px}
+body.dark .box-suave{background:#1b2740}
+body.dark .box-amarela{background:#2a2513}
+body.dark .perfil-btn{background:#1b2740;border-color:var(--linha)}
+body.dark .fx-tab{background:#1b2740;color:var(--tinta)}
+body.dark input:focus,body.dark select:focus,body.dark textarea:focus{box-shadow:0 0 0 3px rgba(120,160,255,.25)}

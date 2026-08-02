@@ -10,6 +10,10 @@
       if(r&&r.ok){
         var j=await r.json();
         if(j&&j.v&&_v()&&j.v!==_v()){
+          // não interrompe quem está digitando num modal nem quem tem edições a enviar
+          var ocupado=false;
+          try{ ocupado=(typeof modalTemConteudo==='function'&&modalTemConteudo()) || (typeof _pendenteSync!=='undefined'&&_pendenteSync); }catch(e){}
+          if(ocupado){ try{ if(typeof toast==='function') toast('Nova versão disponível — atualiza sozinho quando você terminar'); }catch(e){} return; }
           try{ if(sessionStorage.getItem('_verReload')===j.v){ return; } sessionStorage.setItem('_verReload', j.v); }catch(e){}
           try{ if(typeof toast==='function') toast('Atualizando o app…'); }catch(e){}
           setTimeout(function(){ location.replace(location.pathname + '?v=' + encodeURIComponent(j.v)); }, 1200);

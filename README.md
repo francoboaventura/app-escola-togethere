@@ -10,7 +10,7 @@ IA, **matrículas e financeiro**, **livros sob demanda**, **permissões configur
 celular/tablet/computador) publicado como um único `index.html`, mas **desenvolvido em módulos**
 (pasta `src/`) com build automático.
 
-> **Versão atual: `2026.08.01 · b144 (Supabase)`.**
+> **Versão atual: `2026.08.02 · b148 (Supabase)`.**
 > O app roda sobre **PostgreSQL no Supabase** (migração do Google Sheets em 25/07).
 > Confira a versão em uso no **rodapé** do app — ele avisa sozinho quando há atualização.
 
@@ -89,6 +89,8 @@ obrigatória no 1º acesso.
 - **⚙️ Config. financeira** (direção) — tabela de preços **por segmento** (Kids, Junior,
   Teens, Adults, Talking), hora-aula VIP, cobranças diversas, multa e juros.
 - **🔐 Permissões** (direção) — liga/desliga ações da secretaria e dos professores.
+- **🎯 Tarefas internas** — matriz de Eisenhower da equipe com **Standby** no lugar de
+  "delegar": Fazer agora / Agendar / Standby / Eliminar, com responsável e prazo.
 - **Acessos** — senhas da equipe, logins do portal, cards de acesso, assinatura, backup.
 - **Busca global (🔎)**, **limpeza de duplicidades**, **cards de acesso**.
 
@@ -181,6 +183,15 @@ GitHub Actions.
 ---
 
 ## Roadmap
+
+**Concluído em 02/08 (auditoria geral com 4 revisores):** data local corrigida (lançamentos
+noturnos), carimbos de sincronização em todas as edições (nada mais "volta sozinho"),
+alertas por sequência (contato não silencia para sempre), gravação na nuvem com trava de
+concorrência + histórico `estado_hist` no servidor, verificação de senha sem trocar sessão,
+contas da equipe via Edge Function `admin-equipe`, financeiro fiel (recebido por snapshot,
+orçamento congelado, trancada sem atraso, multa na baixa), livros com pendência de cobrança,
+varredura anti-XSS, modo escuro consertado no login, abas da Formação, tarefas internas
+(Eisenhower) e correções de boletim/média/temas.
 
 **Concluído recentemente (31/07–01/08):** VIP com horários previstos, pausas, remanejamentos e
 alerta de 24h · consolidação de horas importadas · recorte de foto e proxy dos writings ·

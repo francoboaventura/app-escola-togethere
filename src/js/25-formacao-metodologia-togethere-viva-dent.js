@@ -58,10 +58,20 @@ function _fmFmt(txt){
 /* ---------------------------- TELA ---------------------------- */
 VIEWS.formacao=()=>{
   const v=document.getElementById('view');
+  const dir=(S.perfil==='direcao');
+  const abas=dir?[['biblioteca','📚 Biblioteca'],['painel','📊 Painel da equipe'],['sessoes','🗓️ Sessões']]:[['biblioteca','📚 Biblioteca'],['percurso','🎯 Meu percurso']];
+  if(!abas.some(a=>a[0]===_fmAba)) _fmAba='biblioteca';
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--amarelo)"></span><h2 class="display">Formação</h2></div>
-    <p class="sub">A metodologia Togethere sempre à mão — biblioteca de consulta.</p>
+    <p class="sub">A metodologia Togethere sempre à mão — biblioteca, leitura registrada e sessões de formação.</p>
+    <div style="display:flex;gap:7px;flex-wrap:wrap;margin:0 0 12px">${abas.map(([k,l])=>`<button class="btn ${_fmAba===k?'':'ghost'} sm" onclick="fmAba('${k}')">${l}</button>`).join('')}</div>
     <div id="fmBox"></div>`;
-  _fmRenderBiblioteca(document.getElementById('fmBox'));
+  const box=document.getElementById('fmBox');
+  try{
+    if(_fmAba==='percurso' && typeof _fmRenderPercurso==='function') _fmRenderPercurso(box);
+    else if(_fmAba==='painel' && typeof _fmRenderPainel==='function') _fmRenderPainel(box);
+    else if(_fmAba==='sessoes' && typeof _fmRenderSessoes==='function') _fmRenderSessoes(box);
+    else _fmRenderBiblioteca(box);
+  }catch(e){ _fmRenderBiblioteca(box); }
 };
 function fmAba(a){ _fmAba=a; VIEWS.formacao(); }
 

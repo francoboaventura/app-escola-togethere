@@ -6,7 +6,7 @@ function turmaTrancada(tid){ const t=(S.turmas||[]).find(x=>x.id===tid); return 
 function statusPill(t){ const s=TSTATUS[turmaStatus(t)]||TSTATUS.aberta; return `<span class="pill" style="background:${s.bg};color:${s.cor}">${s.lbl}</span>`; }
 
 // ---- Nome automático da turma: CEFR + SEGMENTO + DIAS + HORA (ex.: A2+ JUNIOR SEG/QUA 18h) ----
-const CEFR_ORDEM=['A1','A1+','A2','A2+','B1','B1+','B2','B2+','C1','C2'];
+const CEFR_ORDEM=['A1','A1+','A2','A2+','B1','B1+','B2','B2+','C1','C1+','C2'];
 function proximoCefr(c){ const i=CEFR_ORDEM.indexOf((c||'').trim()); return (i>=0&&i<CEFR_ORDEM.length-1)?CEFR_ORDEM[i+1]:(c||''); }
 function _diasSigla(dias){ const S7=['DOM','SEG','TER','QUA','QUI','SEX','SAB']; return (dias||[]).slice().sort((a,b)=>a-b).map(d=>S7[d]||'').filter(Boolean).join('/'); }
 function _horaSigla(horario){ const m=String(horario||'').match(/(\d{1,2}):(\d{2})/); if(!m) return ''; return (+m[1])+'h'+(m[2]!=='00'?m[2]:''); }

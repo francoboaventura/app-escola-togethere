@@ -37,8 +37,10 @@ function testeRealizado(t){
   return Object.keys(t.notas).some(aid=>{ const o=t.notas[aid]||{}; return SKILLS.some(sk=>{ const v=o[sk]; return v!==''&&v!=null&&!isNaN(v); }); });
 }
 function mediaSkillAno(turmaId,aid,skill){
-  // Regra Togethere: num teste JÁ REALIZADO, nota em branco conta como 0.
-  const tests=(S.testes||[]).filter(t=>t.turmaId===turmaId && testeRealizado(t));
+  // Regra Togethere: num teste JÁ REALIZADO, nota em branco conta como 0 —
+  // mas só para aluno que TEM alguma nota no teste (quem entrou depois não é punido).
+  const fezTeste=t=>{ const o=(t.notas&&t.notas[aid])||{}; return SKILLS.some(sk=>{ const v=o[sk]; return v!==''&&v!=null&&!isNaN(v); }); };
+  const tests=(S.testes||[]).filter(t=>t.turmaId===turmaId && testeRealizado(t) && fezTeste(t));
   if(!tests.length) return null;
   const vals=tests.map(t=>{ const v=t.notas&&t.notas[aid]?t.notas[aid][skill]:''; return (v!==''&&v!=null&&!isNaN(v))?Number(v):0; });
   return Math.round(vals.reduce((a,n)=>a+n,0)/vals.length);
@@ -67,7 +69,9 @@ function setTesteNota(num,aid,skill,el){if(soLeitura())return toast('Somente lei
   const t=testeDaTurma(testeTurma,num,true);
   let val=el.value===''?'':Math.max(0,Math.min(100,Math.round(+el.value)));
   if(el.value!==''&&val!==+el.value) el.value=val;
-  t.notas[aid]=t.notas[aid]||{}; t.notas[aid][skill]=val; t.atualizadoEm=Date.now(); save();
+  t.notas[aid]=t.notas[aid]||{}; t.notas[aid][skill]=val; t.atualizadoEm=Date.now();
+  { const b=(S.boletins||[]).find(x=>x.turmaId===testeTurma && x.alunoId===aid); if(b&&b.aprovado&&typeof _boletimRevoga==='function'){ _boletimRevoga(b); toast('Nota alterada — o boletim aprovado voltou para reaprovação'); } }
+  save();
   const b=bandaConceito(val); el.style.background=b.bg; el.style.color=b.cor;
   const m=mediaTesteAluno(t,aid), mc=document.getElementById(`tm_${num}_${aid}`);
   if(mc){ const mb=bandaConceito(m==null?'':Math.round(m)); mc.textContent=m==null?'—':Math.round(m); mc.style.color=mb.cor; }
@@ -490,5 +494,5 @@ function imprimirDoc(html){
   f.onload=()=>setTimeout(go,450);
   setTimeout(go,1200); // garantia caso o onload não dispare
 }
-function imprimirBoletim(){ if(!_boletimHTML)return toast('Gere o boletim primeiro'); if(!_boletimAprovadoOuAvisa()) return; imprimirDoc(_boletimHTML); }
+function imprimirBoletim(){ if(!_boletimHTML)return toast('Gere o boletim primeiro'); if(!_boletimAprovadoOuAvisa()) return; const b=(S.boletins||[]).find(x=>x.turmaId===testeTurma&&x.alunoId===boletimAluno); imprimirDoc((b&&b.aprovado&&b.htmlAprovado)||_boletimHTML); }
 
