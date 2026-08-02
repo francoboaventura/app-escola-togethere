@@ -185,7 +185,7 @@ function fichaSetEmail(){
   if(ehProfessor()) return;
   const a=(S.alunos||[]).find(x=>x.id===_fichaAlunoId); if(!a) return;
   a.email=(document.getElementById('fcEmail').value||'').trim();
-  save(); toast('E-mail do responsável atualizado');
+  a.atualizadoEm=Date.now(); save(); toast('E-mail do responsável atualizado');
 }
 // Edita os dados cadastrais do aluno direto na ficha (secretaria + direção).
 function fichaSetCampoAluno(id,campo,val){
@@ -355,11 +355,13 @@ function setVipHorario(id){
 function abrirRemarcarVip(id){
   if(ehProfessor() && !perm('prof_vip_remanejar')) return toast('A direção desativou o remanejo de aulas para professores');
   const vip=(S.vipAlunos||[]).find(x=>x.id===id); if(!vip) return;
-  let opts='<option value="">— (opcional) dia originalmente previsto —</option>';
+  const temHorario=(typeof vipTemHorario==='function')&&vipTemHorario(vip);
+  let opts=temHorario?'<option value="">— escolha o dia previsto —</option>':'<option value="">— (opcional) dia originalmente previsto —</option>';
   if(typeof _datasPrevistasVip==='function'){ try{ const ds=_datasPrevistasVip(vip,2,1).filter(d=>!(typeof _vipRemarcadaDe==='function' && _vipRemarcadaDe(vip,d))); opts+=ds.map(d=>`<option value="${d}">${brDate(d)}</option>`).join(''); }catch(e){} }
   modal(`<h3>🔀 Remanejar aula VIP <button class="close" onclick="fechar()">×</button></h3>
     <p class="hint" style="margin:0 0 10px">Quando o aluno pede para trocar o dia/horário de uma aula. O app deixa de cobrar no dia original e passa a esperar no novo dia.</p>
-    <div class="field"><label class="lbl">Dia originalmente previsto (opcional)</label><select id="rmDe">${opts}</select></div>
+    <div class="field"><label class="lbl">Dia originalmente previsto${temHorario?'':' (opcional)'}</label><select id="rmDe">${opts}</select></div>
+    ${temHorario?'<p class="hint" style="margin:-4px 0 8px">Obrigatório: sem o dia original, o app cobraria a aula duas vezes (no dia antigo e no novo).</p>':''}
     <div class="row"><div class="field"><label class="lbl">Novo dia</label><input type="date" id="rmData" value="${hoje()}"></div>
       <div class="field"><label class="lbl">Novo horário</label><input type="time" id="rmHora" value="${escAttr(vip.horaPrev||'')}"></div></div>
     <div class="field"><label class="lbl">Motivo (opcional)</label><input type="text" id="rmMotivo" placeholder="Ex: aluno viajou; pediu para adiantar"></div>
@@ -369,7 +371,9 @@ function salvarRemarcarVip(id){
   if(ehProfessor() && !perm('prof_vip_remanejar')) return toast('Sem permissão');
   const vip=(S.vipAlunos||[]).find(x=>x.id===id); if(!vip) return;
   const data=(document.getElementById('rmData').value||''); if(!data) return toast('Escolha o novo dia');
-  const r={ id:uid(), de:(document.getElementById('rmDe').value||''), data, hora:(document.getElementById('rmHora').value||''), motivo:(document.getElementById('rmMotivo').value||'').trim() };
+  const de=(document.getElementById('rmDe').value||'');
+  if(!de && typeof vipTemHorario==='function' && vipTemHorario(vip)) return toast('Escolha o dia originalmente previsto — senão a aula seria cobrada em dobro');
+  const r={ id:uid(), de, data, hora:(document.getElementById('rmHora').value||''), motivo:(document.getElementById('rmMotivo').value||'').trim() };
   vip.remarcacoes=vip.remarcacoes||[]; vip.remarcacoes.push(r); vip.atualizadoEm=Date.now(); save(); fechar(); VIEWS.ficha(); toast('Aula remanejada');
 }
 function delRemarcarVip(id, rid){

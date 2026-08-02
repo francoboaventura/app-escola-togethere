@@ -103,7 +103,7 @@ function addUsuario(){
   if(S.usuarios.some(u=>u.nome.toLowerCase()===nome.toLowerCase()))return toast('Já existe um usuário com esse nome');
   const perfil=document.getElementById('nuPerfil').value;
   const ensina=document.getElementById('nuEnsina').value.trim()||null;
-  S.usuarios.push({nome,perfil,ensina});
+  S.usuarios.push({nome,perfil,ensina,atualizadoEm:Date.now()});
   save();
   cloudResetarSenha(nome, senha).then(r=>{
     if(r && r.ok) toast('Usuário criado e senha definida');

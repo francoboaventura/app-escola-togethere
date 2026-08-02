@@ -68,14 +68,14 @@ function encerrarTurma(id){
   const als=(S.alunos||[]).filter(a=>a.turmaId===id && !a.arquivado);
   if(!confirm('Encerrar a turma "'+t.nome+'"?\n\nEla vai para o ARQUIVO MORTO guardando os '+als.length+' aluno(s) atuais. Depois de encerrada, NADA nela poderá ser editado.\n\nOs alunos continuam no app e podem ser rematriculados em outra turma pelo "+ Aluno".')) return;
   t.alunosSnapshot=als.map(a=>({id:a.id,nome:a.nome}));
-  t.status='encerrada'; t.arquivada=true; t.encerradaEm=hoje();
+  t.status='encerrada'; t.arquivada=true; t.encerradaEm=hoje(); t.atualizadoEm=Date.now();
   if(painelTurma===id) painelTurma=null;
   save(); montarNav(); if(rota==='gturmas') VIEWS.gturmas(); toast('Turma encerrada e arquivada');
 }
 function iniciarTurma(id){
   if(ehProfessor()) return toast('Sem permissão');
   const t=(S.turmas||[]).find(x=>x.id===id); if(!t) return;
-  t.status='aberta'; t.arquivada=false;
+  t.status='aberta'; t.arquivada=false; t.atualizadoEm=Date.now();
   save(); montarNav(); if(rota==='gturmas') VIEWS.gturmas(); toast('Turma aberta');
 }
 /* ---- + Aluno: buscar existente (unicidade) ou criar novo ---- */
@@ -113,7 +113,7 @@ function reusarAluno(aid,turmaId){
   if(antiga && !turmaTrancada(antiga)){
     if(!confirm(a.nome+' está na turma "'+_turmaNomePorId(antiga)+'". Mover para esta turma?')) return;
   }
-  a.turmaId=turmaId; if(a.arquivado) a.arquivado=false;
+  a.turmaId=turmaId; if(a.arquivado) a.arquivado=false; a.atualizadoEm=Date.now();
   save(); fechar(); _refreshTurmas(); montarNav(); toast(a.nome+' adicionado(a)');
 }
 function criarAlunoNovo(turmaId){
@@ -192,7 +192,7 @@ function moverAluno(){
   if(dest===orig)return toast('Origem e destino são a mesma turma');
   const a=S.alunos.find(x=>x.id===aid); if(!a)return;
   const td=S.turmas.find(x=>x.id===dest);
-  a.turmaId=dest; save(); montarNav(); VIEWS.gturmas();
+  a.turmaId=dest; a.atualizadoEm=Date.now(); save(); montarNav(); VIEWS.gturmas();
   toast(`${a.nome} movido para ${td?td.nome:'a turma'}`);
 }
 function abrirCriarProxima(){

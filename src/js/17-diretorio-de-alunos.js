@@ -208,16 +208,16 @@ function renderPainelTurma(){
   window.scrollTo(0,0);
 }
 function _refreshTurmas(){ if(painelTurma) renderPainelTurma(); else renderTurmaList(); }
-function setAlunoEmail(id,val){if(ehProfessor())return;const a=S.alunos.find(x=>x.id===id);if(!a)return;a.email=(val||'').trim();save();}
-function setAlunoNascimento(id,val){if(ehProfessor())return; const a=S.alunos.find(x=>x.id===id); if(!a)return; a.nascimento=(val||'').trim(); save(); _refreshTurmas(); }
+function setAlunoEmail(id,val){if(ehProfessor())return;const a=S.alunos.find(x=>x.id===id);if(!a)return;a.email=(val||'').trim();a.atualizadoEm=Date.now();save();}
+function setAlunoNascimento(id,val){if(ehProfessor())return; const a=S.alunos.find(x=>x.id===id); if(!a)return; a.nascimento=(val||'').trim(); a.atualizadoEm=Date.now(); save(); _refreshTurmas(); }
 function setFaltasRetro(id,val){
   if(S.perfil!=='direcao')return toast('Só a direção edita as faltas retroativas');
   const a=S.alunos.find(x=>x.id===id); if(!a)return;
-  a.faltasRetro=Math.max(0,Math.round(+val||0)); save(); _refreshTurmas();
+  a.faltasRetro=Math.max(0,Math.round(+val||0)); a.atualizadoEm=Date.now(); save(); _refreshTurmas();
 }
 function faltasRetroLinha(a){ return ''; }   /* barra manual removida — faltas retroativas vêm do Sponte */
-function toggleArquivarAluno(id){if(ehProfessor())return toast('Sem permissão'); const a=S.alunos.find(x=>x.id===id); if(!a)return; a.arquivado=!a.arquivado; save(); _refreshTurmas(); montarNav(); toast(a.arquivado?'Aluno arquivado':'Aluno reativado'); }
-function toggleArquivarTurma(id){if(!podeCadastro())return toast('Sem permissão'); const t=S.turmas.find(x=>x.id===id); if(!t)return; t.arquivada=!t.arquivada; if(t.arquivada && painelTurma===id) painelTurma=null; save(); VIEWS.turmas(); montarNav(); toast(t.arquivada?'Turma arquivada':'Turma reativada'); }
+function toggleArquivarAluno(id){if(ehProfessor())return toast('Sem permissão'); const a=S.alunos.find(x=>x.id===id); if(!a)return; a.arquivado=!a.arquivado; a.atualizadoEm=Date.now(); save(); _refreshTurmas(); montarNav(); toast(a.arquivado?'Aluno arquivado':'Aluno reativado'); }
+function toggleArquivarTurma(id){if(!podeCadastro())return toast('Sem permissão'); const t=S.turmas.find(x=>x.id===id); if(!t)return; t.arquivada=!t.arquivada; t.atualizadoEm=Date.now(); if(t.arquivada && painelTurma===id) painelTurma=null; save(); VIEWS.turmas(); montarNav(); toast(t.arquivada?'Turma arquivada':'Turma reativada'); }
 // ---- Editar dados de uma turma já existente (só direção) ----
 function abrirEditarTurma(id){
   if(!podeCadastro()) return toast('Sem permissão para editar a turma');

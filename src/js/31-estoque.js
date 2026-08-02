@@ -38,8 +38,8 @@ VIEWS.estoque=()=>{
   const blocosPedir=Object.keys(grupos).map(g=>{
     const xs=grupos[g];
     return `<div style="margin-top:8px"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><b style="flex:1">${esc(g)}</b><span class="pill">${esc(xs[0].titulo)}</span>
-      ${podeAgir&&xs.length>1?`<button class="btn ghost sm" onclick="pedirTodos('${escAttr(g)}')">🛒 pedir todos (${xs.length})</button>`:''}</div>
-      ${xs.map(x=>`<div class="check"><span style="flex:1">${esc(x.nome)}</span>${podeAgir?`<button class="btn ghost sm" onclick="criarPedidoLivro('${x.pid}',${x.vip},'${escAttr(x.titulo)}')">🛒 pedir</button>`:''}</div>`).join('')}
+      ${podeAgir&&xs.length>1?`<button class="btn ghost sm" onclick="pedirTodos('${escAttr(escJs(g))}')">🛒 pedir todos (${xs.length})</button>`:''}</div>
+      ${xs.map(x=>`<div class="check"><span style="flex:1">${esc(x.nome)}</span>${podeAgir?`<button class="btn ghost sm" onclick="criarPedidoLivro('${x.pid}',${x.vip},'${escAttr(escJs(x.titulo))}')">🛒 pedir</button>`:''}</div>`).join('')}
     </div>`; }).join('');
   const ultimas=_lps().filter(p=>p.status==='entregue').sort((a,b)=>(b.entregueEm||'').localeCompare(a.entregueEm||'')||((b.atualizadoEm||0)-(a.atualizadoEm||0))).slice(0,12);
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:#9333c7"></span><h2 class="display">📚 Livros</h2></div>
@@ -169,7 +169,7 @@ function _cardLivrosAluno(pid, ehVip){
   else { const vv=(S.vipAlunos||[]).find(x=>x.id===pid); alvo=(vv&&vv.material)||''; }
   const reg=alvo?pedidoDoAluno(pid,alvo):null;
   let acao='';
-  if(alvo && !reg) acao=`<p class="hint" style="margin:6px 0 0;color:#c2560b">⚠️ <b>${esc(alvo)}</b> ainda não foi pedido.${_estPode()?` <button class="btn ghost sm" onclick="criarPedidoLivro('${pid}',${!!ehVip},'${escAttr(alvo)}')">🛒 pedir agora</button>`:''}</p>`;
+  if(alvo && !reg) acao=`<p class="hint" style="margin:6px 0 0;color:#c2560b">⚠️ <b>${esc(alvo)}</b> ainda não foi pedido.${_estPode()?` <button class="btn ghost sm" onclick="criarPedidoLivro('${pid}',${!!ehVip},'${escAttr(escJs(alvo))}')">🛒 pedir agora</button>`:''}</p>`;
   else if(reg && reg.status==='pedido') acao=`<p class="hint" style="margin:6px 0 0;color:#005EAF">🛒 <b>${esc(alvo)}</b> pedido em ${brDate(reg.pedidoEm)} — aguardando chegar.${_estPode()?` <button class="btn ghost sm" onclick="marcarLivroRecebido('${reg.id}')">📦 chegou</button>`:''}</p>`;
   else if(reg && reg.status==='recebido') acao=`<p class="hint" style="margin:6px 0 0;color:#9333c7">📦 <b>${esc(alvo)}</b> está na escola desde ${brDate(reg.recebidoEm)}.${_estPode()?` <button class="btn ghost sm" onclick="marcarLivroEntregue('${reg.id}')">✅ entregar agora</button>`:''}</p>`;
   const entregues=regs.filter(r=>r.status==='entregue');

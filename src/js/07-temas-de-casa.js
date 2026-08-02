@@ -14,8 +14,9 @@ VIEWS.temas=()=>{
   document.getElementById('tT').onchange=e=>{temaTurma=e.target.value;renderTemas();};
   renderTemas();
 };
-function escAttr(s){return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escAttr(s){return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function esc(s){return (s==null?'':s+'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function escJs(s){return (s==null?'':s+'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");}   // p/ strings JS dentro de onclick="f('...')" — use escAttr(escJs(x))
 function modalTema(turmaId,descricao,data,origem){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');
   const als=alunosDa(turmaId);
   const orig=data||hoje();
@@ -46,7 +47,7 @@ function criarTema(turmaId,origem){
   }
   const ent={}; alvos.forEach(id=>ent[id]=true);   // padrão: todos entregaram (marca-se quem NÃO entregou)
   const id=uid();
-  S.temas.push({id,turmaId,data,dataEntrega:entrega,descricao:desc,entregas:ent,origem:origem||'extra'});
+  S.temas.push({id,turmaId,data,dataEntrega:entrega,descricao:desc,entregas:ent,origem:origem||'extra',atualizadoEm:Date.now()});
   if(origem==='plano' && _temaPlanoRef){
     const p=S.planos.find(x=>x.id===_temaPlanoRef.pid);
     if(p && p.itens[_temaPlanoRef.i]){ p.itens[_temaPlanoRef.i].virouTema=true; p.itens[_temaPlanoRef.i].temaId=id; }
@@ -115,8 +116,8 @@ function temasEntregaDaAula(turmaId, dataAula){
   });
   return res;
 }
-function setTema(tid,aid,val){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');const t=S.temas.find(t=>t.id===tid);t.entregas[aid]=val;save();refreshTemaCtx();}
-function todosEntregaram(tid){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');const t=S.temas.find(t=>t.id===tid);if(!t)return;Object.keys(t.entregas).forEach(k=>t.entregas[k]=true);save();refreshTemaCtx();toast('Todos marcados como feito');}
+function setTema(tid,aid,val){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');const t=S.temas.find(t=>t.id===tid);t.entregas[aid]=val;t.atualizadoEm=Date.now();save();refreshTemaCtx();}
+function todosEntregaram(tid){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');const t=S.temas.find(t=>t.id===tid);if(!t)return;Object.keys(t.entregas).forEach(k=>t.entregas[k]=true);t.atualizadoEm=Date.now();save();refreshTemaCtx();toast('Todos marcados como feito');}
 function delTema(id){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');if(confirm('Remover este tema de casa?')){S.temas=S.temas.filter(t=>t.id!==id);marcarExcluido('temas',id);save();refreshTemaCtx();toast('Tema removido');}}
 function editarTema(id){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');
   const t=S.temas.find(x=>x.id===id); if(!t)return;
@@ -132,7 +133,7 @@ function salvarEdicaoTema(id){if(soLeitura())return toast('Somente leitura — a
   const d=document.getElementById('etDesc').value.trim(); if(!d)return toast('Descreva o tema');
   t.descricao=d; t.data=document.getElementById('etData').value;
   const en=(document.getElementById('etEntrega')||{}).value; if(en) t.dataEntrega=en;
-  save(); fechar(); refreshTemaCtx(); toast('Tema atualizado');
+  t.atualizadoEm=Date.now(); save(); fechar(); refreshTemaCtx(); toast('Tema atualizado');
 }
 function trocarEntregaTema(id){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');
   const t=S.temas.find(x=>x.id===id); if(!t)return;
@@ -144,7 +145,7 @@ function trocarEntregaTema(id){if(soLeitura())return toast('Somente leitura — 
 function salvarEntregaTema(id){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');
   const t=S.temas.find(x=>x.id===id); if(!t)return;
   const en=(document.getElementById('teEntrega')||{}).value; if(!en)return toast('Selecione a data de entrega');
-  t.dataEntrega=en; save(); fechar(); refreshTemaCtx(); toast('Data de entrega atualizada');
+  t.dataEntrega=en; t.atualizadoEm=Date.now(); save(); fechar(); refreshTemaCtx(); toast('Data de entrega atualizada');
 }
 function abrirTemasHub(turmaId, planoData){
   const ts=S.temas.filter(t=>t.turmaId===turmaId).sort((a,b)=>(b.dataEntrega||b.data).localeCompare(a.dataEntrega||a.data)).slice(0,40);

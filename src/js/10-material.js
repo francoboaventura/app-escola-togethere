@@ -27,9 +27,10 @@ function renderMat(){
 }
 function toggleMat(aid){
   let rec=S.material.find(m=>m.turmaId===matTurma&&m.data===matData);
-  if(!rec){rec={id:uid(),turmaId:matTurma,data:matData,faltantes:[]};S.material.push(rec);}
+  if(!rec){rec={id:uid(),turmaId:matTurma,data:matData,faltantes:[],atualizadoEm:Date.now()};S.material.push(rec);}
   const i=rec.faltantes.indexOf(aid);
   if(i>=0)rec.faltantes.splice(i,1);else rec.faltantes.push(aid);
+  rec.atualizadoEm=Date.now();
   renderMat();
 }
 function salvarMat(){save();montarNav();renderMatLista();toast('Material registrado');}

@@ -29,8 +29,8 @@ async function cloudResetarSenha(alvo, nova){
   }catch(e){ return {ok:false, erro:'rede'}; }
 }
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
-function hoje(){return new Date().toISOString().slice(0,10);}
-function diasAtras(n){const d=new Date();d.setDate(d.getDate()-n);return d.toISOString().slice(0,10);}
+function hoje(){return ymd(new Date());}   // data LOCAL (antes usava UTC: depois das ~21h caía no dia seguinte)
+function diasAtras(n){const d=new Date();d.setDate(d.getDate()-n);return ymd(d);}
 function pesoFalta(turmaId){const t=S.turmas.find(x=>x.id===turmaId);const n=(t&&t.dias&&t.dias.length)?t.dias.length:(t&&t.vezesSemana);return n===1?2:1;}
 function temAula2(turmaId){const t=S.turmas.find(x=>x.id===turmaId);const n=(t&&t.dias&&t.dias.length)?t.dias.length:(t&&t.vezesSemana);return n===1;}
 const DIAS_SEMANA=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
@@ -124,6 +124,7 @@ function alertasFaltas(){
   if(escolaEmRecesso()) return [];
   const out=[]; const vis=_turmasParaAlertas();
   S.alunos.forEach(a=>{
+    if(a.arquivado) return;
     if(!vis.has(a.turmaId)) return;
     const dois=temAula2(a.turmaId);
     const sess=S.presencas.filter(p=>p.turmaId===a.turmaId && _aulaConta(p) && p.registros && a.id in p.registros)
@@ -131,32 +132,49 @@ function alertasFaltas(){
     const seq=[];
     sess.forEach(p=>{
       const s1=p.registros[a.id];
-      if(p.registros2){ seq.push(s1); seq.push(p.registros2[a.id]||'presente'); }
-      else if(dois){ seq.push(s1); seq.push(s1); }   // legado conta por 2 aulas
-      else { seq.push(s1); }
+      if(p.registros2){ seq.push({s:s1,d:p.data}); seq.push({s:p.registros2[a.id]||'presente',d:p.data}); }
+      else if(dois){ seq.push({s:s1,d:p.data}); seq.push({s:s1,d:p.data}); }   // legado conta por 2 aulas
+      else { seq.push({s:s1,d:p.data}); }
     });
     let streak=0;
-    for(let i=seq.length-1;i>=0;i--){ if(seq[i]==='falta')streak++; else break; }
-    if(streak>=3) out.push({alunoId:a.id, tipo:'falta', n:streak, motivo:`${streak} faltas consecutivas`});
+    for(let i=seq.length-1;i>=0;i--){ if(seq[i].s==='falta')streak++; else break; }
+    if(streak>=3){
+      const inicio=seq[seq.length-streak].d;   // data da 1ª falta da sequência ATUAL
+      out.push({alunoId:a.id, tipo:'falta', n:streak, inicio, motivo:`${streak} faltas consecutivas`});
+    }
   });
-  return out.filter(o=>!jaContatado(o.alunoId,'falta'));
+  return out.filter(o=>!jaContatado(o.alunoId,'falta',o.inicio));
 }
 function alertasMaterial(){
   if(escolaEmRecesso()) return [];
   const out=[]; const vis=_turmasParaAlertas();
   S.alunos.forEach(a=>{
+    if(a.arquivado) return;
     if(!vis.has(a.turmaId)) return;
     const sess=S.material.filter(m=>m.turmaId===a.turmaId).sort((x,y)=>x.data.localeCompare(y.data));
+    const ultC=_ultimoContato(a.id,'material');            // alternadas só contam depois do último contato
     let streak=0, total=0;
-    sess.forEach(m=>{ if(m.faltantes.includes(a.id)) total++; });
+    sess.forEach(m=>{ if(m.faltantes.includes(a.id) && m.data>ultC) total++; });
     for(let i=sess.length-1;i>=0;i--){ if(sess[i].faltantes.includes(a.id))streak++; else break; }
-    if(streak>=3) out.push({alunoId:a.id,tipo:'material',motivo:`Sem material em ${streak} aulas seguidas`});
+    if(streak>=3){
+      const inicio=sess[sess.length-streak].data;
+      if(!jaContatado(a.id,'material',inicio)) out.push({alunoId:a.id,tipo:'material',motivo:`Sem material em ${streak} aulas seguidas`});
+    }
     else if(total>=5) out.push({alunoId:a.id,tipo:'material',motivo:`Sem material em ${total} aulas (alternadas)`});
   });
-  return out.filter(o=>!jaContatado(o.alunoId,'material'));
+  return out;
 }
-function jaContatado(alunoId,tipo){
-  return S.contatos.some(c=>c.alunoId===alunoId && c.tipo===tipo);
+function _ultimoContato(alunoId,tipo){
+  let d=''; (S.contatos||[]).forEach(c=>{ if(c.alunoId===alunoId && c.tipo===tipo && (c.data||'')>d) d=c.data||''; });
+  return d;
+}
+// Contato "resolve" só a sequência em andamento: se uma NOVA sequência começar depois
+// do último contato, o aluno volta a alertar (antes, 1 contato silenciava para sempre).
+function jaContatado(alunoId,tipo,inicioSeq){
+  const ult=_ultimoContato(alunoId,tipo);
+  if(!ult) return false;
+  if(!inicioSeq) return true;   // uso legado, sem referência de sequência
+  return ult>=inicioSeq;
 }
 function criarAlerta(alunoId,tipo,motivo){
   if(!alunoId||!tipo||!motivo) return;
@@ -222,6 +240,7 @@ function comentariosDoAluno(alunoId){
 function registroGeral(tipo){
   const out=[];
   S.alunos.forEach(a=>{
+    if(a.arquivado) return;
     let datas=[];
     if(tipo==='falta') datas=faltasDoAluno(a.id,a.turmaId);
     else if(tipo==='material') datas=materialDoAluno(a.id,a.turmaId);

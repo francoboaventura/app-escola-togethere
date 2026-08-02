@@ -7,7 +7,7 @@ function fmtDur(min){ min=+min||0; const h=Math.floor(min/60), m=min%60; if(!min
 function vipConsumoMin(vid){ return (S.aulasVip||[]).filter(a=>a.vipId===vid && (!a.faltou || a.cobrarFalta)).reduce((s,a)=>s+(+a.duracaoMin||0),0); }
 function vipContratadoMin(vid){ return (S.pacotesVip||[]).filter(p=>p.vipId===vid && !p.arquivado).reduce((s,p)=>s+((+p.horas||0)*60),0); }
 function vipSaldoMin(vid){ return vipContratadoMin(vid)-vipConsumoMin(vid); }
-function vipVigenciaFim(vid){ const fs=(S.pacotesVip||[]).filter(p=>p.vipId===vid && !p.arquivado && p.fim).map(p=>p.fim).sort(); return fs.length?fs[fs.length-1]:''; }
+function vipVigenciaFim(vid){ const ativos=(S.pacotesVip||[]).filter(p=>p.vipId===vid && !p.arquivado); if(!ativos.length || ativos.some(p=>!p.fim)) return ''; const fs=ativos.map(p=>p.fim).sort(); return fs[fs.length-1]; }   // pacote ativo sem fim = vigência indeterminada (sem alerta de vencimento)
 function vipDiasVigencia(vid){ const f=vipVigenciaFim(vid); if(!f) return null; return Math.round((new Date(f+'T23:59:59').getTime()-Date.now())/864e5); }
 function vipAlertaPacote(vid){
   const pac=(S.pacotesVip||[]).filter(p=>p.vipId===vid && !p.arquivado);
@@ -98,7 +98,7 @@ function setVipUtilizadas(vid, val){
   const baseMin=(S.aulasVip||[]).filter(a=>conta(a) && !a.ajusteManual).reduce((s,a)=>s+(+a.duracaoMin||0),0);
   const delta=alvoMin-baseMin;
   const aj=(S.aulasVip||[]).find(a=>a.vipId===vid && a.ajusteManual);
-  if(delta===0){ if(aj) S.aulasVip=S.aulasVip.filter(a=>a!==aj); }
+  if(delta===0){ if(aj){ marcarExcluido('aulasVip',aj.id); S.aulasVip=S.aulasVip.filter(a=>a!==aj); } }
   else if(aj){ aj.duracaoMin=delta; aj.atualizadoEm=Date.now(); }
   else { S.aulasVip.push({id:uid(), vipId:vid, data:hoje(), tema:'Ajuste', descricao:'Ajuste manual de horas utilizadas', duracaoMin:delta, faltou:false, cobrarFalta:false, ajusteManual:true, atualizadoEm:Date.now()}); }
   save(); VIEWS.ficha(); toast('Horas utilizadas atualizadas');
@@ -181,7 +181,24 @@ function _datasPrevistasVip(vip, atras, frente){
 // conta como "registrada" se há aula VIP na data ou ±1 dia (VIPs remarcam com frequência)
 function _vipTemAulaPerto(vid, data){
   const alvo=new Date(data+'T12:00:00').getTime();
-  return (S.aulasVip||[]).some(x=>x.vipId===vid && !x.ajusteManual && Math.abs(new Date(x.data+'T12:00:00').getTime()-alvo)<=864e5);
+  return (S.aulasVip||[]).some(x=>x.vipId===vid && !x.ajusteManual && x.tema!=='Importação' && Math.abs(new Date(x.data+'T12:00:00').getTime()-alvo)<=864e5);
+}
+// casa cada aula lançada com NO MÁXIMO uma ocorrência prevista (±1 dia) — evita que
+// uma aula de segunda "quite" também a de terça em VIPs com dias consecutivos.
+function _vipDatasCobertas(vid, datas){
+  const aulas=(S.aulasVip||[]).filter(x=>x.vipId===vid && !x.ajusteManual && x.tema!=='Importação').map(x=>x.data).sort();
+  const usada={}, cobertas={};
+  (datas||[]).forEach(d=>{
+    const alvo=new Date(d+'T12:00:00').getTime();
+    let melhor=-1, melhorDist=Infinity;
+    aulas.forEach((ad,i)=>{
+      if(usada[i]) return;
+      const dist=Math.abs(new Date(ad+'T12:00:00').getTime()-alvo);
+      if(dist<=864e5 && dist<melhorDist){ melhor=i; melhorDist=dist; }
+    });
+    if(melhor>=0){ usada[melhor]=1; cobertas[d]=1; }
+  });
+  return cobertas;
 }
 // aulas pausadas (recesso individual do VIP) — não geram alerta
 function vipEmPausa(vip, data){ return !!vip && (vip.pausas||[]).some(p=>p.de && p.ate && data>=p.de && data<=p.ate); }
@@ -192,23 +209,27 @@ function pendenciasAulaVip(vid){
   const vip=(S.vipAlunos||[]).find(v=>v.id===vid); if(!vip) return [];
   const out=[]; const seen={}; const hojeY=hoje();
   const c=new Date(); c.setDate(c.getDate()-PEND_JANELA_DIAS); const corteY=ymd(c);
+  // junta todas as ocorrências candidatas primeiro (previstas + remanejadas)…
+  const cand=[];
+  if(vipTemHorario(vip)){
+    _datasPrevistasVip(vip, Math.ceil(PEND_JANELA_DIAS/7)+1, 0).forEach(data=>{ if(!_vipRemarcadaDe(vip,data)) cand.push({data, hora:vip.horaPrev}); });
+  }
+  (vip.remarcacoes||[]).forEach(r=>{ if(r.data) cand.push({data:r.data, hora:r.hora||vip.horaPrev}); });
+  cand.sort((a,b)=>a.data.localeCompare(b.data));
+  // …e casa cada aula lançada com uma única ocorrência (±1 dia)
+  const cobertas=_vipDatasCobertas(vid, cand.map(c=>c.data));
   const checar=(data, hora)=>{
     if(!data || seen[data]) return;
     if(data<corteY || data>hojeY) return;
     if(data<PEND_INICIO) return;
     if((typeof _emRecessoISO==='function' && _emRecessoISO(data)) || (typeof _emFeriasFixas==='function' && _emFeriasFixas(data))) return;
     if(vipEmPausa(vip, data)) return;
-    if(_vipTemAulaPerto(vid, data)) return;
+    if(cobertas[data]) return;
     const nivel=_nivelPend(_fimAulaVipTs(data, hora)); if(!nivel) return;
     seen[data]=1;
     out.push({ vipId:vid, nome:vip.nome, data, tipo:'aulavip', nivel, fimTs:_fimAulaVipTs(data, hora) });
   };
-  // ocorrências previstas pelos dias fixos (menos as que foram remanejadas p/ outro dia)
-  if(vipTemHorario(vip)){
-    _datasPrevistasVip(vip, Math.ceil(PEND_JANELA_DIAS/7)+1, 0).forEach(data=>{ if(!_vipRemarcadaDe(vip,data)) checar(data, vip.horaPrev); });
-  }
-  // ocorrências remanejadas / avulsas (dia e hora próprios)
-  (vip.remarcacoes||[]).forEach(r=>{ if(r.data) checar(r.data, r.hora||vip.horaPrev); });
+  cand.forEach(c=>checar(c.data, c.hora));
   return out;
 }
 function _souProfVip(vip){
@@ -251,7 +272,7 @@ VIEWS.vip=()=>{
   const ehGestor=ehDir||ehSec;
   const meuEns=_meuEnsina();
   const profs=[...new Set((S.usuarios||[]).filter(u=>u.ensina).map(u=>u.ensina).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-  const lista=S.vipAlunos.filter(a=>!a.arquivado && (ehGestor || a.professor===meuEns)).sort((a,b)=>a.nome.localeCompare(b.nome));
+  const lista=S.vipAlunos.filter(a=>!a.arquivado && (ehGestor || _normTxt(a.professor||'')===_normTxt(meuEns||''))).sort((a,b)=>a.nome.localeCompare(b.nome));
   if(vipSel && !lista.some(a=>a.id===vipSel)) vipSel=null;
   vipSel=vipSel||(lista[0]&&lista[0].id)||null;
   const vObj=lista.find(a=>a.id===vipSel)||{};
@@ -289,7 +310,7 @@ function alunoParaVip(alunoId){
   const a=(S.alunos||[]).find(x=>x.id===alunoId); if(!a) return;
   if(!confirm('Transformar "'+a.nome+'" em aluno VIP? Ele sai da turma (o histórico é preservado) e passa a ter aulas VIP individuais.')) return;
   const tOrig=(S.turmas||[]).find(x=>x.id===a.turmaId);
-  S.vipAlunos.push({id:uid(), nome:a.nome, professor:(tOrig&&tOrig.professor)||''});
+  S.vipAlunos.push({id:uid(), nome:a.nome, professor:(tOrig&&tOrig.professor)||'', email:a.email||'', nascimento:a.nascimento||'', foto:a.foto||'', origemAlunoId:a.id, atualizadoEm:Date.now()});
   vipSel=S.vipAlunos[S.vipAlunos.length-1].id;
   a.arquivado=true; a.atualizadoEm=Date.now();
   save(); montarNav(); toast(a.nome+' agora é aluno VIP'); ir('vip');
@@ -310,7 +331,7 @@ function confirmarVipParaAluno(vipId){
   const v=(S.vipAlunos||[]).find(x=>x.id===vipId); if(!v) return;
   const destino=(document.getElementById('vpDestino')||{}).value;
   const t=(S.turmas||[]).find(x=>x.id===destino); if(!t) return toast('Selecione a turma de destino');
-  S.alunos.push({id:uid(), nome:v.nome, turmaId:t.id});
+  S.alunos.push({id:uid(), nome:v.nome, turmaId:t.id, email:v.email||'', nascimento:v.nascimento||'', foto:v.foto||'', origemVipId:v.id, atualizadoEm:Date.now()});
   v.arquivado=true; v.atualizadoEm=Date.now();
   if(vipSel===vipId) vipSel=null;
   save(); fechar(); montarNav(); toast(v.nome+' movido para '+t.nome); ir('turmas');
@@ -329,9 +350,12 @@ function trocarProfVip(vipId, prof){
   save(); toast(v.professor?('VIP agora é de '+v.professor):'Professor removido do VIP');
 }
 function delVipAluno(id){
+  if(!podeCadastro()) return toast('Sem permissão para excluir alunos VIP');
   if(!confirm('Excluir este aluno VIP e todas as suas aulas?'))return;
   S.aulasVip.filter(x=>x.vipId===id).forEach(x=>marcarExcluido('aulasVip',x.id)); marcarExcluido('vipAlunos',id);
+  (S.pacotesVip||[]).filter(p=>p.vipId===id).forEach(p=>marcarExcluido('pacotesVip',p.id));
   S.vipAlunos=S.vipAlunos.filter(a=>a.id!==id); S.aulasVip=S.aulasVip.filter(x=>x.vipId!==id);
+  S.pacotesVip=(S.pacotesVip||[]).filter(p=>p.vipId!==id);
   if(vipSel===id)vipSel=null; save(); VIEWS.vip(); toast('Aluno VIP excluído');
 }
 function addAulaVip(){

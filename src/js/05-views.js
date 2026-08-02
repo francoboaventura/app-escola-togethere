@@ -316,5 +316,5 @@ function salvarPerfil(){
   u.email=(document.getElementById('pfEmail').value||'').trim();
   u.telefone=(document.getElementById('pfTel').value||'').trim();
   u.nascimento=document.getElementById('pfNasc').value||'';
-  save(); toast('Perfil salvo ✅');
+  u.atualizadoEm=Date.now(); save(); toast('Perfil salvo ✅');
 }

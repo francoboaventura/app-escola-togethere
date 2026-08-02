@@ -23,7 +23,7 @@ function legendaConceitos(){
 }
 function testeDaTurma(turmaId,numero,criar){
   let t=S.testes.find(x=>x.turmaId===turmaId && x.numero===numero);
-  if(!t && criar){ t={id:uid(),turmaId,numero,data:hoje(),notas:{}}; S.testes.push(t); }
+  if(!t && criar){ t={id:uid(),turmaId,numero,data:hoje(),notas:{},atualizadoEm:Date.now()}; S.testes.push(t); }
   return t;
 }
 function notaSkill(t,aid,skill){ return (t&&t.notas&&t.notas[aid]&&t.notas[aid][skill]!=null)?t.notas[aid][skill]:''; }
@@ -62,12 +62,12 @@ VIEWS.testes=()=>{
   document.getElementById('teT').onchange=e=>{testeTurma=e.target.value;boletimAluno=null;VIEWS.testes();};
   renderTestesArea(); renderBoletimArea();
 };
-function setTesteData(num,val){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas'); const t=testeDaTurma(testeTurma,num,true); t.data=val; save(); }
+function setTesteData(num,val){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas'); const t=testeDaTurma(testeTurma,num,true); t.data=val; t.atualizadoEm=Date.now(); save(); }
 function setTesteNota(num,aid,skill,el){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');
   const t=testeDaTurma(testeTurma,num,true);
   let val=el.value===''?'':Math.max(0,Math.min(100,Math.round(+el.value)));
   if(el.value!==''&&val!==+el.value) el.value=val;
-  t.notas[aid]=t.notas[aid]||{}; t.notas[aid][skill]=val; save();
+  t.notas[aid]=t.notas[aid]||{}; t.notas[aid][skill]=val; t.atualizadoEm=Date.now(); save();
   const b=bandaConceito(val); el.style.background=b.bg; el.style.color=b.cor;
   const m=mediaTesteAluno(t,aid), mc=document.getElementById(`tm_${num}_${aid}`);
   if(mc){ const mb=bandaConceito(m==null?'':Math.round(m)); mc.textContent=m==null?'—':Math.round(m); mc.style.color=mb.cor; }

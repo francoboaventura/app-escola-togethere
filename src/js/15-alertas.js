@@ -50,9 +50,9 @@ VIEWS.alertas=()=>{
   }
 };
 function marcarContato(alunoId,tipo){
-  S.contatos.push({alunoId,tipo,data:hoje()});save();montarNav();VIEWS.alertas();toast('Contato registrado');
+  S.contatos.push({id:uid(),alunoId,tipo,data:hoje(),por:S.usuario||'',atualizadoEm:Date.now()});save();montarNav();VIEWS.alertas();toast('Contato registrado');
 }
-function desfazerContato(i){S.contatos.splice(i,1);save();montarNav();VIEWS.alertas();}
+function desfazerContato(i){const c=S.contatos[i];if(c&&c.id&&typeof marcarExcluido==='function')marcarExcluido('contatos',c.id);S.contatos.splice(i,1);save();montarNav();VIEWS.alertas();}
 
 /* =========================================================================
    AULA DE APOIO — indicação do professor → aprovação da direção → agendamento pela secretaria

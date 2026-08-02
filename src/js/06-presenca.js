@@ -165,13 +165,14 @@ function renderPres(){
 }
 function matRecPres(criar){
   let rec=S.material.find(m=>m.turmaId===presTurma&&m.data===presData);
-  if(!rec && criar){ rec={id:uid(),turmaId:presTurma,data:presData,faltantes:[]}; S.material.push(rec); }
+  if(!rec && criar){ rec={id:uid(),turmaId:presTurma,data:presData,faltantes:[],atualizadoEm:Date.now()}; S.material.push(rec); }
   return rec;
 }
 function toggleMatPres(aid){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');
   const rec=matRecPres(true);
   const i=rec.faltantes.indexOf(aid);
   if(i>=0)rec.faltantes.splice(i,1); else rec.faltantes.push(aid);
+  rec.atualizadoEm=Date.now();
   renderPres();
 }
 function _limparExtrasSeAusente(rec,id){
@@ -227,7 +228,7 @@ function renderTemaChamada(){
   }
   box.innerHTML=h;
 }
-function setTemaChamada(tid,aid,val){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');const t=S.temas.find(t=>t.id===tid);if(!t)return;t.entregas[aid]=val;save();renderPres();renderTemaChamada();}
+function setTemaChamada(tid,aid,val){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas');const t=S.temas.find(t=>t.id===tid);if(!t)return;t.entregas[aid]=val;t.atualizadoEm=Date.now();save();renderPres();renderTemaChamada();}
 function temaDaChamada(){if(soLeitura())return toast('Somente leitura — a secretaria não edita turmas'); _temaPlanoRef=null; modalTema(presTurma,'',presData,'extra'); }
 function carregaPres(data){presData=data;VIEWS.presenca();window.scrollTo({top:0,behavior:'smooth'});}
 function renderPresLista(){
