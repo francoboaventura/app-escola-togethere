@@ -323,6 +323,7 @@ function _cardHorariosVip(vip){
   const linhaH=(hh,i)=>`<div style="display:flex;gap:8px;align-items:flex-end;margin-top:6px;flex-wrap:wrap">
       <div class="field" style="margin:0;flex:0 0 auto"><label class="lbl">Dia</label>${selDia(hh.dia,`setVipHorarioLinha('${vip.id}',${i},'dia',this.value)`)}</div>
       <div class="field" style="margin:0;flex:0 0 auto;width:130px"><label class="lbl">Hora</label><input type="time" value="${escAttr(hh.hora||'')}" onchange="setVipHorarioLinha('${vip.id}',${i},'hora',this.value)"></div>
+      <div class="field" style="margin:0;flex:0 0 auto;width:110px"><label class="lbl">Duração (min)</label><input type="number" min="5" step="5" value="${(+hh.dur>0)?+hh.dur:60}" onchange="setVipHorarioLinha('${vip.id}',${i},'dur',this.value)"></div>
       <button class="btn ghost sm" style="color:var(--vermelho);margin-bottom:2px" title="Remover este horário" onclick="delVipHorario('${vip.id}',${i})">×</button>
     </div>`;
   const linhaNova=`<div style="display:flex;gap:8px;align-items:flex-end;margin-top:6px;flex-wrap:wrap">
@@ -363,7 +364,7 @@ function _vipGravarHorarios(vp, hs){
 }
 function addVipHorario(id){
   const vp=(S.vipAlunos||[]).find(x=>x.id===id); if(!vp) return;
-  const hs=vipHorarios(vp).slice(); hs.push({dia:1, hora:''});
+  const hs=vipHorarios(vp).slice(); hs.push({dia:1, hora:'', dur:60});
   _vipGravarHorarios(vp, hs); VIEWS.ficha(); toast('Linha adicionada — escolha o dia e a hora');
 }
 function novoVipHorario(id, campo, val){   // 1ª linha (quando ainda não há nenhum horário)
@@ -374,7 +375,9 @@ function novoVipHorario(id, campo, val){   // 1ª linha (quando ainda não há n
 function setVipHorarioLinha(id, i, campo, val){
   const vp=(S.vipAlunos||[]).find(x=>x.id===id); if(!vp) return;
   const hs=vipHorarios(vp).slice(); if(!hs[i]) return;
-  if(campo==='dia') hs[i]={dia:+val, hora:hs[i].hora||''}; else hs[i]={dia:+hs[i].dia, hora:val||''};
+  if(campo==='dia') hs[i]=Object.assign({},hs[i],{dia:+val});
+  else if(campo==='dur') hs[i]=Object.assign({},hs[i],{dur:Math.max(5,Math.round(+val||60))});
+  else hs[i]=Object.assign({},hs[i],{hora:val||''});
   _vipGravarHorarios(vp, hs); VIEWS.ficha(); toast('Horários atualizados');
 }
 function delVipHorario(id, i){

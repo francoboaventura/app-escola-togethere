@@ -181,11 +181,12 @@ function vipHorarios(vip){
   return [];
 }
 function vipHoraDoDia(vip,dow){ const hs=vipHorarios(vip).filter(h=>+h.dia===+dow).map(h=>h.hora||'').sort(); return hs[0]||vip.horaPrev||''; }
+function vipDurDoDia(vip,dow){ const h=vipHorarios(vip).find(x=>+x.dia===+dow && +x.dur>0); if(h) return +h.dur; const q=vipHorarios(vip).find(x=>+x.dur>0); return q?+q.dur:60; }   // duração prevista do dia (padrão 60min)
 function vipTemHorario(vip){ return vipHorarios(vip).length>0; }
 function vipHorarioLabel(vip){
   const hs=vipHorarios(vip).slice().sort((a,b)=>(+a.dia)-(+b.dia)||String(a.hora||'').localeCompare(String(b.hora||'')));
   if(!hs.length) return '';
-  return hs.map(h=>DIAS_SEMANA[+h.dia]+(h.hora?(' '+h.hora):'')).join(', ');
+  return hs.map(h=>DIAS_SEMANA[+h.dia]+(h.hora?(' '+h.hora):'')+((+h.dur>0&&+h.dur!==60)?(' ('+fmtDur(+h.dur)+')'):'')).join(', ');
 }
 function _fimAulaVipTs(data, hora){
   const a=String(data).split('-').map(Number);
@@ -319,8 +320,8 @@ VIEWS.vip=()=>{
       <div class="field"><label class="lbl">Descrição da aula</label><textarea id="vipDesc" style="min-height:130px" placeholder="Ex: Conversação — entrevista de emprego. Descreva com detalhes o que foi trabalhado na aula."></textarea></div>
       <div class="field"><label class="lbl">📚 Tema de casa (opcional)</label><input type="text" id="vipTemaCasa" placeholder="Ex: Unit 4 · ex. 3 a 6"></div>
       <div class="row">
-        <div class="field"><label class="lbl">Data</label><input type="date" id="vipData" value="${hoje()}"></div>
-        <div class="field"><label class="lbl">Duração (min)</label><input type="number" id="vipDur" value="60" min="5" step="5"></div>
+        <div class="field"><label class="lbl">Data</label><input type="date" id="vipData" value="${hoje()}" onchange="_vipDurSugerir('${vipSel}')"></div>
+        <div class="field"><label class="lbl">Duração (min)</label><input type="number" id="vipDur" value="${vipDurDoDia(vObj, weekdayOf(hoje()))}" min="5" step="5"></div>
       </div>
       <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:2px 0 6px"><input type="checkbox" id="vipFaltou" onchange="document.getElementById('vipCobrarWrap').style.display=this.checked?'flex':'none'"> ❌ Aluno não compareceu</label>
       <label id="vipCobrarWrap" style="display:none;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:0 0 12px 22px;color:#b8860b"><input type="checkbox" id="vipCobrarFalta"> 💳 Debitar a hora mesmo assim (o professor estava disponível)</label>
@@ -381,6 +382,11 @@ function delVipAluno(id){
   S.vipAlunos=S.vipAlunos.filter(a=>a.id!==id); S.aulasVip=S.aulasVip.filter(x=>x.vipId!==id);
   S.pacotesVip=(S.pacotesVip||[]).filter(p=>p.vipId!==id);
   if(vipSel===id)vipSel=null; save(); VIEWS.vip(); toast('Aluno VIP excluído');
+}
+function _vipDurSugerir(vid){   // ao trocar a data, sugere a duração prevista daquele dia (sem sobrescrever edição manual? simples: sugere sempre)
+  const vip=(S.vipAlunos||[]).find(v=>v.id===vid); if(!vip) return;
+  const d=(document.getElementById('vipData')||{}).value; if(!d) return;
+  const e=document.getElementById('vipDur'); if(e) e.value=vipDurDoDia(vip, weekdayOf(d));
 }
 function addAulaVip(){
   if(ehProfessor() && !perm('prof_vip_lancar')) return toast('A direção desativou o lançamento de aulas VIP para professores');
