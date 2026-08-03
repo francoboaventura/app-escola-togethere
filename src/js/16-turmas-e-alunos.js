@@ -627,12 +627,12 @@ function renderFichaVip(v, vip){
       <div class="fx-htu">Aula particular${vip.professor?(' · Prof. '+escAttr(vip.professor)):''}${idade!=null?(' · '+idade+' anos'):''}${(ehProfessor()&&vip.material)?(' · 📘 '+escAttr(vip.material)):''}</div></div>
     <span class="pill" style="background:#fff8e0;color:#b88600">👑 Aluno VIP</span>
   </div>
-  <div class="fx-tiles">
+  ${ehProfessor()?'':`<div class="fx-tiles">
     ${tile(comp.length,'Aulas c/ presença','var(--ok)')}
     ${tile(faltas,'Faltas',faltas>0?'var(--vermelho)':'var(--tinta)')}
-    ${ehProfessor()?'':tile(fmtDur(compMin),'Tempo total','#005EAF')}
+    ${tile(fmtDur(compMin),'Tempo total','#005EAF')}
     ${tile(wrs.length,'Writings',wrs.length>0?'#9333c7':'var(--tinta)')}
-  </div>
+  </div>`}
   ${(consolMin>0&&!ehProfessor())?`<p class="hint" style="margin:8px 0 0">🕓 Fora as aulas com presença acima, há <b>${fmtDur(consolMin)}</b> de <b>aulas anteriores</b> (consolidação da importação). Elas somam no pacote de horas, mas <b>não contam</b> como aulas com presença aqui.</p>`:''}
   ${(typeof _cardAulaOnlineVip==='function')?_cardAulaOnlineVip(vip):''}
   ${_cardPacoteVip(vip.id)}`;

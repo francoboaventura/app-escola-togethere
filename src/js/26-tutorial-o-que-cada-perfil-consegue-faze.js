@@ -183,7 +183,7 @@ Apenas a direção aprova.` },
 Alunos de aulas particulares, fora das turmas regulares.
 ## Professor
 - A ficha do aluno VIP mostra **só o que é seu**: o painel **"Sua aula com este aluno"** (próxima aula prevista, botão 🎥 **Entrar na aula** e ➕ **Lançar aula**), horários, links úteis e o histórico de aulas.
-- **Você não vê** pacote de horas, totais de horas feitas nem cancelamentos registrados pela secretaria — isso é controle interno.
+- **Você não vê** pacote de horas, totais de horas feitas, contadores no topo da ficha nem cancelamentos registrados pela secretaria — isso é controle interno. Os writings aparecem na seção própria, mais abaixo.
 - **Horários previstos** são definidos pela secretaria (você só consulta). A aula aconteceu em outro horário? Ajuste o campo **"Hora em que aconteceu"** ao lançar — ele já vem preenchido com o previsto do dia.
 - Lança as aulas dadas (data, hora, duração — **mínimo 30 minutos** —, tema, presença).
 - **Aluno não compareceu?** Você mesmo registra a falta — a hora é **descontada do pacote** (regra da escola).
