@@ -134,7 +134,7 @@ p.art{margin:0 0 4.5px;text-align:justify}
 ${opts.partes}
 <h3 class="sec">II – QUADRO</h3>
 ${opts.quadro}
-<h3 class="sec">II – ESTIPULAÇÕES</h3>
+<h3 class="sec">III – ESTIPULAÇÕES</h3>
 ${arts}
 <p class="fecho">${_CT_FECHO}</p>
 <div class="ass"><div>Contratante</div><div>Contratada/Escola</div></div>
