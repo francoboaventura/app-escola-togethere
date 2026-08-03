@@ -2,7 +2,7 @@
 /* ===== TESTES E BOLETIM ===== */
 const SKILLS=['Grammar','Vocabulary','Listening','Reading','Writing','Speaking'];
 function cefrFromNome(nome){ const m=(nome||'').toUpperCase().match(/\b([ABC][12]\+?)\b/); return m?m[1]:''; }
-function cefrRank(c){ const o=['A1','A1+','A2','A2+','B1','B1+','B2','B2+','C1','C1+','C2']; const i=o.indexOf((c||'').toUpperCase()); return i<0?-1:i; }
+function cefrRank(c){ const o=['A1','A1+','A2','A2+','B1','B1+','B2','C1','C1+','C2']; const i=o.indexOf((c||'').toUpperCase()); return i<0?-1:i; }
 function numTestes(turma){
   if(!turma) return 3;
   if(turma.nivel==='kids') return 0;                 // KIDS: sem teste formal

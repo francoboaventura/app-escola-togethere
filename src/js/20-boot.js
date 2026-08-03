@@ -5,12 +5,11 @@
 /* =========================================================================
    b22 — Trocar/criar turma + aniversariantes
    ========================================================================= */
-const TRILHAS={
+const TRILHAS={   // níveis oficiais da escola (Franco, 03/08/2026) — sem B2+
   kids:{label:'KIDS', niveis:['Pré A1','Pré A1+','A1','A1+']},
   junior:{label:'JUNIOR', niveis:['A1','A1+','A2','A2+']},
-  teens:{label:'TEENS', niveis:['A1','A2','B1','B1+']},
-  adults:{label:'ADULTS', niveis:['Pré A1','A1','A2','B1','B1+']},
-  avancado:{label:'Sem faixa etária', niveis:['B2','C1','C1+','C2']}
+  teens:{label:'TEENS', niveis:['A1','A2','B1','B1+','B2','C1','C1+']},
+  adults:{label:'ADULTS', niveis:['A1','A2','B1','B1+','B2','C1','C1+']}
 };
 function _selTurmasOpts(sel){ return turmasVisiveis().slice().sort((a,b)=>a.nome.localeCompare(b.nome)).map(t=>`<option value="${t.id}" ${t.id===sel?'selected':''}>${esc(t.nome)}</option>`).join(''); }
 /* ===== Varredura de duplicidades (b44) ===== */

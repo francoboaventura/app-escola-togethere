@@ -238,12 +238,15 @@ Em recesso/férias cadastrados, os alertas de falta/material param sozinhos.` },
     passos:`## Como usar
 - Veja as turmas, horários e alunos.
 - Professores veem as **suas** turmas; secretaria e direção veem todas.
-- A secretaria tem acesso **somente leitura** às turmas.` },
+- **➕ Nova turma** (secretaria e direção): o card fica no topo da tela — nome, categoria e nível.
+- **Níveis oficiais**: KIDS Pré A1 → A1+ · JUNIOR A1 → A2+ · TEENS/ADULTS A1, A2, B1, B1+, B2, C1 e C1+ (não existe B2+). Precisou de outro? Cadastre em ⚙️ Config. financeira → 🧩 Produtos.
+- Na lista de alunos da turma ficam só o **nome e as ações** — e-mail do responsável e nascimento são editados na 📇 **ficha do aluno**.
+- Para a secretaria, as ações de **sala de aula** (chamada, planos, testes) são somente leitura; o **cadastro** (turmas e alunos) ela edita.` },
   { id:'alunos', em:'🧑‍🎓', titulo:'Alunos', grp:'Gestão', roles:['professor','secretaria','direcao'],
     resumo:'O diretório de todos os alunos, com busca e dados de contato.',
     passos:`## Como usar
 - **Busque** por nome — o resultado mostra a turma e atalhos para a 🏫 turma e a 📇 ficha.
-- Secretaria/direção editam **e-mail do responsável** e **nascimento** direto na lista.
+- E-mail do responsável e nascimento são editados na 📇 **ficha do aluno**.
 - **Arquivar** tira o aluno das turmas e alertas sem apagar o histórico (reativável).
 ## Ligações
 - Trocar de turma: botão 🔄 (ou em Trocar/criar turma).

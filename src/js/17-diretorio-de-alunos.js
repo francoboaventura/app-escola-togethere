@@ -31,24 +31,26 @@ VIEWS.alunos=()=>{
 VIEWS.turmas=()=>{
   painelTurma=null;
   const v=document.getElementById('view');
-  const ehProf=ehProfessor()||soLeitura();
+  const ehProf=ehProfessor()||soLeitura();   // esconde o que é de sala/direção
+  const podeCriar=(typeof podeCadastro==='function')?podeCadastro():(S.perfil==='direcao');   // direção + secretaria criam turmas
+  const ehDir=S.perfil==='direcao';
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:var(--azul)"></span><h2 class="display">Turmas e alunos</h2></div>
     <p class="sub">${soLeitura()?'Todas as turmas da escola. Você <b>gerencia o cadastro</b> (criar/editar turmas e alunos, e-mails, arquivar); as ações de sala (chamada, planos, testes, temas) ficam com os professores.':ehProfessor()?'Suas turmas. Toque numa turma para abrir o painel (chamada, plano, material, temas, testes).':'Todas as turmas da escola. Toque numa turma para abrir o painel; ou cadastre uma nova.'}</p>
-    ${ehProf?'':`<div style="margin-bottom:12px"><button class="btn" onclick="ir('gestaoturmas')">🔁 Gestão rápida — trocar professor / promover nível</button></div>`}
-    ${ehProf?'':`<div class="card"><h3>Nova turma</h3><div class="row">
-      <div style="flex:2"><label class="lbl">Nome da turma</label><input type="text" id="nT" placeholder="Ex: A2 ADULTS NOITE"></div>
-      <div><label class="lbl">Categoria</label><select id="nN"><option value="kids">kids</option><option value="junior">junior</option><option value="teens" selected>teens</option><option value="adults">adults</option><option value="talking">talking</option></select></div>
-      <div><label class="lbl">Nível CEFR</label><select id="nC"><option value="">—</option>${['A1','A1+','A2','A2+','B1','B1+','B2','B2+','C1','C2'].map(c=>`<option value="${c}">${c}</option>`).join('')}</select></div>
+    ${ehDir?`<div style="margin-bottom:12px"><button class="btn" onclick="ir('gestaoturmas')">🔁 Gestão rápida — trocar professor / promover nível</button></div>`:''}
+    ${!podeCriar?'':`<div class="card"><h3>➕ Nova turma</h3><div class="row">
+      <div style="flex:2"><label class="lbl">Nome da turma</label><input type="text" id="nT" placeholder="Ex: B2 TEENS NOITE"></div>
+      <div><label class="lbl">Categoria</label><select id="nN">${((typeof segmentosFin==='function')?segmentosFin():[['kids','Kids'],['junior','Junior'],['teens','Teens'],['adults','Adults'],['talking','Talking']]).map(([k,lbl])=>`<option value="${k}" ${k==='teens'?'selected':''}>${esc(lbl)}</option>`).join('')}</select></div>
+      <div><label class="lbl">Nível CEFR</label><select id="nC"><option value="">—</option>${((typeof cefrTodos==='function')?cefrTodos():CEFR_ORDEM).map(c=>`<option value="${escAttr(c)}">${esc(c)}</option>`).join('')}</select></div>
       <div style="flex:1"><label class="lbl">Horário (opcional)</label><input type="text" id="nHor" placeholder="Ex: 18:15–19:30"></div>
     </div>
     <div class="field" style="margin-top:10px"><label class="lbl">Dias de aula</label><div style="display:flex;flex-wrap:wrap;gap:6px">
       ${[1,2,3,4,5,6].map(d=>`<label style="display:flex;align-items:center;gap:5px;font-size:.88rem;border:1px solid var(--linha);border-radius:9px;padding:6px 10px;cursor:pointer"><input type="checkbox" class="nDia" value="${d}"> ${DIAS_SEMANA[d]}</label>`).join('')}
     </div><p class="hint" style="margin:6px 0 0">A chamada e os planos só permitirão datas nesses dias. Aulas 1x/semana contam falta em dobro. <b>Aluno VIP</b> (aula avulsa) é registrado dentro da turma, em "👑 Aulas VIP".</p></div>
     <div style="margin-top:12px"><button class="btn" onclick="addTurma()">+ Criar turma</button></div></div>`}
-    ${ehProf?'':`<div class="card" style="padding:12px 18px;display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn ghost sm" onclick="toggleVerArquivadas()">${_verArquivadas?'Ocultar arquivados':'Mostrar arquivados'}</button></div>`}
+    ${ehProfessor()?'':`<div class="card" style="padding:12px 18px;display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn ghost sm" onclick="toggleVerArquivadas()">${_verArquivadas?'Ocultar arquivados':'Mostrar arquivados'}</button></div>`}
     <div class="card" style="padding:14px 18px"><input type="text" id="buscaAluno" placeholder="🔎 Buscar aluno pelo nome (em todas as turmas)" value="${_buscaAluno||''}" oninput="filtrarAlunos(this.value)"></div>
     <div id="turmaList"></div>
-    ${ehProf?'':`<div class="card" style="border-color:#fdd"><h3 style="color:var(--vermelho)">Zona de risco</h3><p class="hint">Apaga <b>todos os dados</b> (chamadas, temas, planos, testes…) e volta às turmas iniciais. Exige a <b>senha de um(a) diretor(a)</b> e baixa um <b>backup automático</b> antes de apagar.</p>
+    ${!ehDir?'':`<div class="card" style="border-color:#fdd"><h3 style="color:var(--vermelho)">Zona de risco</h3><p class="hint">Apaga <b>todos os dados</b> (chamadas, temas, planos, testes…) e volta às turmas iniciais. Exige a <b>senha de um(a) diretor(a)</b> e baixa um <b>backup automático</b> antes de apagar.</p>
       <button class="btn red sm" onclick="resetarSeguro()">Restaurar dados originais</button></div>`}`;
   renderTurmaList();
 };
@@ -199,10 +201,10 @@ function renderPainelTurma(){
       <button class="btn block" style="background:#0A7A3D;justify-content:flex-start;text-align:left;margin-bottom:10px;height:auto;padding:14px 16px" onclick="abrirRelatorioMensal('${id}')">📄 Relatório do mês<span style="display:block;font-weight:400;font-size:.78rem;opacity:.85;margin-top:2px">frequência, material, atrasos e temas do mês — abrir/PDF ou planilha (uma turma ou todas)</span></button>
     </div>
     <div class="card"><h3>Alunos (${als.length})</h3>
-      ${podeCadastrar?'<p class="hint" style="margin:0 0 8px">E-mail do responsável (usado para enviar o relatório da aula).</p>':''}
+      ${podeCadastrar?'<p class="hint" style="margin:0 0 8px">E-mail do responsável e nascimento ficam na 📇 ficha do aluno.</p>':''}
       ${als.map(a=>`<div style="padding:8px 0;border-bottom:1px dashed var(--linha)"><div style="display:flex;align-items:center;gap:8px">${avatarFoto('av-sm', a.foto, ((a.nome||'·').trim()[0]||'·').toUpperCase(), '')}<span style="flex:1;cursor:pointer;color:var(--azul)" onclick="abrirFicha('${a.id}')" title="Abrir ficha do aluno">${esc(a.nome)}${idadeDe(a.nascimento)!=null?` <span class="pill">${idadeDe(a.nascimento)} anos</span>`:''}${a.arquivado?' <span class="pill" style="background:#eee;color:#888">arquivado</span>':''}</span><button class="btn ghost sm" onclick="abrirFicha('${a.id}')">📇 Ficha</button>${!ehProfessor()?`<button class="btn ghost sm" onclick="abrirTrocarTurma('${a.id}')">🔄 Turma</button><button class="btn ghost sm" onclick="alunoParaVip('${a.id}')">⭐ VIP</button>`:''}${podeCadastrar?`<button class="btn ghost sm" onclick="toggleArquivarAluno('${a.id}')">${a.arquivado?'reativar':'arquivar'}</button><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delAluno('${a.id}')">remover</button>`:''}</div>
         ${a.saldo?`<p class="hint" style="margin:4px 0 0">saldo inicial: ${a.saldo.dadas} aula(s) · ${a.saldo.presencas} presença(s) · ${a.saldo.faltas} falta(s)</p>`:''}
-        ${podeCadastrar?`<div class="row" style="margin-top:6px"><div style="flex:2"><label style="font-size:.68rem;color:#64748b;display:block;margin-bottom:2px">📧 E-mail do responsável</label><input type="email" value="${escAttr(a.email||'')}" placeholder="email.responsavel@exemplo.com" style="font-size:.85rem" onchange="setAlunoEmail('${a.id}',this.value)"></div><div><label style="font-size:.68rem;color:#64748b;display:block;margin-bottom:2px">🎂 Nascimento</label><input type="date" value="${escAttr(a.nascimento||'')}" title="Data de nascimento" style="font-size:.85rem" onchange="setAlunoNascimento('${a.id}',this.value)"></div></div>`:''}${faltasRetroLinha(a)}</div>`).join('')||'<p class="hint">Sem alunos ainda.</p>'}
+        ${faltasRetroLinha(a)}</div>`).join('')||'<p class="hint">Sem alunos ainda.</p>'}
       ${podeCadastrar?`<button class="btn ghost" style="margin-top:12px" onclick="abrirAddAluno('${id}')">+ Aluno</button>`:''}</div>
     ${!ehProfessor()?`<div style="display:flex;gap:8px;margin-top:6px;flex-wrap:wrap"><button class="btn ghost sm" onclick="abrirEditarTurma('${id}')">✏️ Editar dados da turma</button>${podeCadastrar?`<button class="btn ghost sm" onclick="toggleArquivarTurma('${id}')">${t.arquivada?'Reativar turma':'Arquivar turma'}</button><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delTurma('${id}')">Excluir turma</button>`:''}</div>`:''}`;
   window.scrollTo(0,0);
@@ -223,7 +225,7 @@ function abrirEditarTurma(id){
   if(!podeCadastro()) return toast('Sem permissão para editar a turma');
   const t=S.turmas.find(x=>x.id===id); if(!t) return;
   const cats=(typeof segmentosFin==='function')?segmentosFin().map(x=>x[0]):['kids','junior','teens','adults','talking'];
-  const cefrs=['','A1','A1+','A2','A2+','B1','B1+','B2','B2+','C1','C2'];
+  const cefrs=[''].concat((typeof cefrTodos==='function')?cefrTodos():CEFR_ORDEM);
   const profs=[...new Set((S.usuarios||[]).filter(u=>u.ensina).map(u=>u.ensina).filter(Boolean))];
   if(t.professor && profs.indexOf(t.professor)<0) profs.push(t.professor);   // preserva nome legado
   const dias=Array.isArray(t.dias)?t.dias:[];

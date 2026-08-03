@@ -10,7 +10,7 @@ IA, **matrículas e financeiro**, **livros sob demanda**, **permissões configur
 celular/tablet/computador) publicado como um único `index.html`, mas **desenvolvido em módulos**
 (pasta `src/`) com build automático.
 
-> **Versão atual: `2026.08.03 · b162 (Supabase)`.**
+> **Versão atual: `2026.08.03 · b163 (Supabase)`.**
 > O app roda sobre **PostgreSQL no Supabase** (migração do Google Sheets em 25/07).
 > Confira a versão em uso no **rodapé** do app — ele avisa sozinho quando há atualização.
 
@@ -230,6 +230,12 @@ de horas, totais de horas, contadores de presença/faltas/writings no topo da fi
 cancelamentos, e **não altera horários previstos** (só consulta);
 a **hora real** da aula ele ajusta no lançamento (campo "Hora em que aconteceu", pré-preenchido
 com o previsto do dia). Duração mínima de aula VIP: **30 minutos**.
+
+**Concluído em 03/08 (b163):** níveis oficiais da escola em todo o app (KIDS Pré A1→A1+ ·
+JUNIOR A1→A2+ · TEENS/ADULTS A1–C1+, **sem B2+**) — a secretaria agora cria turmas de
+qualquer nível, com o card **➕ Nova turma** no topo da tela de Turmas (categoria e nível puxam
+os produtos cadastrados); na lista de alunos da turma ficam só nome e ações (e-mail e
+nascimento moram na ficha do aluno).
 
 **Próximos passos previstos:**
 1. **APIs de boleto e cartão** (hoje simulados).
