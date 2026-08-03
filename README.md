@@ -10,7 +10,7 @@ IA, **matrículas e financeiro**, **livros sob demanda**, **permissões configur
 celular/tablet/computador) publicado como um único `index.html`, mas **desenvolvido em módulos**
 (pasta `src/`) com build automático.
 
-> **Versão atual: `2026.08.02 · b157 (Supabase)`.**
+> **Versão atual: `2026.08.03 · b158 (Supabase)`.**
 > O app roda sobre **PostgreSQL no Supabase** (migração do Google Sheets em 25/07).
 > Confira a versão em uso no **rodapé** do app — ele avisa sozinho quando há atualização.
 
@@ -72,7 +72,7 @@ obrigatória no 1º acesso.
   **remanejamentos** de aula e alerta de aula prevista **não lançada em 24h**. Horas de
   **consolidação** (pré-app) ficam separadas e não contam como aula lançada.
 - **Avisos automáticos** — 3 faltas consecutivas; sem material 3 seguidas ou 5 alternadas;
-  aula VIP não lançada.
+  aula VIP não lançada; **mensalidade vencida** (com "✓ Contatei" que realerta se outra vencer).
 - **Relatórios** — por aluno, por turma e **relatório mensal da turma** (impressão + CSV);
   exportação de **horas VIP** em planilha.
 - **Aprovar boletins**, **arquivo de relatórios**, **aula de apoio**, **comunicados**.
@@ -84,11 +84,14 @@ obrigatória no 1º acesso.
 - **📚 Livros** — a escola **não mantém estoque**: fluxo por aluno
   **🛒 pedido → 📦 recebido → ✅ entregue**, com lista automática de quem precisa de livro,
   pedidos, recebimentos e entregas EM LOTE, pedido avulso, CSV e cobrança do material no financeiro na entrega.
-- **📝 Matrículas** (direção) — **orçamentos** exportáveis em PDF (atalho de venda), conversão
+- **📝 Matrículas** (direção) — **⚡ Fechar venda** (wizard: aluno+turma → valores da tabela →
+  confirma; cria aluno, matrícula ativa, plano financeiro e pedido do livro numa sequência só),
+  **orçamentos** exportáveis em PDF (atalho de venda), conversão
   em matrícula, **✖ não fechou** (registra o motivo da venda perdida, com reabrir) e exclusão
   de orçamentos; contrato-modelo que puxa os dados (texto oficial entra depois).
 - **💰 Financeiro** (direção) — plano por matrícula: mensalidade, parcelas, descontos em % e
-  R$, carnê com recebimento manual, **negociação com senha da direção**, cobranças extras,
+  R$, carnê com recebimento manual e **🖨️ recibo em PDF por parcela/extra pago**,
+  **negociação com senha da direção**, cobranças extras,
   multa/juros por atraso. Boleto e cartão por enquanto **simulados** (APIs depois).
 - **⚙️ Config. financeira** (direção) — tabela de preços **por segmento** (Kids, Junior,
   Teens, Adults, Talking **+ segmentos cadastráveis**), hora-aula VIP (individual e dupla),

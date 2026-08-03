@@ -50,7 +50,8 @@ VIEWS.matriculas=()=>{
     ${_cardOrcamentos()}
     <div class="card">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
-        <button class="btn" onclick="abrirMatricula()">+ Nova matrícula</button>
+        <button class="btn" style="background:#0A7A3D" onclick="abrirFecharVenda()">⚡ Fechar venda</button>
+        <button class="btn ghost" onclick="abrirMatricula()">+ Nova matrícula</button>
         <button class="btn ghost sm" onclick="exportarMatriculasCSV()">⬇️ Planilha</button>
         <input type="text" placeholder="Buscar por aluno ou responsável…" value="${escAttr(_matBusca)}" oninput="_matBuscaInput(this.value)" style="flex:1;min-width:180px">
       </div>
@@ -205,6 +206,112 @@ function exportarMatriculasCSV(){
   toast('Planilha de matrículas baixada ('+lista.length+')');
 }
 
+/* -------------------- ⚡ WIZARD FECHAR VENDA (b158) --------------------
+   A venda inteira numa sequência só: aluno+turma → valores → confirmar.
+   Cria: aluno na turma, matrícula ATIVA, plano financeiro e pedido do livro. */
+let _fv={};
+function abrirFecharVenda(){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  _fv={passo:1, parcelas:12, diaVenc:10, descPct:0, descVal:0, forma:'', inicio:hoje(), pedirLivro:true};
+  _fvRender();
+}
+function _fvTurmas(){ return (S.turmas||[]).filter(t=>!t.arquivada).sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')); }
+function _fvTurma(){ return (S.turmas||[]).find(t=>t.id===_fv.turmaId)||null; }
+function _fvPrecos(){ const t=_fvTurma(); return (typeof precosSegmento==='function')?precosSegmento((t&&t.nivel)||''):{taxa:0,anual:0,material:0}; }
+function _fvMensal(){ const base=_matN(_fv.mensal); return Math.max(0, base*(1-(_matN(_fv.descPct)/100)) - _matN(_fv.descVal)); }
+function _fvLerPasso(){
+  const g=id=>{ const e=document.getElementById(id); return e?e.value:''; };
+  if(_fv.passo===1){ _fv.aluno=(g('fv_aluno')||'').trim(); _fv.resp=(g('fv_resp')||'').trim(); _fv.tel=(g('fv_tel')||'').trim(); _fv.email=(g('fv_email')||'').trim(); _fv.turmaId=g('fv_turma'); _fv.inicio=g('fv_inicio')||hoje(); }
+  if(_fv.passo===2){ _fv.taxa=_matN(g('fv_taxa')); _fv.mensal=_matN(g('fv_mensal')); _fv.parcelas=parseInt(g('fv_parcelas'))||12; _fv.diaVenc=parseInt(g('fv_dia'))||10; _fv.descPct=_matN(g('fv_descpct')); _fv.descVal=_matN(g('fv_descval')); _fv.forma=g('fv_forma'); }
+}
+function fvIr(passo){
+  _fvLerPasso();
+  if(passo>=2 && _fv.passo===1){
+    if(!_fv.aluno) return toast('Informe o nome do aluno');
+    if(!_fv.turmaId) return toast('Escolha a turma');
+    if(passo===2 && _fv.taxa==null){ const p=_fvPrecos(); _fv.taxa=p.taxa; _fv.mensal=(p.anual&&_fv.parcelas)?Math.round(p.anual/_fv.parcelas*100)/100:0; }
+  }
+  _fv.passo=passo; _fvRender();
+}
+function fvResumoLive(){ _fvLerPasso(); const el=document.getElementById('fv_resumo'); if(!el) return;
+  el.innerHTML=`<b>Mensalidade líquida:</b> ${_moeda(_fvMensal())} · <b>Taxa:</b> ${_moeda(_fv.taxa)} · <b>Total do curso:</b> <b>${_moeda(_matN(_fv.taxa)+_fvMensal()*(_fv.parcelas||0))}</b>`;
+}
+function _fvRender(){
+  const t=_fvTurma(); const p=_fvPrecos();
+  const passoTag=n=>`<span class="pill" style="background:${_fv.passo===n?'#0A7A3D':'#eef0f4'};color:${_fv.passo===n?'#fff':'#5a6b86'}">${n}</span>`;
+  const cab=`<h3>⚡ Fechar venda <button class="close" onclick="fechar()">×</button></h3>
+    <div style="display:flex;gap:6px;align-items:center;margin:0 0 12px">${passoTag(1)} Aluno e turma ${passoTag(2)} Valores ${passoTag(3)} Confirmar</div>`;
+  if(_fv.passo===1){
+    const opts=_fvTurmas().map(x=>`<option value="${x.id}" ${x.id===_fv.turmaId?'selected':''}>${esc(x.nome)}${turmaStatus(x)==='formacao'?' · EM FORMAÇÃO':''}</option>`).join('');
+    modal(cab+`
+      <div class="field"><label class="lbl">Nome do aluno</label><input type="text" id="fv_aluno" value="${escAttr(_fv.aluno||'')}" placeholder="Nome completo"></div>
+      <div class="row"><div class="field" style="flex:2"><label class="lbl">Responsável</label><input type="text" id="fv_resp" value="${escAttr(_fv.resp||'')}"></div>
+        <div class="field"><label class="lbl">Telefone</label><input type="text" id="fv_tel" value="${escAttr(_fv.tel||'')}"></div></div>
+      <div class="field"><label class="lbl">E-mail do responsável</label><input type="email" id="fv_email" value="${escAttr(_fv.email||'')}"></div>
+      <div class="row"><div class="field" style="flex:2"><label class="lbl">Turma</label><select id="fv_turma"><option value="">— escolha —</option>${opts}</select></div>
+        <div class="field"><label class="lbl">Início</label><input type="date" id="fv_inicio" value="${escAttr(_fv.inicio||hoje())}"></div></div>
+      <button class="btn block" style="background:#0A7A3D" onclick="fvIr(2)">Avançar →</button>`);
+  } else if(_fv.passo===2){
+    modal(cab+`
+      <p class="hint" style="margin:0 0 8px">🏫 <b>${t?esc(t.nome):''}</b> — valores da tabela ${t&&t.nivel?('do segmento '+esc((typeof segmentoLabel==='function')?segmentoLabel(t.nivel):t.nivel).toUpperCase()):''} já preenchidos; ajuste se precisar.</p>
+      <div class="row"><div class="field"><label class="lbl">Taxa de matrícula (R$)</label><input type="number" id="fv_taxa" value="${_fv.taxa!=null?_fv.taxa:p.taxa}" min="0" step="0.01" oninput="fvResumoLive()"></div>
+        <div class="field"><label class="lbl">Mensalidade (R$)</label><input type="number" id="fv_mensal" value="${_fv.mensal!=null?_fv.mensal:''}" min="0" step="0.01" oninput="fvResumoLive()"></div></div>
+      <div class="row"><div class="field"><label class="lbl">Parcelas</label><input type="number" id="fv_parcelas" value="${_fv.parcelas}" min="1" max="48" oninput="fvResumoLive()"></div>
+        <div class="field"><label class="lbl">Vencimento (dia)</label><input type="number" id="fv_dia" value="${_fv.diaVenc}" min="1" max="28"></div>
+        <div class="field"><label class="lbl">Desconto (%)</label><input type="number" id="fv_descpct" value="${_fv.descPct||''}" min="0" max="100" oninput="fvResumoLive()"></div>
+        <div class="field"><label class="lbl">Desconto (R$)</label><input type="number" id="fv_descval" value="${_fv.descVal||''}" min="0" step="0.01" oninput="fvResumoLive()"></div></div>
+      <div class="field"><label class="lbl">Forma de pagamento</label><select id="fv_forma"><option value="">—</option>${FIN_PAGAMENTO.map(x=>`<option ${_fv.forma===x?'selected':''}>${x}</option>`).join('')}</select></div>
+      <div class="gen-box" id="fv_resumo" style="margin-bottom:12px">—</div>
+      <div class="row" style="gap:8px"><button class="btn ghost" onclick="fvIr(1)">← Voltar</button><button class="btn" style="flex:1;background:#0A7A3D" onclick="fvIr(3)">Avançar →</button></div>`);
+    setTimeout(fvResumoLive,40);
+  } else {
+    const col=(t&&typeof planColecaoDe==='function')?(planColecaoDe(t)||''):'';
+    const matPreco=p.material||0;
+    modal(cab+`
+      <div class="card box-suave" style="margin-bottom:10px">
+        <p style="margin:0"><b>${esc(_fv.aluno)}</b>${_fv.resp?(' · resp. '+esc(_fv.resp)):''}<br>
+        🏫 ${t?esc(t.nome):''} · início ${brDate(_fv.inicio)}<br>
+        💰 taxa ${_moeda(_fv.taxa)} + <b>${_fv.parcelas}×</b> de <b>${_moeda(_fvMensal())}</b> (venc. dia ${_fv.diaVenc})${_fv.forma?(' · '+esc(_fv.forma)):''}<br>
+        <b>Total do curso: ${_moeda(_matN(_fv.taxa)+_fvMensal()*_fv.parcelas)}</b>${col?('<br>📚 material: '+esc(col)+(matPreco?(' ('+_moeda(matPreco)+')'):'')):''}</p>
+      </div>
+      ${col?`<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:0 0 12px"><input type="checkbox" id="fv_livro" ${_fv.pedirLivro?'checked':''}> 🛒 Já registrar o pedido do livro <b>${esc(col)}</b></label>`:''}
+      <div class="row" style="gap:8px"><button class="btn ghost" onclick="fvIr(2)">← Voltar</button><button class="btn" style="flex:1;background:#0A7A3D" onclick="fvConcluir()">✅ Fechar a venda</button></div>`);
+  }
+}
+function fvConcluir(){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const chk=document.getElementById('fv_livro'); if(chk) _fv.pedirLivro=chk.checked;
+  const t=_fvTurma(); if(!t) return toast('Turma inválida');
+  const jaExiste=(S.alunos||[]).find(a=>_normTxt(a.nome)===_normTxt(_fv.aluno) && !a.arquivado);
+  if(jaExiste && !confirm('Já existe um aluno chamado "'+jaExiste.nome+'" ('+turmaNome(jaExiste.turmaId)+').\n\nCriar mesmo assim um cadastro novo?')) return;
+  // 1) aluno na turma
+  const aluno={id:uid(), nome:_fv.aluno, turmaId:t.id, email:_fv.email||'', atualizadoEm:Date.now()};
+  S.alunos.push(aluno);
+  // 2) matrícula ATIVA
+  const m={id:uid(), status:'ativa', alunoId:aluno.id, turmaId:t.id, respNome:_fv.resp||'', telefone:_fv.tel||'', email:_fv.email||'', dataInicio:_fv.inicio||hoje(), criadoEm:hoje(), criadoPor:S.usuario, origem:'venda-rapida', atualizadoEm:Date.now()};
+  S.matriculas=S.matriculas||[]; S.matriculas.push(m);
+  // 3) plano financeiro
+  const f={id:'fin_'+m.id, matriculaId:m.id, criadoEm:hoje(), criadoPor:S.usuario, atualizadoEm:Date.now(),
+    valorMatricula:_matN(_fv.taxa), valorMensalidade:_matN(_fv.mensal), descontoPct:_matN(_fv.descPct), descontoValor:_matN(_fv.descVal),
+    parcelas:_fv.parcelas||12, diaVencimento:_fv.diaVenc||10, formaPagamento:_fv.forma||'', dataInicio:_fv.inicio||hoje(), pagos:{}, observacoes:'' };
+  S.financeiro=S.financeiro||[]; S.financeiro.push(f);
+  // 4) pedido do livro
+  const col=(typeof planColecaoDe==='function')?(planColecaoDe(t)||''):'';
+  if(_fv.pedirLivro && col && !(typeof pedidoDoAluno==='function' && pedidoDoAluno(aluno.id,col))){
+    S.livroPedidos=S.livroPedidos||[];
+    S.livroPedidos.push({id:uid(), alunoId:aluno.id, vip:false, titulo:col, status:'pedido', pedidoEm:hoje(), por:S.usuario, atualizadoEm:Date.now()});
+  }
+  save(); fechar(); if(rota==='matriculas') VIEWS.matriculas();
+  toast('Venda fechada — bem-vindo(a), '+_fv.aluno+'! 🎉');
+  modal(`<h3>🎉 Venda fechada! <button class="close" onclick="fechar()">×</button></h3>
+    <p class="hint" style="margin:0 0 12px"><b>${esc(_fv.aluno)}</b> está na turma <b>${esc(t.nome)}</b>, com matrícula ativa, plano financeiro criado${_fv.pedirLivro&&col?' e o livro já pedido':''}.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="fechar();verContratoExemplo('${m.id}')">📄 Contrato</button>
+      <button class="btn ghost" onclick="fechar();abrirCarne('${f.id}')">💳 Carnê</button>
+      <button class="btn ghost" onclick="fechar();abrirFicha('${aluno.id}')">📇 Ficha do aluno</button>
+      <button class="btn ghost" onclick="fechar()">Fechar</button>
+    </div>`);
+}
 /* -------------------- ORÇAMENTOS (atalho de venda) -------------------- */
 let _negVerLista=false;
 function _cardOrcamentos(){

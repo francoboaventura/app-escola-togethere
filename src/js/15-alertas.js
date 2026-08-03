@@ -11,8 +11,9 @@ VIEWS.alertas=()=>{
   { const _vp=(typeof renderPendenciasVipCard==='function')?renderPendenciasVipCard():''; if(_vp) v.appendChild(el(_vp)); }   // aulas VIP previstas sem registro
   renderAvisoRelatorios(v);
   if(escolaEmRecesso()){ v.appendChild(el('<div class="card" style="border-left:4px solid var(--laranja)"><b>🌴 Escola em recesso</b><br>Os alertas de faltas, material e pendências (chamada, plano, relatório) estão <b>pausados</b> durante as férias e voltam sozinhos quando as aulas recomeçarem.</div>')); }
-  if(!fa.length&&!ma.length){
-    v.appendChild(el('<div class="card empty"><div class="big">✅</div><b>Tudo em dia!</b><br>Nenhum aluno com faltas ou material acima do limite.</div>'));
+  const _nFin=(typeof avisosFinanceiro==='function')?avisosFinanceiro().length:0;
+  if(!fa.length&&!ma.length&&!_nFin){
+    v.appendChild(el('<div class="card empty"><div class="big">✅</div><b>Tudo em dia!</b><br>Nenhum aluno com faltas, material ou mensalidade pendente.</div>'));
   }else{
     if(fa.length){
       v.appendChild(el(`<h3 style="margin:6px 0 12px;font-size:1rem">🚨 Faltas consecutivas (${fa.length})</h3>`));
@@ -27,6 +28,14 @@ VIEWS.alertas=()=>{
         <div class="acts"><button class="btn sm" style="background:var(--laranja)" onclick="marcarContato('${o.alunoId}','material')">✓ Contatei</button></div></div>`)));
     }
   }
+  // 💰 mensalidades em atraso (secretaria contata; valores detalhados só direção)
+  { const fin=(typeof avisosFinanceiro==='function')?avisosFinanceiro():[];
+    if(fin.length){
+      v.appendChild(el(`<h3 style="margin:18px 0 12px;font-size:1rem">💰 Mensalidades em atraso (${fin.length})</h3>`));
+      fin.forEach(o=>v.appendChild(el(`<div class="alert-card"><div class="ic falta">💰</div>
+        <div class="info"><b>${esc(o.nome)}</b>${o.turma?` <span class="pill">${esc(o.turma)}</span>`:''}<p>${S.perfil==='direcao'?(_moeda(o.valor)+' em atraso · '):''}${o.n} parcela(s) vencida(s) desde ${brDate(o.desde)} — contatar responsável.</p></div>
+        <div class="acts">${S.perfil==='direcao'?`<button class="btn ghost sm" onclick="abrirFinanceiro('${o.finId}')">💳 abrir</button>`:''}<button class="btn red sm" onclick="marcarContato('${o.alunoId}','financeiro')">✓ Contatei</button></div></div>`)));
+    } }
   // registro completo — somente para a direção
   if(S.perfil==='direcao'){
     const rf=registroGeral('falta'), rm=registroGeral('material'), rt=registroGeral('tema');

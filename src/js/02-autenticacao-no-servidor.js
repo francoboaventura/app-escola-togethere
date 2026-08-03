@@ -200,7 +200,7 @@ function resolverAlerta(alertaId){
   VIEWS.alertas();
   toast('Alerta marcado como resolvido');
 }
-function totalAlertas(){return alertasFaltas().length+alertasMaterial().length+(S.alertas||[]).filter(a=>!a.resolvido).length;}
+function totalAlertas(){return alertasFaltas().length+alertasMaterial().length+((typeof avisosFinanceiro==='function')?avisosFinanceiro().length:0)+(S.alertas||[]).filter(a=>!a.resolvido).length;}
 // clicar no KPI de alertas → mostra de onde vêm
 function verAlertas(){
   if(S.perfil!=='professor'){ ir('alertas'); return; }

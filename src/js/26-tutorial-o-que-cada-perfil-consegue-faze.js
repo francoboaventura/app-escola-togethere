@@ -210,6 +210,7 @@ Aula prevista sem lançamento há mais de 24h gera **aviso** para a secretaria.`
 - **3 faltas consecutivas** de um aluno.
 - Sem material em **3 aulas seguidas** ou **5 alternadas**.
 - Aula **VIP prevista** sem lançamento há mais de 24h.
+- **💰 Mensalidade vencida** (secretaria vê quem contatar; os valores detalhados só a direção).
 ## Como usar
 1. Contate a família e toque em **✓ Contatei** — o aviso some.
 2. O contato vale para a **sequência atual**: se o aluno voltar a faltar 3x mais adiante, o aviso **volta a aparecer** (é assim mesmo).
@@ -280,6 +281,7 @@ Ao entregar para aluno de turma, a **direção** pode lançar o material no fina
     resumo:'Orçamentos, matrículas e contrato — o cadastro comercial.',
     passos:`## Só direção
 ## Como usar
+- **⚡ Fechar venda:** a venda inteira numa sequência guiada — aluno e turma → valores (já puxados da tabela do segmento) → confirmar. Cria o aluno na turma, a matrícula ATIVA, o plano financeiro e já pede o livro, tudo de uma vez.
 - **Orçamento:** monte a proposta (aluno, turma, valores da tabela) e **exporte em PDF** — os orçamentos ficam num atalho próprio para apoiar a venda.
 - **Converter** o orçamento em matrícula quando fechar (cria o aluno e o plano financeiro).
 - Venda não fechou? **✖ não fechou** registra o **motivo** (vira aprendizado comercial; dá para reabrir). Orçamentos também podem ser **🗑 excluídos**.
@@ -290,7 +292,7 @@ Ao entregar para aluno de turma, a **direção** pode lançar o material no fina
     passos:`## Só direção
 ## Como usar
 - Cada matrícula tem um **plano**: mensalidade, nº de parcelas, vencimento e descontos (em **%** e em **R$**).
-- **Carnê:** receba parcelas manualmente (registra a forma de pagamento); **boleto** e **cartão** por enquanto são **simulação** (as integrações vêm depois).
+- **Carnê:** receba parcelas manualmente (registra a forma de pagamento); parcela paga ganha **🖨️ recibo** em PDF na hora (extras pagos também); **boleto** e **cartão** por enquanto são **simulação** (as integrações vêm depois).
 - **Negociação de valores:** troca o valor da mensalidade e **exige a senha da direção**.
 - **Cobranças extras** (ex.: material didático) somam nos totais e no PDF.
 - Atraso aplica **multa e juros** conforme a Config. financeira.` },

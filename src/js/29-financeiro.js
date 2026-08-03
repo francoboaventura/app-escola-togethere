@@ -189,6 +189,7 @@ function abrirFinanceiro(id){
       <div style="display:flex;align-items:center;gap:8px"><b style="flex:1;font-size:.92rem">🧾 Cobranças extras (material, taxas…)</b><button class="btn ghost sm" onclick="abrirExtraManual('${id}')">+ extra</button></div>
       ${finExtras(f).length?finExtras(f).map(e=>`<div class="check"><span style="flex:1">${esc(e.nome)} · <b>${_moeda(e.valor)}</b><span class="hint"> · ${brDate(e.em)}${e.pago?(' · pago '+brDate(e.pago.em)):''}</span></span>
         <span class="pill" style="background:${e.pago?'#eafaf0':'#fff1e6'};color:${e.pago?'#0A7A3D':'#c2560b'}">${e.pago?'pago':'em aberto'}</span>
+        ${e.pago?`<button class="btn ghost sm" title="Imprimir recibo" onclick="reciboExtra('${id}','${e.id}')">🖨️</button>`:''}
         <button class="btn ghost sm" onclick="togglePagoExtra('${id}','${e.id}')">${e.pago?'desfazer':'✓ receber'}</button>
         <button class="btn ghost sm" style="color:var(--vermelho)" onclick="removerExtra('${id}','${e.id}')">×</button></div>`).join(''):'<p class="hint" style="margin:6px 0 0">Nenhuma. A entrega de livro no Estoque pode lançar o material aqui automaticamente.</p>'}
     </div>
@@ -247,7 +248,7 @@ function abrirCarne(id){
       <span style="flex:1">venc. ${brDate(p.venc)} · ${_moeda(p.valor)}${atualizado&&atualizado.total>p.valor?` <b style="color:var(--vermelho)">→ ${_moeda(atualizado.total)}</b> <span class="hint">(multa+juros)</span>`:''}${pg&&pg.em?` <span class="hint">(pago ${brDate(pg.em)}${pg.forma?(' · '+escAttr(pg.forma)):''})</span>`:''}</span>
       <span class="pill" style="background:${cs.bg};color:${cs.c}">${cs.t}</span>
       ${!pg?`<button class="btn ghost sm" title="Boleto (simulação)" onclick="gerarBoletoSim('${id}',${p.n})">🧾</button>
-      <button class="btn ghost sm" title="Cartão de crédito" onclick="pagarCartaoStub('${id}',${p.n})">💳</button>`:''}
+      <button class="btn ghost sm" title="Cartão de crédito" onclick="pagarCartaoStub('${id}',${p.n})">💳</button>`:`<button class="btn ghost sm" title="Imprimir recibo" onclick="reciboParcela('${id}',${p.n})">🖨️ recibo</button>`}
       <button class="btn ghost sm" onclick="finToggleParcela('${id}',${p.n})">${pg?'desfazer':'✓ receber'}</button>
     </div></div>`;
   }).join('');
@@ -475,6 +476,25 @@ function aplicarTabelaPrecos(id){
   _finResumo(); toast('Tabela '+(seg?seg.toUpperCase():'geral')+' aplicada ('+par+'x)');
 }
 
+/* ---------- avisos de mensalidade vencida (central de Avisos) ---------- */
+// Lista planos em atraso ainda não contatados desde a ÚLTIMA parcela que venceu.
+// "✓ Contatei" registra contato tipo 'financeiro'; se OUTRA parcela vencer depois, volta a avisar.
+function avisosFinanceiro(){
+  if(S.perfil!=='direcao' && S.perfil!=='secretaria') return [];
+  const out=[];
+  (S.financeiro||[]).forEach(f=>{
+    const st=finStatusMat(f); if(st!=='ativa' && st!=='concluida') return;
+    const atras=finAtrasadoV(f); if(!(atras>0)) return;
+    const m=finMatricula(f); const alunoId=(m&&m.alunoId)||('fin:'+f.id);
+    const vencidas=finParcelas(f).filter(p=>finParcelaStatus(f,p)==='atrasada');
+    if(!vencidas.length) return;
+    const ultVenc=vencidas[vencidas.length-1].venc;
+    const ult=(typeof _ultimoContato==='function')?_ultimoContato(alunoId,'financeiro'):'';
+    if(ult && ult>=ultVenc) return;
+    out.push({finId:f.id, alunoId, nome:finNome(f), turma:finTurma(f), valor:atras, n:vencidas.length, desde:vencidas[0].venc});
+  });
+  return out.sort((a,b)=>b.valor-a.valor);
+}
 /* ---------- multa/juros sobre parcela atrasada ---------- */
 function finValorAtualizado(p){
   const c=_cfgFin();
@@ -487,6 +507,42 @@ function finValorAtualizado(p){
   return { total: Math.round((p.valor+multa+juros)*100)/100, dias, multa, juros };
 }
 
+/* ---------- recibo de pagamento (parcela ou extra) ---------- */
+function _reciboHTML(f, o){   // o: {ref, valor, em, forma}
+  const m=finMatricula(f); const t=finTurma(f);
+  const pagador=(m&&m.respNome)||finNome(f);
+  const num=(f.id||'').slice(-6).toUpperCase()+'-'+String(o.numRef||'').padStart(2,'0');
+  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Recibo — ${esc(finNome(f))}</title><style>
+@page{margin:16mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact;box-sizing:border-box}
+body{font-family:'Urbanist',system-ui,Arial,sans-serif;color:#15233b;padding:6px;font-size:13.5px;line-height:1.6}
+.top{display:flex;align-items:baseline;gap:10px;border-bottom:3px solid #FFC800;padding-bottom:6px;margin-bottom:16px}
+h1{font-family:'Zilla Slab',Georgia,serif;color:#005EAF;font-size:20px;margin:0}.per{margin-left:auto;color:#5a6b86;font-size:12px}
+.valor{font-size:22px;font-weight:800;color:#0A7A3D;background:#eafaf0;display:inline-block;padding:6px 16px;border-radius:10px;margin:8px 0}
+.ass{margin-top:44px;display:flex;gap:30px}.ass div{flex:1;border-top:1px solid #15233b;padding-top:4px;text-align:center;font-size:11px}
+.foot{margin-top:18px;color:#8a97a8;font-size:10.5px;border-top:1px solid #DCE4EC;padding-top:6px}
+</style></head><body>
+<div class="top"><h1>Togethere</h1><div style="font-weight:700">Recibo de pagamento</div><div class="per">Nº ${esc(num)} · ${brDate(o.em||hoje())}</div></div>
+<p>Recebemos de <b>${esc(pagador)}</b>${(m&&m.respNome&&m.respNome!==finNome(f))?(', responsável por <b>'+esc(finNome(f))+'</b>,'):''} a importância de</p>
+<div class="valor">${_moeda(o.valor)}</div>
+<p>referente a <b>${esc(o.ref)}</b>${t?(' — turma <b>'+esc(t)+'</b>'):''}${o.forma?(', paga via <b>'+esc(o.forma)+'</b>'):''}.</p>
+<div class="ass"><div>Togethere Escola de Idiomas<br>Gravataí/RS</div><div>${esc(pagador)}</div></div>
+<p class="foot">Recibo emitido pelo app Togethere em ${brDate(hoje())} por ${esc(S.usuario||'')} — documento simples de quitação, sem valor fiscal.</p>
+</body></html>`;
+}
+function reciboParcela(id,n){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const f=(S.financeiro||[]).find(x=>x.id===id); if(!f) return;
+  const pg=(f.pagos||{})[n]; if(!pg) return toast('Esta parcela ainda não foi recebida');
+  const p=finParcelas(f).find(x=>x.n===+n);
+  const mesRef=p?_nomeMes(p.venc.slice(0,7)):'';
+  imprimirDoc(_reciboHTML(f,{ref:'parcela '+n+'/'+(f.parcelas||'')+(mesRef?(' (mensalidade de '+mesRef+')'):''), valor:(pg.valor!=null?pg.valor:(p?p.valor:0)), em:pg.em, forma:pg.forma, numRef:n}));
+}
+function reciboExtra(id,extraId){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const f=(S.financeiro||[]).find(x=>x.id===id); if(!f) return;
+  const e=(f.extras||[]).find(x=>x.id===extraId); if(!e||!e.pago) return toast('Esta cobrança ainda não foi recebida');
+  imprimirDoc(_reciboHTML(f,{ref:e.nome, valor:e.valor, em:e.pago.em, forma:e.pago.forma, numRef:'EX'}));
+}
 /* ---------- boleto (SIMULAÇÃO) e cartão (stub) ---------- */
 function gerarBoletoSim(id,n){
   const f=(S.financeiro||[]).find(x=>x.id===id); if(!f) return;
