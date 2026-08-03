@@ -183,13 +183,15 @@ Apenas a direção aprova.` },
 Alunos de aulas particulares, fora das turmas regulares.
 ## Professor
 - A ficha do aluno VIP mostra **só o que é seu**: o painel **"Sua aula com este aluno"** (próxima aula prevista, botão 🎥 **Entrar na aula** e ➕ **Lançar aula**), horários, links úteis e o histórico de aulas.
-- Lança as aulas dadas (data, duração, tema, presença).
+- **Você não vê** pacote de horas, totais de horas feitas nem cancelamentos registrados pela secretaria — isso é controle interno.
+- **Horários previstos** são definidos pela secretaria (você só consulta). A aula aconteceu em outro horário? Ajuste o campo **"Hora em que aconteceu"** ao lançar — ele já vem preenchido com o previsto do dia.
+- Lança as aulas dadas (data, hora, duração — **mínimo 30 minutos** —, tema, presença).
 - **Aluno não compareceu?** Você mesmo registra a falta — a hora é **descontada do pacote** (regra da escola).
 - **Cancelou com menos de 12h e você foi liberado?** Não registre nada — a **secretaria** registra o cancelamento.
 ## Secretaria e direção
 - Controlam o **pacote de horas** (contratadas × utilizadas) na ficha do aluno — o aluno **não** vê isso.
 - **👥 Aula em dupla:** marque na ficha do VIP; o app passa a usar a hora-aula de dupla da tabela (valor por aluno) e mostra o valor estimado do pacote.
-- **🕒 Horários:** cada linha é um dia com a SUA hora **e duração** (ex.: Seg 10h · 90min; Qua 15h30 · 45min) — use **＋ Adicionar horário** para mais dias; o alerta segue cada horário e o lançamento de aula já vem com a duração daquele dia.
+- **🕒 Horários:** cada linha é um dia com a SUA hora **e duração** (mínimo 30min) — use **＋ Adicionar horário** para mais dias; o alerta segue cada horário e o lançamento de aula já vem com a hora e a duração daquele dia. **Só secretaria/direção alteram** os horários previstos e os remanejamentos; o professor consulta.
 - **⏸️ Pausa:** período sem alertas (férias/recesso do aluno).
 - **🔁 Remanejamento:** troca pontual de dia/horário de uma aula prevista.
 - Horas de **consolidação** (importadas de antes do app) aparecem separadas e **não contam** como aula lançada.
