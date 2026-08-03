@@ -105,6 +105,9 @@ function planoCard(p){
           <button class="btn ghost sm" onclick="editarTema('${t.id}')">✏️</button>`}
           ${(ehProfessor()||ro)?'':`<button class="btn ghost sm" style="color:var(--vermelho)" onclick="delTema('${t.id}')">🗑</button>`}</div>`).join(''):'<p class="hint" style="margin:0 0 8px">Nenhum tema passado nesta aula.</p>'}
         ${ro?'':`<button class="btn ghost sm" style="margin-top:8px;color:var(--rosa)" onclick="abrirTemasHub('${p.turmaId}','${p.data}')">📚 Temas</button>`}</div>
+      <div style="margin-top:12px"><div style="display:flex;align-items:center;gap:8px"><b style="font-size:.92rem">🔗 Links úteis desta aula</b>${ro?'':`<button class="btn ghost sm" onclick="abrirLinkPlano('${p.id}')">+ link</button>`}</div>
+        ${(p.links||[]).length?`<div style="margin-top:2px">${_linksUteisChips(p.links, ro?null:("delLinkPlano('"+p.id+"','__ID__')"))}</div>`:(ro?'':'<p class="hint" style="margin:2px 0 0">Cole aqui os links que você vai usar na aula (vídeo, jogo, apresentação…).</p>')}
+      </div>
       <div class="field" style="margin-top:12px"><label class="lbl">Anotações</label><textarea ${ro?'readonly':''} onchange="setPlanoCampo('${p.id}','anotacoes',this.value)" placeholder="Observações sobre a aula...">${esc(p.anotacoes||'')}</textarea></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center">
         ${ro?'':p.realizado?`<button class="btn ghost sm" onclick="reabrirPlano('${p.id}')">↩︎ reabrir</button>`:`<button class="btn sm" onclick="marcarPlanoFeito('${p.id}')">✓ marcar como feito</button> <button class="btn ghost sm" style="color:var(--laranja)" title="A aula conta e as faltas ficam, mas o plano vai para a próxima data — sem relatório nem alerta" onclick="transferirPlanoProximaAula('${p.id}')">↪️ Transferir p/ próxima aula</button>`}
@@ -177,4 +180,26 @@ function salvarEdicaoPlano(id){
   p.titulo=tit; p.data=document.getElementById('epData').value;
   p.conteudo=document.getElementById('epCont').value.trim(); p.anotacoes=document.getElementById('epNotas').value; p.atualizadoEm=Date.now();
   save(); fechar(); renderPlanos(); toast('Plano atualizado');
+}
+
+// ----- links úteis do plano (o professor cola os dele) -----
+function abrirLinkPlano(pid){
+  if(soLeitura()) return toast('Somente leitura');
+  modal(`<h3>🔗 Novo link desta aula <button class="close" onclick="fechar()">×</button></h3>
+    <div class="field"><label class="lbl">Nome do link</label><input type="text" id="lp_titulo" placeholder="Como quer que apareça no plano"></div>
+    <div class="field"><label class="lbl">Endereço (URL)</label><input type="url" id="lp_url" placeholder="https://…"></div>
+    <button class="btn block" onclick="salvarLinkPlano('${pid}')">Salvar link</button>`);
+  setTimeout(()=>{const i=document.getElementById('lp_titulo'); if(i)i.focus();},60);
+}
+function salvarLinkPlano(pid){
+  const p=(S.planos||[]).find(x=>x.id===pid); if(!p) return;
+  const titulo=((document.getElementById('lp_titulo')||{}).value||'').trim();
+  const url=_urlNormalizada((document.getElementById('lp_url')||{}).value);
+  if(url===null||!url) return toast('Cole um endereço válido');
+  p.links=p.links||[]; p.links.push({id:uid(), titulo:titulo||url.replace(/^https?:\/\//,'').slice(0,40), url});
+  p.atualizadoEm=Date.now(); save(); fechar(); if(VIEWS[rota]) VIEWS[rota](); toast('Link salvo 🔗');
+}
+function delLinkPlano(pid, lid){
+  const p=(S.planos||[]).find(x=>x.id===pid); if(!p) return;
+  p.links=(p.links||[]).filter(l=>l.id!==lid); p.atualizadoEm=Date.now(); save(); if(VIEWS[rota]) VIEWS[rota](); toast('Link removido');
 }

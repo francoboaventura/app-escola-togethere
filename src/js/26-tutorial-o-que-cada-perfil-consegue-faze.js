@@ -95,6 +95,7 @@ Os temas não feitos aparecem na ficha do aluno e no portal da família.` },
 4. **✓ Marcar como feito** fecha o plano.
 ## Superpoderes do plano
 - **📩 tema**: transforma qualquer item do plano em tema de casa com data de entrega (e dá para desfazer).
+- **🔗 Links úteis**: cole os links da SUA aula (vídeo, jogo, apresentação) no plano — ficam a um toque na hora de dar aula.
 - **Gerar relatório da aula**: o plano vira o texto do **Relatório do dia** que a secretaria envia às famílias.
 - Temas com entrega na data da aula aparecem dentro do plano para conferência.` },
   { id:'relatorio', em:'🧾', titulo:'Relatório do dia', grp:'Sala de aula', roles:['professor','direcao'],
@@ -191,6 +192,7 @@ Alunos de aulas particulares, fora das turmas regulares.
 - Horas de **consolidação** (importadas de antes do app) aparecem separadas e **não contam** como aula lançada.
 - **📊 Panorama:** escolha o período (este mês, mês passado, este ano) para ver as horas utilizadas no período — contratadas e saldo são sempre do total.
 - **🎥 Aula online:** cole o link (Meet/Zoom) na ficha do VIP — o botão "Entrar na aula" fica ali para todos.
+- **🔗 Links úteis:** espaço para o professor guardar os links daquele aluno (jogos, playlists, PDFs) na mesma seção.
 ## Alertas
 Aula prevista sem lançamento há mais de 24h gera **aviso** para a secretaria.` },
   { id:'apoio', em:'🤝', titulo:'Aula de apoio', grp:'Acompanhamento', roles:['professor','secretaria','direcao'],

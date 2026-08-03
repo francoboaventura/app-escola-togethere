@@ -374,7 +374,46 @@ function _cardAulaOnlineVip(vip){
       <div class="field" style="margin:0;flex:1;min-width:220px"><label class="lbl">Link da sala (Meet/Zoom)</label><input type="url" value="${escAttr(vip.linkAula||'')}" placeholder="https://meet.google.com/…" onchange="setVipLinkAula('${vip.id}',this.value)"></div>
       ${link?`<button class="btn ghost sm" style="color:var(--vermelho);margin-bottom:2px" onclick="setVipLinkAula('${vip.id}','')">remover</button>`:''}
     </div>`:''}
+    <div style="margin-top:12px;border-top:1px solid var(--linha);padding-top:8px">
+      <div style="display:flex;align-items:center;gap:8px"><b style="flex:1;font-size:.92rem">🔗 Links úteis</b><button class="btn ghost sm" onclick="abrirLinkVip('${vip.id}')">+ link</button></div>
+      ${(vip.links||[]).length?`<div style="margin-top:4px">${_linksUteisChips(vip.links, "delLinkVip('"+vip.id+"','__ID__')")}</div>`:`<p class="hint" style="margin:4px 0 0">Materiais do aluno: jogo do Wordwall, playlist, PDF, pasta do Drive…</p>`}
+    </div>
   </div>`;
+}
+// normaliza/valida URL colada (aceita sem https)
+function _urlNormalizada(url){
+  url=(url||'').trim();
+  if(!url) return '';
+  if(!/^https?:\/\//i.test(url)) url='https://'+url;
+  if(!/^https?:\/\/[^\s]+\.[^\s]{2,}/i.test(url)) return null;
+  return url;
+}
+// chips de links úteis (usado no VIP e nos planos de aula)
+function _linksUteisChips(links, delFnJs){
+  return (links||[]).map(l=>`<span style="display:inline-flex;align-items:center;gap:4px;background:#eef2f8;border-radius:16px;padding:4px 6px 4px 12px;margin:3px 4px 0 0;max-width:100%">
+    <a href="${escAttr(l.url)}" target="_blank" rel="noopener noreferrer" style="font-size:.85rem;text-decoration:none;color:var(--azul);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px">🔗 ${esc(l.titulo||l.url)}</a>
+    ${delFnJs?`<button class="btn ghost sm" style="color:var(--vermelho);padding:0 6px" title="Remover link" onclick="${delFnJs.replace('__ID__',l.id)}">×</button>`:''}
+  </span>`).join('');
+}
+// ----- links úteis do aluno VIP -----
+function abrirLinkVip(vid){
+  modal(`<h3>🔗 Novo link útil <button class="close" onclick="fechar()">×</button></h3>
+    <div class="field"><label class="lbl">Nome do link</label><input type="text" id="lv_titulo" placeholder="Ex: Wordwall — Past Simple, playlist, PDF da apostila"></div>
+    <div class="field"><label class="lbl">Endereço (URL)</label><input type="url" id="lv_url" placeholder="https://…"></div>
+    <button class="btn block" onclick="salvarLinkVip('${vid}')">Salvar link</button>`);
+  setTimeout(()=>{const i=document.getElementById('lv_titulo'); if(i)i.focus();},60);
+}
+function salvarLinkVip(vid){
+  const vp=(S.vipAlunos||[]).find(x=>x.id===vid); if(!vp) return;
+  const titulo=((document.getElementById('lv_titulo')||{}).value||'').trim();
+  const url=_urlNormalizada((document.getElementById('lv_url')||{}).value);
+  if(url===null||!url) return toast('Cole um endereço válido (ex.: youtube.com/…)');
+  vp.links=vp.links||[]; vp.links.push({id:uid(), titulo:titulo||url.replace(/^https?:\/\//,'').slice(0,40), url});
+  vp.atualizadoEm=Date.now(); save(); fechar(); VIEWS.ficha&&VIEWS.ficha(); toast('Link salvo 🔗');
+}
+function delLinkVip(vid, lid){
+  const vp=(S.vipAlunos||[]).find(x=>x.id===vid); if(!vp) return;
+  vp.links=(vp.links||[]).filter(l=>l.id!==lid); vp.atualizadoEm=Date.now(); save(); VIEWS.ficha&&VIEWS.ficha(); toast('Link removido');
 }
 function setVipLinkAula(id, url){
   const vp=(S.vipAlunos||[]).find(x=>x.id===id); if(!vp) return;

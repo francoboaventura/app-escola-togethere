@@ -10,7 +10,7 @@ IA, **matrículas e financeiro**, **livros sob demanda**, **permissões configur
 celular/tablet/computador) publicado como um único `index.html`, mas **desenvolvido em módulos**
 (pasta `src/`) com build automático.
 
-> **Versão atual: `2026.08.02 · b156 (Supabase)`.**
+> **Versão atual: `2026.08.02 · b157 (Supabase)`.**
 > O app roda sobre **PostgreSQL no Supabase** (migração do Google Sheets em 25/07).
 > Confira a versão em uso no **rodapé** do app — ele avisa sozinho quando há atualização.
 
@@ -52,7 +52,8 @@ obrigatória no 1º acesso.
 ### Sala de aula
 - **Chamada do dia** — presença, atraso, saiu cedo, material (🎒) e conferência do tema numa
   tela só; chamada salva fica travada (edição controlável por permissão).
-- **Planos de aula** — checklist, anotações e geração do relatório da aula.
+- **Planos de aula** — checklist, anotações, **links úteis do professor** (vídeo, jogo,
+  apresentação) e geração do relatório da aula.
 - **Temas de casa** — registro e acompanhamento (feito/parcial/não feito).
 - **Testes e boletim** — nota por habilidade (Grammar, Vocabulary, Listening, Reading, Writing,
   Speaking), faixas padrão Cambridge, boletim com **fluxo de aprovação** pela direção.
@@ -67,7 +68,7 @@ obrigatória no 1º acesso.
 - **Alunos VIP** — aulas particulares com **pacotes de horas** (contratadas × utilizadas,
   visíveis só para secretaria/direção), **aulas em dupla** com hora-aula própria (valor por
   aluno), horários previstos POR DIA (cada dia com hora E duração próprias), **pausas** (períodos sem alerta), **panorama com filtro de período** (mês/ano),
-  **link de aula online** (Meet/Zoom) na ficha,
+  **link de aula online** (Meet/Zoom) e **links úteis do professor** na ficha,
   **remanejamentos** de aula e alerta de aula prevista **não lançada em 24h**. Horas de
   **consolidação** (pré-app) ficam separadas e não contam como aula lançada.
 - **Avisos automáticos** — 3 faltas consecutivas; sem material 3 seguidas ou 5 alternadas;
