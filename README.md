@@ -10,7 +10,7 @@ IA, **matrículas e financeiro**, **livros sob demanda**, **permissões configur
 celular/tablet/computador) publicado como um único `index.html`, mas **desenvolvido em módulos**
 (pasta `src/`) com build automático.
 
-> **Versão atual: `2026.08.03 · b159 (Supabase)`.**
+> **Versão atual: `2026.08.03 · b160 (Supabase)`.**
 > O app roda sobre **PostgreSQL no Supabase** (migração do Google Sheets em 25/07).
 > Confira a versão em uso no **rodapé** do app — ele avisa sozinho quando há atualização.
 
@@ -217,11 +217,15 @@ matrículas + financeiro separados (orçamentos, contrato-modelo, negociação c
 por segmento, multa/juros) · permissões configuráveis · livros sob demanda (pedido → recebido →
 entregue) com cobrança do material.
 
-**Concluído em 03/08 (b159):** contratos **oficiais** no app — turmas e VIP — com o texto
+**Concluído em 03/08 (b159–b160):** contratos **oficiais** no app — turmas e VIP — com o texto
 jurídico exato fornecido pela direção, quadro preenchido automaticamente e limite de 4 páginas;
 campos de endereço/fim de período/modalidade na matrícula; tabela de preços 2025 carregada
 (mensalidades por segmento, hora VIP renovação/aluno novo/dupla, Material VIP, Talking,
-descontos família+à vista).
+descontos família+à vista). Ficha VIP **limpa para o professor** (painel "Sua aula com este
+aluno" com próxima aula, 🎥 Entrar na aula em destaque e ➕ Lançar aula; link mantido pela
+secretaria) e **regras de falta/cancelamento**: falta sem aviso é registrada pelo professor e
+desconta a hora; cancelamento com **menos de 12h** é registrado pela **secretaria** (🚫 botão
+na ficha) e também desconta — professor liberado não registra nada.
 
 **Próximos passos previstos:**
 1. **APIs de boleto e cartão** (hoje simulados).

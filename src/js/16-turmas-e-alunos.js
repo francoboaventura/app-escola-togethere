@@ -359,16 +359,22 @@ function _cardHorariosVip(vip){
 // Seção destacada da AULA ONLINE (link Meet/Zoom) — botão grande, impossível de não ver
 function _cardAulaOnlineVip(vip){
   const link=(vip.linkAula||'').trim();
-  const podeEditar=true;   // professor cola o próprio link; secretaria/direção também
-  if(!link && !podeEditar) return '';
+  const podeEditar=!ehProfessor();   // secretaria/direção mantêm o link; o professor usa
+  const prox=(typeof _vipProximaAulaTxt==='function')?_vipProximaAulaTxt(vip):'';
+  const podeLancar=!soLeitura() && (!ehProfessor() || perm('prof_vip_lancar'));
   return `<div class="card" style="margin-top:12px;border-left:5px solid #0A7A3D;background:linear-gradient(135deg,rgba(10,122,61,.07),transparent 60%)">
     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
       <div style="font-size:1.9rem;line-height:1">🎥</div>
       <div style="flex:1;min-width:200px">
-        <h3 style="margin:0;font-size:1.02rem">Aula online</h3>
-        <p class="hint" style="margin:2px 0 0">${link?'Sala fixa deste aluno — um toque para entrar.':'Cole o link da sala (Meet/Zoom) e ele fica fixo aqui para todo mundo.'}</p>
+        <h3 style="margin:0;font-size:1.02rem">${ehProfessor()?'Sua aula com este aluno':'Aula online'}</h3>
+        <p class="hint" style="margin:2px 0 0">${prox?('🗓️ Próxima aula prevista: <b>'+prox+'</b>'):(link?'Sala fixa deste aluno — um toque para entrar.':(podeEditar?'Cole o link da sala (Meet/Zoom) e ele fica fixo aqui para todo mundo.':'Sem horários previstos cadastrados.'))}</p>
+        ${(prox&&!link&&!podeEditar)?'<p class="hint" style="margin:2px 0 0">Aula online? Peça o link à secretaria.</p>':''}
       </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">
       ${link?`<a class="btn" style="background:#0A7A3D;text-decoration:none;font-size:1.02rem;padding:12px 22px" href="${escAttr(link)}" target="_blank" rel="noopener noreferrer">🎥 Entrar na aula</a>`:''}
+      ${podeLancar?`<button class="btn" style="font-size:1.02rem;padding:12px 22px" onclick="lancarAulaVip('${vip.id}')">➕ Lançar aula</button>`:''}
+      ${!ehProfessor()?`<button class="btn ghost" style="color:#c2560b" onclick="registrarCancelamentoVip('${vip.id}')">🚫 Cancelou em cima da hora</button>`:''}
     </div>
     ${podeEditar?`<div style="display:flex;gap:8px;align-items:flex-end;margin-top:10px;flex-wrap:wrap">
       <div class="field" style="margin:0;flex:1;min-width:220px"><label class="lbl">Link da sala (Meet/Zoom)</label><input type="url" value="${escAttr(vip.linkAula||'')}" placeholder="https://meet.google.com/…" onchange="setVipLinkAula('${vip.id}',this.value)"></div>
@@ -379,6 +385,22 @@ function _cardAulaOnlineVip(vip){
       ${(vip.links||[]).length?`<div style="margin-top:4px">${_linksUteisChips(vip.links, "delLinkVip('"+vip.id+"','__ID__')")}</div>`:`<p class="hint" style="margin:4px 0 0">Materiais do aluno: jogo do Wordwall, playlist, PDF, pasta do Drive…</p>`}
     </div>
   </div>`;
+}
+// Próxima aula prevista do VIP (até 14 dias à frente, respeitando pausas)
+function _vipProximaAulaTxt(vip){
+  const hs=(typeof vipHorarios==='function')?vipHorarios(vip):[];
+  if(!hs.length) return '';
+  const hj=new Date(hoje()+'T12:00:00');
+  for(let i=0;i<14;i++){
+    const d=new Date(hj.getFullYear(),hj.getMonth(),hj.getDate()+i);
+    const dow=d.getDay(); const cand=hs.filter(x=>+x.dia===dow).sort((a,b)=>(a.hora||'').localeCompare(b.hora||''))[0];
+    if(!cand) continue;
+    const dd=ymd(d);
+    if((vip.pausas||[]).some(pz=>dd>=pz.de&&dd<=pz.ate)) continue;
+    const quando=i===0?'Hoje':(i===1?'Amanhã':DIAS_SEMANA[dow]+' '+brDate(dd).slice(0,5));
+    return quando+(cand.hora?(' · '+cand.hora):'')+((+cand.dur>0&&+cand.dur!==60)?(' · '+fmtDur(+cand.dur)):'');
+  }
+  return '';
 }
 // normaliza/valida URL colada (aceita sem https)
 function _urlNormalizada(url){
@@ -516,8 +538,11 @@ function lancarAulaVip(vid){
     <div class="field"><label class="lbl">📚 Tema de casa (opcional)</label><input type="text" id="laTemaCasa" placeholder="Ex: Unit 4 · ex. 3 a 6"></div>
     <div class="row"><div class="field"><label class="lbl">Data</label><input type="date" id="laData" value="${hoje()}"></div>
       <div class="field"><label class="lbl">Duração (min)</label><input type="number" id="laDur" value="60" min="5" step="5"></div></div>
-    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:2px 0 6px"><input type="checkbox" id="laFaltou" onchange="document.getElementById('laCobrarW').style.display=this.checked?'flex':'none'"> ❌ Aluno não compareceu</label>
-    <label id="laCobrarW" style="display:none;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:0 0 12px 22px;color:#b8860b"><input type="checkbox" id="laCobrar"> 💳 Debitar a hora mesmo assim (professor estava disponível)</label>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:2px 0 6px"><input type="checkbox" id="laFaltou" onchange="document.getElementById('laCobrarW').style.display=this.checked?'block':'none'"> ❌ Aluno não compareceu</label>
+    ${ehProfessor()
+      ?`<div id="laCobrarW" style="display:none;margin:0 0 8px 22px"><p class="hint" style="margin:0;color:#b8860b">💳 A hora é descontada do pacote (regra da escola).</p></div>`
+      :`<div id="laCobrarW" style="display:none;margin:0 0 8px 22px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;color:#b8860b"><input type="checkbox" id="laCobrar" checked> 💳 Descontar a hora do pacote (padrão da escola)</label></div>`}
+    <p class="hint" style="margin:0 0 12px">🚫 O aluno <b>cancelou com menos de 12h</b> e o professor foi liberado? ${ehProfessor()?'Não registre nada — a <b>secretaria</b> registra o cancelamento (a hora é descontada).':'Use o botão "🚫 Cancelou em cima da hora" na ficha.'}</p>
     <button class="btn block" onclick="salvarAulaVipFicha('${vid}')">Lançar aula</button>`);
   setTimeout(()=>{const i=document.getElementById('laDesc'); if(i)i.focus();},60);
 }
@@ -527,9 +552,39 @@ function salvarAulaVipFicha(vid){
   const desc=(document.getElementById('laDesc').value||'').trim(); if(!desc) return toast('Descreva a aula');
   const data=document.getElementById('laData').value; if(!data) return toast('Escolha a data');
   const faltou=!!document.getElementById('laFaltou').checked;
+  const cobrar = faltou && (ehProfessor() ? true : !!(document.getElementById('laCobrar')||{}).checked);   // regra da escola: falta desconta a hora
   S.aulasVip.push({ id:uid(), vipId:vid, data, tema:(document.getElementById('laTema').value||'').trim(), temaCasa:(document.getElementById('laTemaCasa').value||'').trim(), descricao:desc,
-    duracaoMin:+document.getElementById('laDur').value||0, faltou, cobrarFalta: faltou && !!(document.getElementById('laCobrar')||{}).checked, atualizadoEm:Date.now() });
-  save(); fechar(); VIEWS.ficha(); toast(faltou?'Falta lançada':'Aula lançada ✅');
+    duracaoMin:+document.getElementById('laDur').value||0, faltou, cobrarFalta:cobrar, atualizadoEm:Date.now() });
+  save(); fechar(); VIEWS.ficha(); toast(faltou?(cobrar?'Falta lançada — hora descontada do pacote':'Falta lançada (sem débito)'):'Aula lançada ✅');
+}
+// 🚫 Cancelamento em cima da hora (<12h): registrado pela SECRETARIA (ou direção).
+// O professor é liberado e NÃO registra; a hora é descontada do pacote do aluno.
+function registrarCancelamentoVip(vid){
+  if(ehProfessor()) return toast('Cancelamento em cima da hora é registrado pela secretaria');
+  const vip=(S.vipAlunos||[]).find(x=>x.id===vid); if(!vip) return;
+  const d=hoje();
+  modal(`<h3>🚫 Cancelamento em cima da hora <button class="close" onclick="fechar()">×</button></h3>
+    <p class="hint" style="margin:0 0 10px">O aluno avisou com <b>menos de 12h</b> de antecedência e o professor foi liberado. A aula fica registrada como <b>não realizada</b> e a hora é <b>descontada do pacote</b>.</p>
+    <div class="row"><div class="field"><label class="lbl">Data da aula</label><input type="date" id="cz_data" value="${d}" onchange="_czDurSugerir('${vid}')"></div>
+      <div class="field"><label class="lbl">Duração a descontar (min)</label><input type="number" id="cz_dur" value="${(typeof vipDurDoDia==='function'?vipDurDoDia(vip,weekdayOf(d)):60)||60}" min="5" step="5"></div></div>
+    <div class="field"><label class="lbl">Observação (opcional)</label><input type="text" id="cz_obs" placeholder="Ex: avisou 1h antes pelo WhatsApp"></div>
+    <button class="btn block" style="background:#c2560b" onclick="salvarCancelamentoVip('${vid}')">Registrar e descontar a hora</button>`);
+}
+function _czDurSugerir(vid){
+  const vip=(S.vipAlunos||[]).find(x=>x.id===vid); if(!vip) return;
+  const d=(document.getElementById('cz_data')||{}).value; if(!d) return;
+  const e=document.getElementById('cz_dur'); if(e && typeof vipDurDoDia==='function') e.value=vipDurDoDia(vip,weekdayOf(d))||60;
+}
+function salvarCancelamentoVip(vid){
+  if(ehProfessor()) return toast('Sem permissão');
+  const data=(document.getElementById('cz_data')||{}).value; if(!data) return toast('Escolha a data');
+  const dur=+(document.getElementById('cz_dur')||{}).value||60;
+  const obs=((document.getElementById('cz_obs')||{}).value||'').trim();
+  S.aulasVip.push({ id:uid(), vipId:vid, data, tema:'Cancelamento em cima da hora',
+    descricao:obs||'Aluno cancelou com menos de 12h de antecedência — professor liberado, hora descontada.',
+    duracaoMin:dur, faltou:true, cobrarFalta:true, cancel12h:true, por:S.usuario||'', atualizadoEm:Date.now() });
+  save(); fechar(); if(VIEWS.ficha) VIEWS.ficha();
+  toast('Cancelamento registrado — hora descontada do pacote');
 }
 function renderFichaVip(v, vip){
   const inRange=d=>(!_fichaDe||d>=_fichaDe)&&(!_fichaAte||d<=_fichaAte);
@@ -549,7 +604,7 @@ function renderFichaVip(v, vip){
   <div class="fx-hero">
     ${avatarFoto('fx-av', vip.foto, ((vip.nome||'·').trim()[0]||'·').toUpperCase(), "enviarFoto('vip','"+vip.id+"')")}
     <div style="flex:1;min-width:150px"><div class="fx-hnm">${escAttr(vip.nome)}</div>
-      <div class="fx-htu">Aula particular${vip.professor?(' · Prof. '+escAttr(vip.professor)):''}${idade!=null?(' · '+idade+' anos'):''}</div></div>
+      <div class="fx-htu">Aula particular${vip.professor?(' · Prof. '+escAttr(vip.professor)):''}${idade!=null?(' · '+idade+' anos'):''}${(ehProfessor()&&vip.material)?(' · 📘 '+escAttr(vip.material)):''}</div></div>
     <span class="pill" style="background:#fff8e0;color:#b88600">👑 Aluno VIP</span>
   </div>
   <div class="fx-tiles">
@@ -558,10 +613,11 @@ function renderFichaVip(v, vip){
     ${tile(fmtDur(compMin),'Tempo total','#005EAF')}
     ${tile(wrs.length,'Writings',wrs.length>0?'#9333c7':'var(--tinta)')}
   </div>
-  ${consolMin>0?`<p class="hint" style="margin:8px 0 0">🕓 Fora as aulas com presença acima, há <b>${fmtDur(consolMin)}</b> de <b>aulas anteriores</b> (consolidação da importação). Elas somam no pacote de horas, mas <b>não contam</b> como aulas com presença aqui.</p>`:''}
+  ${(consolMin>0&&!ehProfessor())?`<p class="hint" style="margin:8px 0 0">🕓 Fora as aulas com presença acima, há <b>${fmtDur(consolMin)}</b> de <b>aulas anteriores</b> (consolidação da importação). Elas somam no pacote de horas, mas <b>não contam</b> como aulas com presença aqui.</p>`:''}
   ${(typeof _cardAulaOnlineVip==='function')?_cardAulaOnlineVip(vip):''}
-  ${_cardPacoteVip(vip.id)}
-  <div class="card" style="margin-top:12px"><h3 style="margin:0 0 8px">Contato${VIP_PORTAL_ATIVO?' & portal':''}</h3>`;
+  ${_cardPacoteVip(vip.id)}`;
+  if(!ehProfessor()){
+  h+=`<div class="card" style="margin-top:12px"><h3 style="margin:0 0 8px">Contato${VIP_PORTAL_ATIVO?' & portal':''}</h3>`;
   if(podeEd){
     h+=`<div class="row" style="flex-wrap:wrap">
       <div class="field" style="flex:2;min-width:210px;margin:0"><label class="lbl">E-mail (responsável / aluno)</label><input type="email" value="${escAttr(vip.email||'')}" placeholder="email@exemplo.com" onchange="setVipCampo('${vip.id}','email',this.value)"></div>
@@ -574,11 +630,13 @@ function renderFichaVip(v, vip){
   h+=`${VIP_PORTAL_ATIVO?`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--linha)">
       <p class="hint" style="margin:0">🎫 <b>Portal do aluno:</b> <a href="${portalURL}" target="_blank" style="color:var(--azul);word-break:break-all">${escAttr(portalURL.replace(/^https?:\/\//,''))}</a></p>
     </div>`:''}
-  </div>
-  ${_cardMaterialVip(vip)}
+  </div>`;
+  }
+  h+=`
+  ${ehProfessor()?'':_cardMaterialVip(vip)}
   ${_cardHorariosVip(vip)}
-  ${VIP_PORTAL_ATIVO?_cardAcessoPortal(vip.id):''}
-  ${(typeof _cardLivrosAluno==='function')?_cardLivrosAluno(vip.id,true):''}
+  ${(VIP_PORTAL_ATIVO&&!ehProfessor())?_cardAcessoPortal(vip.id):''}
+  ${(!ehProfessor()&&typeof _cardLivrosAluno==='function')?_cardLivrosAluno(vip.id,true):''}
   ${(typeof _cardContratoOficialVip==='function')?_cardContratoOficialVip(vip):''}
   ${_cardContratos(vip.id)}
   <div class="card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
@@ -586,8 +644,8 @@ function renderFichaVip(v, vip){
     <button class="btn ghost sm" onclick="setFichaPeriodo('ano')">Este ano</button>
     <button class="btn ghost sm" onclick="setFichaPeriodo('tudo')">Tudo</button>
   </div>`;
-  h+=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:18px 0 6px"><h3 style="margin:0;flex:1">👑 Aulas VIP (${aulas.length})</h3>${!soLeitura()?`<button class="btn ghost sm" onclick="lancarAulaVip('${vip.id}')">+ Lançar aula</button>`:''}</div>`;
-  h+=aulas.length?aulas.map(a=>`<div class="card" style="padding:10px 12px"><div style="display:flex;gap:8px;flex-wrap:wrap"><b style="flex:1">${brDate(a.data)}</b><span style="color:${a.faltou?'var(--vermelho)':'#1a8a4a'};font-weight:600">${a.faltou?'❌ não compareceu':'✅ '+fmtDur(a.duracaoMin)}</span></div><p class="hint" style="margin:4px 0 0">${a.tema?('<b>'+escAttr(a.tema)+'</b> — '):''}${escAttr(a.descricao||'')}</p>${a.temaCasa?`<p class="hint" style="margin:4px 0 0">📚 <b>Tema de casa:</b> ${escAttr(a.temaCasa)}</p>`:''}</div>`).join(''):'<p class="hint">Nenhuma aula lançada no app ainda.</p>';
+  h+=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:18px 0 6px"><h3 style="margin:0;flex:1">👑 Aulas VIP (${aulas.length})</h3>${!ehProfessor()?`<button class="btn ghost sm" style="color:#c2560b" onclick="registrarCancelamentoVip('${vip.id}')">🚫 Cancelou em cima da hora</button>`:''}${!soLeitura()?`<button class="btn ghost sm" onclick="lancarAulaVip('${vip.id}')">+ Lançar aula</button>`:''}</div>`;
+  h+=aulas.length?aulas.map(a=>`<div class="card" style="padding:10px 12px"><div style="display:flex;gap:8px;flex-wrap:wrap"><b style="flex:1">${brDate(a.data)}</b><span style="color:${a.faltou?(a.cancel12h?'#c2560b':'var(--vermelho)'):'#1a8a4a'};font-weight:600">${a.faltou?(a.cancel12h?'🚫 cancelou em cima da hora · hora descontada':('❌ não compareceu'+(a.cobrarFalta?' · hora descontada':''))):'✅ '+fmtDur(a.duracaoMin)}</span></div><p class="hint" style="margin:4px 0 0">${a.tema?('<b>'+escAttr(a.tema)+'</b> — '):''}${escAttr(a.descricao||'')}</p>${a.temaCasa?`<p class="hint" style="margin:4px 0 0">📚 <b>Tema de casa:</b> ${escAttr(a.temaCasa)}</p>`:''}</div>`).join(''):'<p class="hint">Nenhuma aula lançada no app ainda.</p>';
   // Bloco separado: consolidação de horas anteriores (não conta como aula com presença)
   if(consol.length) h+=`<div style="margin:12px 0 0">${consol.map(a=>`<div class="card" style="padding:10px 12px;background:#f4f7fb;border:1px dashed var(--linha)"><div style="display:flex;gap:8px;flex-wrap:wrap"><b style="flex:1">🕓 Aulas anteriores (consolidação)</b><span style="color:#005EAF;font-weight:600">${fmtDur(a.duracaoMin)}</span></div><p class="hint" style="margin:4px 0 0">Horas já realizadas antes do registro no app, trazidas da planilha só para o controle do saldo${a.data?(' · ref. '+brDate(a.data)):''}. Não conta como aula com presença.</p></div>`).join('')}</div>`;
   h+=`<h3 style="margin:18px 0 6px">📝 Writings (${wrs.length})</h3>`;

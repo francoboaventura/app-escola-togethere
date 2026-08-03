@@ -130,7 +130,7 @@ function abrirMatricula(id){
       ${id?`<button class="btn ghost" onclick="abrirFinanceiroDaMatricula('${id}')">💰 Financeiro</button>`:''}
       ${id?`<button class="btn ghost" onclick="verMatricula('${id}')">🖨️ Ficha / PDF</button>`:''}
       ${id&&m.status==='orcamento'?`<button class="btn ghost" style="color:#9333c7" onclick="verOrcamento('${id}')">🧾 Orçamento / PDF</button>`:''}
-      ${id?`<button class="btn ghost" onclick="verContrato('${id}')">📄 Contrato oficial</button>`:''}
+      ${id?`<button class="btn ghost" onclick="verContratoOficial('${id}')">📄 Contrato oficial</button>`:''}
       ${id?`<button class="btn ghost" style="color:var(--vermelho)" onclick="excluirMatricula('${id}')">🗑 Excluir</button>`:''}
       <button class="btn ghost" onclick="fechar()">Cancelar</button>
     </div>`);
@@ -311,7 +311,7 @@ function fvConcluir(){
   modal(`<h3>🎉 Venda fechada! <button class="close" onclick="fechar()">×</button></h3>
     <p class="hint" style="margin:0 0 12px"><b>${esc(_fv.aluno)}</b> está na turma <b>${esc(t.nome)}</b>, com matrícula ativa, plano financeiro criado${_fv.pedirLivro&&col?' e o livro já pedido':''}.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn" onclick="fechar();verContrato('${m.id}')">📄 Contrato</button>
+      <button class="btn" onclick="fechar();verContratoOficial('${m.id}')">📄 Contrato</button>
       <button class="btn ghost" onclick="fechar();abrirCarne('${f.id}')">💳 Carnê</button>
       <button class="btn ghost" onclick="fechar();abrirFicha('${aluno.id}')">📇 Ficha do aluno</button>
       <button class="btn ghost" onclick="fechar()">Fechar</button>

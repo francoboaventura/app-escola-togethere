@@ -182,7 +182,10 @@ Apenas a direção aprova.` },
     passos:`## O que é
 Alunos de aulas particulares, fora das turmas regulares.
 ## Professor
-- Lança as aulas dadas (data, duração, tema, presença/falta).
+- A ficha do aluno VIP mostra **só o que é seu**: o painel **"Sua aula com este aluno"** (próxima aula prevista, botão 🎥 **Entrar na aula** e ➕ **Lançar aula**), horários, links úteis e o histórico de aulas.
+- Lança as aulas dadas (data, duração, tema, presença).
+- **Aluno não compareceu?** Você mesmo registra a falta — a hora é **descontada do pacote** (regra da escola).
+- **Cancelou com menos de 12h e você foi liberado?** Não registre nada — a **secretaria** registra o cancelamento.
 ## Secretaria e direção
 - Controlam o **pacote de horas** (contratadas × utilizadas) na ficha do aluno — o aluno **não** vê isso.
 - **👥 Aula em dupla:** marque na ficha do VIP; o app passa a usar a hora-aula de dupla da tabela (valor por aluno) e mostra o valor estimado do pacote.
@@ -191,7 +194,8 @@ Alunos de aulas particulares, fora das turmas regulares.
 - **🔁 Remanejamento:** troca pontual de dia/horário de uma aula prevista.
 - Horas de **consolidação** (importadas de antes do app) aparecem separadas e **não contam** como aula lançada.
 - **📊 Panorama:** escolha o período (este mês, mês passado, este ano) para ver as horas utilizadas no período — contratadas e saldo são sempre do total.
-- **🎥 Aula online:** cole o link (Meet/Zoom) na ficha do VIP — o botão "Entrar na aula" fica ali para todos.
+- **🎥 Aula online:** a **secretaria/direção** mantém o link (Meet/Zoom) na ficha do VIP — para o professor ele aparece em destaque no painel "Sua aula com este aluno".
+- **🚫 Cancelamento em cima da hora (<12h):** registrado pela **secretaria** (botão na ficha do VIP) — a aula fica como não realizada e a hora é **descontada do pacote**. Falta sem aviso ("não compareceu") é registrada pelo professor e também desconta.
 - **🔗 Links úteis:** espaço para o professor guardar os links daquele aluno (jogos, playlists, PDFs) na mesma seção.
 - **📄 Contrato oficial (só direção):** na ficha do VIP, preencha os dados do contratante uma vez e gere o contrato de aulas particulares com o texto oficial da escola — quadro com horas, período e parcelas, pronto para assinar.
 ## Alertas

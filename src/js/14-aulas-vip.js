@@ -344,8 +344,11 @@ VIEWS.vip=()=>{
         <div class="field"><label class="lbl">Data</label><input type="date" id="vipData" value="${hoje()}" onchange="_vipDurSugerir('${vipSel}')"></div>
         <div class="field"><label class="lbl">Duração (min)</label><input type="number" id="vipDur" value="${vipDurDoDia(vObj, weekdayOf(hoje()))}" min="5" step="5"></div>
       </div>
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:2px 0 6px"><input type="checkbox" id="vipFaltou" onchange="document.getElementById('vipCobrarWrap').style.display=this.checked?'flex':'none'"> ❌ Aluno não compareceu</label>
-      <label id="vipCobrarWrap" style="display:none;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:0 0 12px 22px;color:#b8860b"><input type="checkbox" id="vipCobrarFalta"> 💳 Debitar a hora mesmo assim (o professor estava disponível)</label>
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:2px 0 6px"><input type="checkbox" id="vipFaltou" onchange="document.getElementById('vipCobrarWrap').style.display=this.checked?'block':'none'"> ❌ Aluno não compareceu</label>
+      ${ehProfessor()
+        ?`<div id="vipCobrarWrap" style="display:none;margin:0 0 8px 22px"><p class="hint" style="margin:0;color:#b8860b">💳 A hora é descontada do pacote (regra da escola).</p></div>`
+        :`<div id="vipCobrarWrap" style="display:none;margin:0 0 8px 22px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;color:#b8860b"><input type="checkbox" id="vipCobrarFalta" checked> 💳 Descontar a hora do pacote (padrão da escola)</label></div>`}
+      <p class="hint" style="margin:0 0 12px">🚫 Cancelou com <b>menos de 12h</b> e o professor foi liberado? ${ehProfessor()?'Não registre nada — a <b>secretaria</b> registra o cancelamento na ficha do aluno.':'Registre pelo botão "🚫 Cancelou em cima da hora" na ficha do aluno.'}</p>
       <button class="btn" onclick="addAulaVip()">+ Lançar aula</button></div>
       <div class="card" id="vipBox"></div>`:''}`;
   renderVipLista();
@@ -418,10 +421,10 @@ function addAulaVip(){
   const data=document.getElementById('vipData').value; if(!data)return toast('Escolha a data');
   const dur=+document.getElementById('vipDur').value||0;
   const faltou=!!document.getElementById('vipFaltou').checked;
-  const cobrarFalta=faltou && !!((document.getElementById('vipCobrarFalta')||{}).checked);
+  const cobrarFalta=faltou && (ehProfessor() ? true : !!((document.getElementById('vipCobrarFalta')||{}).checked));   // regra da escola: falta desconta a hora
   S.aulasVip.push({id:uid(),vipId:vid,data,tema,temaCasa,descricao:desc,duracaoMin:dur,faltou,cobrarFalta,atualizadoEm:Date.now()});
   save(); VIEWS.vip();   // re-renderiza p/ atualizar o saldo do pacote
-  toast(faltou?(cobrarFalta?'Falta lançada e hora debitada':'Falta lançada (sem débito)'):'Aula lançada');
+  toast(faltou?(cobrarFalta?'Falta lançada — hora descontada do pacote':'Falta lançada (sem débito)'):'Aula lançada');
 }
 function delAulaVip(id){ if(!confirm('Excluir esta aula VIP?'))return; S.aulasVip=S.aulasVip.filter(x=>x.id!==id); marcarExcluido('aulasVip',id); save(); renderVipLista(); }
 function editarAulaVip(id){
@@ -466,7 +469,7 @@ function renderVipLista(){
     <button class="btn ghost sm" style="color:var(--vermelho)" onclick="delVipAluno('${vid}')">excluir aluno</button></div>`;
   if(!todas.length){ box.innerHTML=h+'<p class="hint" style="margin:8px 0 0">Nenhuma aula lançada ainda.</p>'; return; }
   h+=`<p class="hint" style="margin:8px 0 10px"><b>${comp.length}</b> aula(s) com presença (${fmtDur(compMin)})${faltas?` · <b>${faltas}</b> falta(s)`:''}${consolMin>0?` · <b>${fmtDur(consolMin)}</b> de aulas anteriores (consolidação)`:''}</p>`;
-  h+=aulas.map(a=>`<div class="check"><span style="flex:1">${brDate(a.data)} · ${a.tema?`<b>${esc(a.tema)}</b> — `:''}<span style="white-space:pre-wrap">${esc(a.descricao)}</span> <span class="pill">${fmtDur(a.duracaoMin)}</span>${a.faltou?(' <span class="pill" style="background:#ffe9e9;color:var(--vermelho)">não compareceu</span>'+(a.cobrarFalta?' <span class="pill" style="background:#fff3cf;color:#8a6d00">hora debitada</span>':' <span class="pill" style="background:#eef1f6;color:#66788c">sem débito</span>')):''}</span><button class="btn ghost sm" onclick="editarAulaVip('${a.id}')">✏️ editar</button><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delAulaVip('${a.id}')">excluir</button></div>`).join('');
+  h+=aulas.map(a=>`<div class="check"><span style="flex:1">${brDate(a.data)} · ${a.tema?`<b>${esc(a.tema)}</b> — `:''}<span style="white-space:pre-wrap">${esc(a.descricao)}</span> <span class="pill">${fmtDur(a.duracaoMin)}</span>${a.faltou?(a.cancel12h?' <span class="pill" style="background:#fff1e6;color:#c2560b">🚫 cancelou em cima da hora</span> <span class="pill" style="background:#fff3cf;color:#8a6d00">hora descontada</span>':(' <span class="pill" style="background:#ffe9e9;color:var(--vermelho)">não compareceu</span>'+(a.cobrarFalta?' <span class="pill" style="background:#fff3cf;color:#8a6d00">hora descontada</span>':' <span class="pill" style="background:#eef1f6;color:#66788c">sem débito</span>'))):''}</span><button class="btn ghost sm" onclick="editarAulaVip('${a.id}')">✏️ editar</button><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delAulaVip('${a.id}')">excluir</button></div>`).join('');
   if(consol.length) h+=consol.map(a=>`<div class="check" style="background:#f4f7fb"><span style="flex:1">🕓 <b>Aulas anteriores (consolidação)</b> — horas da planilha, não conta como presença <span class="pill">${fmtDur(a.duracaoMin)}</span></span></div>`).join('');
   box.innerHTML=h;
 }
@@ -477,7 +480,7 @@ function corpoRelatorioVip(vid){
   const faltas=aulas.length-comp.length;
   let b=`Relatório de aulas VIP — ${al.nome}\n`;
   if(aulas.length) b+=`Período: ${brDate(aulas[0].data)} a ${brDate(aulas[aulas.length-1].data)}\n`;
-  b+=`\n`+aulas.map(a=>`• ${brDate(a.data)} — ${a.tema?a.tema+': ':''}${a.descricao} (${fmtDur(a.duracaoMin)})${a.faltou?' — NÃO COMPARECEU':''}`).join('\n');
+  b+=`\n`+aulas.map(a=>`• ${brDate(a.data)} — ${a.tema?a.tema+': ':''}${a.descricao} (${fmtDur(a.duracaoMin)})${a.faltou?(a.cancel12h?' — CANCELOU EM CIMA DA HORA (hora descontada)':' — NÃO COMPARECEU'):''}`).join('\n');
   b+=`\n\nAulas com presença: ${comp.length} (${fmtDur(compMin)})${faltas?` · Faltas: ${faltas}`:''}\n`;
   b+=`\n${(S.config&&S.config.assinatura)||ASSINATURA_PADRAO}`;
   return b;

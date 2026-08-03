@@ -156,7 +156,7 @@ function _ctRemTurmaHTML(f){
 function _ctFimPadrao(ini){ const y=(ini&&/^\d{4}/.test(ini))?ini.slice(0,4):String(new Date().getFullYear()); return '31/12/'+y; }
 
 /* -------------------- CONTRATO DE TURMA (a partir da matrícula) -------------------- */
-function verContrato(id){
+function verContratoOficial(id){
   const m=(S.matriculas||[]).find(x=>x.id===id); if(!m) return;
   const t=m.turmaId?(S.turmas||[]).find(x=>x.id===m.turmaId):null;
   const f=(S.financeiro||[]).find(x=>x.matriculaId===id);
@@ -183,7 +183,7 @@ function verContrato(id){
   ]);
   imprimirDoc(_ctHTML({nomeDoc:matNome(m), subtitulo:'Contrato — aulas em turma', partes, quadro, arts:_CT_ARTS_TURMA}));
 }
-function verContratoExemplo(id){ return verContrato(id); }   // compat: botões antigos
+function verContratoExemplo(id){ return verContratoOficial(id); }   // compat: botões antigos
 
 /* -------------------- CONTRATO VIP (aulas particulares) -------------------- */
 function _cardContratoOficialVip(vip){
