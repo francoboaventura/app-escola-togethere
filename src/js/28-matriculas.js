@@ -113,10 +113,14 @@ function abrirMatricula(id){
     <div class="row"><div class="field"><label class="lbl">Telefone / WhatsApp</label><input type="text" id="mat_telefone" value="${escAttr(m.telefone||'')}" placeholder="(51) 9…"></div>
       <div class="field" style="flex:2"><label class="lbl">E-mail</label><input type="email" id="mat_email" value="${escAttr(m.email||'')}" placeholder="email@exemplo.com"></div></div>
     <div class="field"><label class="lbl">Documento do responsável</label><input type="text" id="mat_respDoc" value="${escAttr(m.respDoc||'')}" placeholder="CPF (opcional)"></div>
+    <div class="row"><div class="field" style="flex:2"><label class="lbl">Endereço (rua e número) — entra no contrato</label><input type="text" id="mat_endereco" value="${escAttr(m.endereco||'')}" placeholder="Rua …, n. …"></div>
+      <div class="field"><label class="lbl">Cidade</label><input type="text" id="mat_cidade" value="${escAttr(m.cidade||'Gravataí, RS')}"></div></div>
 
     <div style="font-weight:700;color:#0A7A3D;margin:12px 0 4px">🏫 Acadêmico</div>
     <div class="row"><div class="field" style="flex:2"><label class="lbl">Turma</label><select id="mat_turmaId">${optT}</select></div>
       <div class="field"><label class="lbl">Início</label><input type="date" id="mat_dataInicio" value="${escAttr(m.dataInicio||hoje())}"></div></div>
+    <div class="row"><div class="field"><label class="lbl">Fim do período (contrato)</label><input type="date" id="mat_fimPeriodo" value="${escAttr(m.fimPeriodo||'')}" title="Se vazio, o contrato usa 31/12 do ano de início"></div>
+      <div class="field"><label class="lbl">Modalidade</label><select id="mat_modalidade">${['Presencial','On-line','Híbrida'].map(o=>`<option ${(m.modalidade||'Presencial')===o?'selected':''}>${o}</option>`).join('')}</select></div></div>
 
     <div class="field" style="margin-top:8px"><label class="lbl">Observações</label><textarea id="mat_obs" style="min-height:60px" placeholder="Combinados, condições especiais…">${escAttr(m.observacoes||'')}</textarea></div>
 
@@ -126,7 +130,7 @@ function abrirMatricula(id){
       ${id?`<button class="btn ghost" onclick="abrirFinanceiroDaMatricula('${id}')">💰 Financeiro</button>`:''}
       ${id?`<button class="btn ghost" onclick="verMatricula('${id}')">🖨️ Ficha / PDF</button>`:''}
       ${id&&m.status==='orcamento'?`<button class="btn ghost" style="color:#9333c7" onclick="verOrcamento('${id}')">🧾 Orçamento / PDF</button>`:''}
-      ${id?`<button class="btn ghost" onclick="verContratoExemplo('${id}')">📄 Contrato (modelo)</button>`:''}
+      ${id?`<button class="btn ghost" onclick="verContrato('${id}')">📄 Contrato oficial</button>`:''}
       ${id?`<button class="btn ghost" style="color:var(--vermelho)" onclick="excluirMatricula('${id}')">🗑 Excluir</button>`:''}
       <button class="btn ghost" onclick="fechar()">Cancelar</button>
     </div>`);
@@ -136,6 +140,7 @@ function _matLerForm(){
   const g=id=>{ const e=document.getElementById(id); return e?e.value:''; };
   return { status:g('mat_status')||'orcamento', alunoId:g('mat_alunoId'), alunoNome:g('mat_alunoNome').trim(), nascimento:g('mat_nascimento'), docAluno:g('mat_docAluno').trim(),
     respNome:g('mat_respNome').trim(), respParentesco:g('mat_respParentesco'), telefone:g('mat_telefone').trim(), email:g('mat_email').trim(), respDoc:g('mat_respDoc').trim(),
+    endereco:g('mat_endereco').trim(), cidade:g('mat_cidade').trim(), fimPeriodo:g('mat_fimPeriodo'), modalidade:g('mat_modalidade'),
     turmaId:g('mat_turmaId'), dataInicio:g('mat_dataInicio'), observacoes:g('mat_obs').trim() };
 }
 function salvarMatricula(id){
@@ -306,7 +311,7 @@ function fvConcluir(){
   modal(`<h3>🎉 Venda fechada! <button class="close" onclick="fechar()">×</button></h3>
     <p class="hint" style="margin:0 0 12px"><b>${esc(_fv.aluno)}</b> está na turma <b>${esc(t.nome)}</b>, com matrícula ativa, plano financeiro criado${_fv.pedirLivro&&col?' e o livro já pedido':''}.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn" onclick="fechar();verContratoExemplo('${m.id}')">📄 Contrato</button>
+      <button class="btn" onclick="fechar();verContrato('${m.id}')">📄 Contrato</button>
       <button class="btn ghost" onclick="fechar();abrirCarne('${f.id}')">💳 Carnê</button>
       <button class="btn ghost" onclick="fechar();abrirFicha('${aluno.id}')">📇 Ficha do aluno</button>
       <button class="btn ghost" onclick="fechar()">Fechar</button>
@@ -418,47 +423,9 @@ td{border:1px solid #DCE4EC;padding:6px 9px}td.k{background:#F0F6FC;color:#002B6
   ${material>0?linha('Material didático',_moeda(material)):''}
   <tr class="tot"><td class="k">Total do curso (matrícula + ${parcelas}× mensalidade)</td><td>${_moeda(totalCurso)}${material>0?(' + material '+_moeda(material)):''}</td></tr>
 </table>
-<p class="validade">Proposta válida por 15 dias. Valores da tabela ${segOrc?('do segmento '+segOrc.toUpperCase()):'vigente'}${f?' (condições já personalizadas para este aluno)':''}.</p>
+<p class="validade">Proposta válida por 15 dias. Valores da tabela ${segOrc?('do segmento '+segOrc.toUpperCase()):'vigente'}${f?' (condições já personalizadas para este aluno)':''}.${(typeof _cfgFin==='function'&&(_cfgFin().descontosTxt||'').trim())?('<br>Descontos: '+esc(_cfgFin().descontosTxt)):''}</p>
 <p class="foot">Documento de orçamento — não é contrato nem tem valor fiscal. Togethere · inglês para chegar lá.</p>
 </body></html>`;
   imprimirDoc(html);
 }
-/* -------------------- CONTRATO (modelo de exemplo) -------------------- */
-function verContratoExemplo(id){
-  const m=(S.matriculas||[]).find(x=>x.id===id); if(!m) return;
-  const t=m.turmaId?(S.turmas||[]).find(x=>x.id===m.turmaId):null;
-  const f=(S.financeiro||[]).find(x=>x.matriculaId===id);
-  const cfg=(typeof _cfgFin==='function')?_cfgFin():{};
-  const pSegC=(typeof precosSegmento==='function')?precosSegmento((t&&t.nivel)||''):{taxa:0,anual:0};
-  const parcelas=f?(f.parcelas||12):12;
-  const temFinRealC=!!(f && (finMensalLiquida(f)>0 || _matN(f.valorMatricula)>0));
-  const mensal=temFinRealC?finMensalLiquida(f):(parcelas>0?_matN(pSegC.anual)/parcelas:0);   // sem plano: usa a tabela do segmento (não sai R$ 0,00)
-  const taxa=temFinRealC?_matN(f.valorMatricula):pSegC.taxa;
-  const dado=(v,ph)=> v?esc(String(v)):`<span style="background:#FFF7DA;padding:0 4px">${ph}</span>`;
-  const html=`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Contrato — ${esc(matNome(m))}</title><style>
-@page{margin:16mm}*{-webkit-print-color-adjust:exact;print-color-adjust:exact;box-sizing:border-box}
-body{font-family:'Urbanist',system-ui,Arial,sans-serif;color:#15233b;padding:6px;font-size:12.5px;line-height:1.55}
-.top{display:flex;align-items:baseline;gap:10px;border-bottom:3px solid #FFC800;padding-bottom:6px;margin-bottom:12px}
-h1{font-family:'Zilla Slab',Georgia,serif;color:#005EAF;font-size:19px;margin:0}.per{margin-left:auto;color:#5a6b86;font-size:11px}
-h2{font-family:'Zilla Slab',Georgia,serif;font-size:13.5px;color:#002B64;margin:14px 0 4px}
-.marca{background:#fdeaea;color:#E52524;font-weight:700;display:inline-block;padding:2px 10px;border-radius:20px;font-size:11px;margin-bottom:8px}
-.ass{margin-top:34px;display:flex;gap:30px}.ass div{flex:1;border-top:1px solid #15233b;padding-top:4px;text-align:center;font-size:11px}
-.foot{margin-top:14px;color:#8a97a8;font-size:10px;border-top:1px solid #DCE4EC;padding-top:6px}
-</style></head><body>
-<div class="top"><h1>Togethere</h1><div style="font-weight:700">Contrato de prestação de serviços educacionais</div><div class="per">${brDate(hoje())}</div></div>
-<span class="marca">MODELO DE EXEMPLO — texto oficial será fornecido pela direção</span>
-<h2>1. Partes</h2>
-<p><b>CONTRATADA:</b> TOGETHERE ESCOLA DE IDIOMAS, Gravataí/RS ${dado('','[CNPJ / endereço completo]')}.<br>
-<b>CONTRATANTE:</b> ${dado(m.respNome,'[nome do responsável]')}, ${dado(m.respParentesco,'[parentesco]')} do(a) aluno(a), CPF ${dado(m.respDoc,'[CPF]')}, telefone ${dado(m.telefone,'[telefone]')}, e-mail ${dado(m.email,'[e-mail]')}.<br>
-<b>ALUNO(A):</b> ${esc(matNome(m))}${m.nascimento?(', nascido(a) em '+brDate(m.nascimento)):''}${m.docAluno?(', documento '+esc(m.docAluno)):''}.</p>
-<h2>2. Objeto</h2>
-<p>Curso de língua inglesa na turma <b>${t?esc(t.nome):dado('','[turma]')}</b>${t&&t.horario?(', às '+esc(t.horario)):''}, com início em ${m.dataInicio?brDate(m.dataInicio):dado('','[data de início]')}, conforme metodologia e calendário da CONTRATADA.</p>
-<h2>3. Valores e forma de pagamento</h2>
-<p>Taxa de matrícula de <b>${_moeda(taxa)}</b>; mensalidade de <b>${_moeda(mensal)}</b> em <b>${parcelas}</b> parcelas, com vencimento todo dia ${f?(f.diaVencimento||10):10}${f&&f.formaPagamento?(', via '+esc(f.formaPagamento)):''}. Em caso de atraso incidem multa de ${_matN(cfg.multaPct)||2}% e juros de ${_matN(cfg.jurosMesPct)||1}% ao mês. ${dado('','[demais condições — texto oficial]')}</p>
-<h2>4. Disposições gerais</h2>
-<p>${dado('','[cláusulas de cancelamento, reposição, uso de imagem, LGPD e foro — texto oficial da direção]')}</p>
-<div class="ass"><div>${dado(m.respNome,'[responsável]')}<br>CONTRATANTE</div><div>Togethere Escola de Idiomas<br>CONTRATADA</div></div>
-<p class="foot">MODELO DE EXEMPLO gerado pelo app para estudo — sem validade jurídica até substituição pelo texto oficial. Togethere · inglês para chegar lá.</p>
-</body></html>`;
-  imprimirDoc(html);
-}
+/* Contrato oficial: verContrato() vive em 33-contratos-oficiais.js (verContratoExemplo é alias de compatibilidade) */

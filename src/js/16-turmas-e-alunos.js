@@ -579,6 +579,7 @@ function renderFichaVip(v, vip){
   ${_cardHorariosVip(vip)}
   ${VIP_PORTAL_ATIVO?_cardAcessoPortal(vip.id):''}
   ${(typeof _cardLivrosAluno==='function')?_cardLivrosAluno(vip.id,true):''}
+  ${(typeof _cardContratoOficialVip==='function')?_cardContratoOficialVip(vip):''}
   ${_cardContratos(vip.id)}
   <div class="card" style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
     <span class="hint" style="flex:1">Período: <b>${periodoTxt}</b></span>

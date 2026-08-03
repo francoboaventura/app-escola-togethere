@@ -193,6 +193,7 @@ Alunos de aulas particulares, fora das turmas regulares.
 - **📊 Panorama:** escolha o período (este mês, mês passado, este ano) para ver as horas utilizadas no período — contratadas e saldo são sempre do total.
 - **🎥 Aula online:** cole o link (Meet/Zoom) na ficha do VIP — o botão "Entrar na aula" fica ali para todos.
 - **🔗 Links úteis:** espaço para o professor guardar os links daquele aluno (jogos, playlists, PDFs) na mesma seção.
+- **📄 Contrato oficial (só direção):** na ficha do VIP, preencha os dados do contratante uma vez e gere o contrato de aulas particulares com o texto oficial da escola — quadro com horas, período e parcelas, pronto para assinar.
 ## Alertas
 Aula prevista sem lançamento há mais de 24h gera **aviso** para a secretaria.` },
   { id:'apoio', em:'🤝', titulo:'Aula de apoio', grp:'Acompanhamento', roles:['professor','secretaria','direcao'],
@@ -286,7 +287,7 @@ Ao entregar para aluno de turma, a **direção** pode lançar o material no fina
 - **Converter** o orçamento em matrícula quando fechar (cria o aluno e o plano financeiro).
 - Venda não fechou? **✖ não fechou** registra o **motivo** (vira aprendizado comercial; dá para reabrir). Orçamentos também podem ser **🗑 excluídos**.
 - Status da matrícula: orçamento, **ativa**, trancada, concluída, cancelada.
-- **Contrato:** por enquanto um modelo de exemplo que já puxa os dados do aluno/turma/valores (o texto oficial entra depois).` },
+- **📄 Contrato oficial:** gera o contrato com o **texto oficial da escola** (cláusulas jurídicas completas), já preenchido com aluno, responsável, turma, período e as parcelas do plano financeiro — pronto para imprimir e assinar, em até 4 páginas. Preencha **endereço**, fim do período e modalidade na matrícula para o quadro sair completo.` },
   { id:'financeiro', em:'💰', titulo:'Financeiro', grp:'Gestão', roles:['direcao'],
     resumo:'Carnê de parcelas, descontos, negociação, extras e recebimentos.',
     passos:`## Só direção
@@ -301,7 +302,8 @@ Ao entregar para aluno de turma, a **direção** pode lançar o material no fina
     passos:`## Só direção
 ## O que se define aqui
 - **Preços por segmento** (Kids, Junior, Teens, Adults, Talking): taxa de matrícula, valor anual do curso e material.
-- **Valor da hora-aula VIP** — individual e **👥 em dupla** (valor por aluno).
+- **Valor da hora-aula VIP** — renovação, **aluno novo** e **👥 em dupla** (valor por aluno).
+- **Política de descontos** (ex.: família 5% + à vista 5%) — o texto sai no PDF do orçamento.
 - **Cobranças diversas** (itens avulsos com nome e valor).
 - **🧩 Produtos:** cadastre segmentos novos (ex.: Conversation Club), níveis (ex.: PRE-A1) e materiais/coleções — eles aparecem na tabela de preços, no cadastro de turmas e nos pedidos de livros.
 - **Multa e juros por atraso** — usados no cálculo das parcelas vencidas.` },

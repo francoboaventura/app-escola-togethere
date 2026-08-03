@@ -361,10 +361,12 @@ VIEWS.configfin=()=>{
           <td><input type="number" id="cf_${k}_material" value="${sg.material!=null?sg.material:''}" min="0" step="0.01" placeholder="${_matN(c.valorMaterial)||'0,00'}" style="min-width:100px"></td>
         </tr>`; }).join('')}
         </tbody></table></div>
-      <div class="row" style="margin-top:10px"><div class="field" style="max-width:220px"><label class="lbl">Hora-aula VIP (R$)</label><input type="number" id="cf_horaVip" value="${c.valorHoraVip!=null?c.valorHoraVip:''}" min="0" step="0.01" placeholder="0,00"></div>
+      <div class="row" style="margin-top:10px;flex-wrap:wrap"><div class="field" style="max-width:220px"><label class="lbl">Hora-aula VIP (renovação, R$)</label><input type="number" id="cf_horaVip" value="${c.valorHoraVip!=null?c.valorHoraVip:''}" min="0" step="0.01" placeholder="0,00" title="Valor da hora para renovação de pacote"></div>
+        <div class="field" style="max-width:220px"><label class="lbl">Hora-aula VIP (aluno novo, R$)</label><input type="number" id="cf_horaVipNovo" value="${c.valorHoraVipNovo!=null?c.valorHoraVipNovo:''}" min="0" step="0.01" placeholder="0,00" title="Valor da hora no primeiro pacote de um aluno novo"></div>
         <div class="field" style="max-width:220px"><label class="lbl">👥 Hora-aula VIP em dupla (R$)</label><input type="number" id="cf_horaVipDupla" value="${c.valorHoraVipDupla!=null?c.valorHoraVipDupla:''}" min="0" step="0.01" placeholder="0,00" title="Valor por aluno quando a aula é em dupla"></div></div>
       <p class="hint" style="margin:4px 0 0">Dupla: valor <b>por aluno</b>. Marque "👥 aula em dupla" na ficha do VIP para o app usar este valor.</p>
       <p class="hint" style="margin:4px 0 10px">Mensalidade sugerida = valor anual do segmento ÷ nº de parcelas. Campo vazio usa o valor geral antigo (se houver).</p>
+      <div class="field" style="margin:0 0 10px"><label class="lbl">Política de descontos (sai no orçamento)</label><input type="text" id="cf_descontos" value="${escAttr(c.descontosTxt||'')}" placeholder="Ex: família 5% + à vista 5%, acumuláveis"></div>
       <div style="border-top:1px solid var(--linha);padding-top:10px"><b style="font-size:.92rem">Cobranças diversas</b>
         ${linhasDiv||'<p class="hint" style="margin:6px 0 0">Nenhuma. Ex.: taxa de prova, 2ª via de material, evento…</p>'}
         <div class="row" style="margin-top:8px;align-items:flex-end"><div class="field" style="flex:2;margin:0"><label class="lbl">Nome</label><input type="text" id="cf_divNome" placeholder="Ex: Taxa de prova Cambridge"></div>
@@ -406,7 +408,8 @@ function salvarTabelaPrecos(){
   const seg={};
   segmentosFin().forEach(([k])=>{ const o={}; const t=g('cf_'+k+'_taxa'), a=g('cf_'+k+'_anual'), m=g('cf_'+k+'_material');
     if(t!=null)o.taxa=t; if(a!=null)o.anual=a; if(m!=null)o.material=m; if(Object.keys(o).length)seg[k]=o; });
-  _cfgFinSet({ seg, valorHoraVip:g('cf_horaVip')||0, valorHoraVipDupla:g('cf_horaVipDupla')||0 });
+  const dtx=(document.getElementById('cf_descontos')||{value:''}).value.trim();
+  _cfgFinSet({ seg, valorHoraVip:g('cf_horaVip')||0, valorHoraVipNovo:g('cf_horaVipNovo')||0, valorHoraVipDupla:g('cf_horaVipDupla')||0, descontosTxt:dtx });
   toast('Tabela de preços salva ✓ (por segmento)');
 }
 function salvarMultaJuros(){

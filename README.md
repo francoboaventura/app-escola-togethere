@@ -10,7 +10,7 @@ IA, **matrículas e financeiro**, **livros sob demanda**, **permissões configur
 celular/tablet/computador) publicado como um único `index.html`, mas **desenvolvido em módulos**
 (pasta `src/`) com build automático.
 
-> **Versão atual: `2026.08.03 · b158 (Supabase)`.**
+> **Versão atual: `2026.08.03 · b159 (Supabase)`.**
 > O app roda sobre **PostgreSQL no Supabase** (migração do Google Sheets em 25/07).
 > Confira a versão em uso no **rodapé** do app — ele avisa sozinho quando há atualização.
 
@@ -88,15 +88,18 @@ obrigatória no 1º acesso.
   confirma; cria aluno, matrícula ativa, plano financeiro e pedido do livro numa sequência só),
   **orçamentos** exportáveis em PDF (atalho de venda), conversão
   em matrícula, **✖ não fechou** (registra o motivo da venda perdida, com reabrir) e exclusão
-  de orçamentos; contrato-modelo que puxa os dados (texto oficial entra depois).
+  de orçamentos; **📄 contrato oficial** com o texto jurídico completo da escola, preenchido
+  automaticamente (partes, quadro, parcelas do plano, portal do aluno) em até 4 páginas —
+  há também o contrato de **aulas particulares (VIP)**, gerado na ficha do aluno VIP.
 - **💰 Financeiro** (direção) — plano por matrícula: mensalidade, parcelas, descontos em % e
   R$, carnê com recebimento manual e **🖨️ recibo em PDF por parcela/extra pago**,
   **negociação com senha da direção**, cobranças extras,
   multa/juros por atraso. Boleto e cartão por enquanto **simulados** (APIs depois).
 - **⚙️ Config. financeira** (direção) — tabela de preços **por segmento** (Kids, Junior,
-  Teens, Adults, Talking **+ segmentos cadastráveis**), hora-aula VIP (individual e dupla),
-  cobranças diversas, multa e juros, e **🧩 Produtos** (cadastrar segmentos, níveis CEFR e
-  materiais novos — alimentam turmas, preços e livros).
+  Teens, Adults, Talking **+ segmentos cadastráveis**), hora-aula VIP (renovação, **aluno
+  novo** e dupla), **política de descontos** (sai no orçamento), cobranças diversas, multa e
+  juros, e **🧩 Produtos** (cadastrar segmentos, níveis CEFR e materiais novos — alimentam
+  turmas, preços e livros). A tabela 2025 oficial já está carregada.
 - **🔐 Permissões** (direção) — liga/desliga ações da secretaria e dos professores.
 - **🎯 Tarefas internas** — matriz de Eisenhower da equipe com **Standby** no lugar de
   "delegar": Fazer agora / Agendar / Standby / Eliminar, com responsável e prazo.
@@ -214,11 +217,16 @@ matrículas + financeiro separados (orçamentos, contrato-modelo, negociação c
 por segmento, multa/juros) · permissões configuráveis · livros sob demanda (pedido → recebido →
 entregue) com cobrança do material.
 
+**Concluído em 03/08 (b159):** contratos **oficiais** no app — turmas e VIP — com o texto
+jurídico exato fornecido pela direção, quadro preenchido automaticamente e limite de 4 páginas;
+campos de endereço/fim de período/modalidade na matrícula; tabela de preços 2025 carregada
+(mensalidades por segmento, hora VIP renovação/aluno novo/dupla, Material VIP, Talking,
+descontos família+à vista).
+
 **Próximos passos previstos:**
-1. Texto **oficial do contrato** (o modelo já puxa os dados).
-2. **APIs de boleto e cartão** (hoje simulados).
-3. Alerta de faltas calculado no servidor.
-4. Recuperação de senha no próprio app.
-5. Multi-unidade (franquia).
+1. **APIs de boleto e cartão** (hoje simulados).
+2. Alerta de faltas calculado no servidor.
+3. Recuperação de senha no próprio app.
+4. Multi-unidade (franquia).
 
 > Contexto técnico e histórico ficam registrados no Projeto Claude (docs `claude/togethere-*`).
