@@ -679,10 +679,10 @@ function renderFichaVip(v, vip){
   h+=coms.length?'<div class="card" style="padding:10px 12px">'+coms.map(c=>`<div class="hint" style="border-top:1px solid var(--linha);padding:6px 0"><b>${brDate(c.data)}</b> (${escAttr(c.autor||'—')}): ${escAttr(c.texto||'')}</div>`).join('')+'</div>':'<p class="hint">Nenhum.</p>';
   h+=`<div class="card" style="margin-top:8px"><div class="field" style="margin:0"><label class="lbl">Adicionar comentário</label><textarea id="vfCom" style="min-height:70px" placeholder="Observação sobre o aluno (visível na ficha e no relatório)"></textarea></div>
     <button class="btn ghost sm" style="margin-top:8px" onclick="addComentarioVip('${vip.id}')">+ Comentário</button></div>`;
-  h+=`<div class="card" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
-    ${podeEd?`<button class="btn" id="vfEnviar" onclick="enviarFichaVipResponsavel('${vip.id}')">✉️ Enviar ao responsável</button>`:''}
-    <button class="btn ghost" onclick="copiarFichaVip('${vip.id}')">📋 Copiar (WhatsApp)</button>
-    <button class="btn ghost" onclick="imprimirFichaVip('${vip.id}')">🖨️ Imprimir / PDF</button>
+  h+=`<div class="fx-acoes">
+    ${podeEd?_fxAcao('var(--azul)','vfEnviar',`enviarFichaVipResponsavel('${vip.id}')`,'✉️','Enviar ao responsável','manda a ficha por e-mail'):''}
+    ${_fxAcao('#0A7A3D','',`copiarFichaVip('${vip.id}')`,'📋','Copiar','texto pronto pro WhatsApp')}
+    ${_fxAcao('#B8860B','',`imprimirFichaVip('${vip.id}')`,'🖨️','Imprimir / PDF','versão para arquivo')}
   </div>`;
   v.innerHTML=h;
 }
@@ -839,12 +839,12 @@ VIEWS.ficha=()=>{
   const multi=turmas.length>1;
   // abas
   const ABAS=[
-    {id:'aulas', label:'Aulas', n:aulasDet.length},
-    {id:'testes', label:'Testes', n:tst.length},
-    {id:'writings', label:'Writings', n:wrs.length},
-    {id:'temas', label:'Temas', n:temas.length},
-    {id:'material', label:'Material', n:mat.length},
-    {id:'comentarios', label:'Comentários', n:coms.length},
+    {id:'aulas', label:'Aulas', em:'📅', n:aulasDet.length},
+    {id:'testes', label:'Testes', em:'✏️', n:tst.length},
+    {id:'writings', label:'Writings', em:'✍️', n:wrs.length},
+    {id:'temas', label:'Temas', em:'📚', n:temas.length},
+    {id:'material', label:'Material', em:'🎒', n:mat.length},
+    {id:'comentarios', label:'Comentários', em:'💬', n:coms.length},
   ];
   if(!ABAS.some(x=>x.id===_fichaAba)) _fichaAba='aulas';
   const pane = _fichaAba==='aulas'?_fxAulas(aulasDet,multi)
@@ -895,16 +895,20 @@ VIEWS.ficha=()=>{
   ${_cardAcessoPortal(a.id)}
   ${(typeof _cardLivrosAluno==='function')?_cardLivrosAluno(a.id,false):''}
   ${_cardContratos(a.id)}
-  <div class="fx-tabs">${ABAS.map(x=>`<button class="fx-tab${x.id===_fichaAba?' on':''}" onclick="fichaAba('${x.id}')">${x.label}${x.n!=null?` <span class="n">${x.n}</span>`:''}</button>`).join('')}</div>
+  <div class="fx-tabs">${ABAS.map(x=>`<button class="fx-tab${x.id===_fichaAba?' on':''}" onclick="fichaAba('${x.id}')"><span class="fem">${x.em}</span>${x.label}${x.n!=null?`<span class="n">${x.n}</span>`:''}</button>`).join('')}</div>
   <div>${pane}</div>
-  <div class="card" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
-    ${podeEnviar?`<button class="btn" id="fcEnviar" onclick="enviarFichaResponsavel()">✉️ Enviar ao responsável</button>`:''}
-    <button class="btn ghost" onclick="abrirBoletimDoAluno('${a.id}')">📊 Gerar boletim</button>
-    <button class="btn ghost" onclick="copiarFicha()">📋 Copiar (WhatsApp)</button>
-    <button class="btn ghost" onclick="imprimirFicha()">🖨️ Imprimir / PDF</button>
+  <div class="fx-acoes">
+    ${podeEnviar?_fxAcao('var(--azul)','fcEnviar','enviarFichaResponsavel()','✉️','Enviar ao responsável','manda a ficha por e-mail'):''}
+    ${_fxAcao('#6C4BD8','',`abrirBoletimDoAluno('${a.id}')`,'📊','Gerar boletim','notas do período · PDF')}
+    ${_fxAcao('#0A7A3D','','copiarFicha()','📋','Copiar','texto pronto pro WhatsApp')}
+    ${_fxAcao('#B8860B','','imprimirFicha()','🖨️','Imprimir / PDF','versão para arquivo')}
   </div>`;
   v.innerHTML=h;
 };
+// quadradinho de ação da ficha (b165) — mesmo padrão das ações da turma
+function _fxAcao(cor,id,js,em,lbl,hint){
+  return `<button class="fx-acao" style="--c:${cor}"${id?` id="${id}"`:''} onclick="${js}"><span class="aem">${em}</span><span class="alb">${lbl}</span><span class="ahint">${hint}</span></button>`;
+}
 let _fichaAba='aulas';
 function fichaAba(k){ _fichaAba=k; VIEWS.ficha(); }
 function _fichaAulasDet(alunoId, tids, de, ate){

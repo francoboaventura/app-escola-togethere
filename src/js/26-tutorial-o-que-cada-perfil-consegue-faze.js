@@ -140,12 +140,12 @@ A metodologia Togethere sempre à mão, para consulta e treinamento.
     resumo:'Tudo do aluno numa tela: aulas, notas, temas, livros e comentários.',
     passos:`## O que tem nela
 - **Topo**: foto, turma, idade, e-mail do responsável e os tiles Presenças/Faltas/Temas/Material.
-- **Abas**: Aulas (cada aula expansível), Testes (médias com barras), Writings (relatório completo), Temas, Material e Comentários.
+- **Seções em quadradinhos**: Aulas (cada aula expansível), Testes (médias com barras), Writings (relatório completo), Temas, Material e Comentários — cada quadradinho mostra quantos registros tem; toque para abrir.
 - **📚 Livros**: o estágio do material do aluno (pedir → chegou → entregue).
 - Para **alunos VIP**, a ficha ainda traz 🎥 Aula online, ⏱️ Pacote de horas, 🕒 Horários, remanejamentos e pausas.
 ## Ações
 - **Comentários**: registre observações individuais (aparecem no portal da família).
-- **Gerar boletim**, **enviar a ficha por e-mail**, imprimir e copiar.
+- No rodapé, em quadradinhos: **enviar a ficha ao responsável**, **gerar boletim**, **copiar** (WhatsApp) e **imprimir/PDF**. Na ficha do aluno VIP é igual (enviar, copiar, imprimir).
 - Período ajustável (mês, ano, tudo) para os números.
 ## Dica
 Chega nela voando: 🔎 **Buscar** pelo nome do aluno, de qualquer tela.` },

@@ -10,7 +10,7 @@ IA, **matrículas e financeiro**, **livros sob demanda**, **permissões configur
 celular/tablet/computador) publicado como um único `index.html`, mas **desenvolvido em módulos**
 (pasta `src/`) com build automático.
 
-> **Versão atual: `2026.08.04 · b164 (Supabase)`.**
+> **Versão atual: `2026.08.04 · b165 (Supabase)`.**
 > O app roda sobre **PostgreSQL no Supabase** (migração do Google Sheets em 25/07).
 > Confira a versão em uso no **rodapé** do app — ele avisa sozinho quando há atualização.
 
@@ -240,7 +240,10 @@ nascimento moram na ficha do aluno).
 **Concluído em 04/08 (b164):** redesenho dos menus — no lugar de listas de linhas, **quadradinhos**
 no estilo dos cards de "próximas aulas": ações do ambiente da turma, menus suspensos do topo
 (computador), menu **☰ Mais** do celular e as seções do **Portal do Aluno** (com ícone e contador).
-Funciona igual no modo escuro.
+Funciona igual no modo escuro. Em seguida (b165) o mesmo conceito chegou à **ficha do aluno**:
+as seções (Aulas, Testes, Writings, Temas, Material, Comentários) viram quadradinhos com ícone e
+contador — no celular as seis cabem na tela, sem arrastar — e as ações do rodapé (enviar ao
+responsável, boletim, copiar, imprimir) também, valendo igual para a ficha do aluno VIP.
 
 **Próximos passos previstos:**
 1. **APIs de boleto e cartão** (hoje simulados).

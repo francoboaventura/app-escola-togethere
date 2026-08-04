@@ -291,11 +291,24 @@ tr:last-child td{border-bottom:none}
 .fx-tile{background:#fff;border:1px solid var(--linha);border-radius:16px;padding:14px 8px;text-align:center}
 .fx-tile .v{font-size:1.55rem;font-weight:800;line-height:1}
 .fx-tile .l{font-size:.64rem;text-transform:uppercase;letter-spacing:.03em;color:#5b6b7c;margin-top:5px}
-.fx-tabs{display:flex;gap:7px;margin:16px 0 6px;overflow-x:auto;padding-bottom:4px}
-.fx-tabs::-webkit-scrollbar{display:none}
-.fx-tab{flex:0 0 auto;white-space:nowrap;padding:8px 14px;border-radius:999px;font-weight:600;font-size:.9rem;color:#5b6b7c;background:#e6edf6;border:0;cursor:pointer}
-.fx-tab.on{background:var(--azul);color:#fff}
-.fx-tab .n{opacity:.7;font-weight:700}
+.fx-tabs{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin:18px 0 10px}
+.fx-tab{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;white-space:normal;line-height:1.15;
+  padding:14px 6px 12px;border-radius:14px;font-weight:600;font-size:.85rem;color:var(--tinta);background:#fff;
+  border:1px solid var(--linha);box-shadow:var(--sombra-sm);cursor:pointer;transition:.14s}
+.fx-tab:hover{transform:translateY(-2px);border-color:var(--azul)}
+.fx-tab.on{background:var(--azul);color:#fff;border-color:var(--azul)}
+.fx-tab .fem{font-size:1.5rem;line-height:1}
+.fx-tab .n{display:block;font-weight:700;opacity:.65;font-size:.95rem}
+/* ações da ficha (rodapé) — mesmo quadradinho das ações da turma */
+.fx-acoes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:16px}
+.fx-acao{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;background:#fff;
+  border:1px solid var(--linha);border-top:3px solid var(--c,var(--azul));border-radius:14px;padding:16px 10px 14px;
+  text-align:center;cursor:pointer;font:inherit;color:var(--tinta);box-shadow:var(--sombra-sm);transition:.14s}
+.fx-acao:hover{transform:translateY(-2px);border-color:var(--azul)}
+.fx-acao:disabled{opacity:.55;cursor:default;transform:none}
+.fx-acao .aem{font-size:1.8rem;line-height:1}
+.fx-acao .alb{font-family:'Poppins';font-weight:600;font-size:.92rem}
+.fx-acao .ahint{font-size:.7rem;color:var(--tinta-suave);line-height:1.3}
 .fx-ar{overflow:hidden}
 .fx-ar-h{width:100%;display:flex;align-items:center;gap:8px;padding:13px 15px;background:#fff;border:0;cursor:pointer;font:inherit;text-align:left;flex-wrap:wrap}
 .fx-ar-d{font-weight:700;min-width:74px}
@@ -365,7 +378,9 @@ button:disabled,.btn:disabled,button[disabled],.btn[disabled]{
   .btn:not(.sm){min-height:44px}
   .nav button{min-height:44px}
   .perfil-btn{min-height:54px}
-  .fx-tab{min-height:40px}
+  .fx-tabs{grid-template-columns:repeat(3,1fr)}
+  .fx-tab{font-size:.78rem;padding:12px 4px 10px}
+  .fx-acoes{grid-template-columns:repeat(2,1fr)}
 }
 
 /* Pequenos polimentos: seleção de texto na cor da marca e rolagem discreta */
@@ -578,7 +593,7 @@ body[data-tema="verde"]{ --azul:#0E8A63; --marinho:#06503a; --az-hover:#0c7454; 
 body.dark .box-suave{background:#1b2740}
 body.dark .box-amarela{background:#2a2513}
 body.dark .perfil-btn{background:#1b2740;border-color:var(--linha)}
-body.dark .fx-tab{background:#1b2740;color:var(--tinta)}
+body.dark .fx-tab,body.dark .fx-acao{background:#1b2740;color:var(--tinta)}
 body.dark input:focus,body.dark select:focus,body.dark textarea:focus{box-shadow:0 0 0 3px rgba(120,160,255,.25)}
 
 
