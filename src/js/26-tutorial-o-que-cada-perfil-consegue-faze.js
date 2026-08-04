@@ -192,6 +192,7 @@ Alunos de aulas particulares, fora das turmas regulares.
 - **Cancelou com menos de 12h e você foi liberado?** Não registre nada — a **secretaria** registra o cancelamento.
 ## Secretaria e direção
 - Controlam o **pacote de horas** (contratadas × utilizadas) na ficha do aluno — o aluno **não** vê isso.
+- **Nome do aluno VIP**: secretaria e direção editam direto na ficha, no card de contato (o professor não edita).
 - **👥 Aula em dupla:** marque na ficha do VIP; o app passa a usar a hora-aula de dupla da tabela (valor por aluno) e mostra o valor estimado do pacote.
 - **🕒 Horários:** cada linha é um dia com a SUA hora **e duração** (mínimo 30min) — use **＋ Adicionar horário** para mais dias; o alerta segue cada horário e o lançamento de aula já vem com a hora e a duração daquele dia. **Só secretaria/direção alteram** os horários previstos e os remanejamentos; o professor consulta.
 - **⏸️ Pausa:** período sem alertas (férias/recesso do aluno).

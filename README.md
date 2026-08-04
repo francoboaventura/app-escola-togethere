@@ -10,7 +10,7 @@ IA, **matrículas e financeiro**, **livros sob demanda**, **permissões configur
 celular/tablet/computador) publicado como um único `index.html`, mas **desenvolvido em módulos**
 (pasta `src/`) com build automático.
 
-> **Versão atual: `2026.08.04 · b166 (Supabase)`.**
+> **Versão atual: `2026.08.04 · b167 (Supabase)`.**
 > O app roda sobre **PostgreSQL no Supabase** (migração do Google Sheets em 25/07).
 > Confira a versão em uso no **rodapé** do app — ele avisa sozinho quando há atualização.
 
@@ -248,6 +248,13 @@ E no **b166** os menus suspensos do topo deram lugar a um único botão **☰ Me
 painel de quadradinhos com tudo o que aquele perfil acessa — o mesmo menu aparece no **Painel**,
 logo abaixo das próximas aulas. Cada perfil vê só os seus itens. Os cards de **próximas aulas**
 passaram a abrir o **ambiente completo da turma** (antes abriam só a chamada).
+
+**Concluído em 04/08 (b167):** campos de **data e hora** deixaram de fechar no meio da digitação —
+o navegador dispara um evento a cada estado válido (ano 0002 → 0020 → 2026; hora 18:01 antes de
+18:15) e o app re-renderizava a tela em cima disso; agora valores incompletos são ignorados e
+qualquer atualização de tela espera você sair do campo. **Nome do aluno VIP** passou a ser
+editável pela secretaria e pela direção, na ficha. O conjunto de testes automáticos virou parte
+do repositório (`node scripts/testes/app.test.cjs`, 33 verificações).
 
 **Próximos passos previstos:**
 1. **APIs de boleto e cartão** (hoje simulados).

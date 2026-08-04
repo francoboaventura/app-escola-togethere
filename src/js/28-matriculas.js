@@ -104,7 +104,7 @@ function abrirMatricula(id){
     <div style="font-weight:700;color:#0A7A3D;margin:10px 0 4px">👦 Aluno</div>
     <div class="field"><label class="lbl">Vincular a um aluno já cadastrado</label><select id="mat_alunoId" onchange="_matAlunoSel()">${optA}</select></div>
     <div class="field" id="mat_nomeWrap" style="display:${m.alunoId?'none':'block'}"><label class="lbl">Nome do aluno (novo)</label><input type="text" id="mat_alunoNome" value="${escAttr(m.alunoNome||'')}" placeholder="Nome completo"></div>
-    <div class="row"><div class="field"><label class="lbl">Nascimento</label><input type="date" id="mat_nascimento" value="${escAttr(m.nascimento||'')}"></div>
+    <div class="row"><div class="field"><label class="lbl">Nascimento</label><input type="date" min="1900-01-01" max="${hoje()}" id="mat_nascimento" value="${escAttr(m.nascimento||'')}"></div>
       <div class="field"><label class="lbl">Documento do aluno</label><input type="text" id="mat_docAluno" value="${escAttr(m.docAluno||'')}" placeholder="CPF / RG (opcional)"></div></div>
 
     <div style="font-weight:700;color:#0A7A3D;margin:12px 0 4px">👪 Responsável</div>

@@ -312,7 +312,7 @@ VIEWS.perfil=()=>{
           <input type="text" id="pfTel" value="${escAttr(u.telefone||'')}" placeholder="(51) 9 9999-9999"></div>
       </div>
       <div class="field" style="max-width:220px"><label class="lbl">Data de nascimento</label>
-        <input type="date" id="pfNasc" value="${escAttr(u.nascimento||'')}"></div>
+        <input type="date" min="1900-01-01" max="${hoje()}" id="pfNasc" value="${escAttr(u.nascimento||'')}"></div>
       <button class="btn" onclick="salvarPerfil()">💾 Salvar</button>
     </div>`;
 };

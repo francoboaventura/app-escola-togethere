@@ -226,6 +226,41 @@ function _fecharMenus(){
   const a=document.getElementById('app'); if(a) a.classList.remove('menu-open');
 }
 document.addEventListener('click',()=>_fecharMenus());
+
+/* =====================================================================
+   b167 — CAMPOS DE DATA E HORA que não fecham no meio da digitação
+   O navegador dispara "change" a cada estado válido enquanto se digita
+   (ex.: ano 0002 → 0020 → 0202 → 2026; hora 18:01 antes de 18:15). Como
+   vários campos re-renderizam a tela no change, o campo era destruído no
+   meio da digitação. Aqui: (1) engolimos os "change" de valor implausível
+   e (2) adiamos qualquer re-render para quando o campo perder o foco.
+   ===================================================================== */
+function _ehCampoDataHora(el){ return !!el && el.tagName==='INPUT' && /^(date|time|month|datetime-local|week)$/.test(el.type||''); }
+function _dataHoraPlausivel(el){
+  const v=el.value||'';
+  if(!v) return true;                                    // limpar o campo é válido
+  const m=v.match(/^(\d{4})-/);                           // date, month, datetime-local
+  if(m){ const ano=+m[1]; return ano>=1900 && ano<=2200; }
+  return true;                                            // time/week: sem ano para conferir
+}
+// roda ANTES do onchange do próprio campo (fase de captura) e barra o que ainda está incompleto
+document.addEventListener('change', e=>{
+  const el=e.target;
+  if(_ehCampoDataHora(el) && !_dataHoraPlausivel(el)) e.stopImmediatePropagation();
+}, true);
+// Executa fn agora, ou só quando o campo de data/hora em foco for deixado.
+function _reRenderApos(fn){
+  const el=document.activeElement;
+  if(_ehCampoDataHora(el)){
+    el.__pend=fn;                                         // guarda só o último pedido
+    if(!el.__pendLig){
+      el.__pendLig=true;
+      el.addEventListener('blur',()=>{ el.__pendLig=false; const f=el.__pend; el.__pend=null; if(f) f(); },{once:true});
+    }
+    return;
+  }
+  fn();
+}
 function ir(id){
   rota=id; const n=NAV.find(x=>x.id===id);
   document.getElementById('pageTitle').textContent=n.label;

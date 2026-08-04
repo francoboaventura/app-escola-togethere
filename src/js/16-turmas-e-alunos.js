@@ -195,7 +195,7 @@ function fichaSetCampoAluno(id,campo,val){
   if(campo==='nome' && !val){ toast('O nome não pode ficar vazio'); return VIEWS.ficha(); }
   a[campo]=val; a.atualizadoEm=Date.now();
   save();
-  if(campo==='nome' || campo==='nascimento'){ montarNav(); VIEWS.ficha(); }   // atualiza nome/idade no topo
+  if(campo==='nome' || campo==='nascimento'){ montarNav(); _reRenderApos(()=>VIEWS.ficha()); }   // atualiza nome/idade no topo (espera sair do campo)
   else toast('Dados atualizados');
 }
 // Registra no histórico que um relatório por aluno (ficha) foi enviado.
@@ -464,7 +464,7 @@ function novoVipHorario(id, campo, val){   // 1ª linha (quando ainda não há n
   if(ehProfessor()) return toast('Horários previstos são definidos pela secretaria');
   const vp=(S.vipAlunos||[]).find(x=>x.id===id); if(!vp) return;
   const h={dia:1, hora:''}; if(campo==='dia') h.dia=+val; else h.hora=val||'';
-  _vipGravarHorarios(vp, [h]); VIEWS.ficha(); toast('Horário criado');
+  _vipGravarHorarios(vp, [h]); _reRenderApos(()=>{ VIEWS.ficha(); toast('Horário criado'); });
 }
 function setVipHorarioLinha(id, i, campo, val){
   if(ehProfessor()) return toast('Horários previstos são definidos pela secretaria');
@@ -473,7 +473,7 @@ function setVipHorarioLinha(id, i, campo, val){
   if(campo==='dia') hs[i]=Object.assign({},hs[i],{dia:+val});
   else if(campo==='dur') hs[i]=Object.assign({},hs[i],{dur:Math.max(30,Math.round(+val||60))});
   else hs[i]=Object.assign({},hs[i],{hora:val||''});
-  _vipGravarHorarios(vp, hs); VIEWS.ficha(); toast('Horários atualizados');
+  _vipGravarHorarios(vp, hs); _reRenderApos(()=>{ VIEWS.ficha(); toast('Horários atualizados'); });
 }
 function delVipHorario(id, i){
   if(ehProfessor()) return toast('Horários previstos são definidos pela secretaria');
@@ -639,10 +639,13 @@ function renderFichaVip(v, vip){
   if(!ehProfessor()){
   h+=`<div class="card" style="margin-top:12px"><h3 style="margin:0 0 8px">Contato${VIP_PORTAL_ATIVO?' & portal':''}</h3>`;
   if(podeEd){
-    h+=`<div class="row" style="flex-wrap:wrap">
+    h+=`<div class="row" style="flex-wrap:wrap;margin-bottom:10px">
+      <div class="field" style="flex:2;min-width:210px;margin:0"><label class="lbl">Nome completo</label><input type="text" value="${escAttr(vip.nome||'')}" onchange="setVipCampo('${vip.id}','nome',this.value)"></div>
+    </div>
+    <div class="row" style="flex-wrap:wrap">
       <div class="field" style="flex:2;min-width:210px;margin:0"><label class="lbl">E-mail (responsável / aluno)</label><input type="email" value="${escAttr(vip.email||'')}" placeholder="email@exemplo.com" onchange="setVipCampo('${vip.id}','email',this.value)"></div>
       <div class="field" style="flex:1;min-width:150px;margin:0"><label class="lbl">Telefone / WhatsApp</label><input type="text" value="${escAttr(vip.telefone||'')}" placeholder="(51) 9…" onchange="setVipCampo('${vip.id}','telefone',this.value)"></div>
-      <div class="field" style="min-width:150px;margin:0"><label class="lbl">Nascimento</label><input type="date" value="${escAttr(vip.nascimento||'')}" onchange="setVipCampo('${vip.id}','nascimento',this.value)"></div>
+      <div class="field" style="min-width:150px;margin:0"><label class="lbl">Nascimento</label><input type="date" min="1900-01-01" max="${hoje()}" value="${escAttr(vip.nascimento||'')}" onchange="setVipCampo('${vip.id}','nascimento',this.value)"></div>
     </div>`;
   } else {
     h+=`<p class="hint" style="margin:0">${vip.email?('📧 '+escAttr(vip.email)):'Sem e-mail cadastrado'}${vip.telefone?(' · 📱 '+escAttr(vip.telefone)):''}${idade!=null?(' · 🎂 '+idade+' anos'):''}</p>`;
@@ -689,8 +692,15 @@ function renderFichaVip(v, vip){
 function setVipCampo(id,campo,val){
   if(!podeCadastro()) return toast('Sem permissão para editar dados');
   const vp=(S.vipAlunos||[]).find(x=>x.id===id); if(!vp) return;
-  vp[campo]=(val||'').trim(); vp.atualizadoEm=Date.now(); save();
-  if(campo==='nascimento') VIEWS.ficha(); else toast('Atualizado');
+  val=(val||'').trim();
+  if(campo==='nome'){
+    val=(typeof _semTags==='function')?_semTags(val):val.replace(/[<>]/g,'');
+    if(!val){ toast('O nome não pode ficar vazio'); return VIEWS.ficha(); }
+    if(val===vp.nome) return;
+  }
+  vp[campo]=val; vp.atualizadoEm=Date.now(); save();
+  if(campo==='nome'){ if(typeof montarNav==='function') montarNav(); _reRenderApos(()=>{ VIEWS.ficha(); toast('Nome atualizado'); }); return; }
+  if(campo==='nascimento') _reRenderApos(()=>VIEWS.ficha()); else toast('Atualizado');
 }
 function addComentarioVip(id){
   const el=document.getElementById('vfCom'); const txt=((el&&el.value)||'').trim();
@@ -876,7 +886,7 @@ VIEWS.ficha=()=>{
     ${podeEnviar?`
       <div class="row" style="flex-wrap:wrap">
         <div class="field" style="flex:2;min-width:200px;margin:0"><label class="lbl">Nome completo</label><input type="text" value="${escAttr(a.nome||'')}" onchange="fichaSetCampoAluno('${a.id}','nome',this.value)"></div>
-        <div class="field" style="min-width:150px;margin:0"><label class="lbl">🎂 Nascimento</label><input type="date" value="${escAttr(a.nascimento||'')}" onchange="fichaSetCampoAluno('${a.id}','nascimento',this.value)"></div>
+        <div class="field" style="min-width:150px;margin:0"><label class="lbl">🎂 Nascimento</label><input type="date" min="1900-01-01" max="${hoje()}" value="${escAttr(a.nascimento||'')}" onchange="fichaSetCampoAluno('${a.id}','nascimento',this.value)"></div>
       </div>
       <div class="row" style="flex-wrap:wrap;margin-top:10px">
         <div class="field" style="flex:1;min-width:170px;margin:0"><label class="lbl">📱 Telefone / WhatsApp</label><input type="text" value="${escAttr(a.telefone||'')}" placeholder="(51) 9…" onchange="fichaSetCampoAluno('${a.id}','telefone',this.value)"></div>
