@@ -30,11 +30,12 @@
   .tile .v{ font-size:1.6rem; font-weight:800; line-height:1; } .tile .l{ font-size:.66rem; text-transform:uppercase; letter-spacing:.03em; color:var(--fraco); margin-top:5px; }
   @media(max-width:520px){ .tiles{ grid-template-columns:repeat(4,1fr); } .tile .v{ font-size:1.3rem; } }
   .toolbar{ display:flex; justify-content:flex-end; margin-top:10px; }
-  .tabs{ display:flex; gap:7px; margin:16px 0 6px; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; }
-  .tabs::-webkit-scrollbar{ display:none; }
-  .tab{ flex:0 0 auto; white-space:nowrap; padding:8px 14px; border-radius:999px; font-weight:600; font-size:.9rem; color:var(--fraco); background:#e6edf6; border:0; cursor:pointer; }
-  .tab.on{ background:var(--azul); color:#fff; }
+  .tabs{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin:16px 0 8px; }
+  .tab{ display:flex; flex-direction:column; align-items:center; justify-content:center; gap:7px; padding:15px 6px 13px; border-radius:16px; font-weight:700; font-size:.88rem; color:var(--tinta); background:#fff; border:1px solid var(--linha); cursor:pointer; box-shadow:0 2px 8px rgba(0,40,90,.05); line-height:1.15; }
+  .tab.on{ background:var(--azul); color:#fff; border-color:var(--azul); }
+  .tab .tem{ font-size:1.55rem; line-height:1; }
   .tab .n{ opacity:.7; font-weight:700; }
+  @media(max-width:400px){ .tab{ font-size:.8rem; } }
   .pane .card{ margin-top:12px; }
   /* aula row */
   .ar{ overflow:hidden; }

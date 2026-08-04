@@ -200,12 +200,12 @@ function renderPacote(isVip, pac){
 
 /* ---- painel principal ---- */
 const ABAS=[
-  {id:'aulas', label:'Aulas'},
-  {id:'writings', label:'Writings'},
-  {id:'testes', label:'Testes'},
-  {id:'temas', label:'Temas'},
-  {id:'comentarios', label:'Comentários'},
-  {id:'boletim', label:'Boletim'},
+  {id:'aulas', label:'Aulas', em:'📅'},
+  {id:'writings', label:'Writings', em:'✍️'},
+  {id:'testes', label:'Testes', em:'✏️'},
+  {id:'temas', label:'Temas', em:'📚'},
+  {id:'comentarios', label:'Comentários', em:'💬'},
+  {id:'boletim', label:'Boletim', em:'🎓'},
 ];
 function renderPainel(data){
   DATA=data;
@@ -250,7 +250,7 @@ function renderPainel(data){
 
   $('tabs').innerHTML=ABAS.map((a,i)=>{
     const badge = a.id==='boletim' ? (bol.liberado?'':' 🔒') : (cnt[a.id]!=null?` <span class="n">${cnt[a.id]}</span>`:'');
-    return `<button class="tab${i===0?' on':''}" data-aba="${a.id}" onclick="mostrarAba('${a.id}')">${a.label}${badge}</button>`;
+    return `<button class="tab${i===0?' on':''}" data-aba="${a.id}" onclick="mostrarAba('${a.id}')">${a.em?`<span class="tem">${a.em}</span>`:''}${a.label}${badge}</button>`;
   }).join('');
   $('tabs').classList.remove('hide');
 

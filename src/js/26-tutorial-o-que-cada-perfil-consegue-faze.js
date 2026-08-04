@@ -240,6 +240,7 @@ Em recesso/férias cadastrados, os alertas de falta/material param sozinhos.` },
 - Professores veem as **suas** turmas; secretaria e direção veem todas.
 - **➕ Nova turma** (secretaria e direção): o card fica no topo da tela — nome, categoria e nível.
 - **Níveis oficiais**: KIDS Pré A1 → A1+ · JUNIOR A1 → A2+ · TEENS/ADULTS A1, A2, B1, B1+, B2, C1 e C1+ (não existe B2+). Precisou de outro? Cadastre em ⚙️ Config. financeira → 🧩 Produtos.
+- Ao abrir uma turma, as ações ficam em **quadradinhos** (chamada, planos, testes, linha do tempo, tema extra, relatórios) — um toque em cada um.
 - Na lista de alunos da turma ficam só o **nome e as ações** — e-mail do responsável e nascimento são editados na 📇 **ficha do aluno**.
 - Para a secretaria, as ações de **sala de aula** (chamada, planos, testes) são somente leitura; o **cadastro** (turmas e alunos) ela edita.` },
   { id:'alunos', em:'🧑‍🎓', titulo:'Alunos', grp:'Gestão', roles:['professor','secretaria','direcao'],
@@ -356,6 +357,7 @@ O centro de administração do app.
     passos:`## O que é
 Uma página separada (portal-aluno) onde o aluno/família entra com o próprio login e vê **as informações dele, ao vivo** — a escola não precisa publicar nada.
 ## O que a família vê
+- No topo, **quadradinhos** para cada seção (Aulas, Writings, Testes, Temas, Comentários e Boletim), cada um com o número de registros.
 - Aulas (com o que foi trabalhado), faltas, temas pendentes, testes, writings com o relatório completo e comentários do professor.
 - O **boletim** aparece com cadeado até a direção **aprovar** — depois, liberado.
 - Botão **Baixar ficha em PDF**.

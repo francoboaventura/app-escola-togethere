@@ -176,7 +176,7 @@ function _montarMais(){
   const itens=NAV.filter(n=>n.menu!==false && n.roles.includes(S.perfil) && _navPermOk(n));
   const grupos=[]; itens.forEach(n=>{ let g=grupos.find(x=>x.grp===n.grp); if(!g){g={grp:n.grp,itens:[]}; grupos.push(g);} g.itens.push(n); });
   let html='<div class="mais-head">Menu <button class="mais-x" onclick="_abrirMais()" aria-label="Fechar">×</button></div>';
-  grupos.forEach(g=>{ html+=`<div class="mais-grp">${g.grp}</div>`+g.itens.map(n=>{const bd=_navBadge(n);return `<button class="mais-i" data-id="${n.id}" onclick="ir('${n.id}')"><span class="em">${n.em}</span> ${n.label}${bd?`<span class="badge">${bd}</span>`:''}</button>`;}).join(''); });
+  grupos.forEach(g=>{ html+=`<div class="mais-grp">${g.grp}</div><div class="mais-grid">`+g.itens.map(n=>{const bd=_navBadge(n);return `<button class="mais-i" data-id="${n.id}" onclick="ir('${n.id}')"><span class="em">${n.em}</span> ${n.label}${bd?`<span class="badge">${bd}</span>`:''}</button>`;}).join('')+`</div>`; });
   m.innerHTML=html;
 }
 function _toggleGrp(wrap){

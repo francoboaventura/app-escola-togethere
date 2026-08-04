@@ -175,7 +175,8 @@ function renderPainelTurma(){
   const ultTxt=ult?`${brDate(ult.data)} — ${Object.values(ult.registros).filter(s=>s==='falta').length} falta(s)`:'nenhuma ainda';
   const alertasN=alertasFaltas().filter(o=>{const a=S.alunos.find(x=>x.id===o.alunoId);return a&&a.turmaId===id;}).length;
   const temasPend=S.temas.filter(x=>x.turmaId===id && Object.values(x.entregas).some(v=>v===false||v==='parcial')).length;
-  const btn=(cor,acao,emoji,titulo,sub)=>`<button class="btn block" style="background:${cor};justify-content:flex-start;text-align:left;margin-bottom:10px;height:auto;padding:14px 16px" onclick="paAcao('${acao}')">${emoji} ${titulo}<span style="display:block;font-weight:400;font-size:.78rem;opacity:.85;margin-top:2px">${sub}</span></button>`;
+  const btn=(cor,acao,emoji,titulo,sub)=>`<button class="ta-tile" style="--c:${cor}" onclick="paAcao('${acao}')"><div class="ta-em">${emoji}</div><div class="ta-lb">${titulo}</div><div class="ta-hint">${sub}</div></button>`;
+  const btnFn=(cor,js,emoji,titulo,sub)=>`<button class="ta-tile" style="--c:${cor}" onclick="${js}"><div class="ta-em">${emoji}</div><div class="ta-lb">${titulo}</div><div class="ta-hint">${sub}</div></button>`;
   const v=document.getElementById('view');
   const podeCadastrar=podeCadastro();
   v.innerHTML=`<button class="btn ghost sm" onclick="voltarTurmas()">‹ Voltar para turmas</button>
@@ -192,13 +193,15 @@ function renderPainelTurma(){
       <p class="hint" style="margin:2px 0 0">Última chamada: ${ultTxt}${prox?` · Próximo plano: <b>${prox.titulo}</b> (${brDate(prox.data)})`:''}</p>
     </div>
     <div class="card"><h3>O que você quer fazer?</h3>${soLeitura()?'<p class="hint" style="margin:-2px 0 8px;color:var(--azul)">👁️ As ações de <b>sala de aula</b> abaixo (chamada, planos, testes, temas) são <b>somente leitura</b> para a secretaria — mas o <b>cadastro de alunos e da turma</b> (mais abaixo) você edita normalmente.</p>':''}
-      ${btn('var(--azul)','presenca','📋','Chamada do dia','presença, atraso, saída antecipada, material e tema de casa — tudo aqui')}
-      ${btn('var(--azul)','planos','🗒️','Planos de aula','ver o plano pendente e marcar como feito; criar novos')}
+      <div class="ta-grid">
+      ${btn('var(--azul)','presenca','📋','Chamada do dia','presença, atraso, material e tema')}
+      ${btn('var(--azul)','planos','🗒️','Planos de aula','ver pendente · marcar feito · criar')}
       ${btn('var(--roxo)','testes','✏️','Testes','lançar as notas da turma')}
-      <button class="btn block" style="background:var(--ok);justify-content:flex-start;text-align:left;margin-bottom:10px;height:auto;padding:14px 16px" onclick="abrirTimelineTurma('${id}')">📅 Linha do tempo do plano<span style="display:block;font-weight:400;font-size:.78rem;opacity:.85;margin-top:2px">onde a turma está no plano do ano · coleção ${planColecaoDe(t)||'a definir'}</span></button>
-      ${soLeitura()?'':`<button class="btn block" style="background:var(--rosa);justify-content:flex-start;text-align:left;margin-bottom:10px;height:auto;padding:14px 16px" onclick="temaExtraTurma('${id}')">📩 Tema extra<span style="display:block;font-weight:400;font-size:.78rem;opacity:.85;margin-top:2px">atribuir um tema de casa à turma toda ou a alunos específicos</span></button>`}
-      ${btn('var(--vermelho)','relatorio','🧾','Relatório do dia','gerar o resumo da aula para enviar às famílias')}
-      <button class="btn block" style="background:#0A7A3D;justify-content:flex-start;text-align:left;margin-bottom:10px;height:auto;padding:14px 16px" onclick="abrirRelatorioMensal('${id}')">📄 Relatório do mês<span style="display:block;font-weight:400;font-size:.78rem;opacity:.85;margin-top:2px">frequência, material, atrasos e temas do mês — abrir/PDF ou planilha (uma turma ou todas)</span></button>
+      ${btnFn('var(--ok)',`abrirTimelineTurma('${id}')`,'📅','Linha do tempo',`onde a turma está · ${planColecaoDe(t)||'coleção a definir'}`)}
+      ${soLeitura()?'':btnFn('var(--rosa)',`temaExtraTurma('${id}')`,'📩','Tema extra','para a turma toda ou alunos')}
+      ${btn('var(--vermelho)','relatorio','🧾','Relatório do dia','resumo da aula para as famílias')}
+      ${btnFn('#0A7A3D',`abrirRelatorioMensal('${id}')`,'📄','Relatório do mês','frequência e temas · PDF/planilha')}
+      </div>
     </div>
     <div class="card"><h3>Alunos (${als.length})</h3>
       ${podeCadastrar?'<p class="hint" style="margin:0 0 8px">E-mail do responsável e nascimento ficam na 📇 ficha do aluno.</p>':''}
