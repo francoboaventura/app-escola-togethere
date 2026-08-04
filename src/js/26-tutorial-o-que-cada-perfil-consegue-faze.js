@@ -188,10 +188,11 @@ Alunos de aulas particulares, fora das turmas regulares.
 - **Você não vê** pacote de horas, totais de horas feitas, contadores no topo da ficha nem cancelamentos registrados pela secretaria — isso é controle interno. Os writings aparecem na seção própria, mais abaixo.
 - **Horários previstos** são definidos pela secretaria (você só consulta). A aula aconteceu em outro horário? Ajuste o campo **"Hora em que aconteceu"** ao lançar — ele já vem preenchido com o previsto do dia.
 - Lança as aulas dadas (data, hora, duração — **mínimo 30 minutos** —, tema, presença).
+- **Errou algo?** Cada aula lançada tem **✏️ editar** e **🗑 excluir** na própria ficha (excluir devolve a hora ao saldo do aluno).
 - **Aluno não compareceu?** Você mesmo registra a falta — a hora é **descontada do pacote** (regra da escola).
 - **Cancelou com menos de 12h e você foi liberado?** Não registre nada — a **secretaria** registra o cancelamento.
 ## Secretaria e direção
-- Controlam o **pacote de horas** (contratadas × utilizadas) na ficha do aluno — o aluno **não** vê isso.
+- Controlam o **pacote de horas** (contratadas × utilizadas) na ficha do aluno — o aluno **não** vê isso. O card fica **recolhido**: toque em "⏱️ Pacote de horas" para abrir. Quando o pacote entra na lista de atenção (saldo baixo/esgotado ou vigência vencendo), aparece um **(!)** vermelho no título.
 - **Nome do aluno VIP**: secretaria e direção editam direto na ficha, no card de contato (o professor não edita).
 - **👥 Aula em dupla:** marque na ficha do VIP; o app passa a usar a hora-aula de dupla da tabela (valor por aluno) e mostra o valor estimado do pacote.
 - **🕒 Horários:** cada linha é um dia com a SUA hora **e duração** (mínimo 30min) — use **＋ Adicionar horário** para mais dias; o alerta segue cada horário e o lançamento de aula já vem com a hora e a duração daquele dia. **Só secretaria/direção alteram** os horários previstos e os remanejamentos; o professor consulta.
@@ -201,6 +202,7 @@ Alunos de aulas particulares, fora das turmas regulares.
 - **📊 Panorama:** escolha o período (este mês, mês passado, este ano) para ver as horas utilizadas no período — contratadas e saldo são sempre do total.
 - **🎥 Aula online:** a **secretaria/direção** mantém o link (Meet/Zoom) na ficha do VIP — para o professor ele aparece em destaque no painel "Sua aula com este aluno".
 - **🚫 Cancelamento em cima da hora (<12h):** registrado pela **secretaria** (botão na ficha do VIP) — a aula fica como não realizada e a hora é **descontada do pacote**. Falta sem aviso ("não compareceu") é registrada pelo professor e também desconta.
+- **Editar aulas já lançadas:** direção edita tudo; o professor edita as aulas dele; a secretaria edita (e desfaz) os **cancelamentos** que ela registra.
 - **🔗 Links úteis:** espaço para o professor guardar os links daquele aluno (jogos, playlists, PDFs) na mesma seção.
 - **📄 Contrato oficial (só direção):** na ficha do VIP, preencha os dados do contratante uma vez e gere o contrato de aulas particulares com o texto oficial da escola — quadro com horas, período e parcelas, pronto para assinar.
 ## Alertas

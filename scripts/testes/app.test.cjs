@@ -154,6 +154,81 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
   });
   Object.assign(r,reg2);
 
+
+  // ===== 7) b168: editar/excluir aula VIP + pacote recolhível =====
+  const t8=await page.evaluate(async()=>{
+    const o={};
+    S.vipAlunos=[{id:'v1',nome:'Carlos Lima',professor:'Franco',horarios:[{dia:3,hora:'14:00',dur:45}],pausas:[]}];
+    S.pacotesVip=[{id:'p1',vipId:'v1',horas:20,inicio:'2026-02-01',fim:''}];
+    S.aulasVip=[
+      {id:'x1',vipId:'v1',data:'2026-08-05',hora:'14:10',tema:'Job',descricao:'Aula normal',duracaoMin:45,faltou:false},
+      {id:'x2',vipId:'v1',data:'2026-08-10',tema:'Cancelamento em cima da hora',descricao:'Avisou 1h antes',duracaoMin:45,faltou:true,cobrarFalta:true,cancel12h:true}
+    ];
+    const aula=S.aulasVip[0], canc=S.aulasVip[1];
+    // permissões
+    S.perfil='direcao'; o.dir_edita_tudo = podeEditarAulaVip(aula) && podeEditarAulaVip(canc);
+    S.perfil='professor'; o.prof_edita_aula = podeEditarAulaVip(aula) && !podeEditarAulaVip(canc);
+    S.perfil='secretaria'; o.sec_so_cancelamento = !podeEditarAulaVip(aula) && podeEditarAulaVip(canc);
+    // botões na ficha (direção)
+    S.perfil='direcao'; S.usuario='Franco'; rota='ficha'; _fichaAlunoId='v1'; VIEWS.ficha();
+    let h=document.getElementById('view').innerHTML;
+    o.ficha_botoes = /editarAulaVip\('x1'\)/.test(h) && /delAulaVip\('x1'\)/.test(h) && /editarAulaVip\('x2'\)/.test(h);
+    // professor vê editar na dele e não vê a cancelada
+    S.perfil='professor'; VIEWS.ficha(); h=document.getElementById('view').innerHTML;
+    o.prof_botoes = /editarAulaVip\('x1'\)/.test(h) && !/editarAulaVip\('x2'\)/.test(h);
+    // editar de verdade, a partir da ficha
+    S.perfil='direcao'; VIEWS.ficha();
+    editarAulaVip('x1'); await new Promise(z=>setTimeout(z,60));
+    o.modal_abre = !!document.getElementById('evDesc') && !!document.getElementById('evHora');
+    document.getElementById('evDesc').value='Aula revisada';
+    document.getElementById('evDur').value='60';
+    document.getElementById('evHora').value='15:00';
+    salvarEdicaoAulaVip('x1'); await new Promise(z=>setTimeout(z,80));
+    o.editou = aula.descricao==='Aula revisada' && aula.duracaoMin===60 && aula.hora==='15:00';
+    o.voltou_pra_ficha = rota==='ficha' && /Ficha do aluno/.test(document.getElementById('view').innerHTML);
+    // duração mínima continua valendo na edição
+    editarAulaVip('x1'); await new Promise(z=>setTimeout(z,60));
+    document.getElementById('evDur').value='10'; window.__t='';
+    salvarEdicaoAulaVip('x1');
+    o.min30_na_edicao = /30 minutos/.test(window.__t) && aula.duracaoMin===60;
+    if(typeof fechar==='function') fechar();
+    // editar cancelamento mantém a regra (não realizada + hora descontada)
+    S.perfil='secretaria'; S.usuario='Regi';
+    editarAulaVip('x2'); await new Promise(z=>setTimeout(z,60));
+    o.cancel_sem_checkbox = !document.getElementById('evFaltou') && /cancelamento em cima da hora/i.test(document.body.innerHTML);
+    document.getElementById('evDesc').value='Avisou 2h antes';
+    salvarEdicaoAulaVip('x2'); await new Promise(z=>setTimeout(z,60));
+    o.cancel_mantem_regra = canc.cancel12h===true && canc.faltou===true && canc.cobrarFalta===true && canc.descricao==='Avisou 2h antes';
+    // excluir devolve a hora ao saldo
+    const antes=vipConsumoMin('v1');
+    window.confirm=()=>true; delAulaVip('x2'); await new Promise(z=>setTimeout(z,60));
+    o.excluiu = !S.aulasVip.some(x=>x.id==='x2') && vipConsumoMin('v1')===antes-45;
+    // professor não consegue apagar o registro da secretaria
+    S.aulasVip.push({id:'x3',vipId:'v1',data:'2026-08-12',descricao:'c',duracaoMin:45,faltou:true,cobrarFalta:true,cancel12h:true});
+    S.perfil='professor'; window.__t=''; delAulaVip('x3');
+    o.prof_nao_apaga_cancel = S.aulasVip.some(x=>x.id==='x3');
+
+    // ----- pacote de horas recolhível -----
+    S.perfil='direcao'; S.usuario='Franco'; _vipPacoteAberto=false; VIEWS.ficha();
+    h=document.getElementById('view').innerHTML;
+    o.pacote_recolhido = /pac-card/.test(h) && /Pacote de horas/.test(h) && !/Contratadas/.test(h);
+    o.pacote_tem_cabecalho = !!document.querySelector('.pac-h');
+    document.querySelector('.pac-h').click(); await new Promise(z=>setTimeout(z,80));
+    h=document.getElementById('view').innerHTML;
+    o.pacote_abre = /Contratadas/.test(h) && /Utilizadas/.test(h) && /Saldo/.test(h);
+    document.querySelector('.pac-h').click(); await new Promise(z=>setTimeout(z,80));
+    o.pacote_fecha = !/Contratadas/.test(document.getElementById('view').innerHTML);
+    // sinal (!) quando o pacote está na lista de atenção
+    S.pacotesVip=[{id:'p1',vipId:'v1',horas:1,inicio:'2026-02-01',fim:''}];   // saldo baixo -> alerta
+    VIEWS.ficha(); h=document.getElementById('view').innerHTML;
+    o.pacote_alerta = /pac-alerta/.test(h) && !!vipAlertaPacote('v1');
+    S.pacotesVip=[{id:'p1',vipId:'v1',horas:40,inicio:'2026-02-01',fim:''}];  // sem alerta
+    VIEWS.ficha();
+    o.pacote_sem_alerta = !/pac-alerta/.test(document.getElementById('view').innerHTML);
+    return o;
+  });
+  Object.assign(r,t8);
+
   const falhas=Object.keys(r).filter(k=>r[k]!==true);
   console.log(JSON.stringify(r,null,1));
   console.log(falhas.length?('FALHOU: '+falhas.join(', ')):('TUDO VERDE — '+Object.keys(r).length+' checks'));
