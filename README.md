@@ -10,7 +10,7 @@ IA, **matrículas e financeiro**, **livros sob demanda**, **permissões configur
 celular/tablet/computador) publicado como um único `index.html`, mas **desenvolvido em módulos**
 (pasta `src/`) com build automático.
 
-> **Versão atual: `2026.08.04 · b165 (Supabase)`.**
+> **Versão atual: `2026.08.04 · b166 (Supabase)`.**
 > O app roda sobre **PostgreSQL no Supabase** (migração do Google Sheets em 25/07).
 > Confira a versão em uso no **rodapé** do app — ele avisa sozinho quando há atualização.
 
@@ -244,6 +244,10 @@ Funciona igual no modo escuro. Em seguida (b165) o mesmo conceito chegou à **fi
 as seções (Aulas, Testes, Writings, Temas, Material, Comentários) viram quadradinhos com ícone e
 contador — no celular as seis cabem na tela, sem arrastar — e as ações do rodapé (enviar ao
 responsável, boletim, copiar, imprimir) também, valendo igual para a ficha do aluno VIP.
+E no **b166** os menus suspensos do topo deram lugar a um único botão **☰ Menu**, que abre o
+painel de quadradinhos com tudo o que aquele perfil acessa — o mesmo menu aparece no **Painel**,
+logo abaixo das próximas aulas. Cada perfil vê só os seus itens. Os cards de **próximas aulas**
+passaram a abrir o **ambiente completo da turma** (antes abriam só a chamada).
 
 **Próximos passos previstos:**
 1. **APIs de boleto e cartão** (hoje simulados).

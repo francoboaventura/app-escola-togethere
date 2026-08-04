@@ -135,22 +135,54 @@ function _navItemBtn(n, cls){
   b.onclick=()=>ir(n.id);
   return b;
 }
+// Itens que ESTE perfil pode acessar, agrupados (base do ☰ Menu e do menu do Painel)
+function menuGrupos(){
+  const itens=NAV.filter(n=>n.menu!==false && n.roles.includes(S.perfil) && _navPermOk(n));
+  const grupos=[]; itens.forEach(n=>{ let g=grupos.find(x=>x.grp===n.grp); if(!g){g={grp:n.grp,itens:[]}; grupos.push(g);} g.itens.push(n); });
+  return grupos;
+}
+// Grade de quadradinhos com os itens do perfil (usada no ☰ Menu do topo e no Painel)
+function menuQuadrosHTML(pularIds){
+  const pular=pularIds||[];
+  return menuGrupos().map(g=>{
+    const its=g.itens.filter(n=>pular.indexOf(n.id)<0);
+    if(!its.length) return '';
+    return `<div class="mp-grp">${esc(g.grp)}</div><div class="mp-grid">`+its.map(n=>{
+      const bd=_navBadge(n);
+      return `<button class="mp-i" data-id="${n.id}" onclick="ir('${n.id}')"><span class="em">${n.em}</span>${esc(n.label)}${bd?`<span class="badge">${bd}</span>`:''}</button>`;
+    }).join('')+'</div>';
+  }).join('');
+}
 function montarNav(){
   const nav=document.getElementById('nav'); if(!nav) return; nav.innerHTML='';
   const itens=NAV.filter(n=>n.menu!==false && n.roles.includes(S.perfil) && _navPermOk(n));
-  const grupos=[]; itens.forEach(n=>{ let g=grupos.find(x=>x.grp===n.grp); if(!g){g={grp:n.grp,itens:[]}; grupos.push(g);} g.itens.push(n); });
-  grupos.forEach(g=>{
-    if(g.grp==='Início'){ g.itens.forEach(n=>nav.appendChild(_navItemBtn(n,'tnav-item'))); return; }
-    const wrap=document.createElement('div'); wrap.className='tnav-grp';
-    const top=document.createElement('button'); top.className='tnav-top';
-    let gb=0; g.itens.forEach(n=>gb+=_navBadge(n));
-    top.innerHTML=`<span class="lb">${g.grp}</span> <span class="cx">▾</span>`+(gb?`<span class="badge">${gb}</span>`:'');
-    top.onclick=(e)=>{ e.stopPropagation(); _toggleGrp(wrap); };
-    const dd=document.createElement('div'); dd.className='tnav-dd';
-    g.itens.forEach(n=>dd.appendChild(_navItemBtn(n,'tnav-di')));
-    wrap.appendChild(top); wrap.appendChild(dd); nav.appendChild(wrap);
-  });
+  // "Início" segue como botões diretos; todo o resto entra no ☰ Menu
+  itens.filter(n=>n.grp==='Início').forEach(n=>nav.appendChild(_navItemBtn(n,'tnav-item')));
+  const outros=itens.filter(n=>n.grp!=='Início');
+  if(outros.length){
+    const bt=document.createElement('button'); bt.className='tnav-item navbtn tnav-menu'; bt.id='btnMenuTopo';
+    let tb=0; outros.forEach(n=>tb+=_navBadge(n));
+    bt.innerHTML=`<span class="em">☰</span> <span class="lb">Menu</span>`+(tb?`<span class="badge">${tb}</span>`:'');
+    bt.onclick=(e)=>{ e.stopPropagation(); _toggleMenuTopo(); };
+    nav.appendChild(bt);
+  }
+  _montarMenuTopo();
   montarNavMobile();
+}
+function _montarMenuTopo(){
+  let box=document.getElementById('menuTopo');
+  if(!box){
+    const tb=document.querySelector('.tbar'); if(!tb) return;
+    box=document.createElement('div'); box.id='menuTopo'; box.className='menu-topo';
+    box.onclick=(e)=>e.stopPropagation();
+    tb.appendChild(box);
+  }
+  box.innerHTML=`<div class="mp-head">Menu <button class="mais-x" onclick="_toggleMenuTopo()" aria-label="Fechar">×</button></div>`+menuQuadrosHTML(['painel','busca','tutorial']);
+}
+function _toggleMenuTopo(){
+  const box=document.getElementById('menuTopo'); if(!box) return;
+  const abrir=!box.classList.contains('open');
+  _fecharMenus(); if(abrir) box.classList.add('open');
 }
 /* ===== Menu inferior no CELULAR (b107) — resolve a status bar e fica no polegar ===== */
 const NAV_MOBILE_PRIOR=['painel','presenca','alunos','alertas','resumo','planejamento','turmas','writings'];
@@ -188,6 +220,7 @@ function _togglePerfil(e){ if(e) e.stopPropagation(); const m=document.getElemen
 function _toggleMenu(e){ if(e) e.stopPropagation(); const a=document.getElementById('app'); if(a) a.classList.toggle('menu-open'); }
 function _fecharMenus(){
   document.querySelectorAll('.tnav-grp.open').forEach(w=>w.classList.remove('open'));
+  const mt=document.getElementById('menuTopo'); if(mt) mt.classList.remove('open');
   const m=document.getElementById('perfilMenu'); if(m) m.classList.remove('open');
   const mm=document.getElementById('maisMenu'); if(mm) mm.classList.remove('open');
   const a=document.getElementById('app'); if(a) a.classList.remove('menu-open');
@@ -197,7 +230,7 @@ function ir(id){
   rota=id; const n=NAV.find(x=>x.id===id);
   document.getElementById('pageTitle').textContent=n.label;
   document.getElementById('crumb').textContent=n.grp;
-  document.querySelectorAll('#nav button, #bnav button, .mais-i').forEach(b=>b.classList.toggle('active',b.dataset.id===id));
+  document.querySelectorAll('#nav button, #bnav button, .mais-i, .mp-i').forEach(b=>b.classList.toggle('active',b.dataset.id===id));
   _fecharMenus();
   VIEWS[id]();
   if(typeof _hidratarFotos==='function') setTimeout(_hidratarFotos,50);

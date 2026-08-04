@@ -212,6 +212,7 @@ VIEWS.painel=()=>{
     <div class="section-title"><span class="feijao fj" style="background:var(--amarelo)"></span><h2 class="display">Olá, ${esc(S.usuario)}!</h2></div>
     <p class="sub">Resumo rápido — ${brDate(hoje())}</p>
     ${paHtml}
+    ${(typeof menuQuadrosHTML==='function')?`<div class="menu-painel">${menuQuadrosHTML(['painel'])}</div>`:''}
     <div class="grid g4" style="margin-bottom:8px">
       ${cards.map(c=>`<div class="card" ${c.tap?`onclick="${c.tap}" style="cursor:pointer"`:''}><div class="kpi"><div class="k-ic" style="background:${c.bg};color:${c.cor}">${c.ic}</div><div><div class="num">${c.num}</div><small>${c.lbl}</small></div></div></div>`).join('')}
     </div>`;
@@ -248,6 +249,11 @@ VIEWS.painel=()=>{
     </div></div>`));
 };
 
+// Abre o ambiente completo da turma (mesmo painel do menu Gestão > Turmas), e não só a chamada
+function abrirTurmaDoPainel(tid){
+  if(typeof abrirTurma!=='function') return ir('presenca');
+  ir('turmas'); abrirTurma(tid);
+}
 /* ===== Trilho "Próximas aulas" no Painel (b104) — aditivo, olhar pra frente ===== */
 function _paHora(t){ const m=String((t&&t.horario)||'').match(/(\d{1,2}):(\d{2})/); return m?m[0]:''; }
 function proximasAulasLista(limite){
@@ -268,7 +274,7 @@ function renderProximasAulas(){
   const cards=itens.map(it=>{
     const ehHoje=it.data===h;
     const quando= ehHoje ? ('Hoje'+(it.hora?' · '+it.hora:'')) : (DIAS_SEMANA[weekdayOf(it.data)]+' '+brDate(it.data).slice(0,5)+(it.hora?' · '+it.hora:''));
-    return `<button class="pa-card${ehHoje?' hoje':''}" onclick="ir('presenca')">
+    return `<button class="pa-card${ehHoje?' hoje':''}" onclick="abrirTurmaDoPainel('${it.turma.id}')">
       ${ehHoje?'<span class="pa-now">HOJE</span>':''}
       <div class="pa-when">${quando}</div>
       <div class="pa-turma">${escAttr(it.turma.nome)}</div>

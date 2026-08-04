@@ -27,8 +27,10 @@ const TUTORIAL=[
     passos:`## O que é
 A sua porta de entrada no app: um panorama do dia e caminho rápido para o que você mais usa.
 ## Como usar
+- **🗓️ Suas próximas aulas** ficam no topo: toque num card e abre o **ambiente completo da turma** (chamada, planos, testes, linha do tempo, relatórios e a lista de alunos).
+- Logo abaixo, o **seu menu em quadradinhos**: só aparece o que o seu perfil pode acessar — professor vê o dele, secretaria o dela, direção vê tudo.
 - Veja avisos e aniversariantes do dia.
-- Use os atalhos para abrir a chamada, lançar notas ou abrir uma ficha.
+- No topo da tela, o botão **☰ Menu** abre esse mesmo menu de qualquer lugar do app.
 - Disponível para todos os perfis.` },
   { id:'busca', em:'🔎', titulo:'Buscar', grp:'Início', roles:['professor','secretaria','direcao'],
     resumo:'Busca global: encontre alunos, turmas e telas pelo nome.',
