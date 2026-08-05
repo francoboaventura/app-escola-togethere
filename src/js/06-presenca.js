@@ -143,7 +143,7 @@ function renderPres(){
   const segAula=(a,aula)=>{ const cur= aula===2 ? st2De(a.id) : (reg[a.id]||'presente'); const fn= aula===2?'setPres2':'setPres';
     return `<div class="seg"><button class="${cur==='presente'?'on-p':''}" onclick="${fn}('${a.id}','presente')">Presente</button><button class="${cur==='falta'?'on-f':''}" onclick="${fn}('${a.id}','falta')">Falta</button></div>`; };
   box.innerHTML=`<h3>${als.length} alunos · ${brDate(presData)}</h3><p class="hint">Toque para alternar presença. ${dois?'Esta turma tem <b>2 aulas no mesmo dia</b> — marque Aula 1 e Aula 2 separadamente. ':''}Marque atraso, saída antecipada, <b>sem material</b> e a entrega do <b>tema</b> em cada aluno. Ao terminar, clique em <b>Salvar</b>.</p>
-    ${als.map(a=>{
+    ${als.map((a,idx)=>{
       const st=reg[a.id]||'presente', st2=st2De(a.id);
       const presenteAlgum = dois ? (st==='presente'||st2==='presente') : (st==='presente');
       const controles = dois
@@ -154,7 +154,7 @@ function renderPres(){
         : segAula(a,1);
       return `<div style="padding:10px 0;border-bottom:1px dashed var(--linha)">
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-          ${avatarFoto('av-sm', a.foto, ((a.nome||'·').trim()[0]||'·').toUpperCase(), '')}
+          ${avatarFoto('av-sm', a.foto, ((a.nome||'·').trim()[0]||'·').toUpperCase(), '', idx+1)}
           <b style="flex:1;min-width:130px">${a.nome}</b>
           ${controles}
         </div>

@@ -1021,9 +1021,14 @@ function _fxComentarios(coms){
    (máx 1600px, JPEG 0.9) para servir também aos cartões.
    ===================================================================== */
 const _fotoCache = {};   // path -> { url, exp }
-function avatarFoto(cls, foto, inicial, addOnclick){
-  return `<div class="${cls} fotoav" data-foto="${escAttr(foto||'')}">`
-    + `<span class="fotoav-ini">${escAttr(inicial)}</span>`
+function avatarFoto(cls, foto, inicial, addOnclick, numero){
+  // numero (opcional): em listas de alunos mostra o nº sequencial no lugar da inicial;
+  // quando há foto, o nº aparece pequeno sobre a foto (badge .fotoav-num).
+  const temNum = (numero!==undefined && numero!==null && numero!=='');
+  const centro = temNum ? escAttr(String(numero)) : escAttr(inicial);
+  return `<div class="${cls} fotoav${temNum?' com-num':''}" data-foto="${escAttr(foto||'')}">`
+    + `<span class="fotoav-ini">${centro}</span>`
+    + (temNum?`<span class="fotoav-num">${escAttr(String(numero))}</span>`:'')
     + (addOnclick?`<button class="fotoav-add" onclick="${addOnclick}" title="Adicionar/trocar foto" aria-label="Adicionar foto">📷</button>`:'')
     + `</div>`;
 }

@@ -461,6 +461,11 @@ button:disabled,.btn:disabled,button[disabled],.btn[disabled]{
 .fotoav{position:relative;background-size:cover;background-position:center}
 .fotoav .fotoav-ini{display:flex;align-items:center;justify-content:center;width:100%;height:100%}
 .fotoav.com-foto .fotoav-ini{display:none}
+/* nº sequencial nas listas: sem foto vai centralizado (.fotoav-ini); com foto vira
+   uma faixinha discreta no rodapé do círculo (b170) */
+.fotoav-num{display:none;position:absolute;left:0;right:0;bottom:0;height:14px;line-height:14px;
+  background:rgba(6,24,60,.62);color:#fff;font-family:'Poppins';font-weight:700;font-size:.6rem;text-align:center;letter-spacing:.2px}
+.fotoav.com-foto .fotoav-num{display:block}
 .fotoav-add{position:absolute;right:-3px;bottom:-3px;width:23px;height:23px;border-radius:50%;border:2px solid #fff;background:var(--azul);color:#fff;font-size:.66rem;display:grid;place-items:center;cursor:pointer;padding:0;line-height:1;box-shadow:0 1px 5px rgba(0,20,55,.3)}
 .fotoav-add:hover{background:var(--az-hover);transform:scale(1.08)}
 .fx-av.fotoav{overflow:visible}

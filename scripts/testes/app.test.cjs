@@ -270,6 +270,22 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
   });
   Object.assign(r,t9);
 
+  // ===== 10) b170: nº sequencial no lugar da inicial nas listas de alunos =====
+  const t10=await page.evaluate(async()=>{
+    const o={};
+    // sem foto + com número → o número vai no centro (fotoav-ini), marca com-num, sem badge visível
+    const semFoto=avatarFoto('av-sm','','A','',3);
+    o.num_sem_foto = /class="[^"]*com-num/.test(semFoto) && />3<\/span>/.test(semFoto);
+    // com foto + com número → mantém a foto e adiciona o badge pequeno fotoav-num com o número
+    const comFoto=avatarFoto('av-sm','fotos/x.jpg','A','',7);
+    o.num_com_foto_badge = /fotoav-num">7<\/span>/.test(comFoto) && /data-foto="fotos\/x\.jpg"/.test(comFoto);
+    // sem número (ficha/usuário) → comportamento antigo: mostra a inicial, sem com-num nem badge
+    const fichaAv=avatarFoto('fx-av','','M','');
+    o.num_ficha_intacta = !/com-num/.test(fichaAv) && !/fotoav-num/.test(fichaAv) && />M<\/span>/.test(fichaAv);
+    return o;
+  });
+  Object.assign(r,t10);
+
   const falhas=Object.keys(r).filter(k=>r[k]!==true);
   console.log(JSON.stringify(r,null,1));
   console.log(falhas.length?('FALHOU: '+falhas.join(', ')):('TUDO VERDE — '+Object.keys(r).length+' checks'));
