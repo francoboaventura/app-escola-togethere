@@ -10,7 +10,7 @@ IA, **matrículas e financeiro**, **livros sob demanda**, **permissões configur
 celular/tablet/computador) publicado como um único `index.html`, mas **desenvolvido em módulos**
 (pasta `src/`) com build automático.
 
-> **Versão atual: `2026.08.04 · b168 (Supabase)`.**
+> **Versão atual: `2026.08.04 · b169 (Supabase)`.**
 > O app roda sobre **PostgreSQL no Supabase** (migração do Google Sheets em 25/07).
 > Confira a versão em uso no **rodapé** do app — ele avisa sozinho quando há atualização.
 
@@ -261,6 +261,13 @@ ficha do aluno (direção edita tudo; professor edita as aulas dele; secretaria 
 cancelamentos que registra — excluir devolve a hora ao saldo). O card **⏱️ Pacote de horas** passou
 a ficar **recolhido** por padrão, abrindo com um toque, e mostra um **(!)** vermelho quando o
 pacote está na lista de atenção (saldo baixo/esgotado ou vigência vencendo).
+
+**Concluído em 04/08 (b169):** botão **‹ Voltar** no cabeçalho de todas as telas (com histórico de
+navegação; dentro de uma turma volta para a lista). A tela **👑 Alunos VIP** foi reorganizada no
+padrão de quadradinhos: **📊 Visão geral** (panorama das horas, com **(!)** quando há pacote
+pedindo ação) e **👑 Alunos VIP**, onde se escolhe o aluno **numa lista** — sem a fileira de
+atalhos com os nomes. Escolhido o aluno, os detalhes aparecem na própria tela em quadradinhos
+expansíveis: pacote de horas, lançar aula, aulas lançadas (com editar/excluir) e writings.
 
 **Próximos passos previstos:**
 1. **APIs de boleto e cartão** (hoje simulados).

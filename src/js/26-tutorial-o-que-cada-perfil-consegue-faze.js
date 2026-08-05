@@ -27,6 +27,7 @@ const TUTORIAL=[
     passos:`## O que é
 A sua porta de entrada no app: um panorama do dia e caminho rápido para o que você mais usa.
 ## Como usar
+- Em qualquer tela, o botão **‹ Voltar** (canto superior esquerdo) devolve você à tela anterior — dentro de uma turma, ele volta para a lista de turmas.
 - **🗓️ Suas próximas aulas** ficam no topo: toque num card e abre o **ambiente completo da turma** (chamada, planos, testes, linha do tempo, relatórios e a lista de alunos).
 - Logo abaixo, o **seu menu em quadradinhos**: só aparece o que o seu perfil pode acessar — professor vê o dele, secretaria o dela, direção vê tudo.
 - Veja avisos e aniversariantes do dia.
@@ -181,7 +182,9 @@ Apenas a direção aprova.` },
 É a memória da comunicação com as famílias — útil em qualquer conversa sobre "a escola nunca me avisou".` },
   { id:'vip', em:'👑', titulo:'Alunos VIP', grp:'Acompanhamento', roles:['professor','secretaria','direcao'],
     resumo:'Aulas particulares: lançamentos, pacotes de horas, pausas e remanejamentos.',
-    passos:`## O que é
+    passos:`## Como a tela funciona
+Tudo em quadradinhos que abrem e fecham com um toque: **📊 Visão geral** (panorama das horas de todos os VIPs, com o **(!)** quando alguém precisa de ação) e **👑 Alunos VIP**. Abra "Alunos VIP", **escolha o aluno na lista** e aparecem os detalhes dele: ⏱️ pacote de horas, ➕ lançar aula, 👑 aulas lançadas e ✍️ writings — cada um também abre com um toque. O botão **📇 Ficha completa** leva ao histórico inteiro.
+## O que é
 Alunos de aulas particulares, fora das turmas regulares.
 ## Professor
 - A ficha do aluno VIP mostra **só o que é seu**: o painel **"Sua aula com este aluno"** (próxima aula prevista, botão 🎥 **Entrar na aula** e ➕ **Lançar aula**), horários, links úteis e o histórico de aulas.

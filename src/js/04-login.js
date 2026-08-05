@@ -261,13 +261,52 @@ function _reRenderApos(fn){
   }
   fn();
 }
-function ir(id){
+/* =====================================================================
+   QUADRADINHOS EXPANSÍVEIS (b169) — mesmo padrão em qualquer tela.
+   qdBox('chave','Título', conteudo, {sub, alerta}) — conteúdo pode ser
+   função (só é montado quando o quadradinho está aberto).
+   ===================================================================== */
+let _qdAbertos={};
+function qdAberto(k){ return !!_qdAbertos[k]; }
+function toggleQd(k){ _qdAbertos[k]=!_qdAbertos[k]; _reRenderTela(); }
+function abrirQd(k,v){ _qdAbertos[k]=(v!==false); }
+function qdBox(chave, titulo, conteudo, opts){
+  opts=opts||{}; const ab=qdAberto(chave);
+  const corpo=ab?((typeof conteudo==='function')?conteudo():conteudo):'';
+  return `<div class="card qd-card${ab?' aberto':''}">
+    <button class="qd-h" onclick="toggleQd('${chave}')" aria-expanded="${ab}">
+      <span style="flex:1;text-align:left;min-width:0"><b>${titulo}</b>${opts.sub?` <span class="hint">${opts.sub}</span>`:''}${opts.alerta?`<span class="qd-alerta" title="${escAttr(opts.alerta)}">!</span>`:''}</span>
+      <span class="hint">${ab?'esconder':'ver'}</span><span class="qd-cx">▾</span>
+    </button>${ab?`<div class="qd-b">${corpo}</div>`:''}
+  </div>`;
+}
+// redesenha a tela atual (respeita o painel da turma)
+function _reRenderTela(){
+  if(_telaAtualEhPainelTurma()) return renderPainelTurma();
+  if(typeof rota!=='undefined' && VIEWS[rota]) VIEWS[rota]();
+}
+
+/* Histórico simples de navegação — alimenta o botão "‹ Voltar" (b169) */
+let _histNav=[];
+function _telaAtualEhPainelTurma(){ return (typeof painelTurma!=='undefined' && painelTurma && rota==='turmas'); }
+function _atualizaVoltar(){
+  const b=document.getElementById('btnVoltar'); if(!b) return;
+  b.hidden = !(_telaAtualEhPainelTurma() || _histNav.length>0 || (typeof rota!=='undefined' && rota && rota!=='painel'));
+}
+function voltar(){
+  if(_telaAtualEhPainelTurma()){ voltarTurmas(); _atualizaVoltar(); return; }   // dentro de uma turma: volta para a lista
+  const ant=_histNav.pop();
+  ir(ant||'painel', true);
+}
+function ir(id, semHistorico){
+  if(!semHistorico && typeof rota!=='undefined' && rota && rota!==id){ _histNav.push(rota); if(_histNav.length>30) _histNav.shift(); }
   rota=id; const n=NAV.find(x=>x.id===id);
   document.getElementById('pageTitle').textContent=n.label;
   document.getElementById('crumb').textContent=n.grp;
   document.querySelectorAll('#nav button, #bnav button, .mais-i, .mp-i').forEach(b=>b.classList.toggle('active',b.dataset.id===id));
   _fecharMenus();
   VIEWS[id]();
+  _atualizaVoltar();
   if(typeof _hidratarFotos==='function') setTimeout(_hidratarFotos,50);
   if(id==='alertas') _refreshAvisosNuvem();   // ao abrir Avisos, já puxa o que houver de novo
   else if(id==='relturma'||id==='arquivo'||id==='painel') _pullSilencioso(true);   // listas: pode redesenhar

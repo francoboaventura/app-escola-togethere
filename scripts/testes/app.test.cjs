@@ -209,25 +209,66 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
     o.prof_nao_apaga_cancel = S.aulasVip.some(x=>x.id==='x3');
 
     // ----- pacote de horas recolhível -----
-    S.perfil='direcao'; S.usuario='Franco'; _vipPacoteAberto=false; VIEWS.ficha();
+    S.perfil='direcao'; S.usuario='Franco'; _qdAbertos={}; VIEWS.ficha();
     h=document.getElementById('view').innerHTML;
-    o.pacote_recolhido = /pac-card/.test(h) && /Pacote de horas/.test(h) && !/Contratadas/.test(h);
-    o.pacote_tem_cabecalho = !!document.querySelector('.pac-h');
-    document.querySelector('.pac-h').click(); await new Promise(z=>setTimeout(z,80));
+    o.pacote_recolhido = /qd-card/.test(h) && /Pacote de horas/.test(h) && !/Contratadas/.test(h);
+    o.pacote_tem_cabecalho = !!document.querySelector('.qd-card .qd-h');
+    document.querySelector('.qd-card .qd-h').click(); await new Promise(z=>setTimeout(z,80));
     h=document.getElementById('view').innerHTML;
     o.pacote_abre = /Contratadas/.test(h) && /Utilizadas/.test(h) && /Saldo/.test(h);
-    document.querySelector('.pac-h').click(); await new Promise(z=>setTimeout(z,80));
+    document.querySelector('.qd-card .qd-h').click(); await new Promise(z=>setTimeout(z,80));
     o.pacote_fecha = !/Contratadas/.test(document.getElementById('view').innerHTML);
     // sinal (!) quando o pacote está na lista de atenção
     S.pacotesVip=[{id:'p1',vipId:'v1',horas:1,inicio:'2026-02-01',fim:''}];   // saldo baixo -> alerta
     VIEWS.ficha(); h=document.getElementById('view').innerHTML;
-    o.pacote_alerta = /pac-alerta/.test(h) && !!vipAlertaPacote('v1');
+    o.pacote_alerta = /qd-alerta/.test(h) && !!vipAlertaPacote('v1');
     S.pacotesVip=[{id:'p1',vipId:'v1',horas:40,inicio:'2026-02-01',fim:''}];  // sem alerta
     VIEWS.ficha();
-    o.pacote_sem_alerta = !/pac-alerta/.test(document.getElementById('view').innerHTML);
+    o.pacote_sem_alerta = !/qd-alerta/.test(document.getElementById('view').innerHTML);
     return o;
   });
   Object.assign(r,t8);
+
+
+  // ===== 8) b169: botão voltar + tela VIP em quadradinhos =====
+  const t9=await page.evaluate(async()=>{
+    const o={};
+    S.vipAlunos=[{id:'v1',nome:'Carlos Lima',professor:'Franco',horarios:[{dia:3,hora:'14:00',dur:45}]},{id:'v2',nome:'Ana Paula',professor:'Franco'}];
+    S.pacotesVip=[{id:'p1',vipId:'v1',horas:20,inicio:'2026-02-01',fim:''}];
+    S.aulasVip=[{id:'x1',vipId:'v1',data:'2026-08-05',hora:'14:10',tema:'Job',descricao:'Aula',duracaoMin:45,faltou:false}];
+    S.writings=[{id:'w1',alunoId:'v1',data:'2026-07-20',levelLabel:'B1 Teens',overall_band:4,bands:{},subscales:[]}];
+    S.perfil='direcao'; S.usuario='Franco'; montarNav();
+    vipSel=null; _qdAbertos={}; rota='painel'; _histNav=[]; ir('vip');   // histórico limpo para testar o voltar
+    let h=document.getElementById('view').innerHTML;
+    o.vip_sem_atalhos_nome = !/onclick="abrirFicha\('v2'\)/.test(h);
+    o.vip_visao_quadro = /vip_visao/.test(h) && /panorama das horas VIP/i.test(h);
+    o.vip_alunos_recolhido = /vip_alunos/.test(h) && !document.getElementById('vipSelAluno');
+    toggleQd('vip_alunos'); await new Promise(z=>setTimeout(z,60));
+    o.vip_lista_dropdown = !!document.getElementById('vipSelAluno') && document.getElementById('vipSelAluno').options.length===3;
+    selecionarVip('v1'); await new Promise(z=>setTimeout(z,80));
+    h=document.getElementById('view').innerHTML;
+    o.vip_detalhes = /Carlos Lima/.test(h) && /vip_lancar/.test(h) && /vip_aulas/.test(h) && /vip_writings/.test(h);
+    o.vip_aulas_lista = /05\/08\/2026/.test(h);
+    toggleQd('vip_lancar'); await new Promise(z=>setTimeout(z,60));
+    o.vip_form = !!document.getElementById('vipDesc') && !!document.getElementById('vipHora');
+    document.getElementById('vipDesc').value='Aula nova'; addAulaVip(); await new Promise(z=>setTimeout(z,80));
+    o.vip_lanca = S.aulasVip.some(a=>a.descricao==='Aula nova');
+    // funções que vivem no módulo VIP seguem existindo
+    o.vip_funcoes = ['vipHorarios','vipHoraDoDia','vipDurDoDia','pendenciasAulaVip','renderPendenciasVipCard','alunoParaVip','vipParaAluno','vipPausaAtual'].every(f=>typeof window[f]==='function');
+    // botão voltar
+    const bv=document.getElementById('btnVoltar');
+    o.voltar_aparece = !!bv && !bv.hidden;
+    voltar(); await new Promise(z=>setTimeout(z,80));
+    o.voltar_funciona = rota==='painel' && document.getElementById('btnVoltar').hidden;
+    ir('turmas'); abrirTurma('t1'); await new Promise(z=>setTimeout(z,60));
+    o.voltar_na_turma = !document.getElementById('btnVoltar').hidden;
+    voltar(); await new Promise(z=>setTimeout(z,60));
+    o.voltar_sai_da_turma = !painelTurma && rota==='turmas';
+    voltar(); await new Promise(z=>setTimeout(z,60));
+    o.voltar_encadeado = rota==='painel';
+    return o;
+  });
+  Object.assign(r,t9);
 
   const falhas=Object.keys(r).filter(k=>r[k]!==true);
   console.log(JSON.stringify(r,null,1));
