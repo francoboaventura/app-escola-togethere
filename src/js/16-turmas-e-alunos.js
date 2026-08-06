@@ -496,6 +496,8 @@ function abrirRemarcarVip(id){
     ${temHorario?'<p class="hint" style="margin:-4px 0 8px">Obrigatório: sem o dia original, o app cobraria a aula duas vezes (no dia antigo e no novo).</p>':''}
     <div class="row"><div class="field"><label class="lbl">Novo dia</label><input type="date" id="rmData" value="${hoje()}"></div>
       <div class="field"><label class="lbl">Novo horário</label><input type="time" id="rmHora" value="${escAttr(vip.horaPrev||'')}"></div></div>
+    <button class="btn ghost block" style="margin:2px 0 6px" onclick="vipRemarcarFinalPlano('${id}')">📅 Jogar para o final do plano</button>
+    <div id="rmFinalHint" class="hint" style="margin:0 0 8px"></div>
     <div class="field"><label class="lbl">Motivo (opcional)</label><input type="text" id="rmMotivo" placeholder="Ex: aluno viajou; pediu para adiantar"></div>
     <button class="btn block" onclick="salvarRemarcarVip('${id}')">Salvar remanejamento</button>`);
 }
@@ -506,7 +508,41 @@ function salvarRemarcarVip(id){
   const de=(document.getElementById('rmDe').value||'');
   if(!de && typeof vipTemHorario==='function' && vipTemHorario(vip)) return toast('Escolha o dia originalmente previsto — senão a aula seria cobrada em dobro');
   const r={ id:uid(), de, data, hora:(document.getElementById('rmHora').value||''), motivo:(document.getElementById('rmMotivo').value||'').trim() };
-  vip.remarcacoes=vip.remarcacoes||[]; vip.remarcacoes.push(r); vip.atualizadoEm=Date.now(); save(); fechar(); VIEWS.ficha(); toast('Aula remanejada');
+  vip.remarcacoes=vip.remarcacoes||[]; vip.remarcacoes.push(r);
+  const estendeu=_vipEstenderVigenciaAte(id, data);   // se a nova data passa do fim do plano, estende a vigência do pacote pra caber
+  vip.atualizadoEm=Date.now(); save(); fechar(); VIEWS.ficha();
+  toast(estendeu?('Aula remanejada · vigência do pacote estendida até '+brDate(data)):'Aula remanejada');
+}
+// próxima data prevista (pela grade de horários) estritamente depois de "aposData"; sem grade, +7 dias
+function _vipProxDataApos(vip, aposData){
+  const dias=[...new Set(vipHorarios(vip).map(h=>+h.dia))];
+  const base=new Date((aposData||hoje())+'T12:00:00');
+  if(!dias.length){ base.setDate(base.getDate()+7); return ymd(base); }
+  for(let i=1;i<=400;i++){ const d=new Date(base); d.setDate(d.getDate()+i); if(dias.indexOf(d.getDay())>=0) return ymd(d); }
+  base.setDate(base.getDate()+7); return ymd(base);
+}
+// "final do plano" = fim da vigência do pacote; sem fim definido, usa a última aula/remarcação conhecida
+function _vipDataFinalPlano(vip){
+  const vid=vip.id; let anchor=vipVigenciaFim(vid);
+  if(!anchor){ const ds=[]; (S.aulasVip||[]).filter(x=>x.vipId===vid && !x.ajusteManual).forEach(x=>ds.push(x.data)); (vip.remarcacoes||[]).forEach(rr=>{ if(rr.data) ds.push(rr.data); }); ds.sort(); anchor=ds.length?ds[ds.length-1]:hoje(); }
+  return _vipProxDataApos(vip, anchor);
+}
+// estende a vigência do pacote que termina por último até "data" (só se "data" passar do fim atual)
+function _vipEstenderVigenciaAte(vid, data){
+  if(!data) return false; const fim=vipVigenciaFim(vid); if(!fim || data<=fim) return false;
+  const ativos=(S.pacotesVip||[]).filter(p=>p.vipId===vid && !p.arquivado && p.fim).sort((a,b)=>String(a.fim).localeCompare(String(b.fim)));
+  if(!ativos.length) return false;
+  ativos[ativos.length-1].fim=data; ativos[ativos.length-1].atualizadoEm=Date.now(); return true;
+}
+// botão "jogar para o final do plano": preenche o novo dia/horário e avisa sobre a extensão da vigência
+function vipRemarcarFinalPlano(id){
+  const vip=(S.vipAlunos||[]).find(x=>x.id===id); if(!vip) return;
+  const nova=_vipDataFinalPlano(vip);
+  const dd=document.getElementById('rmData'); if(dd) dd.value=nova;
+  const hh=document.getElementById('rmHora'); if(hh) hh.value=vipHoraDoDia(vip, weekdayOf(nova))||hh.value||'';
+  const mot=document.getElementById('rmMotivo'); if(mot && !mot.value) mot.value='cancelou — remarcada para o fim do plano';
+  const fim=vipVigenciaFim(id); const hint=document.getElementById('rmFinalHint');
+  if(hint) hint.innerHTML='➡️ Vai remarcar para <b>'+brDate(nova)+'</b> (depois do fim do plano).'+((fim && nova>fim)?(' A vigência do pacote será estendida até <b>'+brDate(nova)+'</b> ao salvar.'):'')+' Confira o "dia originalmente previsto" acima e clique em Salvar.';
 }
 function delRemarcarVip(id, rid){
   if(ehProfessor()) return toast('Remanejamentos são registrados pela secretaria');
@@ -582,12 +618,30 @@ function registrarCancelamentoVip(vid){
   if(ehProfessor()) return toast('Cancelamento em cima da hora é registrado pela secretaria');
   const vip=(S.vipAlunos||[]).find(x=>x.id===vid); if(!vip) return;
   const d=hoje();
-  modal(`<h3>🚫 Cancelamento em cima da hora <button class="close" onclick="fechar()">×</button></h3>
-    <p class="hint" style="margin:0 0 10px">O aluno avisou com <b>menos de 12h</b> de antecedência e o professor foi liberado. A aula fica registrada como <b>não realizada</b> e a hora é <b>descontada do pacote</b>.</p>
-    <div class="row"><div class="field"><label class="lbl">Data da aula</label><input type="date" id="cz_data" value="${d}" onchange="_czDurSugerir('${vid}')"></div>
+  modal(`<h3>🚫 Cancelamento da aula <button class="close" onclick="fechar()">×</button></h3>
+    <p class="hint" style="margin:0 0 10px">Duas opções: <b>descontar</b> a hora (cancelou em cima da hora — menos de 12h e professor liberado) <b>ou</b> <b>não descontar</b> e <b>jogar a aula para o final do plano</b> (ex.: avisou com antecedência).</p>
+    <div class="row"><div class="field"><label class="lbl">Data da aula (cancelada)</label><input type="date" id="cz_data" value="${d}" onchange="_czDurSugerir('${vid}')"></div>
       <div class="field"><label class="lbl">Duração a descontar (min)</label><input type="number" id="cz_dur" value="${(typeof vipDurDoDia==='function'?vipDurDoDia(vip,weekdayOf(d)):60)||60}" min="30" step="5"></div></div>
     <div class="field"><label class="lbl">Observação (opcional)</label><input type="text" id="cz_obs" placeholder="Ex: avisou 1h antes pelo WhatsApp"></div>
-    <button class="btn block" style="background:#c2560b" onclick="salvarCancelamentoVip('${vid}')">Registrar e descontar a hora</button>`);
+    <button class="btn block" style="background:#c2560b" onclick="salvarCancelamentoVip('${vid}')">Registrar e descontar a hora</button>
+    <div class="hint" style="text-align:center;margin:10px 0 6px">— ou, sem desconto —</div>
+    <button class="btn ghost block" onclick="cancelarJogarFinalPlano('${vid}')">📅 Jogar para o final do plano (não desconta)</button>`);
+}
+// cancelamento SEM desconto: remarca a aula para o final do plano (data seguinte à última prevista) e estende a vigência
+function cancelarJogarFinalPlano(vid){
+  if(ehProfessor()) return toast('Sem permissão');
+  const vip=(S.vipAlunos||[]).find(x=>x.id===vid); if(!vip) return;
+  const de=((document.getElementById('cz_data')||{}).value)||'';
+  const nova=_vipDataFinalPlano(vip);
+  const fim=vipVigenciaFim(vid);
+  if(!confirm('Jogar a aula'+(de?(' de '+brDate(de)):'')+' para '+brDate(nova)+' (final do plano), sem descontar a hora?'+((fim&&nova>fim)?(' A vigência do pacote será estendida até '+brDate(nova)+'.'):''))) return;
+  const hora=(typeof vipHoraDoDia==='function'?vipHoraDoDia(vip,weekdayOf(nova)):'')||'';
+  const obs=((document.getElementById('cz_obs')||{}).value||'').trim();
+  vip.remarcacoes=vip.remarcacoes||[];
+  vip.remarcacoes.push({ id:uid(), de, data:nova, hora, motivo:obs||'cancelou — remarcada para o fim do plano (sem desconto)' });
+  const estendeu=_vipEstenderVigenciaAte(vid, nova);
+  vip.atualizadoEm=Date.now(); save(); fechar(); if(VIEWS.ficha) VIEWS.ficha();
+  toast('Aula jogada para o fim do plano ('+brDate(nova)+') — sem desconto'+(estendeu?' · vigência estendida':''));
 }
 function _czDurSugerir(vid){
   const vip=(S.vipAlunos||[]).find(x=>x.id===vid); if(!vip) return;

@@ -308,6 +308,23 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
   });
   Object.assign(r,t11);
 
+  // ===== 12) b173: remanejar aula VIP "para o final do plano" =====
+  const t12=await page.evaluate(async()=>{
+    const o={};
+    S.vipAlunos=[{id:'vf1',nome:'Josiane',professor:'Franco',horarios:[{dia:3,hora:'14:00',dur:60}]}]; // quarta-feira
+    S.pacotesVip=[{id:'pf1',vipId:'vf1',horas:20,inicio:'2026-02-01',fim:'2026-09-30'}];
+    S.aulasVip=[];
+    const vip=S.vipAlunos[0];
+    const nova=_vipDataFinalPlano(vip);
+    o.final_depois_do_fim = nova>'2026-09-30';
+    o.final_cai_na_quarta = weekdayOf(nova)===3;
+    const est=_vipEstenderVigenciaAte('vf1', nova);
+    o.estende_vigencia = est===true && S.pacotesVip[0].fim===nova;
+    o.nao_estende_dentro = _vipEstenderVigenciaAte('vf1','2026-03-01')===false;
+    return o;
+  });
+  Object.assign(r,t12);
+
   const falhas=Object.keys(r).filter(k=>r[k]!==true);
   console.log(JSON.stringify(r,null,1));
   console.log(falhas.length?('FALHOU: '+falhas.join(', ')):('TUDO VERDE — '+Object.keys(r).length+' checks'));
