@@ -99,23 +99,23 @@ function abrirMatricula(id){
   const ts=(typeof turmasVisiveis==='function'?turmasVisiveis():(S.turmas||[])).filter(t=>!t.arquivada).sort((a,b)=>a.nome.localeCompare(b.nome));
   const alunos=(S.alunos||[]).filter(a=>!a.arquivado).sort((a,b)=>a.nome.localeCompare(b.nome));
   const optT=`<option value="">— turma —</option>`+ts.map(t=>`<option value="${t.id}" ${m.turmaId===t.id?'selected':''}>${esc(t.nome)}</option>`).join('');
-  const optA=`<option value="">— novo aluno (digitar nome) —</option>`+alunos.map(a=>`<option value="${a.id}" ${m.alunoId===a.id?'selected':''}>${esc(a.nome)}${a.turmaId?(' · '+esc(turmaNome(a.turmaId))):''}</option>`).join('');
+  const optA=`<option value="">— não vincular (aluno novo) —</option>`+alunos.map(a=>`<option value="${a.id}" ${m.alunoId===a.id?'selected':''}>${esc(a.nome)}${a.turmaId?(' · '+esc(turmaNome(a.turmaId))):''}</option>`).join('');
   const optP=MAT_PARENTESCO.map(p=>`<option ${m.respParentesco===p?'selected':''}>${p}</option>`).join('');
   const optS=Object.keys(MAT_STATUS).map(k=>`<option value="${k}" ${((m.status||'orcamento')===k)?'selected':''}>${MAT_STATUS[k].lbl}</option>`).join('');
   const tipo=m.tipo||'turma';
   const profs=[...new Set((S.usuarios||[]).filter(u=>u.ensina).map(u=>u.ensina).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
   const optProf=`<option value="">— professor(a) —</option>`+profs.map(p=>`<option value="${escAttr(p)}" ${m.professor===p?'selected':''}>${esc(p)}</option>`).join('');
   const vips=(S.vipAlunos||[]).filter(v=>!v.arquivado).sort((a,b)=>a.nome.localeCompare(b.nome));
-  const optV=`<option value="">— novo aluno VIP (digitar nome) —</option>`+vips.map(v=>`<option value="${v.id}" ${m.vipId===v.id?'selected':''}>${esc(v.nome)}${v.professor?(' · '+esc(v.professor)):''}</option>`).join('');
+  const optV=`<option value="">— não vincular (aluno novo) —</option>`+vips.map(v=>`<option value="${v.id}" ${m.vipId===v.id?'selected':''}>${esc(v.nome)}${v.professor?(' · '+esc(v.professor)):''}</option>`).join('');
   const ehAdulto=(idadeDe(m.nascimento)!=null && idadeDe(m.nascimento)>=18);
   modal(`<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><h3 style="flex:1;margin:0">${id?'✏️ Editar matrícula':'📝 Nova matrícula'}</h3><button class="close" onclick="fechar()">×</button></div>
     <div class="row"><div class="field"><label class="lbl">Status</label><select id="mat_status">${optS}</select></div>
       <div class="field"><label class="lbl">Tipo de matrícula</label><select id="mat_tipo" onchange="_matTipoSel()"><option value="turma" ${tipo==='turma'?'selected':''}>🏫 Turma</option><option value="vip" ${tipo==='vip'?'selected':''}>👑 VIP (particular)</option></select></div></div>
 
     <div style="font-weight:700;color:#0A7A3D;margin:10px 0 4px">👦 Aluno</div>
-    <div class="field" id="mat_wrapAlunoTurma" style="display:${tipo==='vip'?'none':'block'}"><label class="lbl">Vincular a um aluno de turma já cadastrado</label><select id="mat_alunoId" onchange="_matAlunoSel()">${optA}</select></div>
-    <div class="field" id="mat_wrapAlunoVip" style="display:${tipo==='vip'?'block':'none'}"><label class="lbl">Vincular a um aluno VIP já cadastrado</label><select id="mat_vipId" onchange="_matAlunoSel()">${optV}</select></div>
-    <div class="field" id="mat_nomeWrap" style="display:${(m.alunoId||m.vipId)?'none':'block'}"><label class="lbl">Nome do aluno (novo)</label><input type="text" id="mat_alunoNome" value="${escAttr(m.alunoNome||'')}" placeholder="Nome completo"></div>
+    <div class="field" id="mat_nomeWrap" style="display:${(m.alunoId||m.vipId)?'none':'block'}"><label class="lbl">Nome do aluno</label><input type="text" id="mat_alunoNome" value="${escAttr(m.alunoNome||'')}" placeholder="Digite o nome completo do aluno"></div>
+    <div class="field" id="mat_wrapAlunoTurma" style="display:${tipo==='vip'?'none':'block'}"><label class="lbl">…ou vincule a um aluno de turma já cadastrado <span class="hint">(opcional)</span></label><select id="mat_alunoId" onchange="_matAlunoSel()">${optA}</select></div>
+    <div class="field" id="mat_wrapAlunoVip" style="display:${tipo==='vip'?'block':'none'}"><label class="lbl">…ou vincule a um aluno VIP já cadastrado <span class="hint">(opcional)</span></label><select id="mat_vipId" onchange="_matAlunoSel()">${optV}</select></div>
     <div class="row"><div class="field"><label class="lbl">Nascimento</label><input type="date" min="1900-01-01" max="${hoje()}" id="mat_nascimento" value="${escAttr(m.nascimento||'')}" oninput="_matIdadeHint()"></div>
       <div class="field"><label class="lbl">Documento do aluno</label><input type="text" id="mat_docAluno" value="${escAttr(m.docAluno||'')}" placeholder="CPF / RG (opcional)"></div></div>
 
