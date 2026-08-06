@@ -325,6 +325,36 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
   });
   Object.assign(r,t12);
 
+  // ===== 13) b174: prospectivos — criar, registrar contato e encaminhar p/ matrícula =====
+  const t13=await page.evaluate(async()=>{
+    const o={};
+    S.perfil='direcao'; S.prospectos=[]; S.matriculas=[];
+    abrirProspecto(''); await new Promise(z=>setTimeout(z,30));
+    o.form_abre = !!document.getElementById('pr_alunoNome') && !!document.getElementById('pr_trilha') && !!document.getElementById('pr_nivel');
+    document.getElementById('pr_alunoNome').value='Maria Interessada';
+    document.getElementById('pr_paiNome').value='João Pai';
+    document.getElementById('pr_telefone').value='51999';
+    document.getElementById('pr_email').value='m@e.com';
+    document.getElementById('pr_trilha').value='teens'; _prospNiveis();
+    document.getElementById('pr_nivel').value='A2';
+    document.getElementById('pr_horario').value='ter/qui';
+    salvarProspecto('');
+    o.criou = S.prospectos.length===1 && S.prospectos[0].alunoNome==='Maria Interessada' && S.prospectos[0].nivel==='A2' && S.prospectos[0].trilha==='teens';
+    const pid=S.prospectos[0].id;
+    registrarContatoProspecto(pid); await new Promise(z=>setTimeout(z,20));
+    document.getElementById('qc_nota').value='ligamos, retornar semana que vem';
+    salvarContatoRapido(pid);
+    o.contato = (S.prospectos[0].contatos||[]).length===1 && !!_prospUltimoContato(S.prospectos[0]);
+    encaminharProspecto(pid); await new Promise(z=>setTimeout(z,20));
+    const mt=(S.matriculas||[])[0];
+    o.encaminhou = !!mt && mt.status==='orcamento' && mt.alunoNome==='Maria Interessada' && mt.respNome==='João Pai' && mt.prospectoId===pid;
+    o.prosp_marcado = S.prospectos[0].status==='encaminhado' && S.prospectos[0].encaminhadoMatriculaId===mt.id;
+    o.obs_nivel = /A2/.test(mt.observacoes||'');
+    fechar();
+    return o;
+  });
+  Object.assign(r,t13);
+
   const falhas=Object.keys(r).filter(k=>r[k]!==true);
   console.log(JSON.stringify(r,null,1));
   console.log(falhas.length?('FALHOU: '+falhas.join(', ')):('TUDO VERDE — '+Object.keys(r).length+' checks'));

@@ -5,12 +5,12 @@
 Aplicativo interno da escola **Togethere** (Gravataí/RS) para o dia a dia pedagógico **e
 comercial**: chamada, temas de casa, testes e boletins, planos de aula, relatórios por aluno e
 por turma, avisos para a secretaria, alunos VIP com pacotes de horas, correção de writings com
-IA, **matrículas e financeiro**, **livros sob demanda**, **permissões configuráveis** e um
+IA, **prospectivos** (novos interessados) e **matrículas e financeiro**, **livros sob demanda**, **permissões configuráveis** e um
 **Portal do Aluno** — tudo com sincronização na nuvem. É um **PWA** (instalável no
 celular/tablet/computador) publicado como um único `index.html`, mas **desenvolvido em módulos**
 (pasta `src/`) com build automático.
 
-> **Versão atual: `2026.08.05 · b173 (Supabase)`.**
+> **Versão atual: `2026.08.06 · b174 (Supabase)`.**
 > O app roda sobre **PostgreSQL no Supabase** (migração do Google Sheets em 25/07).
 > Confira a versão em uso no **rodapé** do app — ele avisa sozinho quando há atualização.
 

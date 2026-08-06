@@ -33,6 +33,7 @@
     "src/js/30-permissoes.js",
     "src/js/31-estoque.js",
     "src/js/32-tarefas-internas.js",
-    "src/js/33-contratos-oficiais.js"
+    "src/js/33-contratos-oficiais.js",
+    "src/js/34-prospectivos.js"
   ]
 }

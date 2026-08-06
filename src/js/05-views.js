@@ -198,11 +198,13 @@ VIEWS.painel=()=>{
   const tv=turmasVisiveis();
   const nTurmas=tv.length;
   const nAl=S.alunos.filter(a=>tv.some(t=>t.id===a.turmaId)).length;
+  const nVip=(S.vipAlunos||[]).filter(x=>!x.arquivado).length;
   const nAlertas=totalAlertas();
   const planosAbertos=S.planos.filter(p=>p.itens.some(i=>!i.done)).length;
   const ehProf=S.perfil==='professor';
   const cards=[
-    {ic:'👥',bg:'#eaf3ff',cor:'var(--azul)',num:numAlunosMasc(nAl),lbl:'Alunos ativos',tap:(_alunosVisiveis?'':'pedirRevelarAlunos()'),dir:true},
+    {ic:'👥',bg:'#eaf3ff',cor:'var(--azul)',num:numAlunosMasc(nAl),lbl:'Alunos em turma',tap:(_alunosVisiveis?'':'pedirRevelarAlunos()'),dir:true},
+    {ic:'👑',bg:'#fff3d6',cor:'#b88600',num:numAlunosMasc(nVip),lbl:'Alunos VIP',tap:(_alunosVisiveis?'':'pedirRevelarAlunos()'),dir:true},
     {ic:'📚',bg:'#fff8e0',cor:'#b88600',num:nTurmas,lbl:ehProf?'Minhas turmas':'Turmas'},
     {ic:'🔔',bg:'#fdeaea',cor:'var(--vermelho)',num:nAlertas,lbl:'Alertas abertos',tap:(nAlertas?'verAlertas()':'')},
     {ic:'🗒️',bg:'#f4ecff',cor:'#9333c7',num:planosAbertos,lbl:'Planos em andamento'},
