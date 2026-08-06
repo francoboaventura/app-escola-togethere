@@ -286,6 +286,28 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
   });
   Object.assign(r,t10);
 
+  // ===== 11) b171: matrícula Turma/VIP + responsável opcional 18+ =====
+  const t11=await page.evaluate(async()=>{
+    const o={};
+    S.vipAlunos=[{id:'vv1',nome:'Paula Adulta',professor:'Franco'}];
+    S.turmas=S.turmas||[]; if(!S.turmas.some(t=>t.id==='tt1')) S.turmas.push({id:'tt1',nome:'B1 Teens Seg/Qua'});
+    // matrícula VIP resolve nome/local pelo aluno VIP
+    const mVip={tipo:'vip',vipId:'vv1',professor:'Franco'};
+    o.mat_vip_nome = matNome(mVip)==='Paula Adulta';
+    o.mat_vip_local = /VIP/.test(matLocal(mVip)) && /Franco/.test(matLocal(mVip)) && matEhVip(mVip)===true;
+    // matrícula de turma continua resolvendo pela turma
+    const mTur={tipo:'turma',turmaId:'tt1',alunoNome:'João'};
+    o.mat_turma_local = /🏫/.test(matLocal(mTur)) && matEhVip(mTur)===false && matNome(mTur)==='João';
+    // regra de idade: 18+ é adulto (responsável opcional)
+    o.idade_adulto = idadeDe('2000-01-01')>=18 && (idadeDe('2015-01-01')||0)<18;
+    // o form abre sem erro com o novo seletor de tipo
+    S.perfil='direcao'; abrirMatricula(''); await new Promise(z=>setTimeout(z,40));
+    o.mat_form_tipo = !!document.getElementById('mat_tipo') && !!document.getElementById('mat_wrapProf') && !!document.getElementById('mat_wrapAlunoVip');
+    fechar();
+    return o;
+  });
+  Object.assign(r,t11);
+
   const falhas=Object.keys(r).filter(k=>r[k]!==true);
   console.log(JSON.stringify(r,null,1));
   console.log(falhas.length?('FALHOU: '+falhas.join(', ')):('TUDO VERDE — '+Object.keys(r).length+' checks'));

@@ -19,7 +19,11 @@ const MAT_PARENTESCO=['Mãe','Pai','Responsável legal','Avó/Avô','O próprio 
 // helpers de dinheiro compartilhados (usados também pelo módulo Financeiro)
 function _matN(v){ if(v==null) return 0; const s=String(v).replace(/\./g,'').replace(',','.').replace(/[^0-9.\-]/g,''); const n=parseFloat(s); return isNaN(n)?0:n; }
 function _moeda(v){ return 'R$ '+(Math.round((+v||0)*100)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
-function matNome(m){ if(!m) return '—'; if(m.alunoId){ const a=(S.alunos||[]).find(x=>x.id===m.alunoId); if(a) return a.nome; } return m.alunoNome||'(sem nome)'; }
+function matNome(m){ if(!m) return '—';
+  if(m.tipo==='vip' && m.vipId){ const v=(S.vipAlunos||[]).find(x=>x.id===m.vipId); if(v) return v.nome; }
+  if(m.alunoId){ const a=(S.alunos||[]).find(x=>x.id===m.alunoId); if(a) return a.nome; } return m.alunoNome||'(sem nome)'; }
+function matEhVip(m){ return !!(m && m.tipo==='vip'); }
+function matLocal(m){ if(!m) return ''; if(m.tipo==='vip') return '👑 VIP'+(m.professor?(' · '+m.professor):''); return m.turmaId?('🏫 '+turmaNome(m.turmaId)):''; }
 function matAtivas(){ return (S.matriculas||[]).filter(m=>m.status==='ativa'); }
 function matTemFinanceiro(m){ return (S.financeiro||[]).some(f=>f.matriculaId===m.id); }
 
@@ -75,16 +79,16 @@ function _matSetFiltro(id){ _matFiltro=id; VIEWS.matriculas(); }
 function _matBuscaInput(q){ _matBusca=q; clearTimeout(window._matBuscaTO); window._matBuscaTO=setTimeout(_matRenderLista,180); }
 function _matLinha(m){
   const st=MAT_STATUS[m.status]||MAT_STATUS.orcamento;
-  const t=m.turmaId?turmaNome(m.turmaId):'';
-  const vinc=m.alunoId?'🔗 vinculado':'';
+  const loc=matLocal(m);
+  const vinc=(m.alunoId||m.vipId)?'🔗 vinculado':'';
   const temFin=matTemFinanceiro(m);
   return `<div class="check" style="display:block">
     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;cursor:pointer" onclick="abrirMatricula('${m.id}')">
       <b style="flex:1">${esc(matNome(m))}</b>
       <span class="pill" style="background:${st.bg};color:${st.cor}">${st.lbl}</span>
-      <button class="btn ghost sm" onclick="event.stopPropagation();abrirFinanceiroDaMatricula('${m.id}')">💰 ${temFin?'Financeiro':'+ Financeiro'}</button>
+      ${matEhVip(m)?'':`<button class="btn ghost sm" onclick="event.stopPropagation();abrirFinanceiroDaMatricula('${m.id}')">💰 ${temFin?'Financeiro':'+ Financeiro'}</button>`}
     </div>
-    <span class="hint" style="cursor:pointer" onclick="abrirMatricula('${m.id}')">${t?('🏫 '+esc(t)):'sem turma'}${m.respNome?(' · resp. '+esc(m.respNome)):''}${m.telefone?(' · '+esc(m.telefone)):''}${vinc?(' · '+vinc):''}${temFin?' · 💰 com plano':''}</span>
+    <span class="hint" style="cursor:pointer" onclick="abrirMatricula('${m.id}')">${loc?esc(loc):'sem turma'}${m.respNome?(' · resp. '+esc(m.respNome)):''}${m.telefone?(' · '+esc(m.telefone)):''}${vinc?(' · '+vinc):''}${temFin?' · 💰 com plano':''}</span>
   </div>`;
 }
 
@@ -98,16 +102,24 @@ function abrirMatricula(id){
   const optA=`<option value="">— novo aluno (digitar nome) —</option>`+alunos.map(a=>`<option value="${a.id}" ${m.alunoId===a.id?'selected':''}>${esc(a.nome)}${a.turmaId?(' · '+esc(turmaNome(a.turmaId))):''}</option>`).join('');
   const optP=MAT_PARENTESCO.map(p=>`<option ${m.respParentesco===p?'selected':''}>${p}</option>`).join('');
   const optS=Object.keys(MAT_STATUS).map(k=>`<option value="${k}" ${((m.status||'orcamento')===k)?'selected':''}>${MAT_STATUS[k].lbl}</option>`).join('');
+  const tipo=m.tipo||'turma';
+  const profs=[...new Set((S.usuarios||[]).filter(u=>u.ensina).map(u=>u.ensina).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const optProf=`<option value="">— professor(a) —</option>`+profs.map(p=>`<option value="${escAttr(p)}" ${m.professor===p?'selected':''}>${esc(p)}</option>`).join('');
+  const vips=(S.vipAlunos||[]).filter(v=>!v.arquivado).sort((a,b)=>a.nome.localeCompare(b.nome));
+  const optV=`<option value="">— novo aluno VIP (digitar nome) —</option>`+vips.map(v=>`<option value="${v.id}" ${m.vipId===v.id?'selected':''}>${esc(v.nome)}${v.professor?(' · '+esc(v.professor)):''}</option>`).join('');
+  const ehAdulto=(idadeDe(m.nascimento)!=null && idadeDe(m.nascimento)>=18);
   modal(`<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><h3 style="flex:1;margin:0">${id?'✏️ Editar matrícula':'📝 Nova matrícula'}</h3><button class="close" onclick="fechar()">×</button></div>
-    <div class="field" style="margin-bottom:8px"><label class="lbl">Status</label><select id="mat_status">${optS}</select></div>
+    <div class="row"><div class="field"><label class="lbl">Status</label><select id="mat_status">${optS}</select></div>
+      <div class="field"><label class="lbl">Tipo de matrícula</label><select id="mat_tipo" onchange="_matTipoSel()"><option value="turma" ${tipo==='turma'?'selected':''}>🏫 Turma</option><option value="vip" ${tipo==='vip'?'selected':''}>👑 VIP (particular)</option></select></div></div>
 
     <div style="font-weight:700;color:#0A7A3D;margin:10px 0 4px">👦 Aluno</div>
-    <div class="field"><label class="lbl">Vincular a um aluno já cadastrado</label><select id="mat_alunoId" onchange="_matAlunoSel()">${optA}</select></div>
-    <div class="field" id="mat_nomeWrap" style="display:${m.alunoId?'none':'block'}"><label class="lbl">Nome do aluno (novo)</label><input type="text" id="mat_alunoNome" value="${escAttr(m.alunoNome||'')}" placeholder="Nome completo"></div>
-    <div class="row"><div class="field"><label class="lbl">Nascimento</label><input type="date" min="1900-01-01" max="${hoje()}" id="mat_nascimento" value="${escAttr(m.nascimento||'')}"></div>
+    <div class="field" id="mat_wrapAlunoTurma" style="display:${tipo==='vip'?'none':'block'}"><label class="lbl">Vincular a um aluno de turma já cadastrado</label><select id="mat_alunoId" onchange="_matAlunoSel()">${optA}</select></div>
+    <div class="field" id="mat_wrapAlunoVip" style="display:${tipo==='vip'?'block':'none'}"><label class="lbl">Vincular a um aluno VIP já cadastrado</label><select id="mat_vipId" onchange="_matAlunoSel()">${optV}</select></div>
+    <div class="field" id="mat_nomeWrap" style="display:${(m.alunoId||m.vipId)?'none':'block'}"><label class="lbl">Nome do aluno (novo)</label><input type="text" id="mat_alunoNome" value="${escAttr(m.alunoNome||'')}" placeholder="Nome completo"></div>
+    <div class="row"><div class="field"><label class="lbl">Nascimento</label><input type="date" min="1900-01-01" max="${hoje()}" id="mat_nascimento" value="${escAttr(m.nascimento||'')}" oninput="_matIdadeHint()"></div>
       <div class="field"><label class="lbl">Documento do aluno</label><input type="text" id="mat_docAluno" value="${escAttr(m.docAluno||'')}" placeholder="CPF / RG (opcional)"></div></div>
 
-    <div style="font-weight:700;color:#0A7A3D;margin:12px 0 4px">👪 Responsável</div>
+    <div style="font-weight:700;color:#0A7A3D;margin:12px 0 4px">👪 Responsável <span id="mat_respOpc" class="hint" style="font-weight:400;color:var(--azul);display:${ehAdulto?'inline':'none'}">— opcional (aluno maior de 18)</span></div>
     <div class="row"><div class="field" style="flex:2"><label class="lbl">Nome do responsável</label><input type="text" id="mat_respNome" value="${escAttr(m.respNome||'')}" placeholder="Quem assina / financeiro"></div>
       <div class="field"><label class="lbl">Parentesco</label><select id="mat_respParentesco"><option value="">—</option>${optP}</select></div></div>
     <div class="row"><div class="field"><label class="lbl">Telefone / WhatsApp</label><input type="text" id="mat_telefone" value="${escAttr(m.telefone||'')}" placeholder="(51) 9…"></div>
@@ -117,36 +129,57 @@ function abrirMatricula(id){
       <div class="field"><label class="lbl">Cidade</label><input type="text" id="mat_cidade" value="${escAttr(m.cidade||'Gravataí, RS')}"></div></div>
 
     <div style="font-weight:700;color:#0A7A3D;margin:12px 0 4px">🏫 Acadêmico</div>
-    <div class="row"><div class="field" style="flex:2"><label class="lbl">Turma</label><select id="mat_turmaId">${optT}</select></div>
+    <div class="row"><div class="field" id="mat_wrapTurma" style="flex:2;display:${tipo==='vip'?'none':'block'}"><label class="lbl">Turma</label><select id="mat_turmaId">${optT}</select></div>
+      <div class="field" id="mat_wrapProf" style="flex:2;display:${tipo==='vip'?'block':'none'}"><label class="lbl">Professor(a) responsável</label><select id="mat_professor">${optProf}</select></div>
       <div class="field"><label class="lbl">Início</label><input type="date" id="mat_dataInicio" value="${escAttr(m.dataInicio||hoje())}"></div></div>
     <div class="row"><div class="field"><label class="lbl">Fim do período (contrato)</label><input type="date" id="mat_fimPeriodo" value="${escAttr(m.fimPeriodo||'')}" title="Se vazio, o contrato usa 31/12 do ano de início"></div>
       <div class="field"><label class="lbl">Modalidade</label><select id="mat_modalidade">${['Presencial','On-line','Híbrida'].map(o=>`<option ${(m.modalidade||'Presencial')===o?'selected':''}>${o}</option>`).join('')}</select></div></div>
 
     <div class="field" style="margin-top:8px"><label class="lbl">Observações</label><textarea id="mat_obs" style="min-height:60px" placeholder="Combinados, condições especiais…">${escAttr(m.observacoes||'')}</textarea></div>
 
-    ${id&&!m.alunoId?`<div class="card box-suave" style="margin-bottom:12px"><p class="hint" style="margin:0 0 6px">Este cadastro ainda não está vinculado a um aluno do app. Salve primeiro e, quando quiser, crie o aluno na turma:</p><button class="btn ghost sm" onclick="matCriarAlunoEVincular('${id}')">➕ Criar aluno na turma e vincular</button></div>`:''}
+    ${id&&m.tipo==='vip'&&!m.vipId?`<div class="card box-suave" style="margin-bottom:12px"><p class="hint" style="margin:0 0 6px">Ainda não vinculado a um aluno VIP. Salve primeiro e crie o aluno em 👑 Alunos VIP:</p><button class="btn ghost sm" onclick="matCriarAlunoEVincular('${id}')">➕ Criar aluno VIP e vincular</button></div>`:''}
+    ${id&&m.tipo!=='vip'&&!m.alunoId?`<div class="card box-suave" style="margin-bottom:12px"><p class="hint" style="margin:0 0 6px">Este cadastro ainda não está vinculado a um aluno do app. Salve primeiro e, quando quiser, crie o aluno na turma:</p><button class="btn ghost sm" onclick="matCriarAlunoEVincular('${id}')">➕ Criar aluno na turma e vincular</button></div>`:''}
+    ${id&&m.tipo==='vip'?`<div class="card box-suave" style="margin-bottom:12px"><p class="hint" style="margin:0">💡 O <b>pacote de horas</b> e os valores do VIP ficam na tela <b>👑 Alunos VIP</b> (depois de criar/vincular o aluno). O contrato VIP usa os dados preenchidos na ficha do aluno VIP.</p></div>`:''}
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn" onclick="salvarMatricula('${id||''}')">💾 Salvar</button>
-      ${id?`<button class="btn ghost" onclick="abrirFinanceiroDaMatricula('${id}')">💰 Financeiro</button>`:''}
+      ${id&&m.tipo!=='vip'?`<button class="btn ghost" onclick="abrirFinanceiroDaMatricula('${id}')">💰 Financeiro</button>`:''}
       ${id?`<button class="btn ghost" onclick="verMatricula('${id}')">🖨️ Ficha / PDF</button>`:''}
-      ${id&&m.status==='orcamento'?`<button class="btn ghost" style="color:#9333c7" onclick="verOrcamento('${id}')">🧾 Orçamento / PDF</button>`:''}
-      ${id?`<button class="btn ghost" onclick="verContratoOficial('${id}')">📄 Contrato oficial</button>`:''}
+      ${id&&m.tipo!=='vip'&&m.status==='orcamento'?`<button class="btn ghost" style="color:#9333c7" onclick="verOrcamento('${id}')">🧾 Orçamento / PDF</button>`:''}
+      ${id&&m.tipo==='vip'?`<button class="btn ghost" onclick="${m.vipId?`verContratoVip('${m.vipId}')`:`toast('Crie/vincule o aluno VIP e preencha o contrato na ficha do VIP primeiro')`}">📄 Contrato VIP</button>`:(id?`<button class="btn ghost" onclick="verContratoOficial('${id}')">📄 Contrato oficial</button>`:'')}
       ${id?`<button class="btn ghost" style="color:var(--vermelho)" onclick="excluirMatricula('${id}')">🗑 Excluir</button>`:''}
       <button class="btn ghost" onclick="fechar()">Cancelar</button>
     </div>`);
 }
-function _matAlunoSel(){ const sel=document.getElementById('mat_alunoId'); const w=document.getElementById('mat_nomeWrap'); if(w) w.style.display=(sel&&sel.value)?'none':'block'; }
+function _matTipoSel(){
+  const tp=((document.getElementById('mat_tipo')||{}).value)||'turma'; const vip=tp==='vip';
+  const show=(id,on)=>{ const e=document.getElementById(id); if(e) e.style.display=on?'block':'none'; };
+  show('mat_wrapAlunoTurma',!vip); show('mat_wrapAlunoVip',vip);
+  show('mat_wrapTurma',!vip); show('mat_wrapProf',vip);
+  _matAlunoSel();
+}
+function _matAlunoSel(){
+  const tp=((document.getElementById('mat_tipo')||{}).value)||'turma';
+  const sel=document.getElementById(tp==='vip'?'mat_vipId':'mat_alunoId');
+  const w=document.getElementById('mat_nomeWrap'); if(w) w.style.display=(sel&&sel.value)?'none':'block';
+}
+function _matIdadeHint(){
+  const v=((document.getElementById('mat_nascimento')||{}).value)||'';
+  const el=document.getElementById('mat_respOpc'); if(!el) return;
+  el.style.display=(idadeDe(v)!=null && idadeDe(v)>=18)?'inline':'none';
+}
 function _matLerForm(){
   const g=id=>{ const e=document.getElementById(id); return e?e.value:''; };
-  return { status:g('mat_status')||'orcamento', alunoId:g('mat_alunoId'), alunoNome:g('mat_alunoNome').trim(), nascimento:g('mat_nascimento'), docAluno:g('mat_docAluno').trim(),
+  const tipo=g('mat_tipo')||'turma'; const vip=tipo==='vip';
+  return { status:g('mat_status')||'orcamento', tipo, alunoId:vip?'':g('mat_alunoId'), vipId:vip?g('mat_vipId'):'', professor:vip?g('mat_professor'):'',
+    alunoNome:g('mat_alunoNome').trim(), nascimento:g('mat_nascimento'), docAluno:g('mat_docAluno').trim(),
     respNome:g('mat_respNome').trim(), respParentesco:g('mat_respParentesco'), telefone:g('mat_telefone').trim(), email:g('mat_email').trim(), respDoc:g('mat_respDoc').trim(),
     endereco:g('mat_endereco').trim(), cidade:g('mat_cidade').trim(), fimPeriodo:g('mat_fimPeriodo'), modalidade:g('mat_modalidade'),
-    turmaId:g('mat_turmaId'), dataInicio:g('mat_dataInicio'), observacoes:g('mat_obs').trim() };
+    turmaId:vip?'':g('mat_turmaId'), dataInicio:g('mat_dataInicio'), observacoes:g('mat_obs').trim() };
 }
 function salvarMatricula(id){
   if(S.perfil!=='direcao') return toast('Sem permissão');
   const m=_matLerForm();
-  if(!m.alunoId && !m.alunoNome) return toast('Vincule a um aluno ou informe o nome');
+  if(!m.alunoId && !m.vipId && !m.alunoNome) return toast('Vincule a um aluno ou informe o nome');
   S.matriculas=S.matriculas||[];
   if(id){ const ex=S.matriculas.find(x=>x.id===id); if(ex){ Object.assign(ex,m); ex.atualizadoEm=Date.now(); } }
   else { S.matriculas.push(Object.assign({id:uid(), criadoEm:hoje(), criadoPor:S.usuario, atualizadoEm:Date.now()}, m)); }
@@ -166,6 +199,14 @@ function excluirMatricula(id){
 function matCriarAlunoEVincular(id){
   if(S.perfil!=='direcao') return toast('Sem permissão');
   const m=(S.matriculas||[]).find(x=>x.id===id); if(!m) return;
+  if(m.tipo==='vip'){
+    if(m.vipId) return toast('Já vinculado a um aluno VIP');
+    if(!m.alunoNome) return toast('Informe o nome do aluno');
+    if(!m.professor) return toast('Escolha o professor(a) responsável na matrícula primeiro');
+    const nv={ id:uid(), nome:m.alunoNome, professor:m.professor, email:m.email||'', nascimento:m.nascimento||'', atualizadoEm:Date.now() };
+    S.vipAlunos=S.vipAlunos||[]; S.vipAlunos.push(nv); m.vipId=nv.id; m.atualizadoEm=Date.now();
+    save(); if(typeof montarNav==='function') montarNav(); VIEWS.matriculas(); toast('Aluno VIP criado e vinculado ✓'); return;
+  }
   if(m.alunoId) return toast('Já está vinculado a um aluno');
   if(!m.turmaId) return toast('Escolha a turma na matrícula primeiro');
   if(!m.alunoNome) return toast('Informe o nome do aluno');
@@ -193,7 +234,7 @@ td{border:1px solid #DCE4EC;padding:5px 8px;vertical-align:top}td.k{background:#
 </style></head><body>
 <div class="top"><h1>Togethere</h1><div style="font-weight:700">Ficha de matrícula</div><div class="per">Gerado em ${brDate(hoje())} por ${esc(S.usuario||'')}</div></div>
 <p style="margin:0 0 8px"><span class="chip">${st.lbl}</span></p>
-<h2>Aluno</h2><table>${linha('Nome',matNome(m))}${linha('Nascimento',m.nascimento?brDate(m.nascimento):'')}${linha('Documento',m.docAluno)}${linha('Turma',t?t.nome:'')}${linha('Início',m.dataInicio?brDate(m.dataInicio):'')}</table>
+<h2>Aluno</h2><table>${linha('Nome',matNome(m))}${linha('Nascimento',m.nascimento?brDate(m.nascimento):'')}${linha('Documento',m.docAluno)}${m.tipo==='vip'?linha('Modalidade','VIP — aulas particulares'+(m.professor?(' · prof. '+m.professor):'')):linha('Turma',t?t.nome:'')}${linha('Início',m.dataInicio?brDate(m.dataInicio):'')}</table>
 <h2>Responsável</h2><table>${linha('Nome',m.respNome)}${linha('Parentesco',m.respParentesco)}${linha('Telefone',m.telefone)}${linha('E-mail',m.email)}${linha('Documento',m.respDoc)}</table>
 ${m.observacoes?`<h2>Observações</h2><p style="font-size:12.5px">${esc(m.observacoes)}</p>`:''}
 <p class="foot">As condições financeiras estão no módulo Financeiro. Documento de cadastro — sem valor fiscal. Togethere · inglês para chegar lá.</p>
@@ -205,8 +246,8 @@ ${m.observacoes?`<h2>Observações</h2><p style="font-size:12.5px">${esc(m.obser
 function exportarMatriculasCSV(){
   const lista=(S.matriculas||[]).slice().sort((a,b)=>_normTxt(matNome(a)).localeCompare(_normTxt(matNome(b))));
   if(!lista.length) return toast('Nenhuma matrícula para exportar');
-  const rows=[_csvLinha(['Aluno','Status','Turma','Responsável','Parentesco','Telefone','E-mail','Início','Vinculado','Tem financeiro','Motivo (não fechou)'])];
-  lista.forEach(m=>{ rows.push(_csvLinha([matNome(m),(MAT_STATUS[m.status]||{}).lbl||m.status, m.turmaId?turmaNome(m.turmaId):'', m.respNome||'', m.respParentesco||'', m.telefone||'', m.email||'', m.dataInicio?brDate(m.dataInicio):'', m.alunoId?'sim':'não', matTemFinanceiro(m)?'sim':'não', (m.negada&&m.negada.motivo)||''])); });
+  const rows=[_csvLinha(['Aluno','Status','Tipo','Turma / Professor','Responsável','Parentesco','Telefone','E-mail','Início','Vinculado','Tem financeiro','Motivo (não fechou)'])];
+  lista.forEach(m=>{ rows.push(_csvLinha([matNome(m),(MAT_STATUS[m.status]||{}).lbl||m.status, m.tipo==='vip'?'VIP':'Turma', m.tipo==='vip'?(m.professor||''):(m.turmaId?turmaNome(m.turmaId):''), m.respNome||'', m.respParentesco||'', m.telefone||'', m.email||'', m.dataInicio?brDate(m.dataInicio):'', (m.alunoId||m.vipId)?'sim':'não', matTemFinanceiro(m)?'sim':'não', (m.negada&&m.negada.motivo)||''])); });
   _dlArquivo('matriculas-'+hoje()+'.csv', rows.join('\n'));
   toast('Planilha de matrículas baixada ('+lista.length+')');
 }
