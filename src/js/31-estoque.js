@@ -25,7 +25,7 @@ function _livrosAPedir(){
 
 VIEWS.estoque=()=>{
   const v=document.getElementById('view');
-  if(ehProfessor()){ v.innerHTML='<div class="card empty"><div class="big">🔒</div><b>Acesso restrito</b><br>Os livros são gerenciados pela secretaria e direção.</div>'; return; }
+  if(!moduloOk('estoque')){ v.innerHTML='<div class="card empty"><div class="big">🔒</div><b>Acesso restrito</b><br>A direção não liberou os Livros para o seu perfil.</div>'; return; }
   const podeAgir=_estPode();
   const aPedir=_livrosAPedir();
   const pedidos=_lps().filter(p=>p.status==='pedido').sort((a,b)=>(a.pedidoEm||'').localeCompare(b.pedidoEm||''));

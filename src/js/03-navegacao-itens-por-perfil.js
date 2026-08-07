@@ -44,6 +44,18 @@ function perm(k){   // permissões configuráveis pela direção (🔐 Permissõ
   const reg=(S.permissoes||[]).find(x=>x.id==='perm');
   return !(reg && reg.off && reg.off[k]);
 }
+// b179: matriz de acesso por (tela × perfil). Padrão = os roles de NAV. A direção nunca perde
+// o acesso às próprias Permissões (proteção contra se trancar fora — sem cadeado na tela).
+function moduloOk(id, perfil){
+  perfil=perfil||S.perfil;
+  if(perfil==='direcao' && (id==='permissoes'||id==='acessos')) return true;
+  const reg=(S.permissoes||[]).find(x=>x.id==='perm');
+  const m=reg&&reg.mod&&reg.mod[id];
+  if(m && typeof m[perfil]==='boolean') return m[perfil];
+  const n=NAV.find(x=>x.id===id);
+  return !!(n && n.roles.indexOf(perfil)>=0);
+}
+function moduloPadrao(id, perfil){ const n=NAV.find(x=>x.id===id); return !!(n && n.roles.indexOf(perfil)>=0); }
 function _navPermOk(n){   // esconde itens de menu desligados nas Permissões
   if(S.perfil==='professor'){
     if(n.id==='writings') return perm('prof_writings');

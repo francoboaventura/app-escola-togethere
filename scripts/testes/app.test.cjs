@@ -574,6 +574,36 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
   });
   Object.assign(r,t18);
 
+  // ===== b179: matriz de permissões (tela × perfil), sem cadeados + proteção da direção =====
+  const t19=await page.evaluate(async()=>{
+    const o={}; window.confirm=()=>true;
+    S.perfil='direcao'; S.usuario='Chefe'; S.permissoes=[];
+    o.pm_padrao = moduloOk('financeiro','direcao') && !moduloOk('financeiro','professor') && moduloOk('vip','professor') && !moduloOk('matriculas','secretaria');
+    setModulo('matriculas','secretaria',true);
+    o.pm_grant = moduloOk('matriculas','secretaria')===true;
+    setModulo('vip','professor',false);
+    o.pm_revoke = moduloOk('vip','professor')===false;
+    setModulo('permissoes','direcao',false);   // proteção: ignora
+    o.pm_safety = moduloOk('permissoes','direcao')===true;
+    // secretaria abre a tela concedida (matrículas), sem "Acesso restrito"
+    S.perfil='secretaria'; S.usuario='Sec'; VIEWS.matriculas();
+    o.pm_sec_abre = !/Acesso restrito/.test(document.getElementById('view').innerHTML);
+    // professor sem financeiro → bloqueado
+    S.perfil='professor'; S.usuario='Prof'; VIEWS.financeiro();
+    o.pm_prof_bloqueia = /Acesso restrito/.test(document.getElementById('view').innerHTML);
+    // menu do professor perde "Alunos VIP" após revogar
+    S.usuarios=[{nome:'Prof',ensina:'Prof'}]; montarNav();
+    o.pm_menu = !/Alunos VIP/.test(document.getElementById('nav').innerHTML);
+    // volta ao padrão
+    S.perfil='direcao'; restaurarPermissoes();
+    o.pm_restaura = !moduloOk('matriculas','secretaria') && moduloOk('vip','professor');
+    // a tela renderiza a matriz
+    VIEWS.permissoes();
+    o.pm_render = /class="permx"/.test(document.getElementById('view').innerHTML) && /Financeiro/.test(document.getElementById('view').innerHTML);
+    return o;
+  });
+  Object.assign(r,t19);
+
   const falhas=Object.keys(r).filter(k=>r[k]!==true);
   console.log(JSON.stringify(r,null,1));
   console.log(falhas.length?('FALHOU: '+falhas.join(', ')):('TUDO VERDE — '+Object.keys(r).length+' checks'));

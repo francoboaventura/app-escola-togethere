@@ -693,6 +693,20 @@ body.dark .ctv .ct-rodape{background:rgba(255,255,255,.03)}
 @media (prefers-reduced-motion:reduce){ .ctv,#fichaLat,#fichaLatVeu{transition:none} }
 @media (max-width:640px){ .ctg{grid-template-columns:1fr 1fr;gap:8px} .ctv .ct-miolo{padding:10px 12px} }
 
+/* ===== b179 · Permissões em matriz ===== */
+.permx{border-collapse:collapse;width:100%;min-width:520px;font-size:.9rem}
+.permx th,.permx td{border-bottom:1px solid var(--linha);padding:8px 10px;text-align:left}
+.permx th.pc,.permx td.pcell{text-align:center;width:92px}
+.permx thead th,.permx tr:first-child th{position:sticky;top:0}
+.permx .pk{font-weight:500}
+.permx th.pk,.permx th.pc{font-family:'Poppins',sans-serif;font-size:.82rem;color:var(--tinta);background:var(--bg)}
+.permx tr.pgrp td{background:var(--bg);font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--tinta-suave)}
+.permx td.pcell input{width:20px;height:20px;cursor:pointer;accent-color:var(--ok)}
+.permx td.pcell input:disabled{cursor:not-allowed;opacity:.6}
+.permx td.pcell.dif{background:rgba(255,200,0,.14)}
+.pdif{background:rgba(255,200,0,.28);padding:0 5px;border-radius:4px}
+body.dark .permx th.pk,body.dark .permx th.pc,body.dark .permx tr.pgrp td{background:rgba(255,255,255,.03)}
+
 /* ===== b177 · Lista VIP: barra de filtros + cartões recolhíveis ===== */
 .vip-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .vipf-bar{display:flex;flex-direction:column;gap:10px;background:var(--bg);border:1px solid var(--linha);

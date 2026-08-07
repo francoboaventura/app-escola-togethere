@@ -101,7 +101,7 @@ function aplicarLogin(u){
   _md.innerHTML='<span class="fotoav-ini">'+escAttr((u.nome[0]||'·'))+'</span>';
   if(u.foto) _md.dataset.foto=u.foto; else { delete _md.dataset.foto; delete _md.dataset.hid; _md.style.backgroundImage=''; }
   document.getElementById('perfilLabel').innerHTML='Conectado como <b>'+escAttr(u.nome)+'</b> · '+meta.nome;
-  montarNav(); ir(NAV.find(n=>n.roles.includes(u.perfil)).id);
+  montarNav(); ir(NAV.find(n=>moduloOk(n.id,u.perfil)).id);
   _tickRelogio(); if(!window._relInt) window._relInt=setInterval(_tickRelogio, 15000);
   setTimeout(function(){ mostrarAniversariantes(); }, 600);
 }
@@ -137,7 +137,7 @@ function _navItemBtn(n, cls){
 }
 // Itens que ESTE perfil pode acessar, agrupados (base do ☰ Menu e do menu do Painel)
 function menuGrupos(){
-  const itens=NAV.filter(n=>n.menu!==false && n.roles.includes(S.perfil) && _navPermOk(n));
+  const itens=NAV.filter(n=>n.menu!==false && moduloOk(n.id) && _navPermOk(n));
   const grupos=[]; itens.forEach(n=>{ let g=grupos.find(x=>x.grp===n.grp); if(!g){g={grp:n.grp,itens:[]}; grupos.push(g);} g.itens.push(n); });
   return grupos;
 }
@@ -155,7 +155,7 @@ function menuQuadrosHTML(pularIds){
 }
 function montarNav(){
   const nav=document.getElementById('nav'); if(!nav) return; nav.innerHTML='';
-  const itens=NAV.filter(n=>n.menu!==false && n.roles.includes(S.perfil) && _navPermOk(n));
+  const itens=NAV.filter(n=>n.menu!==false && moduloOk(n.id) && _navPermOk(n));
   // "Início" segue como botões diretos; todo o resto entra no ☰ Menu
   itens.filter(n=>n.grp==='Início').forEach(n=>nav.appendChild(_navItemBtn(n,'tnav-item')));
   const outros=itens.filter(n=>n.grp!=='Início');
@@ -189,7 +189,7 @@ const NAV_MOBILE_PRIOR=['painel','presenca','alunos','alertas','resumo','planeja
 const _BNAV_LBL={presenca:'Chamada',alertas:'Avisos',resumo:'Relatórios',planejamento:'Planejam.',painel:'Painel',alunos:'Alunos',turmas:'Turmas',writings:'Writings'};
 function montarNavMobile(){
   const bn=document.getElementById('bnav'); if(!bn) return; bn.innerHTML='';
-  const cand=NAV_MOBILE_PRIOR.map(id=>NAV.find(n=>n.id===id)).filter(n=>n && n.roles.includes(S.perfil) && _navPermOk(n)).slice(0,4);
+  const cand=NAV_MOBILE_PRIOR.map(id=>NAV.find(n=>n.id===id)).filter(n=>n && moduloOk(n.id) && _navPermOk(n)).slice(0,4);
   cand.forEach(n=>{
     const b=document.createElement('button'); b.className='bnav-i'; b.dataset.id=n.id;
     const bd=_navBadge(n);
@@ -205,7 +205,7 @@ function montarNavMobile(){
 function _abrirMais(){ const m=document.getElementById('maisMenu'); if(m) m.classList.toggle('open'); }
 function _montarMais(){
   const m=document.getElementById('maisMenu'); if(!m) return;
-  const itens=NAV.filter(n=>n.menu!==false && n.roles.includes(S.perfil) && _navPermOk(n));
+  const itens=NAV.filter(n=>n.menu!==false && moduloOk(n.id) && _navPermOk(n));
   const grupos=[]; itens.forEach(n=>{ let g=grupos.find(x=>x.grp===n.grp); if(!g){g={grp:n.grp,itens:[]}; grupos.push(g);} g.itens.push(n); });
   let html='<div class="mais-head">Menu <button class="mais-x" onclick="_abrirMais()" aria-label="Fechar">×</button></div>';
   grupos.forEach(g=>{ html+=`<div class="mais-grp">${g.grp}</div><div class="mais-grid">`+g.itens.map(n=>{const bd=_navBadge(n);return `<button class="mais-i" data-id="${n.id}" onclick="ir('${n.id}')"><span class="em">${n.em}</span> ${n.label}${bd?`<span class="badge">${bd}</span>`:''}</button>`;}).join('')+`</div>`; });
@@ -339,6 +339,11 @@ function voltar(){
   ir(ant||'painel', true);
 }
 function ir(id, semHistorico){
+  if(id && typeof moduloOk==='function' && !moduloOk(id)){   // b179: tela não liberada p/ este perfil → manda p/ a 1ª disponível
+    const alt=NAV.find(n=>n.menu!==false && moduloOk(n.id));
+    if(typeof toast==='function') toast('Sem acesso a esta tela');
+    if(alt && alt.id!==id) return ir(alt.id, semHistorico);
+  }
   if(!semHistorico && typeof rota!=='undefined' && rota && rota!==id){ _histNav.push(rota); if(_histNav.length>30) _histNav.shift(); }
   rota=id; const n=NAV.find(x=>x.id===id);
   if(typeof fecharFichaLateral==='function') fecharFichaLateral();

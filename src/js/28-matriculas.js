@@ -53,7 +53,7 @@ function criarMatriculaDaFicha(alunoId){
 let _matFiltro='', _matBusca='';
 VIEWS.matriculas=()=>{
   const v=document.getElementById('view');
-  if(S.perfil!=='direcao'){ v.innerHTML='<div class="card empty"><div class="big">🔒</div><b>Acesso restrito</b><br>O módulo de matrículas é exclusivo da direção.</div>'; return; }
+  if(!moduloOk('matriculas')){ v.innerHTML='<div class="card empty"><div class="big">🔒</div><b>Acesso restrito</b><br>A direção não liberou as matrículas para o seu perfil.</div>'; return; }
   const todas=(S.matriculas||[]).filter(x=>x.status!=='rascunho');   // rascunhos têm card próprio (b176)
   const ativas=matAtivas();
   const ymAtual=hoje().slice(0,7);

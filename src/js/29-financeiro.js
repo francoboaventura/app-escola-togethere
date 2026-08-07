@@ -80,7 +80,7 @@ function abrirExtraManual(finId){
 let _finBusca='';
 VIEWS.financeiro=()=>{
   const v=document.getElementById('view');
-  if(S.perfil!=='direcao'){ v.innerHTML='<div class="card empty"><div class="big">🔒</div><b>Acesso restrito</b><br>O módulo financeiro é exclusivo da direção.</div>'; return; }
+  if(!moduloOk('financeiro')){ v.innerHTML='<div class="card empty"><div class="big">🔒</div><b>Acesso restrito</b><br>A direção não liberou o Financeiro para o seu perfil.</div>'; return; }
   const ativas=(S.financeiro||[]).filter(_finAtiva);
   const ticket=ativas.length?finReceitaMensal()/ativas.length:0;
   const tile=(val,lbl,cor)=>`<div class="fx-tile"><div class="v" style="color:${cor}">${val}</div><div class="l">${lbl}</div></div>`;
@@ -343,7 +343,7 @@ function _cfgFinSet(campos){
 }
 VIEWS.configfin=()=>{
   const v=document.getElementById('view');
-  if(S.perfil!=='direcao'){ v.innerHTML='<div class="card empty"><div class="big">🔒</div><b>Acesso restrito</b><br>Configuração financeira é exclusiva da direção.</div>'; return; }
+  if(!moduloOk('configfin')){ v.innerHTML='<div class="card empty"><div class="big">🔒</div><b>Acesso restrito</b><br>A direção não liberou a configuração financeira para o seu perfil.</div>'; return; }
   const c=_cfgFin();
   const div=(c.diversos||[]);
   const linhasDiv=div.map((d,i)=>`<div class="check"><span style="flex:1">${esc(d.nome||'—')} · <b>${_moeda(d.valor)}</b></span><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delCobrancaDiversa(${i})">remover</button></div>`).join('');
