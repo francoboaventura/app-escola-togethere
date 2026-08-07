@@ -376,11 +376,15 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
     abrirTrilhaMatricula(); await new Promise(z=>setTimeout(z,40));
     o.tr_abre = !!document.getElementById('tr1_nome');
     document.getElementById('tr1_nome').value='Beatriz VIP'; document.getElementById('tr1_nasc').value='1990-05-10';
+    document.getElementById('tr1_doc').value='000.000.000-00'; document.getElementById('tr1_tel').value='51999'; document.getElementById('tr1_endereco').value='Rua X, 1';
     trIr(2); await new Promise(z=>setTimeout(z,30));
     o.tr_rascunho_criado = S.matriculas.some(x=>x.status==='rascunho' && x.alunoNome==='Beatriz VIP');
     o.tr_adulto_opcional = /maior de 18/.test(document.getElementById('modal').innerHTML);
-    document.getElementById('tr2_nome').value='Beatriz VIP'; document.getElementById('tr2_doc').value='000.000.000-00';
-    document.getElementById('tr2_tel').value='51999'; document.getElementById('tr2_endereco').value='Rua X, 1';
+    // b178: adulto entra sem responsável separado (campos ocultos); marcar o checkbox revela os campos
+    o.tr_resp_oculto = !document.getElementById('tr2_nome') && !!document.getElementById('tr2_temResp');
+    document.getElementById('tr2_temResp').checked=true; trIr(2); await new Promise(z=>setTimeout(z,30));
+    o.tr_resp_revela = !!document.getElementById('tr2_nome') && !!document.getElementById('tr2_mesmo');
+    document.getElementById('tr2_temResp').checked=false; trIr(2); await new Promise(z=>setTimeout(z,30));
     trIr(3); await new Promise(z=>setTimeout(z,30));
     document.getElementById('tr3_tipo').value='vip'; trIr(3); await new Promise(z=>setTimeout(z,30));
     o.tr_vip_campos = !!document.getElementById('tr3_horas') && !!document.getElementById('tr3_prof');
@@ -507,6 +511,49 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
     return o;
   });
   Object.assign(r,t16);
+
+  // ===== b178: matrícula (contato no aluno, responsável opcional, material) + alunos ativos + pagamento na ficha =====
+  const t17=await page.evaluate(async()=>{
+    const o={};
+    S.perfil='direcao'; S.usuario='Franco';
+    S.matriculas=[]; S.alunos=[]; S.vipAlunos=[]; S.pacotesVip=[]; S.financeiro=[]; S.livroPedidos=[];
+    S.turmas=[{id:'t1',nome:'B1 TEENS',nivel:'teens',cefr:'B1',status:'aberta',dias:[3],vezesSemana:1,professor:'Franco',horario:'18:15'}];
+    S.configFin=[{id:'fin', valorHoraVip:'120', atualizadoEm:Date.now()}];
+    rota='matriculas';
+    abrirTrilhaMatricula(); await new Promise(z=>setTimeout(z,30));
+    o.aluno_tem_contato = !!document.getElementById('tr1_tel') && !!document.getElementById('tr1_endereco');
+    document.getElementById('tr1_nome').value='Kid Turma'; document.getElementById('tr1_nasc').value='2013-04-01';
+    document.getElementById('tr1_tel').value='(51) 90000'; document.getElementById('tr1_endereco').value='Rua A, 10';
+    trIr(2); await new Promise(z=>setTimeout(z,30));
+    o.menor_resp_on = !!document.getElementById('tr2_temResp') && document.getElementById('tr2_temResp').checked && !!document.getElementById('tr2_nome');
+    o.mesmo_padrao = !!document.getElementById('tr2_mesmo') && document.getElementById('tr2_mesmo').checked && !document.getElementById('tr2_endereco');
+    document.getElementById('tr2_nome').value='Mãe Kid';
+    trIr(3); await new Promise(z=>setTimeout(z,30));
+    o.material_ok = !!document.getElementById('tr3_material') && !!document.querySelector('input[name="tr3_matdest"]');
+    document.getElementById('tr3_turma').value='t1'; _trTurmaChange(); await new Promise(z=>setTimeout(z,30));
+    const sel=document.getElementById('tr3_material'); o.material_lista = !!sel && sel.options.length>1;
+    sel.value='Own It 2';
+    document.querySelector('input[name="tr3_matdest"][value="estoque"]').checked=true;
+    trIr(4); await new Promise(z=>setTimeout(z,30));
+    trIr(5); await new Promise(z=>setTimeout(z,30));
+    trConcluir('ativa'); await new Promise(z=>setTimeout(z,60));
+    const al=(S.alunos||[]).find(a=>a.nome==='Kid Turma');
+    o.aluno_salvou_contato = !!al && al.telefone==='(51) 90000' && al.endereco==='Rua A, 10';
+    const m=(S.matriculas||[]).find(x=>x.alunoId===(al||{}).id);
+    o.resp_mesmo_do_aluno = !!m && m.respNome==='Mãe Kid' && m.telefone==='(51) 90000' && m.endereco==='Rua A, 10';
+    const ped=(S.livroPedidos||[]).find(x=>x.alunoId===(al||{}).id && x.titulo==='Own It 2');
+    o.material_estoque = !!ped && ped.status==='recebido';
+    o.ativos_conta = alunosAtivosReais()>=1;
+    // pagamento na ficha
+    o.ficha_pag_matriculado = /💰 Pagamento/.test(_cardPagamentoFicha(al.id)) && /abrirFinanceiroDaMatricula/.test(_cardPagamentoFicha(al.id));
+    S.alunos.push({id:'aLeg', nome:'Aluno Legado', turmaId:'t1', atualizadoEm:Date.now()});
+    o.ficha_pag_legado = /Criar plano de pagamento/.test(_cardPagamentoFicha('aLeg'));
+    criarMatriculaDaFicha('aLeg'); await new Promise(z=>setTimeout(z,30));
+    o.criou_matricula_ficha = (S.matriculas||[]).some(x=>x.alunoId==='aLeg' && x.status==='ativa');
+    if(typeof fechar==='function') fechar();
+    return o;
+  });
+  Object.assign(r,t17);
 
   const falhas=Object.keys(r).filter(k=>r[k]!==true);
   console.log(JSON.stringify(r,null,1));

@@ -957,6 +957,7 @@ VIEWS.ficha=()=>{
     </div>
   </div>
   ${_cardAcessoPortal(a.id)}
+  ${(typeof _cardPagamentoFicha==='function')?_cardPagamentoFicha(a.id):''}
   ${(typeof _cardLivrosAluno==='function')?_cardLivrosAluno(a.id,false):''}
   ${_cardContratos(a.id)}
   <div class="fx-tabs">${ABAS.map(x=>`<button class="fx-tab${x.id===_fichaAba?' on':''}" onclick="fichaAba('${x.id}')"><span class="fem">${x.em}</span>${x.label}${x.n!=null?`<span class="n">${x.n}</span>`:''}</button>`).join('')}</div>
@@ -969,6 +970,31 @@ VIEWS.ficha=()=>{
   </div>`;
   v.innerHTML=h;
 };
+// b178 · Pagamento na ficha do aluno (só direção) — edita o plano ligado à matrícula, sem ir ao módulo Financeiro.
+function _cardPagamentoFicha(alunoId){
+  if(S.perfil!=='direcao') return '';
+  const m=(S.matriculas||[]).find(x=>(x.alunoId===alunoId||x.vipId===alunoId) && x.status!=='rascunho');
+  if(m && m.tipo==='vip'){
+    return `<div class="card" style="margin-top:12px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px"><h3 style="margin:0;flex:1;font-size:1rem">💰 Pagamento</h3><span class="pill" style="background:#fdf3d7;color:#b8860b">👑 VIP</span></div>
+      <p class="hint" style="margin:0 0 8px">O VIP é cobrado pelo pacote de horas e pelo contrato VIP.</p>
+      <button class="btn ghost sm" onclick="verContratoVip('${m.vipId}')">📄 Contrato VIP</button></div>`;
+  }
+  if(!m){
+    return `<div class="card" style="margin-top:12px"><h3 style="margin:0 0 6px;font-size:1rem">💰 Pagamento</h3>
+      <p class="hint" style="margin:0 0 8px">Este aluno ainda não tem matrícula ligada. Crie o vínculo para lançar mensalidade e carnê aqui mesmo.</p>
+      <button class="btn ghost sm" onclick="criarMatriculaDaFicha('${alunoId}')">➕ Criar plano de pagamento</button></div>`;
+  }
+  const f=(S.financeiro||[]).find(x=>x.matriculaId===m.id);
+  const resumo=f
+    ? `mensalidade <b>${_moeda(finMensalLiquida(f))}</b>${_matN(f.descontoPct)>0?(' (−'+_matN(f.descontoPct)+'%)'):''} · ${f.parcelas||0}× · venc. dia ${f.diaVencimento||10}${f.formaPagamento?(' · '+esc(f.formaPagamento)):''}`
+    : '<span class="hint">Plano de pagamento ainda não definido.</span>';
+  return `<div class="card" style="margin-top:12px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px"><h3 style="margin:0;flex:1;font-size:1rem">💰 Pagamento</h3></div>
+    <p style="margin:0 0 10px;font-size:.92rem">${resumo}</p>
+    <div style="display:flex;gap:6px;flex-wrap:wrap">
+      <button class="btn ghost sm" onclick="abrirFinanceiroDaMatricula('${m.id}')">✏️ ${f?'Editar pagamento':'Definir pagamento'}</button>
+      ${f?`<button class="btn ghost sm" onclick="abrirCarne('${f.id}')">💳 Carnê</button>`:''}
+    </div></div>`;
+}
 // quadradinho de ação da ficha (b165) — mesmo padrão das ações da turma
 function _fxAcao(cor,id,js,em,lbl,hint){
   return `<button class="fx-acao" style="--c:${cor}"${id?` id="${id}"`:''} onclick="${js}"><span class="aem">${em}</span><span class="alb">${lbl}</span><span class="ahint">${hint}</span></button>`;

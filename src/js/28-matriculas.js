@@ -26,7 +26,28 @@ function matNome(m){ if(!m) return '—';
 function matEhVip(m){ return !!(m && m.tipo==='vip'); }
 function matLocal(m){ if(!m) return ''; if(m.tipo==='vip') return '👑 VIP'+(m.professor?(' · '+m.professor):''); return m.turmaId?('🏫 '+turmaNome(m.turmaId)):''; }
 function matAtivas(){ return (S.matriculas||[]).filter(m=>m.status==='ativa'); }
+// b178: alunos realmente ativos = em turma (não arquivados) + VIPs com saldo de horas.
+// Independe de ter passado pela trilha — pega também os cadastros antigos.
+function alunosAtivosReais(){
+  const emTurma=(S.alunos||[]).filter(a=>!a.arquivado && a.turmaId &&
+    (S.turmas||[]).some(t=>t.id===a.turmaId && !t.arquivada)).length;
+  const vipComHoras=(S.vipAlunos||[]).filter(v=>!v.arquivado &&
+    (typeof vipContratadoMin==='function') && (vipContratadoMin(v.id)-vipConsumoMin(v.id))>0).length;
+  return emTurma+vipComHoras;
+}
 function matTemFinanceiro(m){ return (S.financeiro||[]).some(f=>f.matriculaId===m.id); }
+// b178: liga um aluno (cadastro antigo, sem matrícula) a uma matrícula e abre o pagamento na hora.
+function criarMatriculaDaFicha(alunoId){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const a=(S.alunos||[]).find(x=>x.id===alunoId); if(!a) return toast('Aluno não encontrado');
+  S.matriculas=S.matriculas||[];
+  let m=(S.matriculas||[]).find(x=>x.alunoId===alunoId && x.status!=='rascunho');
+  if(!m){ m={id:uid(), status:'ativa', tipo:'turma', origem:'ficha', alunoId:alunoId, alunoNome:a.nome,
+      turmaId:a.turmaId||'', nascimento:a.nascimento||'', email:a.email||'', telefone:a.telefone||'', endereco:a.endereco||'',
+      dataInicio:hoje(), criadoEm:hoje(), criadoPor:S.usuario, atualizadoEm:Date.now()};
+    S.matriculas.push(m); save(); }
+  if(typeof abrirFinanceiroDaMatricula==='function') abrirFinanceiroDaMatricula(m.id);
+}
 
 /* -------------------- VIEW -------------------- */
 let _matFiltro='', _matBusca='';
@@ -45,18 +66,18 @@ VIEWS.matriculas=()=>{
     <p class="sub">Cadastro do aluno, do responsável e da turma. O dinheiro (mensalidade, carnê e pagamentos) fica em <b>💰 Financeiro</b>, ligado à matrícula.</p>
     <div class="card">
       <div class="fx-tiles">
-        ${tile(ativas.length,'Matrículas ativas','#0A7A3D')}
+        ${tile(alunosAtivosReais(),'Alunos ativos','#0A7A3D')}
         ${tile(todas.length,'Total de cadastros','var(--tinta)')}
         ${tile(todas.filter(x=>x.status==='orcamento').length,'Orçamentos abertos','#9333c7')}
         ${tile(semFin,'Ativas sem financeiro',semFin>0?'#c2560b':'var(--tinta)')}
       </div>
-      <p class="hint" style="margin:10px 0 0">Para lançar valores e acompanhar o pagamento, abra a matrícula e toque em <b>💰 Financeiro</b> — ou vá no módulo Financeiro.</p>
+      <p class="hint" style="margin:10px 0 0"><b>Alunos ativos</b> conta todos os que estão em turma ou com horas VIP a usar. O pagamento fica na <b>ficha do aluno</b> (ou aqui, abrindo a matrícula).</p>
     </div>
     ${_cardTrilhas()}
     ${_cardOrcamentos()}
     <div class="card">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
-        <button class="btn" style="background:#0A7A3D" onclick="abrirTrilhaMatricula()">🧭 Nova matrícula (trilha)</button>
+        <button class="btn" style="background:#0A7A3D" onclick="abrirTrilhaMatricula()">🧭 Nova matrícula</button>
         <button class="btn ghost" onclick="abrirMatricula()" title="Formulário completo numa tela só — bom para editar cadastros antigos">✏️ Cadastro avançado</button>
         <button class="btn ghost sm" onclick="exportarMatriculasCSV()">⬇️ Planilha</button>
         <input type="text" placeholder="Buscar por aluno ou responsável…" value="${escAttr(_matBusca)}" oninput="_matBuscaInput(this.value)" style="flex:1;min-width:180px">
@@ -485,10 +506,50 @@ td{border:1px solid #DCE4EC;padding:6px 9px}td.k{background:#F0F6FC;color:#002B6
 let _tr=null;
 const _TR_PASSOS=['Aluno','Responsável','Pedagógico','Pagamento','Contrato'];
 function _trNovo(){ return {id:uid(), passo:1, tipo:'turma',
-  aluno:{nome:'',nasc:'',doc:'',email:''},
-  resp:{nome:'',parentesco:'',tel:'',email:'',doc:'',endereco:'',cidade:'Gravataí, RS'},
-  ped:{turmaId:'',inicio:hoje(),fimPeriodo:'',modalidade:'Presencial',pedirLivro:true, professor:'',dupla:false,horas:'',vigIni:hoje(),vigFim:'',nivel:''},
+  aluno:{nome:'',nasc:'',doc:'',email:'',tel:'',endereco:'',cidade:'Gravataí, RS'},
+  resp:{temResp:null,mesmo:true,nome:'',parentesco:'',tel:'',email:'',doc:'',endereco:'',cidade:'Gravataí, RS'},
+  ped:{turmaId:'',inicio:hoje(),fimPeriodo:'',modalidade:'Presencial',material:'',matDestino:'encomendar', professor:'',dupla:false,horas:'',vigIni:hoje(),vigFim:'',nivel:''},
   pag:{taxa:null,mensal:null,parcelas:12,diaVenc:10,descPct:0,descVal:0,forma:'', vipDesc:0,vipParcelas:1}}; }
+// b178: responsável resolvido — se não houver responsável separado, o próprio aluno é o responsável.
+function _trRespFinal(p){
+  const adulto=(idadeDe(p.aluno.nasc)!=null && idadeDe(p.aluno.nasc)>=18);
+  const temResp = p.resp.temResp==null ? !adulto : !!p.resp.temResp;
+  if(!temResp) return {temResp:false, nome:p.aluno.nome, parentesco:'O próprio aluno', doc:p.aluno.doc||'',
+    email:p.aluno.email||'', tel:p.aluno.tel||'', endereco:p.aluno.endereco||'', cidade:p.aluno.cidade||''};
+  const mesmo=p.resp.mesmo!==false;
+  return {temResp:true, nome:p.resp.nome, parentesco:p.resp.parentesco||'', doc:p.resp.doc||'', email:p.resp.email||'',
+    tel:mesmo?(p.aluno.tel||''):(p.resp.tel||''), endereco:mesmo?(p.aluno.endereco||''):(p.resp.endereco||''),
+    cidade:mesmo?(p.aluno.cidade||''):(p.resp.cidade||'')};
+}
+function _trTemResp(p){ const ad=(idadeDe(p.aluno.nasc)!=null && idadeDe(p.aluno.nasc)>=18); return p.resp.temResp==null?!ad:!!p.resp.temResp; }
+// b178: registra o material no módulo Livros conforme o destino escolhido
+function _trRegistrarMaterial(alunoId, vip, material, destino){
+  const col=(material||'').trim(); if(!col || destino==='tem') return;
+  if(typeof pedidoDoAluno==='function' && pedidoDoAluno(alunoId,col)) return;   // já há pedido ativo desse título
+  S.livroPedidos=S.livroPedidos||[];
+  const reg={id:uid(), alunoId, vip:!!vip, titulo:col, por:S.usuario, pedidoEm:hoje(), atualizadoEm:Date.now()};
+  if(destino==='estoque'){ reg.status='recebido'; reg.recebidoEm=hoje(); }   // já em mãos → aparece como "a entregar"
+  else { reg.status='pedido'; }                                              // encomendar
+  S.livroPedidos.push(reg);
+}
+// b178: material sugerido pela turma e troca de turma refaz a sugestão
+function _trTurmaChange(){ _trLer(); const t=_trTurma();
+  _tr.ped.material=(t && typeof planColecaoSugerida==='function')?(planColecaoSugerida(t)||planColecaoDe(t)||''):''; _trRender(); }
+function _trMaterialHTML(p){
+  const cols=(typeof colecoesTodas==='function')?colecoesTodas():[]; if(!cols.length) return '';
+  const t=(p.tipo!=='vip')?_trTurma():null;
+  const sug=(t && typeof planColecaoSugerida==='function')?(planColecaoSugerida(t)||planColecaoDe(t)||''):'';
+  const atual=p.ped.material||sug||''; const dest=p.ped.matDestino||'encomendar';
+  const opt=(v,txt)=>`<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:2px 0"><input type="radio" name="tr3_matdest" value="${v}" ${dest===v?'checked':''}> ${txt}</label>`;
+  return `<div class="card box-suave" style="margin:4px 0 10px;padding:12px">
+    <div class="field" style="margin:0 0 8px"><label class="lbl">📚 Material / coleção${sug?(' <span class="hint">sugerido: '+esc(sug)+'</span>'):''}</label>
+      <select id="tr3_material"><option value="">— sem material —</option>${cols.map(c=>`<option ${atual===c?'selected':''}>${esc(c)}</option>`).join('')}</select></div>
+    <label class="lbl">O que fazer com o material?</label>
+    ${opt('encomendar','🛒 <b>Encomendar</b> agora <span class="hint">— cria o pedido em 📚 Livros (secretaria acompanha)</span>')}
+    ${opt('estoque','📦 <b>Já temos</b> no estoque <span class="hint">— entra em Livros como "a entregar"</span>')}
+    ${opt('tem','✋ Aluno <b>já tem</b> / não precisa')}
+  </div>`;
+}
 function abrirTrilhaMatricula(rascId){
   if(S.perfil!=='direcao') return toast('Só a direção realiza matrículas');
   if(rascId){ const r=(S.matriculas||[]).find(x=>x.id===rascId && x.status==='rascunho');
@@ -501,16 +562,19 @@ function _trG(id){ const e=document.getElementById(id); return e?e.value:null; }
 function _trChk(id){ const e=document.getElementById(id); return e?!!e.checked:null; }
 function _trLer(){   // lê só o que estiver na tela (cada passo tem seus campos)
   const p=_tr; const g=_trG, c=_trChk; const set=(o,k,v)=>{ if(v!==null) o[k]=v; };
-  set(p.aluno,'nome',(g('tr1_nome')||'')===null?null:(g('tr1_nome')!==null?g('tr1_nome').trim():null));
   if(g('tr1_nome')!==null) p.aluno.nome=g('tr1_nome').trim();
   set(p.aluno,'nasc',g('tr1_nasc')); set(p.aluno,'doc',g('tr1_doc')); set(p.aluno,'email',g('tr1_email'));
+  set(p.aluno,'tel',g('tr1_tel')); set(p.aluno,'endereco',g('tr1_endereco')); set(p.aluno,'cidade',g('tr1_cidade'));
+  if(c('tr2_temResp')!==null) p.resp.temResp=c('tr2_temResp');
+  if(c('tr2_mesmo')!==null) p.resp.mesmo=c('tr2_mesmo');
   ['nome','parentesco','tel','email','doc','endereco','cidade'].forEach(k=>set(p.resp,k,g('tr2_'+k)));
   if(g('tr3_tipo')!==null) p.tipo=g('tr3_tipo')||'turma';
   set(p.ped,'turmaId',g('tr3_turma')); set(p.ped,'inicio',g('tr3_inicio')); set(p.ped,'fimPeriodo',g('tr3_fim'));
   set(p.ped,'modalidade',g('tr3_mod')); set(p.ped,'professor',g('tr3_prof')); set(p.ped,'nivel',g('tr3_nivel'));
   set(p.ped,'horas',g('tr3_horas')); set(p.ped,'vigIni',g('tr3_vigini')); set(p.ped,'vigFim',g('tr3_vigfim'));
+  set(p.ped,'material',g('tr3_material'));
+  const _md=(typeof document!=='undefined')&&document.querySelector('input[name="tr3_matdest"]:checked'); if(_md) p.ped.matDestino=_md.value;
   if(c('tr3_dupla')!==null) p.ped.dupla=c('tr3_dupla');
-  if(c('tr5_livro')!==null) p.ped.pedirLivro=c('tr5_livro');
   ['taxa','mensal','descPct','descVal','vipDesc'].forEach(k=>{ if(g('tr4_'+k)!==null) p.pag[k]=_matN(g('tr4_'+k)); });
   if(g('tr4_parcelas')!==null) p.pag.parcelas=parseInt(g('tr4_parcelas'))||12;
   if(g('tr4_vipParcelas')!==null) p.pag.vipParcelas=parseInt(g('tr4_vipParcelas'))||1;
@@ -533,8 +597,7 @@ function trIr(n){
   const p=_tr;
   if(n>1 && p.passo===1 && !p.aluno.nome) return toast('Informe o nome do aluno');
   if(n>2 && p.passo===2){
-    const adulto=(idadeDe(p.aluno.nasc)!=null && idadeDe(p.aluno.nasc)>=18);
-    if(!adulto && !p.resp.nome) return toast('Informe o responsável (aluno menor de 18)');
+    if(_trTemResp(p) && !p.resp.nome) return toast('Informe o nome do responsável');
   }
   if(n>3 && p.passo===3){
     if(p.tipo==='vip'){ if(!p.ped.professor) return toast('Escolha o professor(a) do VIP');
@@ -586,18 +649,29 @@ function _trRender(){
      +`<div class="row">`+F('Nascimento',`<input type="date" id="tr1_nasc" min="1900-01-01" max="${hoje()}" value="${escAttr(p.aluno.nasc)}">`)
      +F('Documento (CPF/RG) <span class="hint">opcional</span>',`<input type="text" id="tr1_doc" value="${escAttr(p.aluno.doc)}">`)+`</div>`
      +F('E-mail do aluno <span class="hint">vira o acesso ao portal</span>',`<input type="email" id="tr1_email" value="${escAttr(p.aluno.email)}" placeholder="email@exemplo.com">`)
+     +`<div class="row">`+F('📞 Telefone / WhatsApp',`<input type="text" id="tr1_tel" value="${escAttr(p.aluno.tel||'')}" placeholder="(51) 9…">`)
+     +F('Cidade',`<input type="text" id="tr1_cidade" value="${escAttr(p.aluno.cidade||'')}">`)+`</div>`
+     +F('🏠 Endereço (rua e nº) — entra no contrato',`<input type="text" id="tr1_endereco" value="${escAttr(p.aluno.endereco||'')}">`)
      +nav(0,2);
   } else if(p.passo===2){
     const adulto=(idadeDe(p.aluno.nasc)!=null && idadeDe(p.aluno.nasc)>=18);
+    const temResp=_trTemResp(p), mesmo=p.resp.mesmo!==false;
     const optP=MAT_PARENTESCO.map(x=>`<option ${p.resp.parentesco===x?'selected':''}>${x}</option>`).join('');
-    h=(adulto?`<p class="hint" style="margin:0 0 8px">✅ <b>${esc(p.aluno.nome)}</b> é maior de 18 — o responsável é opcional (pode ser o próprio aluno no contrato).</p>`:'')
-     +`<div class="row">`+F('Nome do responsável',`<input type="text" id="tr2_nome" value="${escAttr(p.resp.nome)}" placeholder="Quem assina / financeiro">`)
-     +F('Parentesco',`<select id="tr2_parentesco"><option value="">—</option>${optP}</select>`)+`</div>`
-     +`<div class="row">`+F('Telefone / WhatsApp',`<input type="text" id="tr2_tel" value="${escAttr(p.resp.tel)}" placeholder="(51) 9…">`)
-     +F('CPF do responsável',`<input type="text" id="tr2_doc" value="${escAttr(p.resp.doc)}">`)+`</div>`
-     +F('E-mail',`<input type="email" id="tr2_email" value="${escAttr(p.resp.email)}">`)
-     +`<div class="row">`+F('Endereço (rua e nº) — entra no contrato',`<input type="text" id="tr2_endereco" value="${escAttr(p.resp.endereco)}">`)
-     +F('Cidade',`<input type="text" id="tr2_cidade" value="${escAttr(p.resp.cidade)}">`)+`</div>`
+    h=(adulto?`<p class="hint" style="margin:0 0 8px">✅ <b>${esc(p.aluno.nome)}</b> é maior de 18 — o responsável é opcional.</p>`:'')
+     +`<label class="check" style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:.94rem;padding:11px 13px;border:1px solid var(--linha);border-radius:11px;background:${temResp?'#eafaf0':'var(--bg,#f4f6fb)'};margin:0 0 12px">
+        <input type="checkbox" id="tr2_temResp" ${temResp?'checked':''} onchange="trIr(2)" style="width:17px;height:17px"> 👪 Este aluno tem um <b>responsável</b> <span class="hint">(quem assina / financeiro)</span></label>`
+     +(temResp
+       ?(`<div class="row">`+F('Nome do responsável',`<input type="text" id="tr2_nome" value="${escAttr(p.resp.nome)}" placeholder="Quem assina / financeiro">`)
+          +F('Parentesco',`<select id="tr2_parentesco"><option value="">—</option>${optP}</select>`)+`</div>`
+          +`<div class="row">`+F('CPF do responsável',`<input type="text" id="tr2_doc" value="${escAttr(p.resp.doc)}">`)
+          +F('E-mail',`<input type="email" id="tr2_email" value="${escAttr(p.resp.email)}">`)+`</div>`
+          +`<label class="check" style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:.9rem;padding:9px 12px;border:1px solid var(--linha);border-radius:10px;background:${mesmo?'#eafaf0':'var(--bg,#f4f6fb)'};margin:2px 0 10px">
+             <input type="checkbox" id="tr2_mesmo" ${mesmo?'checked':''} onchange="trIr(2)" style="width:16px;height:16px"> 🏠 Endereço e telefone <b>iguais aos do aluno</b></label>`
+          +(mesmo?`<p class="hint" style="margin:0 0 6px">Usando o endereço e o telefone do passo do aluno.</p>`
+             :(`<div class="row">`+F('Telefone do responsável',`<input type="text" id="tr2_tel" value="${escAttr(p.resp.tel)}" placeholder="(51) 9…">`)
+                +F('Cidade',`<input type="text" id="tr2_cidade" value="${escAttr(p.resp.cidade)}">`)+`</div>`
+                +F('Endereço do responsável',`<input type="text" id="tr2_endereco" value="${escAttr(p.resp.endereco)}">`))))
+       :`<div class="card box-suave" style="padding:11px 13px;margin:0 0 6px"><b style="color:#0A7A3D">✅ Sem responsável separado</b> <span class="hint">— o próprio aluno é o responsável no contrato (usa os dados do passo anterior).</span></div>`)
      +nav(1,3);
   } else if(p.passo===3){
     const ts=(S.turmas||[]).filter(t=>!t.arquivada).sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
@@ -613,11 +687,13 @@ function _trRender(){
          +`<div class="row">`+F('⏱ Horas contratadas',`<input type="number" id="tr3_horas" value="${escAttr(String(p.ped.horas||''))}" min="1" step="1" placeholder="Ex: 20">`)
          +F('Vigência — início',`<input type="date" id="tr3_vigini" value="${escAttr(p.ped.vigIni)}">`)
          +F('Vigência — fim <span class="hint">vazio = sem prazo</span>',`<input type="date" id="tr3_vigfim" value="${escAttr(p.ped.vigFim)}">`)+`</div>`
-         +`<p class="hint" style="margin:0 0 8px">💡 O pacote de horas é criado automaticamente ao concluir; os horários semanais das aulas você define depois na tela 👑 Alunos VIP.</p>`)
-       :(`<div class="row">`+F('Turma',`<select id="tr3_turma">${optT}</select>`)
+         +`<p class="hint" style="margin:0 0 8px">💡 O pacote de horas é criado automaticamente ao concluir; os horários semanais das aulas você define depois na tela 👑 Alunos VIP.</p>`
+         +_trMaterialHTML(p))
+       :(`<div class="row">`+F('Turma',`<select id="tr3_turma" onchange="_trTurmaChange()">${optT}</select>`)
          +F('Início',`<input type="date" id="tr3_inicio" value="${escAttr(p.ped.inicio)}">`)+`</div>`
          +`<div class="row">`+F('Fim do período (contrato) <span class="hint">vazio = 31/12</span>',`<input type="date" id="tr3_fim" value="${escAttr(p.ped.fimPeriodo)}">`)
-         +F('Modalidade',`<select id="tr3_mod">${['Presencial','On-line','Híbrida'].map(x=>`<option ${p.ped.modalidade===x?'selected':''}>${x}</option>`).join('')}</select>`)+`</div>`))
+         +F('Modalidade',`<select id="tr3_mod">${['Presencial','On-line','Híbrida'].map(x=>`<option ${p.ped.modalidade===x?'selected':''}>${x}</option>`).join('')}</select>`)+`</div>`
+         +_trMaterialHTML(p)))
      +nav(2,4);
   } else if(p.passo===4){
     const vip=p.tipo==='vip';
@@ -641,15 +717,17 @@ function _trRender(){
     h+=`<div class="gen-box" id="tr4_resumo" style="margin-bottom:12px">—</div>`+nav(3,5);
   } else {
     const vip=p.tipo==='vip'; const t=_trTurma();
-    const col=(!vip && t && typeof planColecaoDe==='function')?(planColecaoDe(t)||''):'';
+    const R=_trRespFinal(p);
+    const mat=p.ped.material||((!vip && t && typeof planColecaoDe==='function')?(planColecaoDe(t)||''):'');
+    const destLbl={encomendar:'🛒 encomendar',estoque:'📦 do estoque',tem:'✋ já tem'}[p.ped.matDestino||'encomendar'];
     const tot=vip?_trTotalVip():(_matN(p.pag.taxa)+_trMensalLiq()*(p.pag.parcelas||0));
     h=`<div class="card box-suave" style="margin-bottom:10px"><p style="margin:0">
-        <b>${esc(p.aluno.nome)}</b>${p.aluno.nasc?(' · '+brDate(p.aluno.nasc)):''}${p.resp.nome?('<br>👪 '+esc(p.resp.nome)+(p.resp.parentesco?(' ('+esc(p.resp.parentesco)+')'):'')+(p.resp.tel?(' · '+esc(p.resp.tel)):'')):''}
+        <b>${esc(p.aluno.nome)}</b>${p.aluno.nasc?(' · '+brDate(p.aluno.nasc)):''}${p.aluno.tel?(' · 📞 '+esc(p.aluno.tel)):''}
+        <br>👪 ${R.temResp?(esc(R.nome||'—')+(R.parentesco?(' ('+esc(R.parentesco)+')'):'')+(R.tel?(' · '+esc(R.tel)):'')):'<span class="hint">o próprio aluno é o responsável</span>'}
         <br>${vip?('👑 VIP · prof. '+esc(p.ped.professor)+(p.ped.dupla?' · 👥 dupla':'')+' · <b>'+_matN(p.ped.horas)+'h</b>'+(p.ped.vigFim?(' até '+brDate(p.ped.vigFim)):' (sem prazo)')):('🏫 '+(t?esc(t.nome):'')+' · início '+brDate(p.ped.inicio))}
         <br>💰 ${vip?('<b>'+_moeda(tot)+'</b> em '+(p.pag.vipParcelas||1)+'× (venc. dia '+p.pag.diaVenc+')'):('taxa '+_moeda(_matN(p.pag.taxa))+' + <b>'+p.pag.parcelas+'×</b> de <b>'+_moeda(_trMensalLiq())+'</b> (venc. dia '+p.pag.diaVenc+')')}${p.pag.forma?(' · '+esc(p.pag.forma)):''}
-        ${vip?'':('<br><b>Total do curso: '+_moeda(tot)+'</b>')}${col?('<br>📚 material: '+esc(col)):''}</p></div>`
-     +(col?`<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:0 0 10px"><input type="checkbox" id="tr5_livro" ${p.ped.pedirLivro?'checked':''}> 🛒 Já registrar o pedido do livro <b>${esc(col)}</b></label>`:'')
-     +`<p class="hint" style="margin:0 0 10px">📄 Ao concluir, o contrato ${vip?'VIP sai preenchido (partes, horas e parcelas)':'oficial fica disponível'} na tela final.</p>`
+        ${vip?'':('<br><b>Total do curso: '+_moeda(tot)+'</b>')}${mat?('<br>📚 material: '+esc(mat)+' · '+destLbl):''}</p></div>`
+     +`<p class="hint" style="margin:0 0 10px">📄 Ao concluir, o contrato ${vip?'VIP sai preenchido (partes, horas e parcelas)':'oficial fica disponível'} na tela final${mat&&(p.ped.matDestino!=='tem')?' e o livro entra em 📚 Livros':''}.</p>`
      +`<div class="row" style="gap:8px"><button class="btn ghost" onclick="trIr(4)">← Voltar</button>
         ${vip?'':`<button class="btn ghost" style="color:#9333c7" onclick="trConcluir('orcamento')" title="Guarda como proposta — gere o PDF do orçamento e feche a venda depois">🧾 Salvar como orçamento</button>`}
         <button class="btn" style="flex:1;background:#0A7A3D" onclick="trConcluir('ativa')">✅ Concluir matrícula</button></div>`;
@@ -668,28 +746,33 @@ function trConcluir(statusFinal){
   let m=S.matriculas.find(x=>x.id===p.id);
   if(!m){ m={id:p.id, criadoEm:hoje(), criadoPor:S.usuario}; S.matriculas.push(m); }
   delete m.trilha;
+  const R=_trRespFinal(p);
   Object.assign(m,{ status:statusFinal, tipo:p.tipo, origem:'trilha',
-    alunoNome:p.aluno.nome, nascimento:p.aluno.nasc, docAluno:p.aluno.doc, email:p.resp.email||p.aluno.email,
-    respNome:p.resp.nome, respParentesco:p.resp.parentesco, telefone:p.resp.tel, respDoc:p.resp.doc,
-    endereco:p.resp.endereco, cidade:p.resp.cidade, modalidade:p.ped.modalidade,
+    alunoNome:p.aluno.nome, nascimento:p.aluno.nasc, docAluno:p.aluno.doc, email:R.email||p.aluno.email,
+    alunoTelefone:p.aluno.tel||'', alunoEndereco:p.aluno.endereco||'',
+    temResponsavel:R.temResp, respNome:R.nome, respParentesco:R.parentesco, telefone:R.tel, respDoc:R.doc,
+    endereco:R.endereco, cidade:R.cidade, modalidade:p.ped.modalidade,
     dataInicio:vip?(p.ped.vigIni||hoje()):(p.ped.inicio||hoje()), fimPeriodo:vip?(p.ped.vigFim||''):(p.ped.fimPeriodo||''),
     atualizadoEm:Date.now() });
   if(vip){
     // 1) aluno VIP
     const nv={id:uid(), nome:p.aluno.nome, professor:p.ped.professor, dupla:!!p.ped.dupla,
-      email:p.aluno.email||'', nascimento:p.aluno.nasc||'', atualizadoEm:Date.now()};
+      email:p.aluno.email||'', nascimento:p.aluno.nasc||'', telefone:p.aluno.tel||'', endereco:p.aluno.endereco||'',
+      cefr:p.ped.nivel||'', atualizadoEm:Date.now()};
     S.vipAlunos=S.vipAlunos||[]; S.vipAlunos.push(nv);
     m.vipId=nv.id; m.professor=p.ped.professor;
     // 2) pacote de horas
     S.pacotesVip=S.pacotesVip||[];
     S.pacotesVip.push({id:uid(), vipId:nv.id, horas:_matN(p.ped.horas), inicio:p.ped.vigIni||hoje(), fim:p.ped.vigFim||'', obs:'Trilha de matrícula', atualizadoEm:Date.now()});
-    // 3) contrato VIP pronto: partes + parcelas
+    // 3) contrato VIP pronto: partes + parcelas (responsável = aluno se não houver outro)
     const tot=_trTotalVip();
-    nv.contratoDados={ contratante:p.resp.nome||p.aluno.nome, cpf:p.resp.doc||'', cidade:p.resp.cidade||'', endereco:p.resp.endereco||'',
-      email:p.resp.email||p.aluno.email||'', wpp:p.resp.tel||'', alunoCpf:p.aluno.doc||'',
+    nv.contratoDados={ contratante:R.nome||p.aluno.nome, cpf:R.doc||'', cidade:R.cidade||'', endereco:R.endereco||'',
+      email:R.email||p.aluno.email||'', wpp:R.tel||'', alunoCpf:p.aluno.doc||'',
       ini:p.ped.vigIni||hoje(), fim:p.ped.vigFim||'', horas:String(_matN(p.ped.horas)), nivel:p.ped.nivel||'',
       parcelas:_trParcelasVip(tot, p.pag.vipParcelas||1, p.ped.vigIni||hoje(), p.pag.diaVenc),
       obs:(p.pag.forma?('Pagamento: '+p.pag.forma):'')+(_matN(p.pag.vipDesc)?((p.pag.forma?' · ':'')+'desconto de '+_moeda(p.pag.vipDesc)+' aplicado'):'') };
+    // 4) material do VIP (se escolhido)
+    _trRegistrarMaterial(nv.id, true, p.ped.material, p.ped.matDestino);
     save(); fechar(); if(typeof montarNav==='function') montarNav(); if(rota==='matriculas') VIEWS.matriculas();
     toast('Matrícula VIP concluída — bem-vindo(a), '+p.aluno.nome+'! 🎉');
     modal(`<h3>🎉 Matrícula VIP concluída! <button class="close" onclick="fechar()">×</button></h3>
@@ -707,7 +790,8 @@ function trConcluir(statusFinal){
   if(statusFinal==='ativa'){
     const jaExiste=(S.alunos||[]).find(a=>_normTxt(a.nome)===_normTxt(p.aluno.nome) && !a.arquivado);
     if(jaExiste && !confirm('Já existe um aluno chamado "'+jaExiste.nome+'" ('+turmaNome(jaExiste.turmaId)+').\n\nCriar mesmo assim um cadastro novo?')) return;
-    aluno={id:uid(), nome:p.aluno.nome, turmaId:t.id, email:p.aluno.email||'', atualizadoEm:Date.now()};
+    aluno={id:uid(), nome:p.aluno.nome, turmaId:t.id, email:p.aluno.email||'',
+      telefone:p.aluno.tel||'', endereco:p.aluno.endereco||'', nascimento:p.aluno.nasc||'', doc:p.aluno.doc||'', atualizadoEm:Date.now()};
     S.alunos.push(aluno); m.alunoId=aluno.id;
   }
   m.turmaId=t.id;
@@ -716,16 +800,13 @@ function trConcluir(statusFinal){
     parcelas:p.pag.parcelas||12, diaVencimento:p.pag.diaVenc||10, formaPagamento:p.pag.forma||'', dataInicio:p.ped.inicio||hoje(), pagos:{}, observacoes:''};
   S.financeiro=S.financeiro||[];
   if(!S.financeiro.some(x=>x.matriculaId===m.id)) S.financeiro.push(f);
-  const col=(typeof planColecaoDe==='function')?(planColecaoDe(t)||''):'';
-  if(statusFinal==='ativa' && p.ped.pedirLivro && col && aluno && !(typeof pedidoDoAluno==='function' && pedidoDoAluno(aluno.id,col))){
-    S.livroPedidos=S.livroPedidos||[];
-    S.livroPedidos.push({id:uid(), alunoId:aluno.id, vip:false, titulo:col, status:'pedido', pedidoEm:hoje(), por:S.usuario, atualizadoEm:Date.now()});
-  }
+  const col=p.ped.material||((typeof planColecaoDe==='function')?(planColecaoDe(t)||''):'');
+  if(statusFinal==='ativa' && aluno) _trRegistrarMaterial(aluno.id, false, col, p.ped.matDestino);
   save(); fechar(); if(typeof montarNav==='function') montarNav(); if(rota==='matriculas') VIEWS.matriculas();
   if(statusFinal==='orcamento'){ toast('Orçamento salvo — gere o PDF e apresente à família 🧾'); _tr=null; return; }
   toast('Matrícula concluída — bem-vindo(a), '+p.aluno.nome+'! 🎉');
   modal(`<h3>🎉 Matrícula concluída! <button class="close" onclick="fechar()">×</button></h3>
-    <p class="hint" style="margin:0 0 12px"><b>${esc(p.aluno.nome)}</b> está na turma <b>${esc(t.nome)}</b>, com matrícula ativa, plano financeiro criado${p.ped.pedirLivro&&col?' e o livro já pedido':''}.</p>
+    <p class="hint" style="margin:0 0 12px"><b>${esc(p.aluno.nome)}</b> está na turma <b>${esc(t.nome)}</b>, com matrícula ativa, plano financeiro criado${col&&p.ped.matDestino!=='tem'?(' e o material ('+esc(col)+') registrado em 📚 Livros'):''}.</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       <button class="btn" onclick="fechar();verContratoOficial('${m.id}')">📄 Contrato</button>
       <button class="btn ghost" onclick="fechar();abrirCarne('fin_${m.id}')">💳 Carnê</button>
