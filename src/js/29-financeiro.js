@@ -23,10 +23,17 @@ function finTotalCurso(f){ const parc=Math.max(0,parseInt(f.parcelas)||0); retur
 function finParcelas(f){
   const n=Math.max(0,parseInt(f.parcelas)||0); if(!n) return [];
   const val=finMensalLiquida(f);
-  const base=new Date(finInicio(f)+'T12:00:00');
   const dia=Math.min(28,Math.max(1,parseInt(f.diaVencimento)||10));
+  const out=[];
+  if(f.primeiroVenc && /^\d{4}-\d{2}-\d{2}$/.test(f.primeiroVenc)){   // b181: 1ª parcela na data escolhida; demais no dia informado
+    const p1=new Date(f.primeiroVenc+'T12:00:00');
+    out.push({n:1, venc:ymd(p1), valor:val});
+    for(let i=1;i<n;i++){ const d=new Date(p1.getFullYear(), p1.getMonth()+i, dia); out.push({n:i+1, venc:ymd(d), valor:val}); }
+    return out;
+  }
+  const base=new Date(finInicio(f)+'T12:00:00');
   const shift=(dia<base.getDate())?1:0;   // 1ª parcela não nasce vencida: se o dia já passou no mês de início, começa no mês seguinte
-  const out=[]; for(let i=0;i<n;i++){ const d=new Date(base.getFullYear(), base.getMonth()+i+shift, dia); out.push({n:i+1, venc:ymd(d), valor:val}); }
+  for(let i=0;i<n;i++){ const d=new Date(base.getFullYear(), base.getMonth()+i+shift, dia); out.push({n:i+1, venc:ymd(d), valor:val}); }
   return out;
 }
 function finParcelaStatus(f,p){ if((f.pagos||{})[p.n]) return 'paga'; if(finStatusMat(f)==='trancada') return 'aberta'; return (p.venc<hoje())?'atrasada':'aberta'; }   // trancada não entra em atraso
@@ -74,6 +81,15 @@ function abrirExtraManual(finId){
   const v=prompt('Valor (R$):'); if(v==null) return;
   const val=_matN(v); if(!val) return toast('Valor inválido');
   addExtraFinanceiro(finId, nome.trim(), val, 'manual'); toast('Cobrança adicionada'); abrirFinanceiro(finId);
+}
+function editarExtra(finId, extraId){   // b181: editar uma cobrança (nome/valor)
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const f=(S.financeiro||[]).find(x=>x.id===finId); if(!f) return;
+  const e=(f.extras||[]).find(x=>x.id===extraId); if(!e) return;
+  const nome=prompt('Nome da cobrança:', e.nome||''); if(nome==null||!nome.trim()) return;
+  const v=prompt('Valor (R$):', String(e.valor!=null?e.valor:'')); if(v==null) return;
+  const val=_matN(v); if(!val) return toast('Valor inválido');
+  e.nome=nome.trim(); e.valor=val; e.atualizadoEm=Date.now(); f.atualizadoEm=Date.now(); save(); abrirFinanceiro(finId);
 }
 
 /* -------------------- VIEW -------------------- */
@@ -179,7 +195,8 @@ function abrirFinanceiro(id){
     <div class="row"><div class="field"><label class="lbl">Desconto (%)</label><input type="number" id="fin_descontoPct" value="${f.descontoPct!=null?f.descontoPct:''}" min="0" max="100" step="1" placeholder="0" oninput="_finResumo()"></div>
       <div class="field"><label class="lbl">Desconto (R$)</label><input type="number" id="fin_descontoValor" value="${f.descontoValor!=null?f.descontoValor:''}" min="0" step="0.01" placeholder="0,00" oninput="_finResumo()"></div>
       <div class="field"><label class="lbl">Parcelas (nº)</label><input type="number" id="fin_parcelas" value="${f.parcelas!=null?f.parcelas:12}" min="0" max="48" step="1" oninput="_finResumo()"></div>
-      <div class="field"><label class="lbl">Vencimento (dia)</label><input type="number" id="fin_diaVencimento" value="${f.diaVencimento!=null?f.diaVencimento:10}" min="1" max="28" step="1" oninput="_finResumo()"></div></div>
+      <div class="field"><label class="lbl">Demais parcelas (dia)</label><input type="number" id="fin_diaVencimento" value="${f.diaVencimento!=null?f.diaVencimento:10}" min="1" max="28" step="1" oninput="_finResumo()"></div></div>
+    <div class="row"><div class="field"><label class="lbl">1º vencimento <span class="hint">data da 1ª parcela — vazio usa o dia acima</span></label><input type="date" id="fin_primeiroVenc" value="${escAttr(f.primeiroVenc||'')}" onchange="_finResumo()"></div></div>
     ${f.negociacao?`<div class="card box-amarela" style="margin-bottom:10px"><b style="color:#b88600">🤝 Valor negociado:</b> <span class="hint">mensalidade ${_moeda(f.negociacao.mensalidade)} · por ${escAttr(f.negociacao.por||'')} em ${brDate(f.negociacao.em||hoje())}${f.negociacao.obs?(' · '+escAttr(f.negociacao.obs)):''} <button class="btn ghost sm" style="color:var(--vermelho)" onclick="removerNegociacao('${f.id}')">remover</button></span></div>`:''}
     <div class="row" style="align-items:flex-end"><div class="field" style="flex:2"><label class="lbl">Forma de pagamento</label><select id="fin_formaPagamento">${optPg}</select></div>
       <button class="btn ghost sm" style="margin-bottom:14px" onclick="aplicarTabelaPrecos('${id}')" title="Preenche com a tabela de preços">📋 Usar tabela</button>
@@ -190,6 +207,7 @@ function abrirFinanceiro(id){
       ${finExtras(f).length?finExtras(f).map(e=>`<div class="check"><span style="flex:1">${esc(e.nome)} · <b>${_moeda(e.valor)}</b><span class="hint"> · ${brDate(e.em)}${e.pago?(' · pago '+brDate(e.pago.em)):''}</span></span>
         <span class="pill" style="background:${e.pago?'#eafaf0':'#fff1e6'};color:${e.pago?'#0A7A3D':'#c2560b'}">${e.pago?'pago':'em aberto'}</span>
         ${e.pago?`<button class="btn ghost sm" title="Imprimir recibo" onclick="reciboExtra('${id}','${e.id}')">🖨️</button>`:''}
+        ${!e.pago?`<button class="btn ghost sm" title="Editar" onclick="editarExtra('${id}','${e.id}')">✏️</button>`:''}
         <button class="btn ghost sm" onclick="togglePagoExtra('${id}','${e.id}')">${e.pago?'desfazer':'✓ receber'}</button>
         <button class="btn ghost sm" style="color:var(--vermelho)" onclick="removerExtra('${id}','${e.id}')">×</button></div>`).join(''):'<p class="hint" style="margin:6px 0 0">Nenhuma. A entrega de livro no Estoque pode lançar o material aqui automaticamente.</p>'}
     </div>
@@ -206,7 +224,7 @@ function abrirFinanceiro(id){
 }
 function _finLerForm(f){
   const g=id=>{ const e=document.getElementById(id); return e?e.value:''; };
-  return Object.assign({}, f, { valorMatricula:_matN(g('fin_valorMatricula')), valorMensalidade:_matN(g('fin_valorMensalidade')), descontoPct:_matN(g('fin_descontoPct')), descontoValor:_matN(g('fin_descontoValor')), parcelas:parseInt(g('fin_parcelas'))||0, diaVencimento:parseInt(g('fin_diaVencimento'))||10, formaPagamento:g('fin_formaPagamento'), dataInicio:g('fin_dataInicio')||f.dataInicio, observacoes:g('fin_obs').trim() });
+  return Object.assign({}, f, { valorMatricula:_matN(g('fin_valorMatricula')), valorMensalidade:_matN(g('fin_valorMensalidade')), descontoPct:_matN(g('fin_descontoPct')), descontoValor:_matN(g('fin_descontoValor')), parcelas:parseInt(g('fin_parcelas'))||0, diaVencimento:parseInt(g('fin_diaVencimento'))||10, primeiroVenc:g('fin_primeiroVenc')||'', formaPagamento:g('fin_formaPagamento'), dataInicio:g('fin_dataInicio')||f.dataInicio, observacoes:g('fin_obs').trim() });
 }
 function _finResumo(){
   const el=document.getElementById('fin_resumoBox'); if(!el) return;

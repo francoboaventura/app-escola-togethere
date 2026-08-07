@@ -22,26 +22,20 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
   });
 
   const r={};
-  // ===== 1) DATA: eventos intermediários (ano 0002 → 0020 → 1990) =====
+  // ===== 1) DATA de nascimento: campo que se digita (dd/mm/aaaa) — b181 =====
   const t1=await page.evaluate(async()=>{
-    const o={}; rota='ficha'; _fichaAlunoId='a1'; VIEWS.ficha();
-    const el=document.querySelector('#view input[type="date"]');
-    o.tem_campo=!!el; o.limites = el.getAttribute('min')==='1900-01-01' && !!el.getAttribute('max');
-    el.focus();
-    const troca=v=>{ el.value=v; el.dispatchEvent(new Event('change',{bubbles:true})); };
-    troca('0002-04-12'); troca('0020-04-12'); troca('0202-04-12');   // estados intermediários da digitação
-    o.ignorou_parcial = !S.alunos[0].nascimento;                     // nada foi salvo
-    o.campo_vivo_1 = document.contains(el) && document.activeElement===el;
-    troca('1990-04-12');                                             // ano completo
-    o.salvou = S.alunos[0].nascimento==='1990-04-12';
-    o.campo_vivo_2 = document.contains(el) && document.activeElement===el;   // NÃO re-renderizou ainda
-    el.blur(); await new Promise(z=>setTimeout(z,80));
-    o.rerender_no_blur = !document.contains(el) && !!document.querySelector('#view input[type="date"]');
+    const o={};
+    o.iso_ok = _isoData('12/04/1990')==='1990-04-12' && _isoData('1/2/2020')==='2020-02-01';
+    o.iso_parcial = _isoData('12/0')==='' && _isoData('')==='';
+    o.iso_invalida = _isoData('31/02/2020')==='';    // 31 de fevereiro não existe
+    o.br_ok = _brData('1990-04-12')==='12/04/1990' && _brData('')==='';
+    rota='ficha'; _fichaAlunoId='a1'; S.alunos[0].nascimento='1990-04-12'; VIEWS.ficha();
+    const el=[...document.querySelectorAll('#view input[type="text"]')].find(i=>/'nascimento'/.test(i.getAttribute('onchange')||''));
+    o.campo_texto = !!el && el.getAttribute('placeholder')==='dd/mm/aaaa' && el.value==='12/04/1990';
     return o;
   });
-  r.data_tem_campo=t1.tem_campo; r.data_limites=t1.limites;
-  r.data_ignora_ano_parcial=t1.ignorou_parcial; r.data_campo_sobrevive=t1.campo_vivo_1 && t1.campo_vivo_2;
-  r.data_salva=t1.salvou; r.data_rerender_so_no_blur=t1.rerender_no_blur;
+  r.data_iso=t1.iso_ok; r.data_iso_parcial=t1.iso_parcial; r.data_iso_invalida=t1.iso_invalida;
+  r.data_br=t1.br_ok; r.data_campo_texto=t1.campo_texto;
 
   // ===== 2) HORA: 18:01 (meio da digitação) → 18:15 =====
   const t2=await page.evaluate(async()=>{
@@ -370,7 +364,7 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
     // --- fluxo VIP completo ---
     abrirTrilhaMatricula(); await new Promise(z=>setTimeout(z,40));
     o.tr_abre = !!document.getElementById('tr1_nome');
-    document.getElementById('tr1_nome').value='Beatriz VIP'; document.getElementById('tr1_nasc').value='1990-05-10';
+    document.getElementById('tr1_nome').value='Beatriz VIP'; document.getElementById('tr1_nasc').value='10/05/1990';
     document.getElementById('tr1_doc').value='000.000.000-00'; document.getElementById('tr1_tel').value='51999'; document.getElementById('tr1_endereco').value='Rua X, 1';
     trIr(2); await new Promise(z=>setTimeout(z,30));
     o.tr_rascunho_criado = S.matriculas.some(x=>x.status==='rascunho' && x.alunoNome==='Beatriz VIP');
@@ -419,7 +413,7 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
     o.tr_descarta = !S.matriculas.some(x=>x.id===rid);
     // --- fluxo turma com desconto caso a caso ---
     abrirTrilhaMatricula(); await new Promise(z=>setTimeout(z,40));
-    document.getElementById('tr1_nome').value='Aluno Turma'; document.getElementById('tr1_nasc').value='2012-03-01';
+    document.getElementById('tr1_nome').value='Aluno Turma'; document.getElementById('tr1_nasc').value='01/03/2012';
     trIr(2); await new Promise(z=>setTimeout(z,30));
     document.getElementById('tr2_nome').value='Mãe Turma';
     trIr(3); await new Promise(z=>setTimeout(z,30));
@@ -434,7 +428,7 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
     o.tr_turma_criou = !!al && !!mt2 && mt2.status==='ativa' && !!f2 && f2.descontoValor===50 && f2.valorMensalidade===400;
     // menor de 18 sem responsável: barra no passo 2
     abrirTrilhaMatricula(); await new Promise(z=>setTimeout(z,40));
-    document.getElementById('tr1_nome').value='Menor Sem Resp'; document.getElementById('tr1_nasc').value='2015-01-01';
+    document.getElementById('tr1_nome').value='Menor Sem Resp'; document.getElementById('tr1_nasc').value='01/01/2015';
     trIr(2); await new Promise(z=>setTimeout(z,30));
     window.__t=''; trIr(3);
     o.tr_valida_resp = /responsável/.test(window.__t||'');
@@ -517,7 +511,7 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
     rota='matriculas';
     abrirTrilhaMatricula(); await new Promise(z=>setTimeout(z,30));
     o.aluno_tem_contato = !!document.getElementById('tr1_tel') && !!document.getElementById('tr1_endereco');
-    document.getElementById('tr1_nome').value='Kid Turma'; document.getElementById('tr1_nasc').value='2013-04-01';
+    document.getElementById('tr1_nome').value='Kid Turma'; document.getElementById('tr1_nasc').value='01/04/2013';
     document.getElementById('tr1_tel').value='(51) 90000'; document.getElementById('tr1_endereco').value='Rua A, 10';
     trIr(2); await new Promise(z=>setTimeout(z,30));
     o.menor_resp_on = !!document.getElementById('tr2_temResp') && document.getElementById('tr2_temResp').checked && !!document.getElementById('tr2_nome');
@@ -540,7 +534,7 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
     o.material_estoque = !!ped && ped.status==='recebido';
     o.ativos_conta = alunosAtivosReais()>=1;
     // pagamento na ficha
-    o.ficha_pag_matriculado = /💰 Pagamento/.test(_cardPagamentoFicha(al.id)) && /abrirFinanceiroDaMatricula/.test(_cardPagamentoFicha(al.id));
+    o.ficha_pag_matriculado = /💰 Financeiro/.test(_cardPagamentoFicha(al.id)) && /abrirFinanceiroDaMatricula/.test(_cardPagamentoFicha(al.id));
     S.alunos.push({id:'aLeg', nome:'Aluno Legado', turmaId:'t1', atualizadoEm:Date.now()});
     o.ficha_pag_legado = /Criar plano de pagamento/.test(_cardPagamentoFicha('aLeg'));
     criarMatriculaDaFicha('aLeg'); await new Promise(z=>setTimeout(z,30));
@@ -631,6 +625,36 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
     return o;
   });
   Object.assign(r,t20);
+
+  // ===== b181: 1º vencimento nas parcelas + cobrança de material na matrícula + editar cobrança =====
+  const t21=await page.evaluate(async()=>{
+    const o={};
+    const f={valorMensalidade:100,descontoPct:0,descontoValor:0,parcelas:3,diaVencimento:10,primeiroVenc:'2026-09-05',dataInicio:'2026-08-01',pagos:{}};
+    const pc=finParcelas(f);
+    o.fp_1venc = pc.length===3 && pc[0].venc==='2026-09-05' && pc[1].venc==='2026-10-10' && pc[2].venc==='2026-11-10';
+    S.perfil='direcao'; S.usuario='Franco';
+    S.turmas=[{id:'t1',nome:'B1 TEENS',nivel:'teens',cefr:'B1',status:'aberta'}];
+    S.alunos=[]; S.matriculas=[]; S.financeiro=[]; S.livroPedidos=[]; rota='matriculas';
+    abrirTrilhaMatricula(); await new Promise(z=>setTimeout(z,30));
+    document.getElementById('tr1_nome').value='Kid Mat'; document.getElementById('tr1_nasc').value='01/04/2013';
+    trIr(2); await new Promise(z=>setTimeout(z,30));
+    document.getElementById('tr2_nome').value='Mãe';
+    trIr(3); await new Promise(z=>setTimeout(z,30));
+    document.getElementById('tr3_turma').value='t1'; _trTurmaChange(); await new Promise(z=>setTimeout(z,30));
+    trIr(4); await new Promise(z=>setTimeout(z,30));
+    o.pag_campos = !!document.getElementById('tr4_material') && !!document.getElementById('tr4_primeiroVenc') && /Demais parcelas \(dia\)/.test(document.getElementById('modal').innerHTML);
+    document.getElementById('tr4_mensal').value='400'; document.getElementById('tr4_material').value='250'; document.getElementById('tr4_primeiroVenc').value='2026-09-05';
+    trIr(5); await new Promise(z=>setTimeout(z,30));
+    trConcluir('ativa'); await new Promise(z=>setTimeout(z,60));
+    const al=(S.alunos||[]).find(a=>a.nome==='Kid Mat');
+    const mtr=(S.matriculas||[]).find(x=>x.alunoId===(al||{}).id);
+    const fr=(S.financeiro||[]).find(x=>x.matriculaId===(mtr||{}).id);
+    o.mat_primeirovenc = !!fr && fr.primeiroVenc==='2026-09-05' && finParcelas(fr)[0].venc==='2026-09-05';
+    o.mat_cobranca = !!fr && (fr.extras||[]).some(e=>e.origem==='matricula-material' && _matN(e.valor)===250);
+    o.tem_editar_extra = typeof editarExtra==='function';
+    return o;
+  });
+  Object.assign(r,t21);
 
   const falhas=Object.keys(r).filter(k=>r[k]!==true);
   console.log(JSON.stringify(r,null,1));

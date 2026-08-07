@@ -139,7 +139,7 @@ function abrirMatricula(id){
     <div class="field" id="mat_nomeWrap" style="display:${(m.alunoId||m.vipId)?'none':'block'}"><label class="lbl">Nome do aluno</label><input type="text" id="mat_alunoNome" value="${escAttr(m.alunoNome||'')}" placeholder="Digite o nome completo do aluno"></div>
     <div class="field" id="mat_wrapAlunoTurma" style="display:${tipo==='vip'?'none':'block'}"><label class="lbl">…ou vincule a um aluno de turma já cadastrado <span class="hint">(opcional)</span></label><select id="mat_alunoId" onchange="_matAlunoSel()">${optA}</select></div>
     <div class="field" id="mat_wrapAlunoVip" style="display:${tipo==='vip'?'block':'none'}"><label class="lbl">…ou vincule a um aluno VIP já cadastrado <span class="hint">(opcional)</span></label><select id="mat_vipId" onchange="_matAlunoSel()">${optV}</select></div>
-    <div class="row"><div class="field"><label class="lbl">Nascimento</label><input type="date" min="1900-01-01" max="${hoje()}" id="mat_nascimento" value="${escAttr(m.nascimento||'')}" oninput="_matIdadeHint()"></div>
+    <div class="row"><div class="field"><label class="lbl">Nascimento</label><input type="text" id="mat_nascimento" inputmode="numeric" autocomplete="off" placeholder="dd/mm/aaaa" maxlength="10" value="${escAttr(_brData(m.nascimento||''))}" oninput="_maskDataBR(this);_matIdadeHint()"></div>
       <div class="field"><label class="lbl">Documento do aluno</label><input type="text" id="mat_docAluno" value="${escAttr(m.docAluno||'')}" placeholder="CPF / RG (opcional)"></div></div>
 
     <div style="font-weight:700;color:#0A7A3D;margin:12px 0 4px">👪 Responsável <span id="mat_respOpc" class="hint" style="font-weight:400;color:var(--azul);display:${ehAdulto?'inline':'none'}">— opcional (aluno maior de 18)</span></div>
@@ -186,7 +186,7 @@ function _matAlunoSel(){
   const w=document.getElementById('mat_nomeWrap'); if(w) w.style.display=(sel&&sel.value)?'none':'block';
 }
 function _matIdadeHint(){
-  const v=((document.getElementById('mat_nascimento')||{}).value)||'';
+  const v=_isoData(((document.getElementById('mat_nascimento')||{}).value)||'');
   const el=document.getElementById('mat_respOpc'); if(!el) return;
   el.style.display=(idadeDe(v)!=null && idadeDe(v)>=18)?'inline':'none';
 }
@@ -194,7 +194,7 @@ function _matLerForm(){
   const g=id=>{ const e=document.getElementById(id); return e?e.value:''; };
   const tipo=g('mat_tipo')||'turma'; const vip=tipo==='vip';
   return { status:g('mat_status')||'orcamento', tipo, alunoId:vip?'':g('mat_alunoId'), vipId:vip?g('mat_vipId'):'', professor:vip?g('mat_professor'):'',
-    alunoNome:g('mat_alunoNome').trim(), nascimento:g('mat_nascimento'), docAluno:g('mat_docAluno').trim(),
+    alunoNome:g('mat_alunoNome').trim(), nascimento:_isoData(g('mat_nascimento')), docAluno:g('mat_docAluno').trim(),
     respNome:g('mat_respNome').trim(), respParentesco:g('mat_respParentesco'), telefone:g('mat_telefone').trim(), email:g('mat_email').trim(), respDoc:g('mat_respDoc').trim(),
     endereco:g('mat_endereco').trim(), cidade:g('mat_cidade').trim(), fimPeriodo:g('mat_fimPeriodo'), modalidade:g('mat_modalidade'),
     turmaId:vip?'':g('mat_turmaId'), dataInicio:g('mat_dataInicio'), observacoes:g('mat_obs').trim() };
@@ -509,7 +509,7 @@ function _trNovo(){ return {id:uid(), passo:1, tipo:'turma',
   aluno:{nome:'',nasc:'',doc:'',email:'',tel:'',endereco:'',cidade:'Gravataí, RS'},
   resp:{temResp:null,mesmo:true,nome:'',parentesco:'',tel:'',email:'',doc:'',endereco:'',cidade:'Gravataí, RS'},
   ped:{turmaId:'',inicio:hoje(),fimPeriodo:'',modalidade:'Presencial',material:'',matDestino:'encomendar', professor:'',dupla:false,horas:'',vigIni:hoje(),vigFim:'',nivel:''},
-  pag:{taxa:null,mensal:null,parcelas:12,diaVenc:10,descPct:0,descVal:0,forma:'', vipDesc:0,vipParcelas:1}}; }
+  pag:{taxa:null,mensal:null,parcelas:12,diaVenc:10,primeiroVenc:'',material:0,descPct:0,descVal:0,forma:'', vipDesc:0,vipParcelas:1}}; }
 // b178: responsável resolvido — se não houver responsável separado, o próprio aluno é o responsável.
 function _trRespFinal(p){
   const adulto=(idadeDe(p.aluno.nasc)!=null && idadeDe(p.aluno.nasc)>=18);
@@ -563,7 +563,8 @@ function _trChk(id){ const e=document.getElementById(id); return e?!!e.checked:n
 function _trLer(){   // lê só o que estiver na tela (cada passo tem seus campos)
   const p=_tr; const g=_trG, c=_trChk; const set=(o,k,v)=>{ if(v!==null) o[k]=v; };
   if(g('tr1_nome')!==null) p.aluno.nome=g('tr1_nome').trim();
-  set(p.aluno,'nasc',g('tr1_nasc')); set(p.aluno,'doc',g('tr1_doc')); set(p.aluno,'email',g('tr1_email'));
+  if(g('tr1_nasc')!==null){ const _b=g('tr1_nasc').trim(); if(!_b) p.aluno.nasc=''; else { const _i=_isoData(_b); if(_i) p.aluno.nasc=_i; } }
+  set(p.aluno,'doc',g('tr1_doc')); set(p.aluno,'email',g('tr1_email'));
   set(p.aluno,'tel',g('tr1_tel')); set(p.aluno,'endereco',g('tr1_endereco')); set(p.aluno,'cidade',g('tr1_cidade'));
   if(c('tr2_temResp')!==null) p.resp.temResp=c('tr2_temResp');
   if(c('tr2_mesmo')!==null) p.resp.mesmo=c('tr2_mesmo');
@@ -575,7 +576,8 @@ function _trLer(){   // lê só o que estiver na tela (cada passo tem seus campo
   set(p.ped,'material',g('tr3_material'));
   const _md=(typeof document!=='undefined')&&document.querySelector('input[name="tr3_matdest"]:checked'); if(_md) p.ped.matDestino=_md.value;
   if(c('tr3_dupla')!==null) p.ped.dupla=c('tr3_dupla');
-  ['taxa','mensal','descPct','descVal','vipDesc'].forEach(k=>{ if(g('tr4_'+k)!==null) p.pag[k]=_matN(g('tr4_'+k)); });
+  ['taxa','mensal','descPct','descVal','vipDesc','material'].forEach(k=>{ if(g('tr4_'+k)!==null) p.pag[k]=_matN(g('tr4_'+k)); });
+  if(g('tr4_primeiroVenc')!==null) p.pag.primeiroVenc=g('tr4_primeiroVenc');
   if(g('tr4_parcelas')!==null) p.pag.parcelas=parseInt(g('tr4_parcelas'))||12;
   if(g('tr4_vipParcelas')!==null) p.pag.vipParcelas=parseInt(g('tr4_vipParcelas'))||1;
   if(g('tr4_diaVenc')!==null) p.pag.diaVenc=parseInt(g('tr4_diaVenc'))||10;
@@ -646,7 +648,7 @@ function _trRender(){
   let h='';
   if(p.passo===1){
     h=F('Nome do aluno',`<input type="text" id="tr1_nome" value="${escAttr(p.aluno.nome)}" placeholder="Nome completo">`)
-     +`<div class="row">`+F('Nascimento',`<input type="date" id="tr1_nasc" min="1900-01-01" max="${hoje()}" value="${escAttr(p.aluno.nasc)}">`)
+     +`<div class="row">`+F('Nascimento',`<input type="text" id="tr1_nasc" inputmode="numeric" autocomplete="off" placeholder="dd/mm/aaaa" maxlength="10" value="${escAttr(_brData(p.aluno.nasc))}" oninput="_maskDataBR(this)">`)
      +F('Documento (CPF/RG) <span class="hint">opcional</span>',`<input type="text" id="tr1_doc" value="${escAttr(p.aluno.doc)}">`)+`</div>`
      +F('E-mail do aluno <span class="hint">vira o acesso ao portal</span>',`<input type="email" id="tr1_email" value="${escAttr(p.aluno.email)}" placeholder="email@exemplo.com">`)
      +`<div class="row">`+F('📞 Telefone / WhatsApp',`<input type="text" id="tr1_tel" value="${escAttr(p.aluno.tel||'')}" placeholder="(51) 9…">`)
@@ -709,9 +711,11 @@ function _trRender(){
        +`<div class="row">`+F('Taxa de matrícula (R$)',`<input type="number" id="tr4_taxa" value="${p.pag.taxa!=null?p.pag.taxa:''}" min="0" step="0.01" oninput="trResumoLive()">`)
        +F('Mensalidade (R$)',`<input type="number" id="tr4_mensal" value="${p.pag.mensal!=null?p.pag.mensal:''}" min="0" step="0.01" oninput="trResumoLive()">`)+`</div>`
        +`<div class="row">`+F('Parcelas',`<input type="number" id="tr4_parcelas" value="${p.pag.parcelas}" min="1" max="48" oninput="trResumoLive()">`)
-       +F('Vencimento (dia)',`<input type="number" id="tr4_diaVenc" value="${p.pag.diaVenc}" min="1" max="28">`)
+       +F('Demais parcelas (dia)',`<input type="number" id="tr4_diaVenc" value="${p.pag.diaVenc}" min="1" max="28">`)
        +F('Desconto (%)',`<input type="number" id="tr4_descPct" value="${p.pag.descPct||''}" min="0" max="100" oninput="trResumoLive()">`)
        +F('Desconto (R$)',`<input type="number" id="tr4_descVal" value="${p.pag.descVal||''}" min="0" step="0.01" oninput="trResumoLive()">`)+`</div>`
+       +`<div class="row">`+F('1º vencimento <span class="hint">data da 1ª parcela</span>',`<input type="date" id="tr4_primeiroVenc" value="${escAttr(p.pag.primeiroVenc||'')}" onchange="trResumoLive()">`)
+       +F('Cobrar material (R$) <span class="hint">vira uma cobrança no financeiro</span>',`<input type="number" id="tr4_material" value="${p.pag.material||''}" min="0" step="0.01" placeholder="0,00">`)+`</div>`
        +F('Forma de pagamento',`<select id="tr4_forma">${optF}</select>`);
     }
     h+=`<div class="gen-box" id="tr4_resumo" style="margin-bottom:12px">—</div>`+nav(3,5);
@@ -797,11 +801,15 @@ function trConcluir(statusFinal){
   m.turmaId=t.id;
   const f={id:'fin_'+m.id, matriculaId:m.id, criadoEm:hoje(), criadoPor:S.usuario, atualizadoEm:Date.now(),
     valorMatricula:_matN(p.pag.taxa), valorMensalidade:_matN(p.pag.mensal), descontoPct:_matN(p.pag.descPct), descontoValor:_matN(p.pag.descVal),
-    parcelas:p.pag.parcelas||12, diaVencimento:p.pag.diaVenc||10, formaPagamento:p.pag.forma||'', dataInicio:p.ped.inicio||hoje(), pagos:{}, observacoes:''};
+    parcelas:p.pag.parcelas||12, diaVencimento:p.pag.diaVenc||10, primeiroVenc:p.pag.primeiroVenc||'', formaPagamento:p.pag.forma||'', dataInicio:p.ped.inicio||hoje(), pagos:{}, observacoes:''};
   S.financeiro=S.financeiro||[];
   if(!S.financeiro.some(x=>x.matriculaId===m.id)) S.financeiro.push(f);
   const col=p.ped.material||((typeof planColecaoDe==='function')?(planColecaoDe(t)||''):'');
   if(statusFinal==='ativa' && aluno) _trRegistrarMaterial(aluno.id, false, col, p.ped.matDestino);
+  // b181: cobrança do material lançada no financeiro (cobrança extra)
+  if(statusFinal==='ativa' && _matN(p.pag.material)>0 && typeof addExtraFinanceiro==='function' && !(f.extras||[]).some(e=>e.origem==='matricula-material')){
+    addExtraFinanceiro(f.id, 'Material didático'+(col?(' — '+col):''), p.pag.material, 'matricula-material');
+  }
   save(); fechar(); if(typeof montarNav==='function') montarNav(); if(rota==='matriculas') VIEWS.matriculas();
   if(statusFinal==='orcamento'){ toast('Orçamento salvo — gere o PDF e apresente à família 🧾'); _tr=null; return; }
   toast('Matrícula concluída — bem-vindo(a), '+p.aluno.nome+'! 🎉');

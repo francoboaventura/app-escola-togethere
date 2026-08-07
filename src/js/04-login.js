@@ -386,6 +386,11 @@ function nivelTag(n){return `<span class="tag ${n}">${n}</span>`;}
 function alunosDa(turmaId){return S.alunos.filter(a=>a.turmaId===turmaId && (_verArquivadas || !a.arquivado));}
 function idadeDe(nasc){ if(!nasc) return null; const p=String(nasc).split('-').map(Number); if(p.length<3||!p[0]) return null; const [y,m,d]=p; const h=new Date(); let a=h.getFullYear()-y; if((h.getMonth()+1)<m || ((h.getMonth()+1)===m && h.getDate()<d)) a--; return (a>=0&&a<130)?a:null; }
 function brDate(d){if(!d)return'';const[y,m,dd]=d.split('-');return`${dd}/${m}/${y}`;}
+/* b181 · campo de data que se digita (dd/mm/aaaa), sem o seletor confuso do navegador */
+function _brData(iso){ const m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})/); return m?(m[3]+'/'+m[2]+'/'+m[1]):''; }
+function _isoData(br){ const m=String(br||'').trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); if(!m) return ''; const d=+m[1],mo=+m[2],y=+m[3]; if(mo<1||mo>12||d<1||y<1900||y>2100) return ''; const dt=new Date(y,mo-1,d); if(dt.getDate()!==d||dt.getMonth()!==mo-1) return ''; return y+'-'+String(mo).padStart(2,'0')+'-'+String(d).padStart(2,'0'); }
+function _maskDataBR(el){ let v=(el.value||'').replace(/\D/g,'').slice(0,8); if(v.length>4) v=v.slice(0,2)+'/'+v.slice(2,4)+'/'+v.slice(4); else if(v.length>2) v=v.slice(0,2)+'/'+v.slice(2); el.value=v; }
+function inputDataBR(id, iso, onchangeJs, extra){ return `<input type="text" id="${id}" inputmode="numeric" autocomplete="off" placeholder="dd/mm/aaaa" maxlength="10" value="${escAttr(_brData(iso))}" oninput="_maskDataBR(this)"${onchangeJs?(' onchange="'+onchangeJs+'"'):''}${extra?(' '+extra):''}>`; }
 function _navItemDe(rid){ return NAV.find(n=>n.id===rid)||null; }
 function selectTurma(id,sel){
   const ts=turmasVisiveis();

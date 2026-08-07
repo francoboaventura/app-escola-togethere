@@ -314,7 +314,7 @@ VIEWS.perfil=()=>{
           <input type="text" id="pfTel" value="${escAttr(u.telefone||'')}" placeholder="(51) 9 9999-9999"></div>
       </div>
       <div class="field" style="max-width:220px"><label class="lbl">Data de nascimento</label>
-        <input type="date" min="1900-01-01" max="${hoje()}" id="pfNasc" value="${escAttr(u.nascimento||'')}"></div>
+        <input type="text" id="pfNasc" inputmode="numeric" autocomplete="off" placeholder="dd/mm/aaaa" maxlength="10" value="${escAttr(_brData(u.nascimento||''))}" oninput="_maskDataBR(this)"></div>
       <button class="btn" onclick="salvarPerfil()">💾 Salvar</button>
     </div>`;
 };
@@ -323,6 +323,6 @@ function salvarPerfil(){
   u.nomeCompleto=(document.getElementById('pfNome').value||'').trim();
   u.email=(document.getElementById('pfEmail').value||'').trim();
   u.telefone=(document.getElementById('pfTel').value||'').trim();
-  u.nascimento=document.getElementById('pfNasc').value||'';
+  u.nascimento=_isoData(document.getElementById('pfNasc').value||'');
   u.atualizadoEm=Date.now(); save(); toast('Perfil salvo ✅');
 }

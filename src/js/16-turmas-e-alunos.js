@@ -699,7 +699,7 @@ function renderFichaVip(v, vip){
     <div class="row" style="flex-wrap:wrap">
       <div class="field" style="flex:2;min-width:210px;margin:0"><label class="lbl">E-mail (responsável / aluno)</label><input type="email" value="${escAttr(vip.email||'')}" placeholder="email@exemplo.com" onchange="setVipCampo('${vip.id}','email',this.value)"></div>
       <div class="field" style="flex:1;min-width:150px;margin:0"><label class="lbl">Telefone / WhatsApp</label><input type="text" value="${escAttr(vip.telefone||'')}" placeholder="(51) 9…" onchange="setVipCampo('${vip.id}','telefone',this.value)"></div>
-      <div class="field" style="min-width:150px;margin:0"><label class="lbl">Nascimento</label><input type="date" min="1900-01-01" max="${hoje()}" value="${escAttr(vip.nascimento||'')}" onchange="setVipCampo('${vip.id}','nascimento',this.value)"></div>
+      <div class="field" style="min-width:150px;margin:0"><label class="lbl">Nascimento</label><input type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/aaaa" maxlength="10" value="${escAttr(_brData(vip.nascimento||''))}" oninput="_maskDataBR(this)" onchange="setVipCampo('${vip.id}','nascimento',_isoData(this.value))"></div>
     </div>`;
     const _profsVip=[...new Set((S.usuarios||[]).filter(u=>u.ensina).map(u=>u.ensina).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
     h+=`<div class="row" style="flex-wrap:wrap;margin-top:10px">
@@ -948,7 +948,7 @@ VIEWS.ficha=()=>{
     ${podeEnviar?`
       <div class="row" style="flex-wrap:wrap">
         <div class="field" style="flex:2;min-width:200px;margin:0"><label class="lbl">Nome completo</label><input type="text" value="${escAttr(a.nome||'')}" onchange="fichaSetCampoAluno('${a.id}','nome',this.value)"></div>
-        <div class="field" style="min-width:150px;margin:0"><label class="lbl">🎂 Nascimento</label><input type="date" min="1900-01-01" max="${hoje()}" value="${escAttr(a.nascimento||'')}" onchange="fichaSetCampoAluno('${a.id}','nascimento',this.value)"></div>
+        <div class="field" style="min-width:150px;margin:0"><label class="lbl">🎂 Nascimento</label><input type="text" inputmode="numeric" autocomplete="off" placeholder="dd/mm/aaaa" maxlength="10" value="${escAttr(_brData(a.nascimento||''))}" oninput="_maskDataBR(this)" onchange="fichaSetCampoAluno('${a.id}','nascimento',_isoData(this.value))"></div>
       </div>
       <div class="row" style="flex-wrap:wrap;margin-top:10px">
         <div class="field" style="flex:1;min-width:170px;margin:0"><label class="lbl">📱 Telefone / WhatsApp</label><input type="text" value="${escAttr(a.telefone||'')}" placeholder="(51) 9…" onchange="fichaSetCampoAluno('${a.id}','telefone',this.value)"></div>
@@ -993,14 +993,18 @@ function _cardPagamentoFicha(alunoId){
       <button class="btn ghost sm" onclick="criarMatriculaDaFicha('${alunoId}')">➕ Criar plano de pagamento</button></div>`;
   }
   const f=(S.financeiro||[]).find(x=>x.matriculaId===m.id);
+  const nEx=f?(typeof finExtras==='function'?finExtras(f).length:0):0;
+  const exAberto=f?(typeof finExtrasAberto==='function'?finExtrasAberto(f):0):0;
   const resumo=f
-    ? `mensalidade <b>${_moeda(finMensalLiquida(f))}</b>${_matN(f.descontoPct)>0?(' (−'+_matN(f.descontoPct)+'%)'):''} · ${f.parcelas||0}× · venc. dia ${f.diaVencimento||10}${f.formaPagamento?(' · '+esc(f.formaPagamento)):''}`
+    ? `mensalidade <b>${_moeda(finMensalLiquida(f))}</b>${_matN(f.descontoPct)>0?(' (−'+_matN(f.descontoPct)+'%)'):''} · ${f.parcelas||0}× · ${f.primeiroVenc?('1º venc. '+brDate(f.primeiroVenc)):('venc. dia '+(f.diaVencimento||10))}${f.formaPagamento?(' · '+esc(f.formaPagamento)):''}${nEx?('<br><span class="hint">🧾 '+nEx+' cobrança(s)'+(exAberto>0?(' · '+_moeda(exAberto)+' em aberto'):'')+'</span>'):''}`
     : '<span class="hint">Plano de pagamento ainda não definido.</span>';
-  return `<div class="card" style="margin-top:12px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px"><h3 style="margin:0;flex:1;font-size:1rem">💰 Pagamento</h3></div>
+  return `<div class="card" style="margin-top:12px"><div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px"><h3 style="margin:0;flex:1;font-size:1rem">💰 Financeiro</h3></div>
     <p style="margin:0 0 10px;font-size:.92rem">${resumo}</p>
     <div style="display:flex;gap:6px;flex-wrap:wrap">
-      <button class="btn ghost sm" onclick="abrirFinanceiroDaMatricula('${m.id}')">✏️ ${f?'Editar pagamento':'Definir pagamento'}</button>
-      ${f?`<button class="btn ghost sm" onclick="abrirCarne('${f.id}')">💳 Carnê</button>`:''}
+      <button class="btn ghost sm" onclick="abrirFinanceiroDaMatricula('${m.id}')">✏️ ${f?'Plano e cobranças':'Definir pagamento'}</button>
+      ${f?`<button class="btn ghost sm" onclick="abrirCarne('${f.id}')">💳 Boletos / Carnê</button>`:''}
+      ${f?`<button class="btn ghost sm" onclick="abrirExtraManual('${f.id}')">+ Cobrança</button>`:''}
+      ${f?`<button class="btn ghost sm" onclick="verFinanceiro('${f.id}')">🖨️ PDF</button>`:''}
     </div></div>`;
 }
 // quadradinho de ação da ficha (b165) — mesmo padrão das ações da turma
