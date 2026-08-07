@@ -43,14 +43,12 @@ function _cardPacoteVip(vid){
   const pac=(S.pacotesVip||[]).filter(p=>p.vipId===vid && !p.arquivado).sort((a,b)=>(a.inicio||'').localeCompare(b.inicio||''));
   const fim=vipVigenciaFim(vid), dias=vipDiasVigencia(vid), al=vipAlertaPacote(vid);
   const tile=(v,l,c)=>`<div class="fx-tile"><div class="v" style="color:${c}">${v}</div><div class="l">${l}</div></div>`;
-  const aberto=qdAberto('vip_pacote');       // recolhido por padrão (b168)
   const titulo=`⏱️ Pacote de horas${vipObj.dupla?' <span class="pill" style="background:#e6f0fb;color:#005EAF">👥 em dupla</span>':''}`;
-  if(!aberto) return qdBox('vip_pacote', titulo, '', {alerta: al?_vipAlertaTxt(al):''});
   let h='';
   if(ehGestor) h+=`<div style="display:flex;justify-content:flex-end"><button class="btn ghost sm" onclick="addPacoteVip('${vid}')">+ Novo pacote</button></div>`;
   if(ehGestor) h+=`<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.88rem;margin:8px 0 0"><input type="checkbox" ${vipObj.dupla?'checked':''} onchange="setVipDupla('${vid}',this.checked)"> 👥 Aula em dupla <span class="hint">(usa a hora-aula de dupla da tabela${vHora?(' — '+_moeda(vHora)+'/h por aluno'):''})</span></label>`;
   else if(vipObj.dupla) h+=`<p class="hint" style="margin:8px 0 0">👥 Aula em dupla.</p>`;
-  if(!pac.length && !usado){ return qdBox('vip_pacote', titulo, h+`<p class="hint" style="margin:8px 0 0">Nenhum pacote cadastrado.${ehGestor?' Clique em “+ Novo pacote” quando o aluno contratar horas.':''}</p>`, {alerta: al?_vipAlertaTxt(al):''}); }
+  if(!pac.length && !usado){ return _vipCardAberto(titulo, al, h+`<p class="hint" style="margin:8px 0 0">Nenhum pacote cadastrado.${ehGestor?' Clique em “+ Novo pacote” quando o aluno contratar horas.':''}</p>`); }
   h+=`<div class="fx-tiles" style="margin-top:10px">
     ${tile(fmtDur(contr),'Contratadas','#005EAF')}
     ${tile(fmtDur(usado),'Utilizadas','#b8860b')}
@@ -70,7 +68,17 @@ function _cardPacoteVip(vid){
     const d=p.fim?Math.round((new Date(p.fim+'T23:59:59').getTime()-Date.now())/864e5):null;
     return `<div style="border-top:1px solid var(--linha);padding:8px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="flex:1"><b>${(+p.horas||0)}h</b>${p.inicio?(' · de '+brDate(p.inicio)):''}${p.fim?(' até '+brDate(p.fim)):''}${p.obs?(' · '+escAttr(p.obs)):''}${d!=null&&d<0?' <span class="pill" style="background:#fdeaea;color:var(--vermelho)">vencido</span>':''}</span>${ehGestor?`<button class="btn ghost sm" onclick="editarPacoteVip('${p.id}')">✏️</button><button class="btn ghost sm" style="color:var(--vermelho)" onclick="delPacoteVip('${p.id}')">excluir</button>`:''}</div>`;
   }).join('');
-  return qdBox('vip_pacote', titulo, h, {alerta: al?_vipAlertaTxt(al):''});
+  return _vipCardAberto(titulo, al, h);
+}
+/* cartão sempre aberto (b175): título + selo de alerta + corpo, sem sanfona */
+function _vipCardAberto(titulo, al, corpo, cor){
+  // al: objeto de alerta do pacote OU texto pronto para o selo
+  const selo=!al?'':(typeof al==='string'
+    ?`<span class="pill" style="background:#fff3e0;color:#c2560b">⚠ ${al}</span>`
+    :`<span class="pill" style="background:${(al.esgotado||al.vencido)?'#fdeaea':'#fff3e0'};color:${(al.esgotado||al.vencido)?'var(--vermelho)':'#c2560b'}" title="Renovar o pacote ou avisar o responsável">⚠ ${_vipAlertaTxt(al)}</span>`);
+  return `<div class="card" style="border-left:4px solid ${cor||'var(--amarelo)'}">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><h4 style="flex:1;margin:0">${titulo}</h4>${selo}</div>
+    ${corpo}</div>`;
 }
 function togglePacoteVip(){ toggleQd('vip_pacote'); }   // compat
 function addPacoteVip(vid){ if(!(S.perfil==='direcao'||soLeitura())) return toast('Sem permissão'); _modalPacoteVip(vid,null); }
@@ -162,17 +170,23 @@ function _cardVisaoHorasVip(lista){
     return {v,c,u,s,uPer,pct,al,fim,barCor,urg};
   }).sort((a,b)=> b.urg-a.urg || a.s-b.s);
   const tile=(val,lbl,cor)=>`<div class="fx-tile"><div class="v" style="color:${cor}">${val}</div><div class="l">${lbl}</div></div>`;
-  const linha=r=>{
-    const chip = r.al?`<span class="pill" style="background:${(r.al.esgotado||r.al.vencido)?'#fdeaea':'#fff3e0'};color:${(r.al.esgotado||r.al.vencido)?'var(--vermelho)':'#c2560b'}">${_vipAlertaTxt(r.al)}</span>`:'';
+  const cartao=r=>{
+    const chip = r.al?`<span class="pill" style="background:${(r.al.esgotado||r.al.vencido)?'#fdeaea':'#fff3e0'};color:${(r.al.esgotado||r.al.vencido)?'var(--vermelho)':'#c2560b'}" title="Este aluno precisa de ação: renovar o pacote ou avisar o responsável">⚠ ${_vipAlertaTxt(r.al)}</span>`:'';
     const sCor = r.s<=0?'var(--vermelho)':(r.al&&r.al.baixo?'var(--laranja)':'var(--ok)');
-    return `<div class="check" style="cursor:pointer;display:block" onclick="abrirFicha('${r.v.id}')">
-      <div style="display:flex;gap:6px;align-items:baseline;flex-wrap:wrap"><b style="flex:1">${esc(r.v.nome)}</b>${chip}</div>
-      <div style="height:6px;background:#eef1f6;border-radius:4px;overflow:hidden;margin:5px 0 3px"><div style="height:100%;width:${r.pct}%;background:${r.barCor}"></div></div>
-      <span class="hint">${temPer?`<b style="color:#b8860b">${fmtDur(r.uPer)} no período</b> · `:''}${fmtDur(r.u)} de ${fmtDur(r.c)} (${r.pct}%) · saldo <b style="color:${sCor}">${fmtDur(Math.max(0,r.s))}</b>${r.v.professor?(' · '+esc(r.v.professor)):''}${r.fim?(' · até '+brDate(r.fim)):''}</span>
+    return `<div class="ctv" role="button" tabindex="0" onclick="selecionarVip('${r.v.id}')" onkeydown="if(event.key==='Enter')selecionarVip('${r.v.id}')" title="Ver os detalhes e o pacote deste aluno">
+      <div class="ct-topo" style="background:${r.barCor}"></div>
+      <div class="ct-miolo">
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><b style="flex:1;min-width:0">${esc(r.v.nome)}</b>${r.v.dupla?'<span class="pill" style="background:#e6f0fb;color:#005EAF" title="Aula em dupla — hora-aula de dupla, por aluno">👥</span>':''}</div>
+        <div class="hint">${r.v.professor?esc(r.v.professor):'<i>sem professor</i>'}</div>
+        <div class="ct-barra" title="${fmtDur(r.u)} de ${fmtDur(r.c)} contratadas (${r.pct}%)"><i style="width:${r.pct}%;background:${r.barCor}"></i></div>
+        <span class="hint">${temPer?`<b style="color:#b8860b">${fmtDur(r.uPer)} no período</b> · `:''}saldo <b style="color:${sCor}">${fmtDur(Math.max(0,r.s))}</b>${r.fim?(' · até '+brDate(r.fim)):''}</span>
+        ${chip?`<div style="margin-top:6px">${chip}</div>`:''}
+      </div>
+      <div class="ct-rodape"><span class="ct-abrir">abrir aluno ›</span></div>
     </div>`;
   };
   const criticos=rows.filter(r=>r.urg>0);
-  const mostra=_vipPanoramaAberto?rows:criticos;
+  const mostra=_vipPanoramaAberto?criticos:rows;   // b175: padrão mostra todos, ordenados por urgência
   const corpo=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <select onchange="setVipPanoramaPer(this.value)" style="max-width:150px">
         <option value="tudo" ${per==='tudo'?'selected':''}>Desde o início</option>
@@ -181,17 +195,17 @@ function _cardVisaoHorasVip(lista){
         <option value="ano" ${per==='ano'?'selected':''}>Este ano</option>
       </select>
       <button class="btn ghost sm" onclick="exportarHorasVipCSV()">⬇️ Planilha</button>
-      <button class="btn ghost sm" onclick="toggleVipPanorama()">${_vipPanoramaAberto?'ver só os que precisam de ação ▲':'ver todos os '+com.length+' pacotes ▼'}</button></div>
+      <button class="btn ghost sm" onclick="toggleVipPanorama()">${_vipPanoramaAberto?'ver todos os '+com.length+' pacotes':'ver só os que precisam de ação'}</button></div>
     <div class="fx-tiles" style="margin-top:10px">
       ${tile(com.length,'Alunos c/ pacote','#005EAF')}
       ${tile(fmtDur(totC),'Contratadas','#005EAF')}
       ${tile(fmtDur(temPer?totUPer:totU),temPer?'Utilizadas no período':'Utilizadas','#b8860b')}
       ${tile(fmtDur(Math.max(0,totS)),'Saldo total',totS<=0?'var(--vermelho)':'var(--ok)')}
     </div>
-    ${nAt?`<p class="hint" style="margin:10px 0 0"><b style="color:#c2560b">${nAt}</b> aluno(s) precisam de ação.</p>`:'<p class="hint" style="margin:10px 0 0">Nenhum pacote pedindo ação agora. 👏</p>'}
-    <div style="margin-top:8px">${mostra.length?mostra.map(linha).join(''):'<p class="hint">—</p>'}</div>`;
-  return qdBox('vip_visao','📊 Visão geral — panorama das horas VIP', corpo,
-    { sub:`${com.length} aluno(s) com pacote`, alerta: nAt?(nAt+' aluno(s) precisam de ação'):'' });
+    ${nAt?`<p class="hint" style="margin:10px 0 0"><b style="color:#c2560b">${nAt}</b> aluno(s) precisam de ação — aparecem primeiro.</p>`:'<p class="hint" style="margin:10px 0 0">Nenhum pacote pedindo ação agora. 👏</p>'}
+    <div class="ctg" style="margin-bottom:0">${mostra.length?mostra.map(cartao).join(''):'<p class="hint">—</p>'}</div>`;
+  return _vipCardAberto('📊 Visão geral — horas VIP <span class="hint">'+com.length+' aluno(s) com pacote</span>',
+    nAt?(nAt+' aluno(s) precisam de ação'):null, corpo, '#C8A200');
 }
 function vipHorarios(vip){
   if(!vip) return [];
@@ -343,27 +357,44 @@ VIEWS.vip=()=>{
     if(ehProfessor()) todas=todas.filter(a=>!a.cancel12h);
     const aulas=todas.filter(a=>a.tema!=='Importação');
     const wrs=(S.writings||[]).filter(w=>w.alunoId===vipSel);
+    const ult=aulas.slice().sort((a,b)=>(b.data||'').localeCompare(a.data||''))[0];
+    const uwr=wrs.slice().sort((a,b)=>(b.data||b.criadoEm||'').toString().localeCompare((a.data||a.criadoEm||'').toString()))[0];
+    const prevAulas=ult?`Última: <b>${brDate(ult.data)}</b> · ${fmtDur(+ult.duracaoMin||0)}${ult.faltou?' · <span style="color:var(--vermelho)">faltou</span>':''}<br>${esc((ult.tema||ult.descricao||'—').slice(0,60))}`:'Nenhuma aula lançada ainda.';
+    const prevWr=uwr?`Último: <b>${uwr.data?brDate(uwr.data):'—'}</b><br>${esc((uwr.titulo||uwr.tema||'—').toString().slice(0,60))}`:'Nenhuma avaliação ainda.';
     det=`<div class="vip-sel"><span class="nm">👑 ${esc(vObj.nome||'')}</span>
         ${vObj.professor?`<span class="pill">${esc(vObj.professor)}</span>`:''}
         <button class="btn ghost sm" onclick="abrirFicha('${vipSel}')">📇 Ficha completa</button>
         ${!ehProfessor()?`<button class="btn ghost sm" style="color:#c2560b" onclick="registrarCancelamentoVip('${vipSel}')">🚫 Cancelou em cima da hora</button>`:''}
       </div>
       ${_cardPacoteVip(vipSel)}
-      ${!ehSec?qdBox('vip_lancar','➕ Lançar aula', ()=>_vipFormLancarHTML(vObj), {sub:'registrar a aula que aconteceu'}):''}
-      ${qdBox('vip_aulas','👑 Aulas lançadas', ()=>_vipAulasHTML(vipSel), {sub:aulas.length+' registro(s)'})}
-      ${qdBox('vip_writings','✍️ Writings', ()=>_vipWritingsHTML(vipSel), {sub:wrs.length+' avaliação(ões)'})}`;
+      <div class="ctg">
+        ${!ehSec?_ctAcaoVip('var(--ok)','➕ Lançar aula','Registrar a aula que aconteceu: tema, descrição, data e duração.','lançar ›','abrirVipLancar()'):''}
+        ${_ctAcaoVip('var(--azul)','👑 Aulas lançadas',prevAulas+`<div style="margin-top:6px"><span class="pill">${aulas.length} registro(s)</span></div>`,'ver todas ›','abrirVipAulas()')}
+        ${_ctAcaoVip('var(--rosa)','✍️ Writings',prevWr+`<div style="margin-top:6px"><span class="pill">${wrs.length} avaliação(ões)</span></div>`,'ver todas ›','abrirVipWritings()')}
+      </div>`;
   }
 
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:#C8A200"></span><h2 class="display">👑 Alunos VIP</h2></div>
     <p class="sub">${ehSec?'Gestão dos alunos particulares — escolha o aluno na lista para ver os detalhes.':ehDir?'Aulas particulares, uma a uma. Cadastre o aluno, escolha na lista e lance cada aula.':'Seus alunos particulares — escolha na lista para ver os detalhes e lançar as aulas.'}</p>
     ${ehGestor?_cardVisaoHorasVip(lista):''}
-    ${qdBox('vip_alunos','👑 Alunos VIP', boxAlunos, {sub: vipSel?('selecionado: '+esc(vObj.nome||'')):(lista.length+' aluno(s)')})}
+    ${_vipCardAberto('👑 Alunos VIP <span class="hint">'+(vipSel?('selecionado: '+esc(vObj.nome||'')):(lista.length+' aluno(s)'))+'</span>', null, boxAlunos(), '#C8A200')}
     ${det}`;
+  if(typeof _fichaLatRefresh==='function') _fichaLatRefresh();   // ficha lateral acompanha o re-render (b175)
 };
+/* cartão de ação (b175): prévia + clique abre a ficha lateral */
+function _ctAcaoVip(cor,titulo,prev,cta,fn){
+  return `<div class="ctv" role="button" tabindex="0" onclick="${fn}" onkeydown="if(event.key==='Enter')${fn}">
+    <div class="ct-topo" style="background:${cor}"></div>
+    <div class="ct-miolo"><b>${titulo}</b><div class="hint" style="margin-top:4px">${prev}</div></div>
+    <div class="ct-rodape"><span class="ct-abrir">${cta}</span></div></div>`;
+}
+function abrirVipLancar(){ const v=(S.vipAlunos||[]).find(a=>a.id===vipSel); if(!v)return; fichaLateral('➕ Lançar aula — '+esc(v.nome), ()=>{const x=(S.vipAlunos||[]).find(a=>a.id===vipSel); return x?_vipFormLancarHTML(x):'';}); }
+function abrirVipAulas(){ const v=(S.vipAlunos||[]).find(a=>a.id===vipSel); if(!v)return; fichaLateral('👑 Aulas lançadas — '+esc(v.nome), ()=>vipSel?_vipAulasHTML(vipSel):''); }
+function abrirVipWritings(){ const v=(S.vipAlunos||[]).find(a=>a.id===vipSel); if(!v)return; fichaLateral('✍️ Writings — '+esc(v.nome), ()=>vipSel?_vipWritingsHTML(vipSel):''); }
 // escolher um aluno na lista: mostra os detalhes na própria tela
 function selecionarVip(id){
   vipSel=id||null;
-  if(vipSel){ abrirQd('vip_alunos',true); abrirQd('vip_aulas',true); }
+  if(typeof fecharFichaLateral==='function') fecharFichaLateral();
   VIEWS.vip();
 }
 // formulário de lançar aula (dentro do quadradinho)
@@ -491,6 +522,7 @@ function addAulaVip(){
   const faltou=!!document.getElementById('vipFaltou').checked;
   const cobrarFalta=faltou && (ehProfessor() ? true : !!((document.getElementById('vipCobrarFalta')||{}).checked));   // regra da escola: falta desconta a hora
   S.aulasVip.push({id:uid(),vipId:vid,data,hora,tema,temaCasa,descricao:desc,duracaoMin:dur,faltou,cobrarFalta,atualizadoEm:Date.now()});
+  if(typeof fecharFichaLateral==='function') fecharFichaLateral();   // b175: fecha a ficha de lançamento
   save(); VIEWS.vip();   // re-renderiza p/ atualizar o saldo do pacote
   toast(faltou?(cobrarFalta?'Falta lançada — hora descontada do pacote':'Falta lançada (sem débito)'):'Aula lançada');
 }

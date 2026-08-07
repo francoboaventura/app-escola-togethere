@@ -13,6 +13,7 @@ const MAT_STATUS={
   concluida:{lbl:'Concluída', bg:'#eaf3ff', cor:'#005EAF'},
   cancelada:{lbl:'Cancelada', bg:'#fdeaea', cor:'#E52524'},
   negada:  {lbl:'Não fechou', bg:'#eef0f4', cor:'#5a6b86'},
+  rascunho:{lbl:'Rascunho',   bg:'#fff8e1', cor:'#b8860b'},   // trilha de matrícula em andamento (b176)
 };
 const MAT_PARENTESCO=['Mãe','Pai','Responsável legal','Avó/Avô','O próprio aluno','Outro'];
 
@@ -32,7 +33,7 @@ let _matFiltro='', _matBusca='';
 VIEWS.matriculas=()=>{
   const v=document.getElementById('view');
   if(S.perfil!=='direcao'){ v.innerHTML='<div class="card empty"><div class="big">🔒</div><b>Acesso restrito</b><br>O módulo de matrículas é exclusivo da direção.</div>'; return; }
-  const todas=(S.matriculas||[]).slice();
+  const todas=(S.matriculas||[]).filter(x=>x.status!=='rascunho');   // rascunhos têm card próprio (b176)
   const ativas=matAtivas();
   const ymAtual=hoje().slice(0,7);
   const noMes=todas.filter(m=>(m.criadoEm||'').slice(0,7)===ymAtual).length;
@@ -51,11 +52,12 @@ VIEWS.matriculas=()=>{
       </div>
       <p class="hint" style="margin:10px 0 0">Para lançar valores e acompanhar o pagamento, abra a matrícula e toque em <b>💰 Financeiro</b> — ou vá no módulo Financeiro.</p>
     </div>
+    ${_cardTrilhas()}
     ${_cardOrcamentos()}
     <div class="card">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">
-        <button class="btn" style="background:#0A7A3D" onclick="abrirFecharVenda()">⚡ Fechar venda</button>
-        <button class="btn ghost" onclick="abrirMatricula()">+ Nova matrícula</button>
+        <button class="btn" style="background:#0A7A3D" onclick="abrirTrilhaMatricula()">🧭 Nova matrícula (trilha)</button>
+        <button class="btn ghost" onclick="abrirMatricula()" title="Formulário completo numa tela só — bom para editar cadastros antigos">✏️ Cadastro avançado</button>
         <button class="btn ghost sm" onclick="exportarMatriculasCSV()">⬇️ Planilha</button>
         <input type="text" placeholder="Buscar por aluno ou responsável…" value="${escAttr(_matBusca)}" oninput="_matBuscaInput(this.value)" style="flex:1;min-width:180px">
       </div>
@@ -68,7 +70,7 @@ VIEWS.matriculas=()=>{
 };
 function _matRenderLista(){
   const box=document.getElementById('matListaBox'); if(!box) return;
-  let lista=(S.matriculas||[]).slice();
+  let lista=(S.matriculas||[]).filter(x=>x.status!=='rascunho');
   if(_matFiltro) lista=lista.filter(m=>m.status===_matFiltro);
   const q=_normTxt(_matBusca||'').trim();
   if(q) lista=lista.filter(m=>_normTxt(matNome(m)).includes(q) || _normTxt(m.respNome||'').includes(q));
@@ -244,7 +246,7 @@ ${m.observacoes?`<h2>Observações</h2><p style="font-size:12.5px">${esc(m.obser
 
 /* -------------------- EXPORTAR (planilha) — cadastro -------------------- */
 function exportarMatriculasCSV(){
-  const lista=(S.matriculas||[]).slice().sort((a,b)=>_normTxt(matNome(a)).localeCompare(_normTxt(matNome(b))));
+  const lista=(S.matriculas||[]).filter(x=>x.status!=='rascunho').sort((a,b)=>_normTxt(matNome(a)).localeCompare(_normTxt(matNome(b))));
   if(!lista.length) return toast('Nenhuma matrícula para exportar');
   const rows=[_csvLinha(['Aluno','Status','Tipo','Turma / Professor','Responsável','Parentesco','Telefone','E-mail','Início','Vinculado','Tem financeiro','Motivo (não fechou)'])];
   lista.forEach(m=>{ rows.push(_csvLinha([matNome(m),(MAT_STATUS[m.status]||{}).lbl||m.status, m.tipo==='vip'?'VIP':'Turma', m.tipo==='vip'?(m.professor||''):(m.turmaId?turmaNome(m.turmaId):''), m.respNome||'', m.respParentesco||'', m.telefone||'', m.email||'', m.dataInicio?brDate(m.dataInicio):'', (m.alunoId||m.vipId)?'sim':'não', matTemFinanceiro(m)?'sim':'não', (m.negada&&m.negada.motivo)||''])); });
@@ -256,7 +258,8 @@ function exportarMatriculasCSV(){
    A venda inteira numa sequência só: aluno+turma → valores → confirmar.
    Cria: aluno na turma, matrícula ATIVA, plano financeiro e pedido do livro. */
 let _fv={};
-function abrirFecharVenda(){
+function abrirFecharVenda(){ abrirTrilhaMatricula(); }   // b176: a trilha substituiu o wizard antigo
+function _abrirFecharVendaAntigo(){
   if(S.perfil!=='direcao') return toast('Sem permissão');
   _fv={passo:1, parcelas:12, diaVenc:10, descPct:0, descVal:0, forma:'', inicio:hoje(), pedirLivro:true};
   _fvRender();
@@ -470,3 +473,286 @@ td{border:1px solid #DCE4EC;padding:6px 9px}td.k{background:#F0F6FC;color:#002B6
   imprimirDoc(html);
 }
 /* Contrato oficial: verContrato() vive em 33-contratos-oficiais.js (verContratoExemplo é alias de compatibilidade) */
+
+/* =====================================================================
+   🧭 TRILHA DE MATRÍCULA (b176) — 5 passos:
+   1 Aluno → 2 Responsável → 3 Pedagógico (Turma/VIP) → 4 Pagamento → 5 Contrato
+   · VIP: cria o aluno VIP + pacote de horas e deixa o contrato pronto.
+   · Turma: cria aluno na turma + matrícula + plano financeiro + pedido do livro.
+   · Rascunho: cada avanço salva em S.matriculas (status 'rascunho') —
+     sincroniza entre aparelhos e qualquer pessoa com acesso à tela continua.
+   ===================================================================== */
+let _tr=null;
+const _TR_PASSOS=['Aluno','Responsável','Pedagógico','Pagamento','Contrato'];
+function _trNovo(){ return {id:uid(), passo:1, tipo:'turma',
+  aluno:{nome:'',nasc:'',doc:'',email:''},
+  resp:{nome:'',parentesco:'',tel:'',email:'',doc:'',endereco:'',cidade:'Gravataí, RS'},
+  ped:{turmaId:'',inicio:hoje(),fimPeriodo:'',modalidade:'Presencial',pedirLivro:true, professor:'',dupla:false,horas:'',vigIni:hoje(),vigFim:'',nivel:''},
+  pag:{taxa:null,mensal:null,parcelas:12,diaVenc:10,descPct:0,descVal:0,forma:'', vipDesc:0,vipParcelas:1}}; }
+function abrirTrilhaMatricula(rascId){
+  if(S.perfil!=='direcao') return toast('Só a direção realiza matrículas');
+  if(rascId){ const r=(S.matriculas||[]).find(x=>x.id===rascId && x.status==='rascunho');
+    if(!r) return toast('Rascunho não encontrado');
+    _tr=JSON.parse(JSON.stringify(r.trilha||{})); _tr.id=r.id; _tr.passo=_tr.passo||1;
+  } else _tr=_trNovo();
+  _trRender();
+}
+function _trG(id){ const e=document.getElementById(id); return e?e.value:null; }
+function _trChk(id){ const e=document.getElementById(id); return e?!!e.checked:null; }
+function _trLer(){   // lê só o que estiver na tela (cada passo tem seus campos)
+  const p=_tr; const g=_trG, c=_trChk; const set=(o,k,v)=>{ if(v!==null) o[k]=v; };
+  set(p.aluno,'nome',(g('tr1_nome')||'')===null?null:(g('tr1_nome')!==null?g('tr1_nome').trim():null));
+  if(g('tr1_nome')!==null) p.aluno.nome=g('tr1_nome').trim();
+  set(p.aluno,'nasc',g('tr1_nasc')); set(p.aluno,'doc',g('tr1_doc')); set(p.aluno,'email',g('tr1_email'));
+  ['nome','parentesco','tel','email','doc','endereco','cidade'].forEach(k=>set(p.resp,k,g('tr2_'+k)));
+  if(g('tr3_tipo')!==null) p.tipo=g('tr3_tipo')||'turma';
+  set(p.ped,'turmaId',g('tr3_turma')); set(p.ped,'inicio',g('tr3_inicio')); set(p.ped,'fimPeriodo',g('tr3_fim'));
+  set(p.ped,'modalidade',g('tr3_mod')); set(p.ped,'professor',g('tr3_prof')); set(p.ped,'nivel',g('tr3_nivel'));
+  set(p.ped,'horas',g('tr3_horas')); set(p.ped,'vigIni',g('tr3_vigini')); set(p.ped,'vigFim',g('tr3_vigfim'));
+  if(c('tr3_dupla')!==null) p.ped.dupla=c('tr3_dupla');
+  if(c('tr5_livro')!==null) p.ped.pedirLivro=c('tr5_livro');
+  ['taxa','mensal','descPct','descVal','vipDesc'].forEach(k=>{ if(g('tr4_'+k)!==null) p.pag[k]=_matN(g('tr4_'+k)); });
+  if(g('tr4_parcelas')!==null) p.pag.parcelas=parseInt(g('tr4_parcelas'))||12;
+  if(g('tr4_vipParcelas')!==null) p.pag.vipParcelas=parseInt(g('tr4_vipParcelas'))||1;
+  if(g('tr4_diaVenc')!==null) p.pag.diaVenc=parseInt(g('tr4_diaVenc'))||10;
+  if(g('tr4_forma')!==null) p.pag.forma=g('tr4_forma');
+}
+function _trSalvarRascunho(msg){
+  if(!_tr) return;
+  S.matriculas=S.matriculas||[];
+  let r=S.matriculas.find(x=>x.id===_tr.id);
+  if(!r){ r={id:_tr.id, status:'rascunho', criadoEm:hoje(), criadoPor:S.usuario}; S.matriculas.push(r); }
+  r.status='rascunho'; r.trilha=JSON.parse(JSON.stringify(_tr));
+  r.alunoNome=_tr.aluno.nome||'(sem nome)'; r.tipo=_tr.tipo; r.atualizadoEm=Date.now();
+  save();
+  if(msg) toast(msg);
+}
+function trSairSalvando(){ _trLer(); _trSalvarRascunho('Rascunho salvo — continue quando quiser 💾'); fechar(); if(rota==='matriculas') VIEWS.matriculas(); }
+function trIr(n){
+  _trLer();
+  const p=_tr;
+  if(n>1 && p.passo===1 && !p.aluno.nome) return toast('Informe o nome do aluno');
+  if(n>2 && p.passo===2){
+    const adulto=(idadeDe(p.aluno.nasc)!=null && idadeDe(p.aluno.nasc)>=18);
+    if(!adulto && !p.resp.nome) return toast('Informe o responsável (aluno menor de 18)');
+  }
+  if(n>3 && p.passo===3){
+    if(p.tipo==='vip'){ if(!p.ped.professor) return toast('Escolha o professor(a) do VIP');
+      if(!(_matN(p.ped.horas)>0)) return toast('Informe as horas contratadas do pacote'); }
+    else if(!p.ped.turmaId) return toast('Escolha a turma');
+    if(n===4){ // pré-preenche o pagamento a partir da tabela
+      if(p.tipo!=='vip' && p.pag.taxa==null){ const pr=(typeof precosSegmento==='function')?precosSegmento(_trNivelTurma()):{taxa:0,anual:0};
+        p.pag.taxa=pr.taxa; p.pag.mensal=(pr.anual&&p.pag.parcelas)?Math.round(pr.anual/p.pag.parcelas*100)/100:0; }
+    }
+  }
+  p.passo=n; _trSalvarRascunho(); _trRender();
+}
+function _trTurma(){ return (S.turmas||[]).find(t=>t.id===_tr.ped.turmaId)||null; }
+function _trNivelTurma(){ const t=_trTurma(); return (t&&t.nivel)||''; }
+function _trHoraVip(){ const c=(typeof _cfgFin==='function')?_cfgFin():{};
+  return _tr.ped.dupla ? (_matN(c.valorHoraVipDupla)||_matN(c.valorHoraVip)||0) : (_matN(c.valorHoraVip)||0); }
+function _trTotalVip(){ return Math.max(0, _matN(_tr.ped.horas)*_trHoraVip() - _matN(_tr.pag.vipDesc)); }
+function _trMensalLiq(){ const b=_matN(_tr.pag.mensal); return Math.max(0, b*(1-(_matN(_tr.pag.descPct)/100)) - _matN(_tr.pag.descVal)); }
+function _trParcelasVip(total,n,inicio,dia){
+  n=Math.max(1,parseInt(n)||1); const out=[];
+  const d0=inicio?new Date(inicio+'T12:00:00'):new Date();
+  const base=Math.floor(total/n*100)/100;
+  for(let i=0;i<n;i++){
+    const d=new Date(d0.getFullYear(), d0.getMonth()+i, Math.min(parseInt(dia)||10,28));
+    const val=(i===n-1)?(Math.round((total-base*(n-1))*100)/100):base;
+    out.push({venc:d.toLocaleDateString('pt-BR'), valor:_moeda(val)});
+  }
+  return out;
+}
+function trResumoLive(){ _trLer(); const el=document.getElementById('tr4_resumo'); if(!el) return;
+  if(_tr.tipo==='vip'){ const tot=_trTotalVip(), n=_tr.pag.vipParcelas||1;
+    el.innerHTML=`⏱ <b>${_matN(_tr.ped.horas)}h</b> × ${_moeda(_trHoraVip())}/h${_tr.ped.dupla?' (dupla, por aluno)':''}${_matN(_tr.pag.vipDesc)?(' − desconto '+_moeda(_tr.pag.vipDesc)):''} = <b>${_moeda(tot)}</b> em <b>${n}×</b> de <b>${_moeda(tot/(n||1))}</b>`;
+  } else {
+    el.innerHTML=`<b>Mensalidade líquida:</b> ${_moeda(_trMensalLiq())} · <b>Taxa:</b> ${_moeda(_matN(_tr.pag.taxa))} · <b>Total do curso:</b> <b>${_moeda(_matN(_tr.pag.taxa)+_trMensalLiq()*(_tr.pag.parcelas||0))}</b>`;
+  }
+}
+function _trRender(){
+  const p=_tr; const F=(l,inner)=>`<div class="field"><label class="lbl">${l}</label>${inner}</div>`;
+  const chips=_TR_PASSOS.map((lbl,i)=>{ const n=i+1; const on=p.passo===n, feito=p.passo>n;
+    return `<span class="pill" style="background:${on?'#0A7A3D':(feito?'#eafaf0':'#eef0f4')};color:${on?'#fff':(feito?'#0A7A3D':'#5a6b86')}" title="${lbl}">${feito?'✓':n} ${lbl}</span>`; }).join(' ');
+  const cab=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:2px"><h3 style="flex:1;margin:0">🧭 Nova matrícula</h3>
+      <button class="btn ghost sm" onclick="trSairSalvando()" title="Salva o rascunho e fecha — qualquer pessoa da direção continua depois">💾 salvar e sair</button>
+      <button class="close" onclick="trSairSalvando()">×</button></div>
+    <div style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin:0 0 12px">${chips}</div>`;
+  const nav=(volta,avanca,txt)=>`<div class="row" style="gap:8px;margin-top:4px">${volta?`<button class="btn ghost" onclick="trIr(${volta})">← Voltar</button>`:''}<button class="btn" style="flex:1;background:#0A7A3D" onclick="trIr(${avanca})">${txt||'Avançar →'}</button></div>`;
+  let h='';
+  if(p.passo===1){
+    h=F('Nome do aluno',`<input type="text" id="tr1_nome" value="${escAttr(p.aluno.nome)}" placeholder="Nome completo">`)
+     +`<div class="row">`+F('Nascimento',`<input type="date" id="tr1_nasc" min="1900-01-01" max="${hoje()}" value="${escAttr(p.aluno.nasc)}">`)
+     +F('Documento (CPF/RG) <span class="hint">opcional</span>',`<input type="text" id="tr1_doc" value="${escAttr(p.aluno.doc)}">`)+`</div>`
+     +F('E-mail do aluno <span class="hint">vira o acesso ao portal</span>',`<input type="email" id="tr1_email" value="${escAttr(p.aluno.email)}" placeholder="email@exemplo.com">`)
+     +nav(0,2);
+  } else if(p.passo===2){
+    const adulto=(idadeDe(p.aluno.nasc)!=null && idadeDe(p.aluno.nasc)>=18);
+    const optP=MAT_PARENTESCO.map(x=>`<option ${p.resp.parentesco===x?'selected':''}>${x}</option>`).join('');
+    h=(adulto?`<p class="hint" style="margin:0 0 8px">✅ <b>${esc(p.aluno.nome)}</b> é maior de 18 — o responsável é opcional (pode ser o próprio aluno no contrato).</p>`:'')
+     +`<div class="row">`+F('Nome do responsável',`<input type="text" id="tr2_nome" value="${escAttr(p.resp.nome)}" placeholder="Quem assina / financeiro">`)
+     +F('Parentesco',`<select id="tr2_parentesco"><option value="">—</option>${optP}</select>`)+`</div>`
+     +`<div class="row">`+F('Telefone / WhatsApp',`<input type="text" id="tr2_tel" value="${escAttr(p.resp.tel)}" placeholder="(51) 9…">`)
+     +F('CPF do responsável',`<input type="text" id="tr2_doc" value="${escAttr(p.resp.doc)}">`)+`</div>`
+     +F('E-mail',`<input type="email" id="tr2_email" value="${escAttr(p.resp.email)}">`)
+     +`<div class="row">`+F('Endereço (rua e nº) — entra no contrato',`<input type="text" id="tr2_endereco" value="${escAttr(p.resp.endereco)}">`)
+     +F('Cidade',`<input type="text" id="tr2_cidade" value="${escAttr(p.resp.cidade)}">`)+`</div>`
+     +nav(1,3);
+  } else if(p.passo===3){
+    const ts=(S.turmas||[]).filter(t=>!t.arquivada).sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
+    const optT=`<option value="">— escolha —</option>`+ts.map(t=>`<option value="${t.id}" ${p.ped.turmaId===t.id?'selected':''}>${esc(t.nome)}${(typeof turmaStatus==='function'&&turmaStatus(t)==='formacao')?' · EM FORMAÇÃO':''}</option>`).join('');
+    const profs=[...new Set((S.usuarios||[]).filter(u=>u.ensina).map(u=>u.ensina).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+    const optProf=`<option value="">— professor(a) —</option>`+profs.map(x=>`<option value="${escAttr(x)}" ${p.ped.professor===x?'selected':''}>${esc(x)}</option>`).join('');
+    const vip=p.tipo==='vip'; const vHora=_trHoraVip();
+    h=F('Tipo de matrícula',`<select id="tr3_tipo" onchange="trIr(3)"><option value="turma" ${!vip?'selected':''}>🏫 Turma</option><option value="vip" ${vip?'selected':''}>👑 VIP (aulas particulares)</option></select>`)
+     +(vip
+       ?(`<div class="row">`+F('Professor(a) responsável',`<select id="tr3_prof">${optProf}</select>`)
+         +F('Nível <span class="hint">p/ o contrato</span>',`<input type="text" id="tr3_nivel" value="${escAttr(p.ped.nivel)}" placeholder="Ex: B1">`)+`</div>`
+         +`<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:2px 0 10px"><input type="checkbox" id="tr3_dupla" ${p.ped.dupla?'checked':''} onchange="trIr(3)"> 👥 Aula em dupla <span class="hint">(hora-aula de dupla, por aluno${vHora?(' — '+_moeda(vHora)+'/h'):''})</span></label>`
+         +`<div class="row">`+F('⏱ Horas contratadas',`<input type="number" id="tr3_horas" value="${escAttr(String(p.ped.horas||''))}" min="1" step="1" placeholder="Ex: 20">`)
+         +F('Vigência — início',`<input type="date" id="tr3_vigini" value="${escAttr(p.ped.vigIni)}">`)
+         +F('Vigência — fim <span class="hint">vazio = sem prazo</span>',`<input type="date" id="tr3_vigfim" value="${escAttr(p.ped.vigFim)}">`)+`</div>`
+         +`<p class="hint" style="margin:0 0 8px">💡 O pacote de horas é criado automaticamente ao concluir; os horários semanais das aulas você define depois na tela 👑 Alunos VIP.</p>`)
+       :(`<div class="row">`+F('Turma',`<select id="tr3_turma">${optT}</select>`)
+         +F('Início',`<input type="date" id="tr3_inicio" value="${escAttr(p.ped.inicio)}">`)+`</div>`
+         +`<div class="row">`+F('Fim do período (contrato) <span class="hint">vazio = 31/12</span>',`<input type="date" id="tr3_fim" value="${escAttr(p.ped.fimPeriodo)}">`)
+         +F('Modalidade',`<select id="tr3_mod">${['Presencial','On-line','Híbrida'].map(x=>`<option ${p.ped.modalidade===x?'selected':''}>${x}</option>`).join('')}</select>`)+`</div>`))
+     +nav(2,4);
+  } else if(p.passo===4){
+    const vip=p.tipo==='vip';
+    const optF=`<option value="">—</option>`+FIN_PAGAMENTO.map(x=>`<option ${p.pag.forma===x?'selected':''}>${x}</option>`).join('');
+    if(vip){ const vHora=_trHoraVip();
+      h=`<p class="hint" style="margin:0 0 8px">👑 <b>${_matN(p.ped.horas)}h</b> × <b>${_moeda(vHora)}</b>/h${p.ped.dupla?' (dupla, por aluno)':''} — tabela vigente. Desconto é caso a caso.</p>`
+       +`<div class="row">`+F('Desconto (R$) <span class="hint">opcional</span>',`<input type="number" id="tr4_vipDesc" value="${p.pag.vipDesc||''}" min="0" step="0.01" oninput="trResumoLive()">`)
+       +F('Parcelas',`<input type="number" id="tr4_vipParcelas" value="${p.pag.vipParcelas||1}" min="1" max="12" oninput="trResumoLive()">`)
+       +F('Vencimento (dia)',`<input type="number" id="tr4_diaVenc" value="${p.pag.diaVenc}" min="1" max="28">`)+`</div>`
+       +F('Forma de pagamento',`<select id="tr4_forma">${optF}</select>`);
+    } else {
+      h=`<p class="hint" style="margin:0 0 8px">🏫 Valores da tabela${_trNivelTurma()?(' do segmento <b>'+esc(String((typeof segmentoLabel==='function')?segmentoLabel(_trNivelTurma()):_trNivelTurma()).toUpperCase())+'</b>'):''} já preenchidos — ajuste se precisar. Desconto é caso a caso.</p>`
+       +`<div class="row">`+F('Taxa de matrícula (R$)',`<input type="number" id="tr4_taxa" value="${p.pag.taxa!=null?p.pag.taxa:''}" min="0" step="0.01" oninput="trResumoLive()">`)
+       +F('Mensalidade (R$)',`<input type="number" id="tr4_mensal" value="${p.pag.mensal!=null?p.pag.mensal:''}" min="0" step="0.01" oninput="trResumoLive()">`)+`</div>`
+       +`<div class="row">`+F('Parcelas',`<input type="number" id="tr4_parcelas" value="${p.pag.parcelas}" min="1" max="48" oninput="trResumoLive()">`)
+       +F('Vencimento (dia)',`<input type="number" id="tr4_diaVenc" value="${p.pag.diaVenc}" min="1" max="28">`)
+       +F('Desconto (%)',`<input type="number" id="tr4_descPct" value="${p.pag.descPct||''}" min="0" max="100" oninput="trResumoLive()">`)
+       +F('Desconto (R$)',`<input type="number" id="tr4_descVal" value="${p.pag.descVal||''}" min="0" step="0.01" oninput="trResumoLive()">`)+`</div>`
+       +F('Forma de pagamento',`<select id="tr4_forma">${optF}</select>`);
+    }
+    h+=`<div class="gen-box" id="tr4_resumo" style="margin-bottom:12px">—</div>`+nav(3,5);
+  } else {
+    const vip=p.tipo==='vip'; const t=_trTurma();
+    const col=(!vip && t && typeof planColecaoDe==='function')?(planColecaoDe(t)||''):'';
+    const tot=vip?_trTotalVip():(_matN(p.pag.taxa)+_trMensalLiq()*(p.pag.parcelas||0));
+    h=`<div class="card box-suave" style="margin-bottom:10px"><p style="margin:0">
+        <b>${esc(p.aluno.nome)}</b>${p.aluno.nasc?(' · '+brDate(p.aluno.nasc)):''}${p.resp.nome?('<br>👪 '+esc(p.resp.nome)+(p.resp.parentesco?(' ('+esc(p.resp.parentesco)+')'):'')+(p.resp.tel?(' · '+esc(p.resp.tel)):'')):''}
+        <br>${vip?('👑 VIP · prof. '+esc(p.ped.professor)+(p.ped.dupla?' · 👥 dupla':'')+' · <b>'+_matN(p.ped.horas)+'h</b>'+(p.ped.vigFim?(' até '+brDate(p.ped.vigFim)):' (sem prazo)')):('🏫 '+(t?esc(t.nome):'')+' · início '+brDate(p.ped.inicio))}
+        <br>💰 ${vip?('<b>'+_moeda(tot)+'</b> em '+(p.pag.vipParcelas||1)+'× (venc. dia '+p.pag.diaVenc+')'):('taxa '+_moeda(_matN(p.pag.taxa))+' + <b>'+p.pag.parcelas+'×</b> de <b>'+_moeda(_trMensalLiq())+'</b> (venc. dia '+p.pag.diaVenc+')')}${p.pag.forma?(' · '+esc(p.pag.forma)):''}
+        ${vip?'':('<br><b>Total do curso: '+_moeda(tot)+'</b>')}${col?('<br>📚 material: '+esc(col)):''}</p></div>`
+     +(col?`<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:0 0 10px"><input type="checkbox" id="tr5_livro" ${p.ped.pedirLivro?'checked':''}> 🛒 Já registrar o pedido do livro <b>${esc(col)}</b></label>`:'')
+     +`<p class="hint" style="margin:0 0 10px">📄 Ao concluir, o contrato ${vip?'VIP sai preenchido (partes, horas e parcelas)':'oficial fica disponível'} na tela final.</p>`
+     +`<div class="row" style="gap:8px"><button class="btn ghost" onclick="trIr(4)">← Voltar</button>
+        ${vip?'':`<button class="btn ghost" style="color:#9333c7" onclick="trConcluir('orcamento')" title="Guarda como proposta — gere o PDF do orçamento e feche a venda depois">🧾 Salvar como orçamento</button>`}
+        <button class="btn" style="flex:1;background:#0A7A3D" onclick="trConcluir('ativa')">✅ Concluir matrícula</button></div>`;
+  }
+  modal(cab+h);
+  if(p.passo===4) setTimeout(trResumoLive,40);
+}
+function trConcluir(statusFinal){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  _trLer(); const p=_tr;
+  if(!p.aluno.nome) return toast('Informe o nome do aluno');
+  const vip=p.tipo==='vip';
+  if(vip && statusFinal!=='ativa') return toast('Matrícula VIP conclui como ativa');
+  // reaproveita o registro do rascunho como matrícula definitiva (mesmo id → sync limpo)
+  S.matriculas=S.matriculas||[];
+  let m=S.matriculas.find(x=>x.id===p.id);
+  if(!m){ m={id:p.id, criadoEm:hoje(), criadoPor:S.usuario}; S.matriculas.push(m); }
+  delete m.trilha;
+  Object.assign(m,{ status:statusFinal, tipo:p.tipo, origem:'trilha',
+    alunoNome:p.aluno.nome, nascimento:p.aluno.nasc, docAluno:p.aluno.doc, email:p.resp.email||p.aluno.email,
+    respNome:p.resp.nome, respParentesco:p.resp.parentesco, telefone:p.resp.tel, respDoc:p.resp.doc,
+    endereco:p.resp.endereco, cidade:p.resp.cidade, modalidade:p.ped.modalidade,
+    dataInicio:vip?(p.ped.vigIni||hoje()):(p.ped.inicio||hoje()), fimPeriodo:vip?(p.ped.vigFim||''):(p.ped.fimPeriodo||''),
+    atualizadoEm:Date.now() });
+  if(vip){
+    // 1) aluno VIP
+    const nv={id:uid(), nome:p.aluno.nome, professor:p.ped.professor, dupla:!!p.ped.dupla,
+      email:p.aluno.email||'', nascimento:p.aluno.nasc||'', atualizadoEm:Date.now()};
+    S.vipAlunos=S.vipAlunos||[]; S.vipAlunos.push(nv);
+    m.vipId=nv.id; m.professor=p.ped.professor;
+    // 2) pacote de horas
+    S.pacotesVip=S.pacotesVip||[];
+    S.pacotesVip.push({id:uid(), vipId:nv.id, horas:_matN(p.ped.horas), inicio:p.ped.vigIni||hoje(), fim:p.ped.vigFim||'', obs:'Trilha de matrícula', atualizadoEm:Date.now()});
+    // 3) contrato VIP pronto: partes + parcelas
+    const tot=_trTotalVip();
+    nv.contratoDados={ contratante:p.resp.nome||p.aluno.nome, cpf:p.resp.doc||'', cidade:p.resp.cidade||'', endereco:p.resp.endereco||'',
+      email:p.resp.email||p.aluno.email||'', wpp:p.resp.tel||'', alunoCpf:p.aluno.doc||'',
+      ini:p.ped.vigIni||hoje(), fim:p.ped.vigFim||'', horas:String(_matN(p.ped.horas)), nivel:p.ped.nivel||'',
+      parcelas:_trParcelasVip(tot, p.pag.vipParcelas||1, p.ped.vigIni||hoje(), p.pag.diaVenc),
+      obs:(p.pag.forma?('Pagamento: '+p.pag.forma):'')+(_matN(p.pag.vipDesc)?((p.pag.forma?' · ':'')+'desconto de '+_moeda(p.pag.vipDesc)+' aplicado'):'') };
+    save(); fechar(); if(typeof montarNav==='function') montarNav(); if(rota==='matriculas') VIEWS.matriculas();
+    toast('Matrícula VIP concluída — bem-vindo(a), '+p.aluno.nome+'! 🎉');
+    modal(`<h3>🎉 Matrícula VIP concluída! <button class="close" onclick="fechar()">×</button></h3>
+      <p class="hint" style="margin:0 0 12px"><b>${esc(p.aluno.nome)}</b> está em 👑 Alunos VIP com prof. <b>${esc(p.ped.professor)}</b>, pacote de <b>${_matN(p.ped.horas)}h</b> criado e contrato preenchido.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn" onclick="fechar();verContratoVip('${nv.id}')">📄 Contrato VIP</button>
+        <button class="btn ghost" onclick="fechar();ir('vip');selecionarVip('${nv.id}')">👑 Abrir o aluno</button>
+        <button class="btn ghost" onclick="fechar()">Fechar</button>
+      </div>`);
+    _tr=null; return;
+  }
+  // ---- turma ----
+  const t=_trTurma(); if(!t) return toast('Turma inválida');
+  let aluno=null;
+  if(statusFinal==='ativa'){
+    const jaExiste=(S.alunos||[]).find(a=>_normTxt(a.nome)===_normTxt(p.aluno.nome) && !a.arquivado);
+    if(jaExiste && !confirm('Já existe um aluno chamado "'+jaExiste.nome+'" ('+turmaNome(jaExiste.turmaId)+').\n\nCriar mesmo assim um cadastro novo?')) return;
+    aluno={id:uid(), nome:p.aluno.nome, turmaId:t.id, email:p.aluno.email||'', atualizadoEm:Date.now()};
+    S.alunos.push(aluno); m.alunoId=aluno.id;
+  }
+  m.turmaId=t.id;
+  const f={id:'fin_'+m.id, matriculaId:m.id, criadoEm:hoje(), criadoPor:S.usuario, atualizadoEm:Date.now(),
+    valorMatricula:_matN(p.pag.taxa), valorMensalidade:_matN(p.pag.mensal), descontoPct:_matN(p.pag.descPct), descontoValor:_matN(p.pag.descVal),
+    parcelas:p.pag.parcelas||12, diaVencimento:p.pag.diaVenc||10, formaPagamento:p.pag.forma||'', dataInicio:p.ped.inicio||hoje(), pagos:{}, observacoes:''};
+  S.financeiro=S.financeiro||[];
+  if(!S.financeiro.some(x=>x.matriculaId===m.id)) S.financeiro.push(f);
+  const col=(typeof planColecaoDe==='function')?(planColecaoDe(t)||''):'';
+  if(statusFinal==='ativa' && p.ped.pedirLivro && col && aluno && !(typeof pedidoDoAluno==='function' && pedidoDoAluno(aluno.id,col))){
+    S.livroPedidos=S.livroPedidos||[];
+    S.livroPedidos.push({id:uid(), alunoId:aluno.id, vip:false, titulo:col, status:'pedido', pedidoEm:hoje(), por:S.usuario, atualizadoEm:Date.now()});
+  }
+  save(); fechar(); if(typeof montarNav==='function') montarNav(); if(rota==='matriculas') VIEWS.matriculas();
+  if(statusFinal==='orcamento'){ toast('Orçamento salvo — gere o PDF e apresente à família 🧾'); _tr=null; return; }
+  toast('Matrícula concluída — bem-vindo(a), '+p.aluno.nome+'! 🎉');
+  modal(`<h3>🎉 Matrícula concluída! <button class="close" onclick="fechar()">×</button></h3>
+    <p class="hint" style="margin:0 0 12px"><b>${esc(p.aluno.nome)}</b> está na turma <b>${esc(t.nome)}</b>, com matrícula ativa, plano financeiro criado${p.ped.pedirLivro&&col?' e o livro já pedido':''}.</p>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="fechar();verContratoOficial('${m.id}')">📄 Contrato</button>
+      <button class="btn ghost" onclick="fechar();abrirCarne('fin_${m.id}')">💳 Carnê</button>
+      ${aluno?`<button class="btn ghost" onclick="fechar();abrirFicha('${aluno.id}')">📇 Ficha do aluno</button>`:''}
+      <button class="btn ghost" onclick="fechar()">Fechar</button>
+    </div>`);
+  _tr=null;
+}
+/* ---- card "trilhas em andamento" (rascunhos, visíveis a todos com acesso) ---- */
+function _cardTrilhas(){
+  const rs=(S.matriculas||[]).filter(x=>x.status==='rascunho').sort((a,b)=>(b.atualizadoEm||0)-(a.atualizadoEm||0));
+  if(!rs.length) return '';
+  const linhas=rs.map(r=>{ const tr=r.trilha||{}; const passo=tr.passo||1;
+    return `<div class="check"><span style="flex:1"><b>${esc(r.alunoNome||'(sem nome)')}</b> <span class="pill" style="background:${r.tipo==='vip'?'#fdf3d7':'#eaf3ff'};color:${r.tipo==='vip'?'#b8860b':'#005EAF'}">${r.tipo==='vip'?'👑 VIP':'🏫 Turma'}</span><br>
+      <span class="hint">parou no passo ${passo} (${_TR_PASSOS[passo-1]||''}) · por ${esc(r.criadoPor||'')}${r.atualizadoEm?(' · '+brDate(new Date(r.atualizadoEm).toISOString().slice(0,10))):''}</span></span>
+      <button class="btn sm" style="background:#b8860b" onclick="abrirTrilhaMatricula('${r.id}')">▶ continuar</button>
+      <button class="btn ghost sm" style="color:var(--vermelho)" onclick="trilhaDescartar('${r.id}')">🗑</button>
+    </div>`; }).join('');
+  return `<div class="card" style="border-left:4px solid #b8860b">
+    <h3 style="margin:0 0 2px">🧭 Matrículas em andamento (${rs.length})</h3>
+    <p class="hint" style="margin:0 0 4px">Trilhas salvas no meio do caminho — qualquer pessoa da direção pode continuar de onde parou.</p>
+    ${linhas}</div>`;
+}
+function trilhaDescartar(id){
+  if(S.perfil!=='direcao') return toast('Sem permissão');
+  const r=(S.matriculas||[]).find(x=>x.id===id && x.status==='rascunho'); if(!r) return;
+  if(!confirm('Descartar o rascunho de '+(r.alunoNome||'(sem nome)')+'? Nada foi criado ainda.')) return;
+  S.matriculas=(S.matriculas||[]).filter(x=>x.id!==id); if(typeof marcarExcluido==='function') marcarExcluido('matriculas',id);
+  save(); VIEWS.matriculas(); toast('Rascunho descartado');
+}

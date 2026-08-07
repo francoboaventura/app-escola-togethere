@@ -208,23 +208,31 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
     S.perfil='professor'; window.__t=''; delAulaVip('x3');
     o.prof_nao_apaga_cancel = S.aulasVip.some(x=>x.id==='x3');
 
-    // ----- pacote de horas recolhível -----
+    // ----- pacote de horas sempre visível (b175: cartões, sem sanfona) -----
     S.perfil='direcao'; S.usuario='Franco'; _qdAbertos={}; VIEWS.ficha();
     h=document.getElementById('view').innerHTML;
-    o.pacote_recolhido = /qd-card/.test(h) && /Pacote de horas/.test(h) && !/Contratadas/.test(h);
-    o.pacote_tem_cabecalho = !!document.querySelector('.qd-card .qd-h');
-    document.querySelector('.qd-card .qd-h').click(); await new Promise(z=>setTimeout(z,80));
-    h=document.getElementById('view').innerHTML;
-    o.pacote_abre = /Contratadas/.test(h) && /Utilizadas/.test(h) && /Saldo/.test(h);
-    document.querySelector('.qd-card .qd-h').click(); await new Promise(z=>setTimeout(z,80));
-    o.pacote_fecha = !/Contratadas/.test(document.getElementById('view').innerHTML);
-    // sinal (!) quando o pacote está na lista de atenção
+    o.pacote_sempre_visivel = /Pacote de horas/.test(h) && /Contratadas/.test(h) && /Utilizadas/.test(h) && /Saldo/.test(h);
+    // selo (⚠) quando o pacote está na lista de atenção
     S.pacotesVip=[{id:'p1',vipId:'v1',horas:1,inicio:'2026-02-01',fim:''}];   // saldo baixo -> alerta
     VIEWS.ficha(); h=document.getElementById('view').innerHTML;
-    o.pacote_alerta = /qd-alerta/.test(h) && !!vipAlertaPacote('v1');
+    o.pacote_alerta = /saldo (baixo|esgotado)/.test(h) && !!vipAlertaPacote('v1');
     S.pacotesVip=[{id:'p1',vipId:'v1',horas:40,inicio:'2026-02-01',fim:''}];  // sem alerta
     VIEWS.ficha();
-    o.pacote_sem_alerta = !/qd-alerta/.test(document.getElementById('view').innerHTML);
+    o.pacote_sem_alerta = !/saldo (baixo|esgotado)/.test(document.getElementById('view').innerHTML);
+
+    // ----- b175: tela VIP em cartões + ficha lateral -----
+    rota='vip'; vipSel='v1'; VIEWS.vip();
+    h=document.getElementById('view').innerHTML;
+    o.b175_cartoes = /class="ctv"/.test(h) && /abrirVipAulas\(\)/.test(h) && /abrirVipWritings\(\)/.test(h);
+    o.b175_visao_cartoes = /abrir aluno ›/.test(h);   // visão geral em grade de cartões (direção)
+    abrirVipAulas(); await new Promise(z=>setTimeout(z,60));
+    o.b175_ficha_abre = document.getElementById('fichaLat').classList.contains('on')
+      && /Aula revisada/.test(document.getElementById('fichaLatCorpo').innerHTML);
+    VIEWS.vip();   // re-render da tela não pode fechar nem esvaziar a ficha lateral
+    o.b175_ficha_sobrevive = document.getElementById('fichaLat').classList.contains('on')
+      && /Aula revisada/.test(document.getElementById('fichaLatCorpo').innerHTML);
+    fecharFichaLateral();
+    o.b175_ficha_fecha = !document.getElementById('fichaLat').classList.contains('on');
     return o;
   });
   Object.assign(r,t8);
@@ -241,18 +249,18 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
     vipSel=null; _qdAbertos={}; rota='painel'; _histNav=[]; ir('vip');   // histórico limpo para testar o voltar
     let h=document.getElementById('view').innerHTML;
     o.vip_sem_atalhos_nome = !/onclick="abrirFicha\('v2'\)/.test(h);
-    o.vip_visao_quadro = /vip_visao/.test(h) && /panorama das horas VIP/i.test(h);
-    o.vip_alunos_recolhido = /vip_alunos/.test(h) && !document.getElementById('vipSelAluno');
-    toggleQd('vip_alunos'); await new Promise(z=>setTimeout(z,60));
-    o.vip_lista_dropdown = !!document.getElementById('vipSelAluno') && document.getElementById('vipSelAluno').options.length===3;
+    o.vip_visao_cartoes = /horas VIP/i.test(h) && /class="ctv"/.test(h);   // b175: visão geral em grade de cartões
+    o.vip_dropdown_visivel = !!document.getElementById('vipSelAluno') && document.getElementById('vipSelAluno').options.length===3;   // b175: dropdown sempre à vista
     selecionarVip('v1'); await new Promise(z=>setTimeout(z,80));
     h=document.getElementById('view').innerHTML;
-    o.vip_detalhes = /Carlos Lima/.test(h) && /vip_lancar/.test(h) && /vip_aulas/.test(h) && /vip_writings/.test(h);
-    o.vip_aulas_lista = /05\/08\/2026/.test(h);
-    toggleQd('vip_lancar'); await new Promise(z=>setTimeout(z,60));
+    o.vip_detalhes = /Carlos Lima/.test(h) && /abrirVipLancar\(\)/.test(h) && /abrirVipAulas\(\)/.test(h) && /abrirVipWritings\(\)/.test(h);
+    o.vip_pacote_visivel = /Contratadas/.test(h);   // b175: pacote sem sanfona
+    o.vip_aulas_preview = /05\/08\/2026/.test(h);  // prévia da última aula no cartão
+    abrirVipLancar(); await new Promise(z=>setTimeout(z,60));
     o.vip_form = !!document.getElementById('vipDesc') && !!document.getElementById('vipHora');
     document.getElementById('vipDesc').value='Aula nova'; addAulaVip(); await new Promise(z=>setTimeout(z,80));
     o.vip_lanca = S.aulasVip.some(a=>a.descricao==='Aula nova');
+    o.vip_ficha_fechou = !document.getElementById('fichaLat').classList.contains('on');   // lançar fecha a ficha lateral
     // funções que vivem no módulo VIP seguem existindo
     o.vip_funcoes = ['vipHorarios','vipHoraDoDia','vipDurDoDia','pendenciasAulaVip','renderPendenciasVipCard','alunoParaVip','vipParaAluno','vipPausaAtual'].every(f=>typeof window[f]==='function');
     // botão voltar
@@ -354,6 +362,89 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
     return o;
   });
   Object.assign(r,t13);
+
+  // ===== 14) b176: trilha de matrícula (5 passos, Turma/VIP, rascunhos) =====
+  const t14=await page.evaluate(async()=>{
+    const o={};
+    S.perfil='direcao'; S.usuario='Franco';
+    S.matriculas=[]; S.vipAlunos=[]; S.pacotesVip=[]; S.alunos=S.alunos||[]; S.financeiro=[];
+    S.turmas=[{id:'t1',nome:'B1 TEENS',nivel:'teens',cefr:'B1',status:'aberta',dias:[3],vezesSemana:1,professor:'Franco',horario:'18:15'}];
+    S.usuarios=(S.usuarios||[]).some(u=>u.ensina)?S.usuarios:[{id:'u1',nome:'Franco',perfil:'direcao',ensina:'Franco'}];
+    S.configFin=[{id:'fin', valorHoraVip:'120', valorHoraVipDupla:'90', atualizadoEm:Date.now()}];
+    rota='matriculas';
+    // --- fluxo VIP completo ---
+    abrirTrilhaMatricula(); await new Promise(z=>setTimeout(z,40));
+    o.tr_abre = !!document.getElementById('tr1_nome');
+    document.getElementById('tr1_nome').value='Beatriz VIP'; document.getElementById('tr1_nasc').value='1990-05-10';
+    trIr(2); await new Promise(z=>setTimeout(z,30));
+    o.tr_rascunho_criado = S.matriculas.some(x=>x.status==='rascunho' && x.alunoNome==='Beatriz VIP');
+    o.tr_adulto_opcional = /maior de 18/.test(document.getElementById('modal').innerHTML);
+    document.getElementById('tr2_nome').value='Beatriz VIP'; document.getElementById('tr2_doc').value='000.000.000-00';
+    document.getElementById('tr2_tel').value='51999'; document.getElementById('tr2_endereco').value='Rua X, 1';
+    trIr(3); await new Promise(z=>setTimeout(z,30));
+    document.getElementById('tr3_tipo').value='vip'; trIr(3); await new Promise(z=>setTimeout(z,30));
+    o.tr_vip_campos = !!document.getElementById('tr3_horas') && !!document.getElementById('tr3_prof');
+    document.getElementById('tr3_prof').value='Franco'; document.getElementById('tr3_horas').value='20';
+    document.getElementById('tr3_vigini').value='2026-08-10'; document.getElementById('tr3_nivel').value='B1';
+    trIr(4); await new Promise(z=>setTimeout(z,30));
+    o.tr_vip_pag = !!document.getElementById('tr4_vipParcelas') && /120/.test(document.getElementById('modal').innerHTML);
+    document.getElementById('tr4_vipParcelas').value='4'; document.getElementById('tr4_vipDesc').value='100';
+    document.getElementById('tr4_forma').value='Pix';
+    trIr(5); await new Promise(z=>setTimeout(z,30));
+    o.tr_vip_resumo = /Beatriz VIP/.test(document.getElementById('modal').innerHTML) && /20h/.test(document.getElementById('modal').innerHTML);
+    trConcluir('ativa'); await new Promise(z=>setTimeout(z,60));
+    const nv=(S.vipAlunos||[]).find(v=>v.nome==='Beatriz VIP');
+    o.tr_vip_criou_aluno = !!nv && nv.professor==='Franco';
+    o.tr_vip_pacote = (S.pacotesVip||[]).some(pk=>pk.vipId===nv.id && pk.horas===20 && pk.inicio==='2026-08-10');
+    const mv=(S.matriculas||[]).find(x=>x.vipId===nv.id);
+    o.tr_vip_matricula = !!mv && mv.status==='ativa' && mv.tipo==='vip' && !mv.trilha;
+    // contrato preenchido: 20h × 120 − 100 = 2300 em 4× (3×575,00 + ajuste)
+    const cd=nv.contratoDados||{};
+    o.tr_vip_contrato = cd.contratante==='Beatriz VIP' && cd.horas==='20' && (cd.parcelas||[]).length===4
+      && cd.parcelas.every(pp=>/R\$/.test(pp.valor)) && /Pix/.test(cd.obs||'');
+    o.tr_sem_rascunho_orfao = !S.matriculas.some(x=>x.status==='rascunho');
+    if(typeof fechar==='function') fechar();
+    // --- rascunho: salvar, aparecer no card, continuar e descartar ---
+    abrirTrilhaMatricula(); await new Promise(z=>setTimeout(z,40));
+    document.getElementById('tr1_nome').value='Rascunho Kid';
+    trSairSalvando(); await new Promise(z=>setTimeout(z,40));
+    o.tr_rascunho_salvo = S.matriculas.some(x=>x.status==='rascunho' && x.alunoNome==='Rascunho Kid');
+    VIEWS.matriculas();
+    o.tr_card_trilhas = /Matrículas em andamento/.test(document.getElementById('view').innerHTML) && /Rascunho Kid/.test(document.getElementById('view').innerHTML);
+    o.tr_fora_da_lista = !/Rascunho Kid/.test(document.getElementById('matListaBox').innerHTML);
+    const rid=S.matriculas.find(x=>x.status==='rascunho').id;
+    abrirTrilhaMatricula(rid); await new Promise(z=>setTimeout(z,40));
+    o.tr_continua = document.getElementById('tr1_nome') && document.getElementById('tr1_nome').value==='Rascunho Kid';
+    if(typeof fechar==='function') fechar();
+    window.confirm=()=>true; trilhaDescartar(rid); await new Promise(z=>setTimeout(z,30));
+    o.tr_descarta = !S.matriculas.some(x=>x.id===rid);
+    // --- fluxo turma com desconto caso a caso ---
+    abrirTrilhaMatricula(); await new Promise(z=>setTimeout(z,40));
+    document.getElementById('tr1_nome').value='Aluno Turma'; document.getElementById('tr1_nasc').value='2012-03-01';
+    trIr(2); await new Promise(z=>setTimeout(z,30));
+    document.getElementById('tr2_nome').value='Mãe Turma';
+    trIr(3); await new Promise(z=>setTimeout(z,30));
+    document.getElementById('tr3_turma').value='t1';
+    trIr(4); await new Promise(z=>setTimeout(z,30));
+    document.getElementById('tr4_mensal').value='400'; document.getElementById('tr4_descVal').value='50';
+    trIr(5); await new Promise(z=>setTimeout(z,30));
+    trConcluir('ativa'); await new Promise(z=>setTimeout(z,60));
+    const al=(S.alunos||[]).find(a=>a.nome==='Aluno Turma');
+    const mt2=(S.matriculas||[]).find(x=>x.alunoId===(al||{}).id);
+    const f2=(S.financeiro||[]).find(x=>x.matriculaId===(mt2||{}).id);
+    o.tr_turma_criou = !!al && !!mt2 && mt2.status==='ativa' && !!f2 && f2.descontoValor===50 && f2.valorMensalidade===400;
+    // menor de 18 sem responsável: barra no passo 2
+    abrirTrilhaMatricula(); await new Promise(z=>setTimeout(z,40));
+    document.getElementById('tr1_nome').value='Menor Sem Resp'; document.getElementById('tr1_nasc').value='2015-01-01';
+    trIr(2); await new Promise(z=>setTimeout(z,30));
+    window.__t=''; trIr(3);
+    o.tr_valida_resp = /responsável/.test(window.__t||'');
+    trSairSalvando(); await new Promise(z=>setTimeout(z,30));
+    const rid2=(S.matriculas.find(x=>x.status==='rascunho')||{}).id;
+    if(rid2){ trilhaDescartar(rid2); }
+    return o;
+  });
+  Object.assign(r,t14);
 
   const falhas=Object.keys(r).filter(k=>r[k]!==true);
   console.log(JSON.stringify(r,null,1));

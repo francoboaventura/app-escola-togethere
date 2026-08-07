@@ -280,6 +280,46 @@ function qdBox(chave, titulo, conteudo, opts){
     </button>${ab?`<div class="qd-b">${corpo}</div>`:''}
   </div>`;
 }
+/* =====================================================================
+   FICHA LATERAL (b175) — painel que desliza da direita, aberto pelos
+   cartões. fichaLateral('Título', renderFn): renderFn devolve o HTML e
+   é chamada de novo a cada re-render da tela (conteúdo sempre fresco,
+   então salvar algo dentro dela atualiza a ficha sozinho).
+   ===================================================================== */
+let _fichaLat=null;
+function _fichaLatDom(){
+  let w=document.getElementById('fichaLatWrap');
+  if(!w){
+    w=document.createElement('div'); w.id='fichaLatWrap';
+    w.innerHTML='<div id="fichaLatVeu" onclick="fecharFichaLateral()"></div>'
+      +'<aside id="fichaLat" role="dialog" aria-modal="true" aria-labelledby="fichaLatTit">'
+      +'<div class="fl-h"><h3 id="fichaLatTit"></h3><button class="fl-x" onclick="fecharFichaLateral()" aria-label="Fechar" title="Fechar (Esc)">\u2715</button></div>'
+      +'<div class="fl-b" id="fichaLatCorpo"></div></aside>';
+    document.body.appendChild(w);
+    document.addEventListener('keydown',function(e){ if(e.key==='Escape') fecharFichaLateral(); });
+  }
+  return w;
+}
+function fichaLateral(titulo, render){
+  _fichaLatDom();
+  _fichaLat={titulo:titulo, render:(typeof render==='function')?render:function(){return String(render);}};
+  _fichaLatRefresh();
+  document.getElementById('fichaLatVeu').classList.add('on');
+  document.getElementById('fichaLat').classList.add('on');
+}
+function _fichaLatRefresh(){
+  if(!_fichaLat) return;
+  const t=document.getElementById('fichaLatTit'), c=document.getElementById('fichaLatCorpo');
+  if(!t||!c) return;
+  t.innerHTML=_fichaLat.titulo;
+  c.innerHTML=_fichaLat.render();
+}
+function fecharFichaLateral(){
+  _fichaLat=null;
+  const v=document.getElementById('fichaLatVeu'), f=document.getElementById('fichaLat');
+  if(v)v.classList.remove('on'); if(f)f.classList.remove('on');
+}
+
 // redesenha a tela atual (respeita o painel da turma)
 function _reRenderTela(){
   if(_telaAtualEhPainelTurma()) return renderPainelTurma();
@@ -301,6 +341,7 @@ function voltar(){
 function ir(id, semHistorico){
   if(!semHistorico && typeof rota!=='undefined' && rota && rota!==id){ _histNav.push(rota); if(_histNav.length>30) _histNav.shift(); }
   rota=id; const n=NAV.find(x=>x.id===id);
+  if(typeof fecharFichaLateral==='function') fecharFichaLateral();
   document.getElementById('pageTitle').textContent=n.label;
   document.getElementById('crumb').textContent=n.grp;
   document.querySelectorAll('#nav button, #bnav button, .mais-i, .mp-i').forEach(b=>b.classList.toggle('active',b.dataset.id===id));
