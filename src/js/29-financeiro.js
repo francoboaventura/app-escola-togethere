@@ -319,7 +319,7 @@ function exportarFinanceiroCSV(){
    Guardada em S.configFin=[{id:'fin', ...}] (sincroniza via MERGE_COLS).
    ===================================================================== */
 function _cfgFin(){ return ((S.configFin||[]).find(c=>c.id==='fin'))||{}; }
-const SEGMENTOS_FIN=[['kids','Kids'],['junior','Junior'],['teens','Teens'],['adults','Adults'],['talking','Talking']];
+const SEGMENTOS_FIN=[['kids','Kids'],['junior','Junior'],['teens','Teens'],['adults','Adults']];
 function _slugSeg(nome){ return (nome||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'').slice(0,24); }
 function segmentosFin(){ const c=_cfgFin(); const ex=(c.segExtra||[]).map(s=>[s.key, s.nome]); return SEGMENTOS_FIN.concat(ex); }   // base + cadastrados pela direção
 function segmentoLabel(k){ const p=segmentosFin().find(x=>x[0]===k); return p?p[1]:(k||''); }

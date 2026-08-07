@@ -39,7 +39,7 @@ VIEWS.turmas=()=>{
     ${ehDir?`<div style="margin-bottom:12px"><button class="btn" onclick="ir('gestaoturmas')">🔁 Gestão rápida — trocar professor / promover nível</button></div>`:''}
     ${!podeCriar?'':`<div class="card"><h3>➕ Nova turma</h3><div class="row">
       <div style="flex:2"><label class="lbl">Nome da turma</label><input type="text" id="nT" placeholder="Ex: B2 TEENS NOITE"></div>
-      <div><label class="lbl">Categoria</label><select id="nN">${((typeof segmentosFin==='function')?segmentosFin():[['kids','Kids'],['junior','Junior'],['teens','Teens'],['adults','Adults'],['talking','Talking']]).map(([k,lbl])=>`<option value="${k}" ${k==='teens'?'selected':''}>${esc(lbl)}</option>`).join('')}</select></div>
+      <div><label class="lbl">Categoria</label><select id="nN">${((typeof segmentosFin==='function')?segmentosFin():[['kids','Kids'],['junior','Junior'],['teens','Teens'],['adults','Adults']]).map(([k,lbl])=>`<option value="${k}" ${k==='teens'?'selected':''}>${esc(lbl)}</option>`).join('')}</select></div>
       <div><label class="lbl">Nível CEFR</label><select id="nC"><option value="">—</option>${((typeof cefrTodos==='function')?cefrTodos():CEFR_ORDEM).map(c=>`<option value="${escAttr(c)}">${esc(c)}</option>`).join('')}</select></div>
       <div style="flex:1"><label class="lbl">Horário (opcional)</label><input type="text" id="nHor" placeholder="Ex: 18:15–19:30"></div>
     </div>
@@ -227,7 +227,7 @@ function toggleArquivarTurma(id){if(!podeCadastro())return toast('Sem permissão
 function abrirEditarTurma(id){
   if(!podeCadastro()) return toast('Sem permissão para editar a turma');
   const t=S.turmas.find(x=>x.id===id); if(!t) return;
-  const cats=(typeof segmentosFin==='function')?segmentosFin().map(x=>x[0]):['kids','junior','teens','adults','talking'];
+  const cats=(typeof segmentosFin==='function')?segmentosFin().map(x=>x[0]):['kids','junior','teens','adults'];
   const cefrs=[''].concat((typeof cefrTodos==='function')?cefrTodos():CEFR_ORDEM);
   const profs=[...new Set((S.usuarios||[]).filter(u=>u.ensina).map(u=>u.ensina).filter(Boolean))];
   if(t.professor && profs.indexOf(t.professor)<0) profs.push(t.professor);   // preserva nome legado

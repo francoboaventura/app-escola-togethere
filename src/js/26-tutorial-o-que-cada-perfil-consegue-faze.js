@@ -319,7 +319,7 @@ Ao entregar para aluno de turma, a **direção** pode lançar o material no fina
     resumo:'Tabela de preços por segmento, hora VIP, cobranças diversas, multa e juros.',
     passos:`## Só direção
 ## O que se define aqui
-- **Preços por segmento** (Kids, Junior, Teens, Adults, Talking): taxa de matrícula, valor anual do curso e material.
+- **Preços por segmento** (Kids, Junior, Teens, Adults): taxa de matrícula, valor anual do curso e material.
 - **Valor da hora-aula VIP** — renovação, **aluno novo** e **👥 em dupla** (valor por aluno).
 - **Política de descontos** (ex.: família 5% + à vista 5%) — o texto sai no PDF do orçamento.
 - **Cobranças diversas** (itens avulsos com nome e valor).

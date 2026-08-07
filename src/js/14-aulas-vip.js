@@ -1,5 +1,34 @@
 /* ===== AULAS VIP (aulas avulsas por aluno) ===== */
 let vipSel=null;
+/* --- b177: cartões recolhíveis + filtros da lista VIP + nível (CEFR) do aluno --- */
+let _vipFProf=new Set(), _vipFNivel=new Set(), _vipFSaldo=false, _vipCardOpen=null;
+const VIP_CEFR=['Pré-A1','A1','A1+','A2','A2+','B1','B1+','B2','C1','C1+','C2'];
+const _CEFR_BASE_ORDEM=['Pré-A1','A1','A2','B1','B2','C1','C2'];
+// nível do aluno VIP: usa o gravado; se não houver, cai no nível do contrato (trilha nova)
+function vipCefr(v){ return ((v&&v.cefr)||'').trim() || ((v&&v.contratoDados&&v.contratoDados.nivel)||'').trim(); }
+// bucket base do filtro: "B1+"→"B1", "A2+"→"A2", "Pré-A1"→"Pré-A1" (o "+" cai no mesmo filtro)
+function _cefrBase(c){ c=(c||'').trim(); if(!c) return ''; if(/^pr[eé]/i.test(c)) return 'Pré-A1'; const m=c.match(/^([ABC][12])/i); return m?m[1].toUpperCase():c.replace('+',''); }
+function _souProfVipId(vid){ const v=(S.vipAlunos||[]).find(x=>x.id===vid); return !!v && _souProfVip(v); }
+function setCefrVip(vid,val){
+  if(!(S.perfil==='direcao'||soLeitura()||_souProfVipId(vid))) return toast('Sem permissão');
+  const v=(S.vipAlunos||[]).find(x=>x.id===vid); if(!v) return;
+  v.cefr=(val||'').trim(); v.atualizadoEm=Date.now(); save();
+  if(VIEWS.vip) VIEWS.vip();
+}
+// situação de saldo do aluno: 'sem' (sem pacote), 'esgotado', 'baixo' (<5h) ou 'ok'
+function _vipSaldoTipo(vid){
+  const c=vipContratadoMin(vid), u=vipConsumoMin(vid);
+  if(c<=0 && u<=0) return 'sem';
+  const s=c-u; if(s<=0) return 'esgotado'; if(s/60<5) return 'baixo'; return 'ok';
+}
+function _vipSaldoCor(t){ return t==='esgotado'?'var(--vermelho)':(t==='baixo'?'var(--laranja)':(t==='sem'?'var(--tinta-suave)':'var(--ok)')); }
+function toggleVipCard(vid){ _vipCardOpen=(_vipCardOpen===vid?null:vid); if(VIEWS.vip) VIEWS.vip(); }
+function setVipFProf(p){ p=String(p); _vipFProf.has(p)?_vipFProf.delete(p):_vipFProf.add(p); _vipCardOpen=null; if(VIEWS.vip) VIEWS.vip(); }
+function setVipFNivel(b){ b=String(b); _vipFNivel.has(b)?_vipFNivel.delete(b):_vipFNivel.add(b); _vipCardOpen=null; if(VIEWS.vip) VIEWS.vip(); }
+function setVipFSaldo(v){ _vipFSaldo=!!v; _vipCardOpen=null; if(VIEWS.vip) VIEWS.vip(); }
+function limparFiltrosVip(){ _vipFProf.clear(); _vipFNivel.clear(); _vipFSaldo=false; _vipCardOpen=null; if(VIEWS.vip) VIEWS.vip(); }
+function _vipFiltroAtivo(){ return _vipFProf.size||_vipFNivel.size||_vipFSaldo; }
+function _iniNome(nome){ const p=String(nome||'').trim().split(/\s+/); return ((p[0]||'')[0]||'·')+((p[1]||'')[0]||''); }
 function fmtDur(min){ min=+min||0; const h=Math.floor(min/60), m=min%60; if(!min)return '0min'; return (h?h+'h':'')+(m?(h?' ':'')+m+'min':''); }
 
 /* ===== Pacotes de horas (VIP) ===== */
@@ -152,60 +181,101 @@ function vipConsumoMinPer(vid, per){
   const r=_vipPerRange(per); if(!r) return vipConsumoMin(vid);
   return (S.aulasVip||[]).filter(a=>a.vipId===vid && (!a.faltou||a.cobrarFalta) && a.data>=r[0] && a.data<=r[1]).reduce((s,a)=>s+(+a.duracaoMin||0),0);
 }
+// Painel gestor (b177): totais + filtros (professor / nível / saldo) + cartões recolhíveis.
 function _cardVisaoHorasVip(lista){
-  const com=(lista||[]).filter(v=>vipContratadoMin(v.id)>0 || vipConsumoMin(v.id)>0);
-  if(!com.length) return '';
+  const ativos=(lista||[]).filter(v=>!v.arquivado);
+  const com=ativos.filter(v=>vipContratadoMin(v.id)>0 || vipConsumoMin(v.id)>0);
   const per=_vipPanoramaPer, temPer=(per!=='tudo');
   const totC=com.reduce((s,v)=>s+vipContratadoMin(v.id),0);
   const totU=com.reduce((s,v)=>s+vipConsumoMin(v.id),0);
   const totUPer=temPer?com.reduce((s,v)=>s+vipConsumoMinPer(v.id,per),0):totU;
   const totS=totC-totU;
-  const nAt=com.filter(v=>vipAlertaPacote(v.id)).length;
-  const rows=com.map(v=>{
-    const c=vipContratadoMin(v.id), u=vipConsumoMin(v.id), s=c-u, uPer=temPer?vipConsumoMinPer(v.id,per):u;
-    const pct=c>0?Math.min(100,Math.round(u/c*100)):(u>0?100:0);
-    const al=vipAlertaPacote(v.id); const fim=vipVigenciaFim(v.id);
-    let barCor='var(--ok)'; if(al&&(al.esgotado||al.vencido))barCor='var(--vermelho)'; else if(al&&(al.baixo||al.vencendo))barCor='var(--laranja)'; else if(pct>=80)barCor='#c2560b';
-    const urg = al?(al.esgotado||al.vencido?3:(al.baixo?2:1)):0;
-    return {v,c,u,s,uPer,pct,al,fim,barCor,urg};
-  }).sort((a,b)=> b.urg-a.urg || a.s-b.s);
   const tile=(val,lbl,cor)=>`<div class="fx-tile"><div class="v" style="color:${cor}">${val}</div><div class="l">${lbl}</div></div>`;
-  const cartao=r=>{
-    const chip = r.al?`<span class="pill" style="background:${(r.al.esgotado||r.al.vencido)?'#fdeaea':'#fff3e0'};color:${(r.al.esgotado||r.al.vencido)?'var(--vermelho)':'#c2560b'}" title="Este aluno precisa de ação: renovar o pacote ou avisar o responsável">⚠ ${_vipAlertaTxt(r.al)}</span>`:'';
-    const sCor = r.s<=0?'var(--vermelho)':(r.al&&r.al.baixo?'var(--laranja)':'var(--ok)');
-    return `<div class="ctv" role="button" tabindex="0" onclick="selecionarVip('${r.v.id}')" onkeydown="if(event.key==='Enter')selecionarVip('${r.v.id}')" title="Ver os detalhes e o pacote deste aluno">
-      <div class="ct-topo" style="background:${r.barCor}"></div>
-      <div class="ct-miolo">
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><b style="flex:1;min-width:0">${esc(r.v.nome)}</b>${r.v.dupla?'<span class="pill" style="background:#e6f0fb;color:#005EAF" title="Aula em dupla — hora-aula de dupla, por aluno">👥</span>':''}</div>
-        <div class="hint">${r.v.professor?esc(r.v.professor):'<i>sem professor</i>'}</div>
-        <div class="ct-barra" title="${fmtDur(r.u)} de ${fmtDur(r.c)} contratadas (${r.pct}%)"><i style="width:${r.pct}%;background:${r.barCor}"></i></div>
-        <span class="hint">${temPer?`<b style="color:#b8860b">${fmtDur(r.uPer)} no período</b> · `:''}saldo <b style="color:${sCor}">${fmtDur(Math.max(0,r.s))}</b>${r.fim?(' · até '+brDate(r.fim)):''}</span>
-        ${chip?`<div style="margin-top:6px">${chip}</div>`:''}
-      </div>
-      <div class="ct-rodape"><span class="ct-abrir">abrir aluno ›</span></div>
-    </div>`;
-  };
-  const criticos=rows.filter(r=>r.urg>0);
-  const mostra=_vipPanoramaAberto?criticos:rows;   // b175: padrão mostra todos, ordenados por urgência
-  const corpo=`<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+  // opções de filtro tiradas dos próprios alunos
+  const profs=[...new Set(ativos.map(v=>(v.professor||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const presentes=new Set(ativos.map(v=>_cefrBase(vipCefr(v))).filter(Boolean));
+  const niveis=_CEFR_BASE_ORDEM.filter(b=>presentes.has(b));
+  const chk=(on,cls,onclick,txt)=>`<label class="vipf ${cls} ${on?'on':''}"><input type="checkbox" ${on?'checked':''} onchange="${onclick}">${txt}</label>`;
+  const gProf = profs.length>1?`<div class="vipf-grp"><span class="vipf-lbl">Professor</span><div class="vipf-chips">${profs.map(p=>chk(_vipFProf.has(p),'',`setVipFProf('${escAttr(escJs(p))}')`,esc(p))).join('')}</div></div>`:'';
+  const gNivel = niveis.length?`<div class="vipf-grp"><span class="vipf-lbl">Nível (B1 mostra B1 e B1+)</span><div class="vipf-chips">${niveis.map(b=>chk(_vipFNivel.has(b),'',`setVipFNivel('${escJs(b)}')`,esc(b))).join('')}</div></div>`:'';
+  const gSaldo = `<div class="vipf-grp"><span class="vipf-lbl">Situação</span><div class="vipf-chips">${chk(_vipFSaldo,'saldo','setVipFSaldo(this.checked)','⚠️ Só saldo baixo/esgotado')}</div></div>`;
+  const filtros = (gProf||gNivel)?`<div class="vipf-bar">${gProf}${gNivel}${gSaldo}${_vipFiltroAtivo()?`<button class="vipf-limpar" onclick="limparFiltrosVip()">limpar filtros</button>`:''}</div>`:'';
+  // aplica os filtros
+  let mostra=ativos.slice();
+  if(_vipFProf.size) mostra=mostra.filter(v=>_vipFProf.has((v.professor||'').trim()));
+  if(_vipFNivel.size) mostra=mostra.filter(v=>_vipFNivel.has(_cefrBase(vipCefr(v))));
+  if(_vipFSaldo) mostra=mostra.filter(v=>{const t=_vipSaldoTipo(v.id);return t==='baixo'||t==='esgotado';});
+  const urg=v=>{const t=_vipSaldoTipo(v.id);return t==='esgotado'?3:(t==='baixo'?2:0);};
+  mostra.sort((a,b)=>urg(b)-urg(a)||a.nome.localeCompare(b.nome));
+  const nAt=ativos.filter(v=>{const t=_vipSaldoTipo(v.id);return t==='baixo'||t==='esgotado';}).length;
+  const toolbar=`<div class="vip-toolbar">
       <select onchange="setVipPanoramaPer(this.value)" style="max-width:150px">
         <option value="tudo" ${per==='tudo'?'selected':''}>Desde o início</option>
         <option value="mes" ${per==='mes'?'selected':''}>Este mês</option>
         <option value="mespass" ${per==='mespass'?'selected':''}>Mês passado</option>
         <option value="ano" ${per==='ano'?'selected':''}>Este ano</option>
       </select>
-      <button class="btn ghost sm" onclick="exportarHorasVipCSV()">⬇️ Planilha</button>
-      <button class="btn ghost sm" onclick="toggleVipPanorama()">${_vipPanoramaAberto?'ver todos os '+com.length+' pacotes':'ver só os que precisam de ação'}</button></div>
-    <div class="fx-tiles" style="margin-top:10px">
+      <button class="btn ghost sm" onclick="exportarHorasVipCSV()">⬇️ Planilha</button></div>`;
+  const tiles=`<div class="fx-tiles" style="margin-top:8px">
       ${tile(com.length,'Alunos c/ pacote','#005EAF')}
       ${tile(fmtDur(totC),'Contratadas','#005EAF')}
       ${tile(fmtDur(temPer?totUPer:totU),temPer?'Utilizadas no período':'Utilizadas','#b8860b')}
-      ${tile(fmtDur(Math.max(0,totS)),'Saldo total',totS<=0?'var(--vermelho)':'var(--ok)')}
+      ${tile(fmtDur(Math.max(0,totS)),'Saldo total',totS<=0?'var(--vermelho)':'var(--ok)')}</div>`;
+  const conta=`<p class="hint" style="margin:12px 0 8px">${mostra.length} de ${ativos.length} aluno(s)${nAt?` · <b style="color:#c2560b">${nAt} pedindo ação</b>`:''}</p>`;
+  const grade=`<div class="vip-grade">${mostra.length?mostra.map(_vipCartaoGestor).join(''):'<p class="hint" style="grid-column:1/-1">Nenhum aluno com esses filtros.</p>'}</div>`;
+  return _vipCardAberto('📊 Visão geral — horas VIP <span class="hint">'+com.length+' com pacote</span>',
+    nAt?(nAt+' aluno(s) precisam de ação'):null, toolbar+tiles+filtros+conta+grade, '#C8A200');
+}
+// Cartão do aluno (direção/secretaria): fechado mostra foto + nome + nível + status; abre no clique.
+function _vipCartaoGestor(v){
+  const t=_vipSaldoTipo(v.id), cor=_vipSaldoCor(t);
+  const c=vipContratadoMin(v.id), u=vipConsumoMin(v.id), s=c-u;
+  const pct=c>0?Math.min(100,Math.round(u/c*100)):(u>0?100:0);
+  const cefr=vipCefr(v), open=_vipCardOpen===v.id;
+  const stTxt=t==='esgotado'?'esgotado':(t==='baixo'?'saldo baixo':(t==='sem'?'sem pacote':'em dia'));
+  const barCor=(t==='esgotado')?'var(--vermelho)':(t==='baixo'?'var(--laranja)':(pct>=80?'#c2560b':'var(--ok)'));
+  const al=vipAlertaPacote(v.id);
+  const chip=al?`<div class="vip-chip" style="background:${(al.esgotado||al.vencido)?'#fdeaea':'#fff3e0'};color:${(al.esgotado||al.vencido)?'var(--vermelho)':'#c2560b'}">⚠ ${_vipAlertaTxt(al)}</div>`:'';
+  return `<div class="vipcard ${open?'aberto':''}" role="button" tabindex="0" aria-expanded="${open?'true':'false'}" onclick="toggleVipCard('${v.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleVipCard('${v.id}')}" title="Clique para ver a visão geral deste aluno">
+    <div class="vip-topo" style="background:${cor}"></div>
+    <div class="vip-cab">
+      <div class="vip-av fotoav" data-foto="${escAttr(v.foto||'')}" style="background:#005EAF"><span class="fotoav-ini">${esc(_iniNome(v.nome))}</span></div>
+      <div class="vip-nb">
+        <div class="vip-nome">${esc(v.nome)}${v.dupla?' <span class="pill" style="background:#e6f0fb;color:#005EAF" title="Aula em dupla">👥</span>':''}</div>
+        <div class="vip-l2">${cefr?`<span class="vip-cefr">${esc(cefr)}</span>`:'<span class="vip-cefr vazio">sem nível</span>'}<span class="vip-ponto" style="background:${cor}"></span><span class="vip-mini">${stTxt}</span></div>
+      </div>
+      <span class="vip-seta">›</span>
     </div>
-    ${nAt?`<p class="hint" style="margin:10px 0 0"><b style="color:#c2560b">${nAt}</b> aluno(s) precisam de ação — aparecem primeiro.</p>`:'<p class="hint" style="margin:10px 0 0">Nenhum pacote pedindo ação agora. 👏</p>'}
-    <div class="ctg" style="margin-bottom:0">${mostra.length?mostra.map(cartao).join(''):'<p class="hint">—</p>'}</div>`;
-  return _vipCardAberto('📊 Visão geral — horas VIP <span class="hint">'+com.length+' aluno(s) com pacote</span>',
-    nAt?(nAt+' aluno(s) precisam de ação'):null, corpo, '#C8A200');
+    <div class="vip-det">
+      <p class="vip-prof">👩‍🏫 <b>${v.professor?esc(v.professor):'<i>sem professor</i>'}</b></p>
+      ${t==='sem'?'<p class="hint" style="margin:0">Sem pacote de horas cadastrado.</p>':
+        `<div class="vip-barra" title="${fmtDur(u)} de ${fmtDur(c)} (${pct}%)"><i style="width:${pct}%;background:${barCor}"></i></div>
+         <div class="vip-saldo">${fmtDur(u)} de ${fmtDur(c)} · saldo <b style="color:${cor}">${fmtDur(Math.max(0,s))}</b>${vipVigenciaFim(v.id)?(' · até '+brDate(vipVigenciaFim(v.id))):''}</div>`}
+      ${chip}
+      <div><button class="btn sm" style="margin-top:10px" onclick="event.stopPropagation();selecionarVip('${v.id}')">abrir aluno ›</button></div>
+    </div>
+  </div>`;
+}
+// Cartão do aluno (professor): sem horas/saldo — clicar abre o aluno para lançar aulas.
+function _vipCartaoProf(v){
+  const cefr=vipCefr(v), sel=vipSel===v.id;
+  const ult=(S.aulasVip||[]).filter(x=>x.vipId===v.id && !x.ajusteManual && x.tema!=='Importação').sort((a,b)=>(b.data||'').localeCompare(a.data||''))[0];
+  return `<div class="vipcard prof ${sel?'aberto':''}" role="button" tabindex="0" onclick="selecionarVip('${v.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selecionarVip('${v.id}')}" title="Abrir o aluno para lançar aulas">
+    <div class="vip-topo" style="background:#C8A200"></div>
+    <div class="vip-cab">
+      <div class="vip-av fotoav" data-foto="${escAttr(v.foto||'')}" style="background:#005EAF"><span class="fotoav-ini">${esc(_iniNome(v.nome))}</span></div>
+      <div class="vip-nb">
+        <div class="vip-nome">${esc(v.nome)}</div>
+        <div class="vip-l2">${cefr?`<span class="vip-cefr">${esc(cefr)}</span>`:''}<span class="vip-mini">${ult?('última '+brDate(ult.data)):'sem aulas ainda'}</span></div>
+      </div>
+      <span class="vip-seta">›</span>
+    </div>
+  </div>`;
+}
+function _vipCardsProfessor(lista){
+  const als=(lista||[]).filter(v=>!v.arquivado).sort((a,b)=>a.nome.localeCompare(b.nome));
+  const grade=als.length?`<div class="vip-grade">${als.map(_vipCartaoProf).join('')}</div>`:'<p class="hint">Você ainda não tem alunos VIP.</p>';
+  return _vipCardAberto('👑 Seus alunos VIP <span class="hint">'+als.length+'</span>', null, grade, '#C8A200');
 }
 function vipHorarios(vip){
   if(!vip) return [];
@@ -334,21 +404,12 @@ VIEWS.vip=()=>{
   if(vipSel && !lista.some(a=>a.id===vipSel)) vipSel=null;
   const vObj=lista.find(a=>a.id===vipSel)||{};
 
-  // --- quadradinho "Alunos VIP": cadastro + seleção pela lista ---
-  const boxAlunos=()=>`
-    ${!ehSec?`<div class="row" style="align-items:flex-end"><div style="flex:3"><label class="lbl">Novo aluno VIP</label><input type="text" id="vipNome" placeholder="Nome do aluno" onkeydown="if(event.key==='Enter')addVipAluno()"></div>
+  // --- cadastro de novo aluno VIP (direção e professor; secretaria não cadastra) ---
+  const cadastro = ehSec ? '' : _vipCardAberto('➕ Novo aluno VIP', null,
+    `<div class="row" style="align-items:flex-end">
+      <div style="flex:3"><label class="lbl">Nome do aluno</label><input type="text" id="vipNome" placeholder="Nome do aluno" onkeydown="if(event.key==='Enter')addVipAluno()"></div>
       ${ehDir?`<div style="flex:2"><label class="lbl">Professor(a)</label><select id="vipProf"><option value="">— professor…</option>${profs.map(p=>`<option value="${escAttr(p)}">${esc(p)}</option>`).join('')}</select></div>`:''}
-      <button class="btn ghost" style="margin-bottom:2px" onclick="addVipAluno()">+ Aluno VIP</button></div>`:''}
-    ${lista.length?`<div class="field" style="margin-top:12px"><label class="lbl">Selecione o aluno para ver os detalhes</label>
-      <select id="vipSelAluno" onchange="selecionarVip(this.value)">
-        <option value="">— escolha um aluno…</option>
-        ${lista.map(a=>`<option value="${a.id}" ${vipSel===a.id?'selected':''}>${esc(a.nome)}${ehGestor?(a.professor?' · '+esc(a.professor):' · (sem professor)'):''}</option>`).join('')}
-      </select></div>`
-      :`<p class="hint" style="margin:10px 0 0">${ehGestor?'Nenhum aluno VIP cadastrado ainda.':'Você ainda não tem alunos VIP.'}</p>`}
-    ${vipSel&&ehGestor?`<div class="row" style="margin-top:10px;align-items:flex-end;gap:8px">
-      <div style="flex:1"><label class="lbl">Professor(a) responsável</label><select id="vipTrocaProf" onchange="trocarProfVip('${vipSel}',this.value)"><option value="">— sem professor</option>${profs.map(p=>`<option value="${escAttr(p)}" ${vObj.professor===p?'selected':''}>${esc(p)}</option>`).join('')}</select></div>
-      <button class="btn ghost sm" onclick="vipParaAluno('${vipSel}')">🎓 Mover para turma</button>
-      <button class="btn ghost sm" style="color:var(--vermelho)" onclick="delVipAluno('${vipSel}')">🗑 excluir aluno</button></div>`:''}`;
+      <button class="btn ghost" style="margin-bottom:2px" onclick="addVipAluno()">+ Aluno VIP</button></div>`, '#C8A200');
 
   // --- detalhes do aluno selecionado, tudo em quadradinhos ---
   let det='';
@@ -361,11 +422,20 @@ VIEWS.vip=()=>{
     const uwr=wrs.slice().sort((a,b)=>(b.data||b.criadoEm||'').toString().localeCompare((a.data||a.criadoEm||'').toString()))[0];
     const prevAulas=ult?`Última: <b>${brDate(ult.data)}</b> · ${fmtDur(+ult.duracaoMin||0)}${ult.faltou?' · <span style="color:var(--vermelho)">faltou</span>':''}<br>${esc((ult.tema||ult.descricao||'—').slice(0,60))}`:'Nenhuma aula lançada ainda.';
     const prevWr=uwr?`Último: <b>${uwr.data?brDate(uwr.data):'—'}</b><br>${esc((uwr.titulo||uwr.tema||'—').toString().slice(0,60))}`:'Nenhuma avaliação ainda.';
+    const podeNivel = ehGestor || _souProfVipId(vipSel);
+    const cefrRow = podeNivel?`<div class="field" style="max-width:230px;margin:0 0 12px"><label class="lbl">Nível (CEFR)</label>
+        <select onchange="setCefrVip('${vipSel}',this.value)"><option value="">— nível…</option>${VIP_CEFR.map(c=>`<option ${vipCefr(vObj)===c?'selected':''}>${c}</option>`).join('')}</select></div>`:'';
+    const gestaoRow = ehGestor?`<div class="row" style="margin:0 0 12px;align-items:flex-end;gap:8px;flex-wrap:wrap">
+        <div style="flex:1;min-width:160px"><label class="lbl">Professor(a) responsável</label><select onchange="trocarProfVip('${vipSel}',this.value)"><option value="">— sem professor</option>${profs.map(p=>`<option value="${escAttr(p)}" ${vObj.professor===p?'selected':''}>${esc(p)}</option>`).join('')}</select></div>
+        <button class="btn ghost sm" onclick="vipParaAluno('${vipSel}')">🎓 Mover para turma</button>
+        <button class="btn ghost sm" style="color:var(--vermelho)" onclick="delVipAluno('${vipSel}')">🗑 excluir aluno</button></div>`:'';
     det=`<div class="vip-sel"><span class="nm">👑 ${esc(vObj.nome||'')}</span>
+        ${vipCefr(vObj)?`<span class="pill" style="background:var(--az-suave);color:var(--azul)">${esc(vipCefr(vObj))}</span>`:''}
         ${vObj.professor?`<span class="pill">${esc(vObj.professor)}</span>`:''}
         <button class="btn ghost sm" onclick="abrirFicha('${vipSel}')">📇 Ficha completa</button>
         ${!ehProfessor()?`<button class="btn ghost sm" style="color:#c2560b" onclick="registrarCancelamentoVip('${vipSel}')">🚫 Cancelou em cima da hora</button>`:''}
       </div>
+      ${cefrRow}${gestaoRow}
       ${_cardPacoteVip(vipSel)}
       <div class="ctg">
         ${!ehSec?_ctAcaoVip('var(--ok)','➕ Lançar aula','Registrar a aula que aconteceu: tema, descrição, data e duração.','lançar ›','abrirVipLancar()'):''}
@@ -375,11 +445,12 @@ VIEWS.vip=()=>{
   }
 
   v.innerHTML=`<div class="section-title"><span class="feijao fj" style="background:#C8A200"></span><h2 class="display">👑 Alunos VIP</h2></div>
-    <p class="sub">${ehSec?'Gestão dos alunos particulares — escolha o aluno na lista para ver os detalhes.':ehDir?'Aulas particulares, uma a uma. Cadastre o aluno, escolha na lista e lance cada aula.':'Seus alunos particulares — escolha na lista para ver os detalhes e lançar as aulas.'}</p>
-    ${ehGestor?_cardVisaoHorasVip(lista):''}
-    ${_vipCardAberto('👑 Alunos VIP <span class="hint">'+(vipSel?('selecionado: '+esc(vObj.nome||'')):(lista.length+' aluno(s)'))+'</span>', null, boxAlunos(), '#C8A200')}
-    ${det}`;
+    <p class="sub">${ehSec?'Gestão dos alunos particulares — filtre e clique num cartão para ver a visão geral do aluno.':ehDir?'Aulas particulares, uma a uma. Filtre, clique num cartão para abrir o aluno e lance cada aula.':'Seus alunos particulares — clique num cartão para ver os detalhes e lançar as aulas.'}</p>
+    ${ehGestor?_cardVisaoHorasVip(lista):_vipCardsProfessor(lista)}
+    ${det}
+    ${cadastro}`;
   if(typeof _fichaLatRefresh==='function') _fichaLatRefresh();   // ficha lateral acompanha o re-render (b175)
+  if(typeof _hidratarFotos==='function') setTimeout(_hidratarFotos,60);   // fotos nos avatares dos cartões
 };
 /* cartão de ação (b175): prévia + clique abre a ficha lateral */
 function _ctAcaoVip(cor,titulo,prev,cta,fn){

@@ -234,7 +234,7 @@ function criarProximaTurma(){
    CEFR e atualiza o material (coleção do planejamento), zerando o progresso.
    ===================================================================== */
 const _GT_CEFR=['A1','A1+','A2','A2+','B1','B1+','B2','C1','C1+','C2'];
-function _gtCats(){ return (typeof segmentosFin==='function')?segmentosFin().map(x=>x[0]):['kids','junior','teens','adults','talking']; }
+function _gtCats(){ return (typeof segmentosFin==='function')?segmentosFin().map(x=>x[0]):['kids','junior','teens','adults']; }
 VIEWS.gestaoturmas=()=>{
   const v=document.getElementById('view');
   if(S.perfil!=='direcao'){ v.innerHTML='<div class="card empty"><div class="big">🔒</div>Só a direção acessa a gestão rápida de turmas.</div>'; return; }

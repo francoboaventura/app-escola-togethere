@@ -249,8 +249,8 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
     vipSel=null; _qdAbertos={}; rota='painel'; _histNav=[]; ir('vip');   // histórico limpo para testar o voltar
     let h=document.getElementById('view').innerHTML;
     o.vip_sem_atalhos_nome = !/onclick="abrirFicha\('v2'\)/.test(h);
-    o.vip_visao_cartoes = /horas VIP/i.test(h) && /class="ctv"/.test(h);   // b175: visão geral em grade de cartões
-    o.vip_dropdown_visivel = !!document.getElementById('vipSelAluno') && document.getElementById('vipSelAluno').options.length===3;   // b175: dropdown sempre à vista
+    o.vip_visao_cartoes = /horas VIP/i.test(h) && /class="vipcard/.test(h);   // b177: visão geral em grade de cartões recolhíveis
+    o.vip_cards_alunos = /Carlos Lima/.test(h) && /Ana Paula/.test(h) && /toggleVipCard\('v1'\)/.test(h) && /toggleVipCard\('v2'\)/.test(h);   // b177: um cartão por aluno (fechado)
     selecionarVip('v1'); await new Promise(z=>setTimeout(z,80));
     h=document.getElementById('view').innerHTML;
     o.vip_detalhes = /Carlos Lima/.test(h) && /abrirVipLancar\(\)/.test(h) && /abrirVipAulas\(\)/.test(h) && /abrirVipWritings\(\)/.test(h);
@@ -445,6 +445,68 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
     return o;
   });
   Object.assign(r,t14);
+
+  // ===== b177: filtros da lista VIP (professor/nível/saldo), nível CEFR e visão do professor =====
+  const t15=await page.evaluate(async()=>{
+    const o={};
+    S.vipAlunos=[
+      {id:'v1',nome:'Beatriz Lima', professor:'Ana',   cefr:'B1'},
+      {id:'v2',nome:'Caio Mendes',  professor:'Bruno', cefr:'A2'},
+      {id:'v3',nome:'Duda Rocha',   professor:'Ana',   cefr:'B1+'},
+      {id:'v4',nome:'Igor Nunes',   professor:'Bruno'}  // sem nível
+    ];
+    S.pacotesVip=[
+      {id:'p1',vipId:'v1',horas:20,inicio:'2026-02-01',fim:''},
+      {id:'p4',vipId:'v4',horas:1, inicio:'2026-02-01',fim:''}   // saldo baixo
+    ];
+    S.aulasVip=[]; S.writings=[];
+    S.perfil='direcao'; S.usuario='Chefe'; montarNav();
+    vipSel=null; _vipFProf.clear(); _vipFNivel.clear(); _vipFSaldo=false; _vipCardOpen=null;
+    ir('vip'); await new Promise(z=>setTimeout(z,40));
+    let h=document.getElementById('view').innerHTML;
+    o.f_todos = /Beatriz Lima/.test(h) && /Caio Mendes/.test(h) && /Duda Rocha/.test(h) && /Igor Nunes/.test(h);
+    o.f_tem_filtros = /setVipFProf\('Ana'\)/.test(h) && /setVipFNivel\('B1'\)/.test(h) && /Só saldo baixo/.test(h);
+    // filtro por professor
+    setVipFProf('Ana'); await new Promise(z=>setTimeout(z,30)); h=document.getElementById('view').innerHTML;
+    o.f_prof = /Beatriz Lima/.test(h) && /Duda Rocha/.test(h) && !/Caio Mendes/.test(h) && !/Igor Nunes/.test(h);
+    setVipFProf('Ana');   // desliga
+    // filtro por nível: B1 pega B1 e B1+ (não pega A2)
+    setVipFNivel('B1'); await new Promise(z=>setTimeout(z,30)); h=document.getElementById('view').innerHTML;
+    o.f_nivel_base = /Beatriz Lima/.test(h) && /Duda Rocha/.test(h) && !/Caio Mendes/.test(h);
+    setVipFNivel('B1');
+    // filtro saldo baixo
+    setVipFSaldo(true); await new Promise(z=>setTimeout(z,30)); h=document.getElementById('view').innerHTML;
+    o.f_saldo = /Igor Nunes/.test(h) && !/Beatriz Lima/.test(h);
+    setVipFSaldo(false);
+    // abrir cartão não navega (fica na mesma tela, com detalhe expandido)
+    toggleVipCard('v1'); await new Promise(z=>setTimeout(z,30)); h=document.getElementById('view').innerHTML;
+    o.f_abre_inline = /class="vipcard aberto"/.test(h) && vipSel===null;
+    // editar nível CEFR pelo aluno selecionado
+    selecionarVip('v4'); await new Promise(z=>setTimeout(z,30));
+    setCefrVip('v4','A1+'); await new Promise(z=>setTimeout(z,30));
+    o.f_cefr_salva = (S.vipAlunos.find(x=>x.id==='v4').cefr==='A1+');
+    // nível do contrato serve de padrão quando não há cefr gravado
+    o.f_cefr_contrato = vipCefr({contratoDados:{nivel:'C1'}})==='C1' && vipCefr({cefr:'B2',contratoDados:{nivel:'C1'}})==='B2';
+    // visão do PROFESSOR: só os alunos dele, sem filtros e sem visão geral
+    S.perfil='professor'; S.usuario='Ana';
+    S.usuarios=[{nome:'Ana',ensina:'Ana'}];
+    vipSel=null; ir('vip'); await new Promise(z=>setTimeout(z,40)); h=document.getElementById('view').innerHTML;
+    o.prof_so_seus = /Beatriz Lima/.test(h) && /Duda Rocha/.test(h) && !/Caio Mendes/.test(h) && !/Igor Nunes/.test(h);
+    o.prof_sem_filtros = !/setVipFNivel\(/.test(h) && !/Só saldo baixo/.test(h);
+    o.prof_sem_visao_geral = !/horas VIP/i.test(h) && /Seus alunos VIP/.test(h);
+    return o;
+  });
+  Object.assign(r,t15);
+
+  // ===== b177: "Talking" removido dos produtos, cadastro de produto novo segue existindo =====
+  const t16=await page.evaluate(()=>{
+    const o={};
+    o.sem_talking = !segmentosFin().some(([k])=>k==='talking');
+    o.tem_padrao = ['kids','junior','teens','adults'].every(k=>segmentosFin().some(([kk])=>kk===k));
+    o.cadastra_produto = typeof addSegmento==='function';
+    return o;
+  });
+  Object.assign(r,t16);
 
   const falhas=Object.keys(r).filter(k=>r[k]!==true);
   console.log(JSON.stringify(r,null,1));
