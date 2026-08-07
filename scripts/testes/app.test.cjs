@@ -643,14 +643,22 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
     document.getElementById('tr3_turma').value='t1'; _trTurmaChange(); await new Promise(z=>setTimeout(z,30));
     trIr(4); await new Promise(z=>setTimeout(z,30));
     o.pag_campos = !!document.getElementById('tr4_material') && !!document.getElementById('tr4_primeiroVenc') && /Demais parcelas \(dia\)/.test(document.getElementById('modal').innerHTML);
-    document.getElementById('tr4_mensal').value='400'; document.getElementById('tr4_material').value='250'; document.getElementById('tr4_primeiroVenc').value='2026-09-05';
+    o.pag_material_parc = !!document.getElementById('tr4_materialParc') && !!document.getElementById('tr4_somar');
+    document.getElementById('tr4_mensal').value='400'; document.getElementById('tr4_material').value='250'; document.getElementById('tr4_materialParc').value='2'; document.getElementById('tr4_somar').checked=true; document.getElementById('tr4_primeiroVenc').value='2026-09-05';
     trIr(5); await new Promise(z=>setTimeout(z,30));
     trConcluir('ativa'); await new Promise(z=>setTimeout(z,60));
     const al=(S.alunos||[]).find(a=>a.nome==='Kid Mat');
     const mtr=(S.matriculas||[]).find(x=>x.alunoId===(al||{}).id);
     const fr=(S.financeiro||[]).find(x=>x.matriculaId===(mtr||{}).id);
     o.mat_primeirovenc = !!fr && fr.primeiroVenc==='2026-09-05' && finParcelas(fr)[0].venc==='2026-09-05';
-    o.mat_cobranca = !!fr && (fr.extras||[]).some(e=>e.origem==='matricula-material' && _matN(e.valor)===250);
+    // material vira plano parcelado à parte (250 em 2×)
+    const mp=fr?finParcelasMaterial(fr):[];
+    o.mat_plano = !!fr && finMaterialTotal(fr)===250 && mp.length===2 && (mp[0].valor+mp[1].valor)===250;
+    // somar mesmo dia: 1ª linha do cronograma junta mensalidade + material do mesmo vencimento
+    const cron=fr?finCronograma(fr):[];
+    o.mat_somado = !!fr && fr.somarMesmoDia===true && cron.length>0 && cron[0].itens.length===2 && cron[0].total===(400+125);
+    // boleto do dia e toggle combinado existem
+    o.mat_boleto = typeof gerarBoletoLinha==='function' && typeof finToggleLinha==='function';
     o.tem_editar_extra = typeof editarExtra==='function';
     return o;
   });

@@ -509,7 +509,7 @@ function _trNovo(){ return {id:uid(), passo:1, tipo:'turma',
   aluno:{nome:'',nasc:'',doc:'',email:'',tel:'',endereco:'',cidade:'Gravataí, RS'},
   resp:{temResp:null,mesmo:true,nome:'',parentesco:'',tel:'',email:'',doc:'',endereco:'',cidade:'Gravataí, RS'},
   ped:{turmaId:'',inicio:hoje(),fimPeriodo:'',modalidade:'Presencial',material:'',matDestino:'encomendar', professor:'',dupla:false,horas:'',vigIni:hoje(),vigFim:'',nivel:''},
-  pag:{taxa:null,mensal:null,parcelas:12,diaVenc:10,primeiroVenc:'',material:0,descPct:0,descVal:0,forma:'', vipDesc:0,vipParcelas:1}}; }
+  pag:{taxa:null,mensal:null,parcelas:12,diaVenc:10,primeiroVenc:'',material:0,materialParcelas:1,somarMesmoDia:false,descPct:0,descVal:0,forma:'', vipDesc:0,vipParcelas:1}}; }
 // b178: responsável resolvido — se não houver responsável separado, o próprio aluno é o responsável.
 function _trRespFinal(p){
   const adulto=(idadeDe(p.aluno.nasc)!=null && idadeDe(p.aluno.nasc)>=18);
@@ -578,6 +578,8 @@ function _trLer(){   // lê só o que estiver na tela (cada passo tem seus campo
   if(c('tr3_dupla')!==null) p.ped.dupla=c('tr3_dupla');
   ['taxa','mensal','descPct','descVal','vipDesc','material'].forEach(k=>{ if(g('tr4_'+k)!==null) p.pag[k]=_matN(g('tr4_'+k)); });
   if(g('tr4_primeiroVenc')!==null) p.pag.primeiroVenc=g('tr4_primeiroVenc');
+  if(g('tr4_materialParc')!==null) p.pag.materialParcelas=parseInt(g('tr4_materialParc'))||1;
+  if(c('tr4_somar')!==null) p.pag.somarMesmoDia=c('tr4_somar');
   if(g('tr4_parcelas')!==null) p.pag.parcelas=parseInt(g('tr4_parcelas'))||12;
   if(g('tr4_vipParcelas')!==null) p.pag.vipParcelas=parseInt(g('tr4_vipParcelas'))||1;
   if(g('tr4_diaVenc')!==null) p.pag.diaVenc=parseInt(g('tr4_diaVenc'))||10;
@@ -715,7 +717,9 @@ function _trRender(){
        +F('Desconto (%)',`<input type="number" id="tr4_descPct" value="${p.pag.descPct||''}" min="0" max="100" oninput="trResumoLive()">`)
        +F('Desconto (R$)',`<input type="number" id="tr4_descVal" value="${p.pag.descVal||''}" min="0" step="0.01" oninput="trResumoLive()">`)+`</div>`
        +`<div class="row">`+F('1º vencimento <span class="hint">data da 1ª parcela</span>',`<input type="date" id="tr4_primeiroVenc" value="${escAttr(p.pag.primeiroVenc||'')}" onchange="trResumoLive()">`)
-       +F('Cobrar material (R$) <span class="hint">vira uma cobrança no financeiro</span>',`<input type="number" id="tr4_material" value="${p.pag.material||''}" min="0" step="0.01" placeholder="0,00">`)+`</div>`
+       +F('Cobrar material (R$) <span class="hint">cobrança à parte</span>',`<input type="number" id="tr4_material" value="${p.pag.material||''}" min="0" step="0.01" placeholder="0,00">`)
+       +F('Material: parcelas',`<input type="number" id="tr4_materialParc" value="${p.pag.materialParcelas||1}" min="1" max="48">`)+`</div>`
+       +`<label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:.9rem;margin:2px 0 10px"><input type="checkbox" id="tr4_somar" ${p.pag.somarMesmoDia?'checked':''}> ➕ Somar as parcelas que caem no mesmo dia <span class="hint">(mensalidade + material num só boleto)</span></label>`
        +F('Forma de pagamento',`<select id="tr4_forma">${optF}</select>`);
     }
     h+=`<div class="gen-box" id="tr4_resumo" style="margin-bottom:12px">—</div>`+nav(3,5);
@@ -730,7 +734,7 @@ function _trRender(){
         <br>👪 ${R.temResp?(esc(R.nome||'—')+(R.parentesco?(' ('+esc(R.parentesco)+')'):'')+(R.tel?(' · '+esc(R.tel)):'')):'<span class="hint">o próprio aluno é o responsável</span>'}
         <br>${vip?('👑 VIP · prof. '+esc(p.ped.professor)+(p.ped.dupla?' · 👥 dupla':'')+' · <b>'+_matN(p.ped.horas)+'h</b>'+(p.ped.vigFim?(' até '+brDate(p.ped.vigFim)):' (sem prazo)')):('🏫 '+(t?esc(t.nome):'')+' · início '+brDate(p.ped.inicio))}
         <br>💰 ${vip?('<b>'+_moeda(tot)+'</b> em '+(p.pag.vipParcelas||1)+'× (venc. dia '+p.pag.diaVenc+')'):('taxa '+_moeda(_matN(p.pag.taxa))+' + <b>'+p.pag.parcelas+'×</b> de <b>'+_moeda(_trMensalLiq())+'</b> (venc. dia '+p.pag.diaVenc+')')}${p.pag.forma?(' · '+esc(p.pag.forma)):''}
-        ${vip?'':('<br><b>Total do curso: '+_moeda(tot)+'</b>')}${mat?('<br>📚 material: '+esc(mat)+' · '+destLbl):''}</p></div>`
+        ${vip?'':('<br><b>Total do curso: '+_moeda(tot)+'</b>')}${mat?('<br>📚 material: '+esc(mat)+' · '+destLbl):''}${(!vip&&_matN(p.pag.material)>0)?('<br>💳 cobrança do material: <b>'+_moeda(_matN(p.pag.material))+'</b> em '+(p.pag.materialParcelas||1)+'×'+(p.pag.somarMesmoDia?' · somado ao mesmo dia':' · à parte')):''}</p></div>`
      +`<p class="hint" style="margin:0 0 10px">📄 Ao concluir, o contrato ${vip?'VIP sai preenchido (partes, horas e parcelas)':'oficial fica disponível'} na tela final${mat&&(p.ped.matDestino!=='tem')?' e o livro entra em 📚 Livros':''}.</p>`
      +`<div class="row" style="gap:8px"><button class="btn ghost" onclick="trIr(4)">← Voltar</button>
         ${vip?'':`<button class="btn ghost" style="color:#9333c7" onclick="trConcluir('orcamento')" title="Guarda como proposta — gere o PDF do orçamento e feche a venda depois">🧾 Salvar como orçamento</button>`}
@@ -801,15 +805,13 @@ function trConcluir(statusFinal){
   m.turmaId=t.id;
   const f={id:'fin_'+m.id, matriculaId:m.id, criadoEm:hoje(), criadoPor:S.usuario, atualizadoEm:Date.now(),
     valorMatricula:_matN(p.pag.taxa), valorMensalidade:_matN(p.pag.mensal), descontoPct:_matN(p.pag.descPct), descontoValor:_matN(p.pag.descVal),
-    parcelas:p.pag.parcelas||12, diaVencimento:p.pag.diaVenc||10, primeiroVenc:p.pag.primeiroVenc||'', formaPagamento:p.pag.forma||'', dataInicio:p.ped.inicio||hoje(), pagos:{}, observacoes:''};
+    parcelas:p.pag.parcelas||12, diaVencimento:p.pag.diaVenc||10, primeiroVenc:p.pag.primeiroVenc||'',
+    materialTotal:_matN(p.pag.material), materialParcelas:parseInt(p.pag.materialParcelas)||1, somarMesmoDia:!!p.pag.somarMesmoDia, pagosMaterial:{},
+    formaPagamento:p.pag.forma||'', dataInicio:p.ped.inicio||hoje(), pagos:{}, observacoes:''};
   S.financeiro=S.financeiro||[];
   if(!S.financeiro.some(x=>x.matriculaId===m.id)) S.financeiro.push(f);
   const col=p.ped.material||((typeof planColecaoDe==='function')?(planColecaoDe(t)||''):'');
   if(statusFinal==='ativa' && aluno) _trRegistrarMaterial(aluno.id, false, col, p.ped.matDestino);
-  // b181: cobrança do material lançada no financeiro (cobrança extra)
-  if(statusFinal==='ativa' && _matN(p.pag.material)>0 && typeof addExtraFinanceiro==='function' && !(f.extras||[]).some(e=>e.origem==='matricula-material')){
-    addExtraFinanceiro(f.id, 'Material didático'+(col?(' — '+col):''), p.pag.material, 'matricula-material');
-  }
   save(); fechar(); if(typeof montarNav==='function') montarNav(); if(rota==='matriculas') VIEWS.matriculas();
   if(statusFinal==='orcamento'){ toast('Orçamento salvo — gere o PDF e apresente à família 🧾'); _tr=null; return; }
   toast('Matrícula concluída — bem-vindo(a), '+p.aluno.nome+'! 🎉');
