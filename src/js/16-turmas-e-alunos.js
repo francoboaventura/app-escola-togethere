@@ -701,6 +701,11 @@ function renderFichaVip(v, vip){
       <div class="field" style="flex:1;min-width:150px;margin:0"><label class="lbl">Telefone / WhatsApp</label><input type="text" value="${escAttr(vip.telefone||'')}" placeholder="(51) 9…" onchange="setVipCampo('${vip.id}','telefone',this.value)"></div>
       <div class="field" style="min-width:150px;margin:0"><label class="lbl">Nascimento</label><input type="date" min="1900-01-01" max="${hoje()}" value="${escAttr(vip.nascimento||'')}" onchange="setVipCampo('${vip.id}','nascimento',this.value)"></div>
     </div>`;
+    const _profsVip=[...new Set((S.usuarios||[]).filter(u=>u.ensina).map(u=>u.ensina).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+    h+=`<div class="row" style="flex-wrap:wrap;margin-top:10px">
+      <div class="field" style="flex:1;min-width:170px;margin:0"><label class="lbl">Professor(a) responsável</label><select onchange="trocarProfVip('${vip.id}',this.value)"><option value="">— sem professor</option>${_profsVip.map(p=>`<option value="${escAttr(p)}" ${vip.professor===p?'selected':''}>${esc(p)}</option>`).join('')}</select></div>
+      <div class="field" style="min-width:150px;margin:0"><label class="lbl">Nível (CEFR)</label><select onchange="setCefrVip('${vip.id}',this.value)"><option value="">— nível…</option>${(typeof VIP_CEFR!=='undefined'?VIP_CEFR:[]).map(c=>`<option ${vipCefr(vip)===c?'selected':''}>${c}</option>`).join('')}</select></div>
+    </div>`;
   } else {
     h+=`<p class="hint" style="margin:0">${vip.email?('📧 '+escAttr(vip.email)):'Sem e-mail cadastrado'}${vip.telefone?(' · 📱 '+escAttr(vip.telefone)):''}${idade!=null?(' · 🎂 '+idade+' anos'):''}</p>`;
   }
@@ -708,6 +713,9 @@ function renderFichaVip(v, vip){
       <p class="hint" style="margin:0">🎫 <b>Portal do aluno:</b> <a href="${portalURL}" target="_blank" style="color:var(--azul);word-break:break-all">${escAttr(portalURL.replace(/^https?:\/\//,''))}</a></p>
     </div>`:''}
   </div>`;
+  h+=`<div class="card" style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center"><span class="hint" style="flex:1;min-width:150px">Gestão do aluno VIP</span>
+    <button class="btn ghost sm" onclick="vipParaAluno('${vip.id}')">🎓 Mover para turma</button>
+    <button class="btn ghost sm" style="color:var(--vermelho)" onclick="delVipAluno('${vip.id}')">🗑 Excluir aluno</button></div>`;
   }
   h+=`
   ${ehProfessor()?'':_cardMaterialVip(vip)}

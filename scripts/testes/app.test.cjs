@@ -220,19 +220,15 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
     VIEWS.ficha();
     o.pacote_sem_alerta = !/saldo (baixo|esgotado)/.test(document.getElementById('view').innerHTML);
 
-    // ----- b175: tela VIP em cartões + ficha lateral -----
-    rota='vip'; vipSel='v1'; VIEWS.vip();
+    // ----- b180: tela VIP em cartões; "abrir aluno" → ficha; visão geral em janela dedicada -----
+    S.perfil='direcao'; rota='vip'; VIEWS.vip();
     h=document.getElementById('view').innerHTML;
-    o.b175_cartoes = /class="ctv"/.test(h) && /abrirVipAulas\(\)/.test(h) && /abrirVipWritings\(\)/.test(h);
-    o.b175_visao_cartoes = /abrir aluno ›/.test(h);   // visão geral em grade de cartões (direção)
-    abrirVipAulas(); await new Promise(z=>setTimeout(z,60));
-    o.b175_ficha_abre = document.getElementById('fichaLat').classList.contains('on')
-      && /Aula revisada/.test(document.getElementById('fichaLatCorpo').innerHTML);
-    VIEWS.vip();   // re-render da tela não pode fechar nem esvaziar a ficha lateral
-    o.b175_ficha_sobrevive = document.getElementById('fichaLat').classList.contains('on')
-      && /Aula revisada/.test(document.getElementById('fichaLatCorpo').innerHTML);
-    fecharFichaLateral();
-    o.b175_ficha_fecha = !document.getElementById('fichaLat').classList.contains('on');
+    o.b180_cartoes = /class="vipcard/.test(h) && /abrir aluno ›/.test(h) && /selecionarVip\('v1'\)/.test(h);
+    o.b180_botao_vg = /abrirVisaoGeralVip\(\)/.test(h);   // direção tem o botão da janela dedicada
+    abrirVisaoGeralVip(); await new Promise(z=>setTimeout(z,40));
+    const mvg=document.getElementById('modal').innerHTML;
+    o.b180_vg_modal = /Visão geral — horas VIP/.test(mvg) && /Contratadas/.test(mvg);
+    fechar();
     return o;
   });
   Object.assign(r,t8);
@@ -248,22 +244,21 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
     S.perfil='direcao'; S.usuario='Franco'; montarNav();
     vipSel=null; _qdAbertos={}; rota='painel'; _histNav=[]; ir('vip');   // histórico limpo para testar o voltar
     let h=document.getElementById('view').innerHTML;
-    o.vip_sem_atalhos_nome = !/onclick="abrirFicha\('v2'\)/.test(h);
-    o.vip_visao_cartoes = /horas VIP/i.test(h) && /class="vipcard/.test(h);   // b177: visão geral em grade de cartões recolhíveis
-    o.vip_cards_alunos = /Carlos Lima/.test(h) && /Ana Paula/.test(h) && /toggleVipCard\('v1'\)/.test(h) && /toggleVipCard\('v2'\)/.test(h);   // b177: um cartão por aluno (fechado)
+    o.vip_visao_cartoes = /horas VIP/i.test(h) && /class="vipcard/.test(h);   // b180: botão da visão geral (direção) + cartões
+    o.vip_cards_alunos = /Carlos Lima/.test(h) && /Ana Paula/.test(h) && /toggleVipCard\('v1'\)/.test(h) && /toggleVipCard\('v2'\)/.test(h);
+    // b180: "abrir aluno" leva à ficha completa (janela dedicada)
     selecionarVip('v1'); await new Promise(z=>setTimeout(z,80));
     h=document.getElementById('view').innerHTML;
-    o.vip_detalhes = /Carlos Lima/.test(h) && /abrirVipLancar\(\)/.test(h) && /abrirVipAulas\(\)/.test(h) && /abrirVipWritings\(\)/.test(h);
-    o.vip_pacote_visivel = /Contratadas/.test(h);   // b175: pacote sem sanfona
-    o.vip_aulas_preview = /05\/08\/2026/.test(h);  // prévia da última aula no cartão
-    abrirVipLancar(); await new Promise(z=>setTimeout(z,60));
-    o.vip_form = !!document.getElementById('vipDesc') && !!document.getElementById('vipHora');
-    document.getElementById('vipDesc').value='Aula nova'; addAulaVip(); await new Promise(z=>setTimeout(z,80));
+    o.vip_abre_ficha = rota==='ficha' && /Carlos Lima/.test(h) && /Aluno VIP/.test(h) && /lancarAulaVip\('v1'\)/.test(h);
+    o.vip_aulas_preview = /05\/08\/2026/.test(h);   // aula na ficha
+    lancarAulaVip('v1'); await new Promise(z=>setTimeout(z,60));
+    o.vip_form = !!document.getElementById('laDesc') && !!document.getElementById('laData');
+    document.getElementById('laDesc').value='Aula nova'; salvarAulaVipFicha('v1'); await new Promise(z=>setTimeout(z,80));
     o.vip_lanca = S.aulasVip.some(a=>a.descricao==='Aula nova');
-    o.vip_ficha_fechou = !document.getElementById('fichaLat').classList.contains('on');   // lançar fecha a ficha lateral
     // funções que vivem no módulo VIP seguem existindo
     o.vip_funcoes = ['vipHorarios','vipHoraDoDia','vipDurDoDia','pendenciasAulaVip','renderPendenciasVipCard','alunoParaVip','vipParaAluno','vipPausaAtual'].every(f=>typeof window[f]==='function');
-    // botão voltar
+    // botão voltar (reset do histórico: a ficha agora navega — b180)
+    rota='painel'; _histNav=[]; ir('vip'); await new Promise(z=>setTimeout(z,40));
     const bv=document.getElementById('btnVoltar');
     o.voltar_aparece = !!bv && !bv.hidden;
     voltar(); await new Promise(z=>setTimeout(z,80));
@@ -603,6 +598,39 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
     return o;
   });
   Object.assign(r,t19);
+
+  // ===== b180: tarefas internas — visibilidade por usuário, direção acompanha tudo + delega, setores =====
+  const t20=await page.evaluate(async()=>{
+    const o={};
+    S.usuarios=[{nome:'Chefe',perfil:'direcao'},{nome:'Sec',perfil:'secretaria'},{nome:'Prof',perfil:'professor'}];
+    S.tarefas=[
+      {id:'ta1',titulo:'T do prof', criadoPor:'Prof', quadrante:'fazer', feita:false},
+      {id:'ta2',titulo:'T da sec', criadoPor:'Sec', quadrante:'fazer', feita:false},
+      {id:'ta3',titulo:'Encaminhada sec', criadoPor:'Prof', setor:'secretaria', quadrante:'fazer', feita:false},
+      {id:'ta4',titulo:'Delegada ao prof', criadoPor:'Chefe', responsavel:'Prof', quadrante:'fazer', feita:false}
+    ];
+    // professor vê só as suas (criou + delegada a ele), sem "delegar a pessoa"
+    S.perfil='professor'; S.usuario='Prof'; VIEWS.tarefas();
+    let h=document.getElementById('view').innerHTML;
+    o.tar_prof_ve_suas = /T do prof/.test(h) && /Delegada ao prof/.test(h) && !/T da sec/.test(h);
+    tarNova('fazer'); let m=document.getElementById('modal').innerHTML;
+    o.tar_prof_sem_delegar = !/Delegar a \(pessoa\)/.test(m) && /Encaminhar para o setor/.test(m);
+    fechar();
+    // secretaria vê o que foi encaminhado pro seu setor
+    S.perfil='secretaria'; S.usuario='Sec'; VIEWS.tarefas(); h=document.getElementById('view').innerHTML;
+    o.tar_sec_ve_setor = /Encaminhada sec/.test(h) && /T da sec/.test(h) && !/T do prof/.test(h);
+    // direção acompanha todas + pode delegar a uma pessoa
+    S.perfil='direcao'; S.usuario='Chefe'; _tarSoMinhas=false; VIEWS.tarefas(); h=document.getElementById('view').innerHTML;
+    o.tar_dir_ve_todas = /T do prof/.test(h) && /T da sec/.test(h) && /Encaminhada sec/.test(h);
+    tarNova('fazer'); m=document.getElementById('modal').innerHTML;
+    o.tar_dir_delega = /Delegar a \(pessoa\)/.test(m) && /Encaminhar para o setor/.test(m);
+    fechar();
+    _tarSoMinhas=true; VIEWS.tarefas(); h=document.getElementById('view').innerHTML;
+    o.tar_dir_so_minhas = /Delegada ao prof/.test(h) && !/T do prof/.test(h);
+    _tarSoMinhas=false;
+    return o;
+  });
+  Object.assign(r,t20);
 
   const falhas=Object.keys(r).filter(k=>r[k]!==true);
   console.log(JSON.stringify(r,null,1));
