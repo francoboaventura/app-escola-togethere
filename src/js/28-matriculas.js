@@ -659,7 +659,7 @@ function _trRender(){
     const optP=MAT_PARENTESCO.map(x=>`<option ${p.resp.parentesco===x?'selected':''}>${x}</option>`).join('');
     h=(adulto?`<p class="hint" style="margin:0 0 8px">✅ <b>${esc(p.aluno.nome)}</b> é maior de 18 — o responsável é opcional.</p>`:'')
      +`<label class="check" style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:.94rem;padding:11px 13px;border:1px solid var(--linha);border-radius:11px;background:${temResp?'#eafaf0':'var(--bg,#f4f6fb)'};margin:0 0 12px">
-        <input type="checkbox" id="tr2_temResp" ${temResp?'checked':''} onchange="trIr(2)" style="width:17px;height:17px"> 👪 Este aluno tem um <b>responsável</b> <span class="hint">(quem assina / financeiro)</span></label>`
+        <input type="checkbox" id="tr2_temResp" ${temResp?'checked':''} onchange="trIr(2)" style="width:17px;height:17px"> 👪 Este aluno tem um <b>responsável</b></label>`
      +(temResp
        ?(`<div class="row">`+F('Nome do responsável',`<input type="text" id="tr2_nome" value="${escAttr(p.resp.nome)}" placeholder="Quem assina / financeiro">`)
           +F('Parentesco',`<select id="tr2_parentesco"><option value="">—</option>${optP}</select>`)+`</div>`

@@ -93,9 +93,15 @@ function _ctDado(v){ return (v!=null && String(v).trim()!=='') ? esc(String(v).t
 function _ctPessoaLinha(rotulo,nome,cpf,cidade,endereco,email,wpp){
   return `<p class="pessoa"><b>${rotulo}:</b> ${_ctDado(nome)}, inscrito(a) no CPF sob n. ${_ctDado(cpf)}, com endereço na cidade de ${_ctDado(cidade||'Gravataí, RS')}, na ${_ctDado(endereco)}, e-mail ${_ctDado(email)}, whatsapp ${_ctDado(wpp)}.</p>`;
 }
-function _ctPortalBox(login){
-  const site='https://bit.ly/portal_togethere';
-  return `<b>SITE:</b> ${site}<br><b>LOGIN:</b> ${_ctDado(login)}<br><b>SENHA:</b> Se não souber sua senha, use a opção “Esqueci minha senha” no Portal do Aluno para redefini-la.`;
+function _ctPortalBox(login, senha){
+  const base=(typeof PORTAL_ALUNO_URL!=='undefined')?PORTAL_ALUNO_URL:'https://app.togethere.com.br/portal-aluno.html';
+  const url=base+(login?('?u='+encodeURIComponent(login)):'');
+  const qr=(typeof _qrSVGcard==='function')?_qrSVGcard(url):'';
+  const senhaTxt = senha ? ('<b>'+esc(senha)+'</b>') : 'definida pelo aluno no 1º acesso — se não souber, use “Esqueci minha senha” no portal.';
+  const texto=`<b>URL:</b> ${esc(base)}<br><b>USUÁRIO:</b> ${_ctDado(login)}<br><b>SENHA:</b> ${senhaTxt}`;
+  return qr
+    ? `<div style="display:flex;gap:8px;align-items:center"><div style="flex:1;min-width:0">${texto}</div><div class="qrcell">${qr}</div></div>`
+    : texto;
 }
 function _ctQuadroHTML(rows){
   return `<table class="quadro">${rows.map(r=>`<tr><td class="k">${r[0]}</td><td>${r[1]}</td></tr>`).join('')}</table>`;
@@ -114,6 +120,7 @@ h3.sec{font-family:'Zilla Slab',Georgia,serif;text-align:center;font-size:10.5px
 table.quadro{width:100%;border-collapse:collapse;margin:2px 0 4px}
 table.quadro td{border:1px solid #C9D6E4;padding:3.5px 7px;vertical-align:top}
 table.quadro td.k{background:#F0F6FC;color:#002B64;font-weight:700;width:24%}
+.qrcell{flex:0 0 auto;width:24mm;height:24mm}.qrcell svg{width:100%;height:100%;display:block}
 table.rem{width:100%;border-collapse:collapse;font-size:9.2px}
 table.rem th{background:#F0F6FC;color:#002B64;border:1px solid #C9D6E4;padding:2.5px 6px;font-weight:700}
 table.rem td{border:1px solid #C9D6E4;padding:2.5px 6px;text-align:center}
@@ -161,11 +168,17 @@ function verContratoOficial(id){
   const t=m.turmaId?(S.turmas||[]).find(x=>x.id===m.turmaId):null;
   const f=(S.financeiro||[]).find(x=>x.matriculaId===id);
   const alu=m.alunoId?(S.alunos||[]).find(a=>a.id===m.alunoId):null;
-  const contratante=m.respNome||matNome(m);   // aluno adulto sem responsável: ele mesmo contrata
+  // aluno adulto sem responsável separado: ele mesmo é o contratante — usa os dados do aluno
+  const selfResp = (m.temResponsavel===false) || !m.respNome;
+  const contratante = m.respNome || matNome(m);
+  const contrDoc = selfResp ? (m.docAluno||m.respDoc) : m.respDoc;
+  const contrTel = selfResp ? (m.alunoTelefone||m.telefone||(alu&&alu.telefone)||'') : m.telefone;
+  const contrEnd = selfResp ? (m.alunoEndereco||m.endereco) : m.endereco;
+  const aluTel = m.alunoTelefone || (alu&&alu.telefone) || (selfResp?(m.telefone||''):'');
   const partes=
-    _ctPessoaLinha('CONTRATANTE',contratante,m.respDoc,m.cidade,m.endereco,m.email,m.telefone)
+    _ctPessoaLinha('CONTRATANTE',contratante,contrDoc,m.cidade,contrEnd,m.email||(alu&&alu.email),contrTel)
     +`<p class="pessoa">${_CT_ESCOLA}</p>`
-    +_ctPessoaLinha('ALUNO',matNome(m),m.docAluno,m.cidade,m.endereco,(alu&&alu.email)||'','');
+    +_ctPessoaLinha('ALUNO',matNome(m),m.docAluno,m.cidade,(m.alunoEndereco||m.endereco),(alu&&alu.email)||m.email||'',aluTel);
   const ini=m.dataInicio?brDate(m.dataInicio):'';
   const fim=m.fimPeriodo?brDate(m.fimPeriodo):_ctFimPadrao(m.dataInicio);
   const diasHor=t?[diasTurmaLabel(t),t.horario||''].filter(Boolean).join(', '):'';
@@ -254,7 +267,7 @@ function verContratoVip(vid){
   const partes=
     _ctPessoaLinha('CONTRATANTE',cd.contratante,cd.cpf,cd.cidade,cd.endereco,cd.email,cd.wpp)
     +`<p class="pessoa">${_CT_ESCOLA}</p>`
-    +_ctPessoaLinha('ALUNO',vip.nome,cd.alunoCpf,cd.cidade,cd.endereco,vip.email||'','');
+    +_ctPessoaLinha('ALUNO',vip.nome,cd.alunoCpf,cd.cidade,(vip.endereco||cd.endereco),vip.email||cd.email||'',(vip.telefone||cd.wpp||''));
   const per=(cd.ini?brDate(cd.ini):'')+(cd.fim?(' até '+brDate(cd.fim)):'');
   const quadro=_ctQuadroHTML([
     ['Período contratado', _ctDado(per)],

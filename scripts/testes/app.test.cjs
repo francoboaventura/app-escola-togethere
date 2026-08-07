@@ -555,6 +555,25 @@ const { chromium } = require(process.env.PW || '/home/claude/.npm-global/lib/nod
   });
   Object.assign(r,t17);
 
+  // ===== b178: contrato — CPF do contratante (aluno é o próprio responsável), whatsapp do aluno e portal (URL/usuário/QR) =====
+  const t18=await page.evaluate(async()=>{
+    const o={}; let cap=''; window.imprimirDoc=(html)=>{ cap=html; };
+    S.perfil='direcao'; S.usuario='Franco';
+    S.turmas=[{id:'t1',nome:'B1 TEENS',nivel:'teens',cefr:'B1',status:'aberta'}];
+    S.alunos=[{id:'a1',nome:'Débora Oliveira',turmaId:'t1',email:'debora@ex.com',telefone:'(51) 98888-0000',doc:'111.222.333-44',endereco:'Rua Y, 5'}];
+    S.matriculas=[{id:'m1',status:'ativa',tipo:'turma',alunoId:'a1',alunoNome:'Débora Oliveira',turmaId:'t1',
+      temResponsavel:false, respNome:'', docAluno:'111.222.333-44', telefone:'(51) 98888-0000', alunoTelefone:'(51) 98888-0000',
+      endereco:'Rua Y, 5', alunoEndereco:'Rua Y, 5', email:'debora@ex.com', cidade:'Gravataí, RS', dataInicio:'2026-08-10'}];
+    S.financeiro=[{id:'f1',matriculaId:'m1',valorMatricula:150,valorMensalidade:400,parcelas:12,diaVencimento:10,pagos:{}}];
+    verContratoOficial('m1'); await new Promise(z=>setTimeout(z,30));
+    o.ct_contratante_cpf = /CONTRATANTE:<\/b>[^<]*111\.222\.333-44/.test(cap);
+    o.ct_aluno_whats = /ALUNO:<\/b>[^<]*98888-0000/.test(cap);
+    o.ct_portal_url = /URL:<\/b>[^<]*portal-aluno\.html/.test(cap) && /USU[ÁA]RIO:<\/b>[^<]*debora@ex\.com/.test(cap);
+    o.ct_portal_qr = /qrcell/.test(cap) && /<svg/.test(cap);
+    return o;
+  });
+  Object.assign(r,t18);
+
   const falhas=Object.keys(r).filter(k=>r[k]!==true);
   console.log(JSON.stringify(r,null,1));
   console.log(falhas.length?('FALHOU: '+falhas.join(', ')):('TUDO VERDE — '+Object.keys(r).length+' checks'));
